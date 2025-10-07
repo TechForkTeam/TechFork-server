@@ -312,6 +312,12 @@ resource "aws_instance" "app" {
                   
                   location /health {
                       proxy_pass http://spring_backend/actuator/health;
+
+                      proxy_set_header Host $host;
+                      proxy_set_header X-Real-IP $remote_addr;
+                      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                      proxy_set_header X-Forwarded-Proto $scheme;
+
                       access_log off;
                   }
               }
