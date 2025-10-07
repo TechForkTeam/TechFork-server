@@ -37,7 +37,3 @@ spring:
             max-idle: 8
             min-idle: 0
             max-wait: 5s
-
-server:
-
-  domain: ${DOMAIN_NAME}
