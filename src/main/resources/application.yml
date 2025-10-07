@@ -1,1 +1,13 @@
-spring.application.name=TechFork
+spring:
+  profiles:
+    default: local
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
