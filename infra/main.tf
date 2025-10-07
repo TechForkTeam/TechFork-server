@@ -204,7 +204,7 @@ resource "aws_iam_instance_profile" "ec2_profile" {
   role = aws_iam_role.ec2_role.name
 }
 
-# EC2 Instance (Spring Boot + Redis + Nginx)
+# EC2 Instance (Spring Boot + Nginx)
 resource "aws_instance" "app" {
   ami                    = data.aws_ami.amazon_linux_2.id
   instance_type          = var.ec2_instance_type
@@ -389,37 +389,7 @@ resource "aws_instance" "app" {
                 -s \
                 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
               
-              echo "===== Create systemd Service ====="
-              cat > /etc/systemd/system/tech-blog.service <<'SERVICE'
-              [Unit]
-              Description=Tech Blog Spring Boot Application
-              After=network.target redis.service
-              Requires=redis.service
-              
-              [Service]
-              Type=simple
-              User=tech-blog
-              WorkingDirectory=/opt/tech-blog
-              ExecStart=/usr/bin/java -Xms256m -Xmx768m -jar /opt/tech-blog/app.jar
-              SuccessExitStatus=143
-              TimeoutStopSec=10
-              Restart=on-failure
-              RestartSec=5
-              
-              Environment="SPRING_PROFILES_ACTIVE=prod"
-              Environment="SERVER_PORT=8080"
-              
-              StandardOutput=append:/var/log/tech-blog/application.log
-              StandardError=append:/var/log/tech-blog/error.log
-              
-              [Install]
-              WantedBy=multi-user.target
-              SERVICE
-              
-              systemctl daemon-reload
-              
               echo "===== Installation Complete ====="
-              echo "Redis Status: $(systemctl is-active redis)"
               echo "Nginx Status: $(systemctl is-active nginx)"
               echo "Java Version: $(java -version 2>&1 | head -n 1)"
               
