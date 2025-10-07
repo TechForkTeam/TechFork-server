@@ -244,19 +244,6 @@ resource "aws_instance" "app" {
               echo "===== Install Nginx ====="
               amazon-linux-extras install -y nginx1
               
-              echo "===== Install Redis ====="
-              amazon-linux-extras install -y redis6
-              
-              # Redis Configuration
-              echo "===== Redis Configuration ====="
-              sed -i 's/bind 127.0.0.1/bind 127.0.0.1/' /etc/redis/redis.conf
-              sed -i 's/protected-mode yes/protected-mode yes/' /etc/redis/redis.conf
-              echo "maxmemory 512mb" >> /etc/redis/redis.conf
-              echo "maxmemory-policy allkeys-lru" >> /etc/redis/redis.conf
-              
-              systemctl start redis
-              systemctl enable redis
-              
               echo "===== Create Application Directories ====="
               mkdir -p /opt/tech-blog
               mkdir -p /var/log/tech-blog
