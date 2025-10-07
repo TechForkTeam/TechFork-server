@@ -144,6 +144,14 @@ resource "aws_security_group" "rds" {
     security_groups = [aws_security_group.ec2.id]
   }
 
+  ingress {
+    description = "MySQL from anywhere (development)"
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -439,7 +447,7 @@ resource "aws_instance" "app" {
 # RDS Subnet Group
 resource "aws_db_subnet_group" "main" {
   name       = "${var.project_name}-${var.environment}-db-subnet-group"
-  subnet_ids = aws_subnet.private[*].id
+  subnet_ids = aws_subnet.public[*].id
 
   tags = {
     Name = "${var.project_name}-${var.environment}-db-subnet-group"
@@ -463,7 +471,7 @@ resource "aws_db_instance" "main" {
   vpc_security_group_ids = [aws_security_group.rds.id]
   
   skip_final_snapshot       = true
-  publicly_accessible       = false
+  publicly_accessible       = true
   backup_retention_period   = 7
   enabled_cloudwatch_logs_exports = ["error", "general", "slowquery"]
 
