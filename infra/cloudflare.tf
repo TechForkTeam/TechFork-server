@@ -18,6 +18,16 @@ resource "cloudflare_record" "www" {
   proxied = true
 }
 
+# A Record - SSH (Direct, Not Proxied!)
+resource "cloudflare_record" "ssh" {
+  zone_id = var.cloudflare_zone_id
+  name    = "ssh"
+  content = aws_instance.app.public_ip
+  type    = "A"
+  ttl     = 300
+  proxied = false  # SSH 직접 연결!
+}
+
 # A Record - api
 resource "cloudflare_record" "api" {
   zone_id = var.cloudflare_zone_id
