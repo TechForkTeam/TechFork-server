@@ -27,7 +27,7 @@ spring:
 
     data:
       redis:
-        host: localhost
+        host: redis
         port: 6379
         password: ${REDIS_PASSWORD}
         timeout: 3s
@@ -39,4 +39,5 @@ spring:
             max-wait: 5s
 
 server:
+
   domain: ${DOMAIN_NAME}
