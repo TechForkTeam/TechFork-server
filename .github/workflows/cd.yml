@@ -82,12 +82,15 @@ jobs:
 
       - name: Health check
         run: |
-          sleep 25
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://techfork.shop/actuator/health || echo "000")
-          
-          if [ "$response" = "200" ]; then
-            echo "✅ 배포 성공!"
-          else
-            echo "❌ 헬스 체크 실패: $response"
-            exit 1
-          fi
+          echo "🚀 Starting health check..."
+          for i in {1..18}; do
+            response=$(curl -s -o /dev/null -w "%{http_code}" https://techfork.shop/actuator/health || echo "000")
+            if [ "$response" = "200" ]; then
+              echo "✅ (Attempt $i/18) Health check successful!"
+              exit 0
+            fi
+            echo "🟡 (Attempt $i/18) Health check failed with status $response. Retrying in 5 seconds..."
+            sleep 5
+          done
+          echo "❌ Health check failed after 90 seconds."
+          exit 1
