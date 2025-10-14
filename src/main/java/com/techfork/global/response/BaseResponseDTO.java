@@ -14,23 +14,16 @@ public record BaseResponseDTO<T>(
         String message,
         T data
 ) {
-    public static <T> ResponseEntity<BaseResponseDTO<T>> success(BaseCode successCode) {
-        ReasonDTO reason = successCode.getReason();
-        BaseResponseDTO<T> body = BaseResponseDTO.<T>builder()
-                .isSuccess(true)
-                .code(reason.code())
-                .message(reason.message())
-                .build();
-
-        return ResponseEntity
-                .status(reason.httpStatus())
-                .body(body);
+    public static <T> ResponseEntity<BaseResponseDTO<T>> of(BaseCode code) {
+        return of(code, null);
     }
 
-    public static <T> ResponseEntity<BaseResponseDTO<T>> success(BaseCode successCode, T data) {
-        ReasonDTO reason = successCode.getReason();
+    public static <T> ResponseEntity<BaseResponseDTO<T>> of(BaseCode code, T data) {
+        ReasonDTO reason = code.getReason();
+        boolean isSuccess = reason.httpStatus().is2xxSuccessful();
+
         BaseResponseDTO<T> body = BaseResponseDTO.<T>builder()
-                .isSuccess(true)
+                .isSuccess(isSuccess)
                 .code(reason.code())
                 .message(reason.message())
                 .data(data)
@@ -38,19 +31,6 @@ public record BaseResponseDTO<T>(
 
         return ResponseEntity
                 .status(reason.httpStatus())
-                .body(body);
-    }
-
-    public static <T> ResponseEntity<BaseResponseDTO<T>> error(BaseCode errorCode) {
-        ReasonDTO errorReason = errorCode.getReason();
-        BaseResponseDTO<T> body = BaseResponseDTO.<T>builder()
-                .isSuccess(false)
-                .code(errorReason.code())
-                .message(errorReason.message())
-                .build();
-
-        return ResponseEntity
-                .status(errorReason.httpStatus())
                 .body(body);
     }
 }
