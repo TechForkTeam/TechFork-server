@@ -33,4 +33,20 @@ public record BaseResponseDTO<T>(
                 .status(reason.httpStatus())
                 .body(body);
     }
+
+    public static ResponseEntity<Object> ofObject(BaseCode code, Object data) {
+        ReasonDTO reason = code.getReason();
+        boolean isSuccess = reason.httpStatus().is2xxSuccessful();
+
+        BaseResponseDTO<Object> body = BaseResponseDTO.builder()
+                .isSuccess(isSuccess)
+                .code(reason.code())
+                .message(reason.message())
+                .data(data)
+                .build();
+
+        return ResponseEntity
+                .status(reason.httpStatus())
+                .body(body);
+    }
 }
