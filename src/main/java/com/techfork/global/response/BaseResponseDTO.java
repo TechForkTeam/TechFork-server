@@ -40,4 +40,17 @@ public record BaseResponseDTO<T>(
                 .status(reason.httpStatus())
                 .body(body);
     }
+
+    public static <T> ResponseEntity<BaseResponseDTO<T>> error(BaseCode errorCode) {
+        ReasonDTO errorReason = errorCode.getReason();
+        BaseResponseDTO<T> body = BaseResponseDTO.<T>builder()
+                .isSuccess(false)
+                .code(errorReason.code())
+                .message(errorReason.message())
+                .build();
+
+        return ResponseEntity
+                .status(errorReason.httpStatus())
+                .body(body);
+    }
 }
