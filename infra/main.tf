@@ -410,7 +410,7 @@ resource "aws_instance" "app" {
 # RDS Subnet Group
 resource "aws_db_subnet_group" "main" {
   name       = "${var.project_name}-${var.environment}-db-subnet-group"
-  subnet_ids = aws_subnet.public[*].id
+  subnet_ids = aws_subnet.private[*].id
 
   tags = {
     Name = "${var.project_name}-${var.environment}-db-subnet-group"
@@ -434,7 +434,7 @@ resource "aws_db_instance" "main" {
   vpc_security_group_ids = [aws_security_group.rds.id]
   
   skip_final_snapshot       = true
-  publicly_accessible       = true
+  publicly_accessible       = false
   backup_retention_period   = 7
   enabled_cloudwatch_logs_exports = ["error", "general", "slowquery"]
 
