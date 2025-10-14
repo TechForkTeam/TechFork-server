@@ -1,28 +1,27 @@
 package com.techfork.global.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.techfork.global.response.code.BaseCode;
-import com.techfork.global.response.dto.ReasonDTO;
+import com.techfork.global.common.code.BaseCode;
 import lombok.Builder;
 import org.springframework.http.ResponseEntity;
 
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public record BaseResponseDTO<T>(
+public record BaseResponse<T>(
         boolean isSuccess,
         String code,
         String message,
         T data
 ) {
-    public static <T> ResponseEntity<BaseResponseDTO<T>> of(BaseCode code) {
+    public static <T> ResponseEntity<BaseResponse<T>> of(BaseCode code) {
         return of(code, null);
     }
 
-    public static <T> ResponseEntity<BaseResponseDTO<T>> of(BaseCode code, T data) {
+    public static <T> ResponseEntity<BaseResponse<T>> of(BaseCode code, T data) {
         ReasonDTO reason = code.getReason();
         boolean isSuccess = reason.httpStatus().is2xxSuccessful();
 
-        BaseResponseDTO<T> body = BaseResponseDTO.<T>builder()
+        BaseResponse<T> body = BaseResponse.<T>builder()
                 .isSuccess(isSuccess)
                 .code(reason.code())
                 .message(reason.message())
@@ -38,7 +37,7 @@ public record BaseResponseDTO<T>(
         ReasonDTO reason = code.getReason();
         boolean isSuccess = reason.httpStatus().is2xxSuccessful();
 
-        BaseResponseDTO<Object> body = BaseResponseDTO.builder()
+        BaseResponse<Object> body = BaseResponse.builder()
                 .isSuccess(isSuccess)
                 .code(reason.code())
                 .message(reason.message())

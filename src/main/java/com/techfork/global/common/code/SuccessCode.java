@@ -1,11 +1,11 @@
-package com.techfork.global.response.code;
+package com.techfork.global.common.code;
 
-import com.techfork.global.response.dto.ReasonDTO;
+import com.techfork.global.response.ReasonDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 
 @RequiredArgsConstructor
-public enum CommonSuccessCode implements BaseCode{
+public enum SuccessCode implements BaseCode {
     OK(HttpStatus.OK, "COMMON200", "요청에 성공했습니다."),
     CREATED(HttpStatus.CREATED, "COMMON201", "요청이 성공적으로 처리되어 리소스가 생성되었습니다."),
     ACCEPTED(HttpStatus.ACCEPTED, "COMMON202", "요청이 접수되었습니다."),

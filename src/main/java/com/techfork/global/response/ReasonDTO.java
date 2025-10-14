@@ -1,4 +1,4 @@
-package com.techfork.global.response.dto;
+package com.techfork.global.response;
 
 import lombok.Builder;
 import org.springframework.http.HttpStatus;

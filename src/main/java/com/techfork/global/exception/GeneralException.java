@@ -1,7 +1,7 @@
 package com.techfork.global.exception;
 
-import com.techfork.global.response.code.BaseCode;
-import com.techfork.global.response.dto.ReasonDTO;
+import com.techfork.global.common.code.BaseCode;
+import com.techfork.global.response.ReasonDTO;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 

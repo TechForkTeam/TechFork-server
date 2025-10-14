@@ -1,4 +1,4 @@
-package com.techfork.global.response.dto;
+package com.techfork.global.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;

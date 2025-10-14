@@ -1,11 +1,12 @@
-package com.techfork.global.response.code;
+package com.techfork.global.exception;
 
-import com.techfork.global.response.dto.ReasonDTO;
+import com.techfork.global.common.code.BaseCode;
+import com.techfork.global.response.ReasonDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 
 @RequiredArgsConstructor
-public enum CommonErrorCode implements BaseCode{
+public enum CommonErrorCode implements BaseCode {
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "COMMON400", "잘못된 요청입니다."),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "COMMON401", "인증이 필요합니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "COMMON403", "접근 권한이 없는 요청입니다."),

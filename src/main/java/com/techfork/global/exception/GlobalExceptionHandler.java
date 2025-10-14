@@ -1,9 +1,8 @@
 package com.techfork.global.exception;
 
-import com.techfork.global.response.BaseResponseDTO;
-import com.techfork.global.response.code.CommonErrorCode;
-import com.techfork.global.response.dto.ErrorDetailDTO;
-import com.techfork.global.response.dto.ReasonDTO;
+import com.techfork.global.response.BaseResponse;
+import com.techfork.global.response.ErrorDetailDTO;
+import com.techfork.global.response.ReasonDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -31,7 +30,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      * 비즈니스 로직 예외
      */
     @ExceptionHandler(GeneralException.class)
-    public ResponseEntity<BaseResponseDTO<Object>> handleGeneralException(
+    public ResponseEntity<BaseResponse<Object>> handleGeneralException(
             GeneralException ex, WebRequest request) {
 
         ReasonDTO errorReason = ex.getErrorReason();
@@ -44,7 +43,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                     getRequestURI(request), errorReason.code(), errorReason.message());
         }
 
-        return BaseResponseDTO.of(ex.getCode());
+        return BaseResponse.of(ex.getCode());
     }
 
     /**
@@ -61,7 +60,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         ErrorDetailDTO errorDetail = ErrorDetailDTO.of(fieldErrors);
 
-        return BaseResponseDTO.ofObject(CommonErrorCode.VALIDATION_FAILED, errorDetail);
+        return BaseResponse.ofObject(CommonErrorCode.VALIDATION_FAILED, errorDetail);
     }
 
     /**
@@ -77,7 +76,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         ErrorDetailDTO errorDetail = ErrorDetailDTO.of(violations);
 
-        return BaseResponseDTO.ofObject(CommonErrorCode.VALIDATION_FAILED, errorDetail);
+        return BaseResponse.ofObject(CommonErrorCode.VALIDATION_FAILED, errorDetail);
     }
 
     /**
@@ -97,7 +96,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         ErrorDetailDTO errorDetail = ErrorDetailDTO.of(detail);
 
-        return BaseResponseDTO.ofObject(CommonErrorCode.INVALID_PARAMETER_TYPE, errorDetail);
+        return BaseResponse.ofObject(CommonErrorCode.INVALID_PARAMETER_TYPE, errorDetail);
     }
 
     /**
@@ -115,7 +114,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         ErrorDetailDTO errorDetail = ErrorDetailDTO.of(detail);
 
-        return BaseResponseDTO.ofObject(CommonErrorCode.MISSING_REQUIRED_PARAMETER, errorDetail);
+        return BaseResponse.ofObject(CommonErrorCode.MISSING_REQUIRED_PARAMETER, errorDetail);
     }
 
     /**
@@ -131,7 +130,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         String detail = "요청 본문의 JSON 형식이 올바르지 않거나 필수 필드가 누락되었습니다.";
         ErrorDetailDTO errorDetail = ErrorDetailDTO.of(detail);
 
-        return BaseResponseDTO.ofObject(CommonErrorCode.INVALID_REQUEST_FORMAT, errorDetail);
+        return BaseResponse.ofObject(CommonErrorCode.INVALID_REQUEST_FORMAT, errorDetail);
     }
 
     /**
@@ -146,7 +145,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         ErrorDetailDTO errorDetail = ErrorDetailDTO.of("예상치 못한 오류가 발생했습니다. 관리자에게 문의해주세요.");
 
-        return BaseResponseDTO.ofObject(CommonErrorCode.INTERNAL_SERVER_ERROR, errorDetail);
+        return BaseResponse.ofObject(CommonErrorCode.INTERNAL_SERVER_ERROR, errorDetail);
     }
 
     private String getRequestURI(WebRequest request) {
