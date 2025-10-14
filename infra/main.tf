@@ -257,7 +257,7 @@ resource "aws_instance" "app" {
               
               echo "===== Nginx Configuration ====="
               cat > /etc/nginx/conf.d/tech-blog.conf <<'NGINX'
-              upstream spring_backend {
+              upstream springapp {
                   server 127.0.0.1:8080 fail_timeout=0;
               }
 
@@ -289,7 +289,7 @@ resource "aws_instance" "app" {
                   real_ip_header CF-Connecting-IP;
                   
                   location / {
-                      proxy_pass http://spring_backend;
+                      proxy_pass http://springapp;
                       proxy_set_header Host $host;
                       proxy_set_header X-Real-IP $remote_addr;
                       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -305,13 +305,13 @@ resource "aws_instance" "app" {
                   }
                   
                   location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf)$ {
-                      proxy_pass http://spring_backend;
+                      proxy_pass http://springapp;
                       expires 30d;
                       add_header Cache-Control "public, immutable";
                   }
                   
                   location /health {
-                      proxy_pass http://spring_backend/actuator/health;
+                      proxy_pass http://springapp/actuator/health;
 
                       proxy_set_header Host $host;
                       proxy_set_header X-Real-IP $remote_addr;
