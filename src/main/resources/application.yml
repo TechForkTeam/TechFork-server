@@ -10,4 +10,9 @@ spring:
 spring:
   config:
     activate:
+      on-profile: local-tunnel
+---
+spring:
+  config:
+    activate:
       on-profile: dev
