@@ -3,7 +3,7 @@ version: '3.8'
 services:
   app:
     image: ${DOCKER_IMAGE}:${BRANCH}
-    container_name: tech-blog-app
+    container_name: tech-fork-app
     restart: always
     ports:
       - "8080:8080"
@@ -21,7 +21,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: tech-blog-redis
+    container_name: tech-fork-redis
     restart: always
     ports:
       - "6379:6379"
@@ -33,7 +33,7 @@ services:
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-    container_name: tech-blog-elasticsearch
+    container_name: tech-fork-elasticsearch
     restart: always
     ports:
       - "9200:9200"

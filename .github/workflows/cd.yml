@@ -7,7 +7,7 @@ on:
     branches: [ develop, main ]
 
 env:
-  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/tech-blog
+  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/tech-fork
 
 jobs:
   docker-build:
@@ -21,7 +21,7 @@ jobs:
       - name: Download JAR from CI
         uses: actions/download-artifact@v4
         with:
-          name: tech-blog-jar
+          name: tech-fork-jar
           path: build/libs/
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
