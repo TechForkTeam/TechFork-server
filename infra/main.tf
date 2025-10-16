@@ -413,6 +413,8 @@ resource "aws_instance" "app" {
               touch /var/log/user-data-complete.txt
               EOF
 
+  user_data_replace_on_change = true
+
   tags = {
     Name = "${var.project_name}-${var.environment}-app-server"
   }
