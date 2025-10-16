@@ -37,3 +37,7 @@ spring:
           max-idle: 8
           min-idle: 0
           max-wait: 5s
+
+elasticsearch:
+  host: elasticsearch
+  port: 9200
