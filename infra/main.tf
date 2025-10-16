@@ -424,7 +424,7 @@ resource "aws_db_instance" "main" {
   engine_version         = "8.0"
   instance_class         = var.rds_instance_class
   allocated_storage      = 20
-  storage_type           = "gp3"
+  storage_type           = "gp2"
   
   db_name  = "techblog"
   username = var.db_username
@@ -435,7 +435,7 @@ resource "aws_db_instance" "main" {
   
   skip_final_snapshot       = true
   publicly_accessible       = false
-  backup_retention_period   = 7
+  backup_retention_period   = 1
   enabled_cloudwatch_logs_exports = ["error", "general", "slowquery"]
 
   tags = {
