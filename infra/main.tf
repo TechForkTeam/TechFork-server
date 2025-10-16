@@ -254,6 +254,17 @@ resource "aws_instance" "app" {
               
               echo "===== Install Git ====="
               yum install -y git
+
+              echo "===== Install Docker ====="
+              yum install -y docker
+              systemctl start docker
+              systemctl enable docker
+              usermod -aG docker ec2-user
+
+              echo "===== Install Docker Compose ====="
+              curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              chmod +x /usr/local/bin/docker-compose
+              ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
               
               echo "===== Nginx Configuration ====="
               cat > /etc/nginx/conf.d/tech-blog.conf <<'NGINX'
