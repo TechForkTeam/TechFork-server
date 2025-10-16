@@ -7,7 +7,7 @@ on:
     branches: [ develop, main ]
 
 env:
-  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/tech-blog
+  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/tech-fork
 
 jobs:
   docker-build:
@@ -21,7 +21,7 @@ jobs:
       - name: Download JAR from CI
         uses: actions/download-artifact@v4
         with:
-          name: tech-blog-jar
+          name: tech-fork-jar
           path: build/libs/
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
@@ -51,8 +51,6 @@ jobs:
       DB_URL: ${{ secrets.DB_URL }}
       DB_USERNAME: ${{ secrets.DB_USERNAME }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
       REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
 
     steps:
@@ -74,7 +72,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: DOCKER_IMAGE,BRANCH,SPRING_PROFILES_ACTIVE,DB_URL,DB_USERNAME,DB_PASSWORD,REDIS_HOST,REDIS_PORT,REDIS_PASSWORD
+          envs: DOCKER_IMAGE,BRANCH,SPRING_PROFILES_ACTIVE,DB_URL,DB_USERNAME,DB_PASSWORD,REDIS_PASSWORD
           script: |
             cd ~/deploy
             chmod +x deploy.sh

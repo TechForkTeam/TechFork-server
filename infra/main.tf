@@ -245,18 +245,29 @@ resource "aws_instance" "app" {
               amazon-linux-extras install -y nginx1
               
               echo "===== Create Application Directories ====="
-              mkdir -p /opt/tech-blog
-              mkdir -p /var/log/tech-blog
+              mkdir -p /opt/tech-fork
+              mkdir -p /var/log/tech-fork
               
-              useradd -r -s /bin/false tech-blog || true
-              chown -R tech-blog:tech-blog /opt/tech-blog
-              chown -R tech-blog:tech-blog /var/log/tech-blog
+              useradd -r -s /bin/false tech-fork || true
+              chown -R tech-fork:tech-fork /opt/tech-fork
+              chown -R tech-fork:tech-fork /var/log/tech-fork
               
               echo "===== Install Git ====="
               yum install -y git
+
+              echo "===== Install Docker ====="
+              yum install -y docker
+              systemctl start docker
+              systemctl enable docker
+              usermod -aG docker ec2-user
+
+              echo "===== Install Docker Compose ====="
+              curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              chmod +x /usr/local/bin/docker-compose
+              ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
               
               echo "===== Nginx Configuration ====="
-              cat > /etc/nginx/conf.d/tech-blog.conf <<'NGINX'
+              cat > /etc/nginx/conf.d/tech-fork.conf <<'NGINX'
               upstream springapp {
                   server 127.0.0.1:8080 fail_timeout=0;
               }
@@ -267,8 +278,8 @@ resource "aws_instance" "app" {
                   
                   client_max_body_size 10M;
                   
-                  access_log /var/log/nginx/tech-blog-access.log;
-                  error_log /var/log/nginx/tech-blog-error.log;
+                  access_log /var/log/nginx/tech-fork-access.log;
+                  error_log /var/log/nginx/tech-fork-error.log;
                   
                   # Cloudflare Real IP
                   set_real_ip_from 173.245.48.0/20;
@@ -365,7 +376,7 @@ resource "aws_instance" "app" {
                     "files": {
                       "collect_list": [
                         {
-                          "file_path": "/var/log/tech-blog/*.log",
+                          "file_path": "/var/log/tech-fork/*.log",
                           "log_group_name": "/aws/ec2/${var.project_name}-${var.environment}/application",
                           "log_stream_name": "{instance_id}",
                           "timezone": "Asia/Seoul"
@@ -377,7 +388,7 @@ resource "aws_instance" "app" {
                           "timezone": "Asia/Seoul"
                         },
                         {
-                          "file_path": "/var/log/nginx/tech-blog-*.log",
+                          "file_path": "/var/log/nginx/tech-fork-*.log",
                           "log_group_name": "/aws/ec2/${var.project_name}-${var.environment}/nginx",
                           "log_stream_name": "{instance_id}",
                           "timezone": "Asia/Seoul"
@@ -401,6 +412,8 @@ resource "aws_instance" "app" {
               
               touch /var/log/user-data-complete.txt
               EOF
+
+  user_data_replace_on_change = true
 
   tags = {
     Name = "${var.project_name}-${var.environment}-app-server"
