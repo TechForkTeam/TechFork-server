@@ -25,6 +25,12 @@ spring:
         jdbc:
           batch_size: 20
 
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      names: ''
+
   data:
     redis:
       host: redis

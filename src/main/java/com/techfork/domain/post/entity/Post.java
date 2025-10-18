@@ -1,9 +1,11 @@
 package com.techfork.domain.post.entity;
 
+import com.techfork.domain.source.dto.RssFeedItem;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -18,7 +20,7 @@ public class Post extends BaseEntity {
     @Column(nullable = false, length = 500)
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "MEDIUMTEXT")
     private String fullContent;
 
     @Column(nullable = false)
@@ -36,4 +38,28 @@ public class Post extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tech_blog_id", nullable = false)
     private TechBlog techBlog;
+
+    @Builder
+    private Post(String title, String fullContent, String company, String url,
+                 LocalDateTime publishedAt, LocalDateTime crawledAt, TechBlog techBlog) {
+        this.title = title;
+        this.fullContent = fullContent;
+        this.company = company;
+        this.url = url;
+        this.publishedAt = publishedAt;
+        this.crawledAt = crawledAt;
+        this.techBlog = techBlog;
+    }
+
+    public static Post create(RssFeedItem item, TechBlog techBlog) {
+        return Post.builder()
+                .title(item.title())
+                .fullContent(item.content())
+                .company(item.company())
+                .url(item.url())
+                .publishedAt(item.publishedAt())
+                .crawledAt(LocalDateTime.now())
+                .techBlog(techBlog)
+                .build();
+    }
 }

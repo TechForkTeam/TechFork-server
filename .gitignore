@@ -48,3 +48,6 @@ application-local.yml
 application-local-tunnel.yml
 start-dev-tunnel.sh
 stop-dev-tunnel.sh
+
+### claude code ###
+/CLAUDE.md
