@@ -35,14 +35,12 @@ public class InitialDataConfig {
                     TechBlog.create("인프랩", "https://tech.inflab.com", "https://tech.inflab.com/rss.xml"),
 
                     TechBlog.create("네이버D2", "https://d2.naver.com/home", "https://d2.naver.com/d2.atom"),
-                    TechBlog.create("쿠팡", "https://medium.com/coupang-engineering/kr", "https://medium.com/feed/coupang-engineering/kr"),
                     TechBlog.create("요기요", "https://techblog.yogiyo.co.kr", "https://techblog.yogiyo.co.kr/feed"),
                     TechBlog.create("넷마블", "https://netmarble.engineering", "https://netmarble.engineering/feed/"),
                     TechBlog.create("올리브영", "https://oliveyoung.tech", "https://oliveyoung.tech/rss.xml"),
 
                     TechBlog.create("마켓컬리", "https://helloworld.kurly.com", "https://helloworld.kurly.com/feed.xml"),
                     TechBlog.create("당근마켓", "https://medium.com/daangn", "https://medium.com/feed/daangn"),
-                    TechBlog.create("쏘카", "https://tech.socarcorp.kr", "https://tech.socarcorp.kr/rss.xml"),
                     TechBlog.create("29CM", "https://medium.com/29cm", "https://medium.com/feed/29cm"),
 
                     TechBlog.create("우아한형제들", "https://techblog.woowahan.com", "https://techblog.woowahan.com/feed/"),
@@ -51,7 +49,6 @@ public class InitialDataConfig {
                     TechBlog.create("SK C&C", "https://engineering-skcc.github.io", "https://engineering-skcc.github.io/feed.xml"),
 
                     TechBlog.create("카카오엔터프라이즈", "https://tech.kakaoenterprise.com", "https://tech.kakaoenterprise.com/feed"),
-                    TechBlog.create("직방", "https://medium.com/zigbang", "https://medium.com/feed/zigbang"),
                     TechBlog.create("NHN", "https://meetup.nhncloud.com", "https://meetup.nhncloud.com/rss"),
                     TechBlog.create("원티드", "https://medium.com/wantedjobs", "https://medium.com/feed/wantedjobs"),
 
@@ -63,7 +60,11 @@ public class InitialDataConfig {
                     TechBlog.create("데브시스터즈", "https://tech.devsisters.com", "https://tech.devsisters.com/rss.xml"),
                     TechBlog.create("뱅크샐러드", "https://blog.banksalad.com/tech", "https://blog.banksalad.com/rss.xml"),
                     TechBlog.create("지마켓", "https://dev.gmarket.com", "https://dev.gmarket.com/rss"),
-                    TechBlog.create("야놀자", "https://yanolja.github.io", "https://yanolja.github.io/feed.xml")
+
+                    TechBlog.create("카카오페이", "https://tech.kakaopay.com", "https://tech.kakaopay.com/rss.xml"),
+                    TechBlog.create("번개장터", "https://medium.com/bunjang-tech-blog", "https://medium.com/feed/bunjang-tech-blog"),
+                    TechBlog.create("스포카", "https://spoqa.github.io", "https://spoqa.github.io/rss"),
+                    TechBlog.create("줌인터넷", "https://zuminternet.github.io", "https://zuminternet.github.io/feed.xml")
             );
 
             techBlogRepository.saveAll(techBlogs);
