@@ -54,9 +54,6 @@ dependencies {
 	implementation 'com.rometools:rome:2.1.0'
 	implementation 'com.rometools:rome-modules:2.1.0'
 
-	// HTTP Client
-	implementation 'org.springframework.boot:spring-boot-starter-webflux'
-
 	//	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 	//	implementation 'org.springframework.boot:spring-boot-starter-security'
 	//	testImplementation 'org.springframework.security:spring-security-test'
