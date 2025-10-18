@@ -50,4 +50,4 @@ start-dev-tunnel.sh
 stop-dev-tunnel.sh
 
 ### claude code ###
-CLUADE.md
+/CLAUDE.md
