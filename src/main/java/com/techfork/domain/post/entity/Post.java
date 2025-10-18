@@ -20,7 +20,7 @@ public class Post extends BaseEntity {
     @Column(nullable = false, length = 500)
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "MEDIUMTEXT")
     private String fullContent;
 
     @Column(nullable = false)
