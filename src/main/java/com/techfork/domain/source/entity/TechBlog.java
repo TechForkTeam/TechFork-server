@@ -5,6 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -29,4 +30,20 @@ public class TechBlog extends BaseTimeEntity {
     private String logoUrl;
 
     private LocalDateTime lastCrawledAt;
+
+    @Builder
+    private TechBlog(String companyName, String blogUrl, String rssUrl, String logoUrl) {
+        this.companyName = companyName;
+        this.blogUrl = blogUrl;
+        this.rssUrl = rssUrl;
+        this.logoUrl = logoUrl;
+    }
+
+    public static TechBlog create(String companyName, String blogUrl, String rssUrl) {
+        return TechBlog.builder()
+                .companyName(companyName)
+                .blogUrl(blogUrl)
+                .rssUrl(rssUrl)
+                .build();
+    }
 }
