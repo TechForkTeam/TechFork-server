@@ -44,6 +44,15 @@ spring:
           min-idle: 0
           max-wait: 5s
 
+  ai:
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY}
+      chat:
+        options:
+          model: claude-3-5-haiku-20241022
+          temperature: 0.3
+          max-tokens: 1024
+
 elasticsearch:
   host: localhost
   port: 9200
@@ -51,7 +60,7 @@ elasticsearch:
 webhook:
   enabled: true
   discord:
-    url: ${DISCORD_WEBHOOK_URL:}
+    url: ${DISCORD_WEBHOOK_URL}
 
 logging:
   level:
