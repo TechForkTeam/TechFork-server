@@ -44,6 +44,11 @@ spring:
           min-idle: 0
           max-wait: 5s
 
+webhook:
+  enabled: true
+  discord:
+    url: ${DISCORD_WEBHOOK_URL:}
+
 elasticsearch:
   host: elasticsearch
   port: 9200

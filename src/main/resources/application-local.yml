@@ -48,6 +48,11 @@ elasticsearch:
   host: localhost
   port: 9200
 
+webhook:
+  enabled: true
+  discord:
+    url: ${DISCORD_WEBHOOK_URL:}
+
 logging:
   level:
     com.techfork: DEBUG
