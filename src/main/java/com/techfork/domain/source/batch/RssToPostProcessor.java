@@ -11,8 +11,6 @@ import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
-
 /**
  * RssFeedItem을 Post 엔티티로 변환하는 Processor
  * 중복 체크도 여기서 수행하여 이미 존재하는 URL은 null 반환
