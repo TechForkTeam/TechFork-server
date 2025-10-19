@@ -52,6 +52,7 @@ jobs:
       DB_USERNAME: ${{ secrets.DB_USERNAME }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
       REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
     steps:
       - name: Checkout code
@@ -72,7 +73,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: DOCKER_IMAGE,BRANCH,SPRING_PROFILES_ACTIVE,DB_URL,DB_USERNAME,DB_PASSWORD,REDIS_PASSWORD
+          envs: DOCKER_IMAGE,BRANCH,SPRING_PROFILES_ACTIVE,DB_URL,DB_USERNAME,DB_PASSWORD,REDIS_PASSWORD,DISCORD_WEBHOOK_URL
           script: |
             cd ~/deploy
             chmod +x deploy.sh
