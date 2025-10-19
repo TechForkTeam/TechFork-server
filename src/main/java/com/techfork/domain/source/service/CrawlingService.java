@@ -29,10 +29,6 @@ public class CrawlingService {
     private final CrawlingHistoryRepository crawlingHistoryRepository;
     private final WebhookNotificationService webhookNotificationService;
 
-    /**
-     * RSS 크롤링 실행
-     */
-    @Transactional
     public void executeCrawling() {
         log.info("Starting RSS crawling job");
 
@@ -77,9 +73,6 @@ public class CrawlingService {
         }
     }
 
-    /**
-     * Job 실행 완료 대기 및 결과 처리
-     */
     private void waitForJobCompletion(JobExecution jobExecution, CrawlingHistory history) {
         BatchStatus batchStatus = jobExecution.getStatus();
 
