@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: TechFork
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/techblog?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
+    username: techfork
+    password: techfork1234
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 20000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+        highlight_sql: true
+        use_sql_comments: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        jdbc:
+          batch_size: 20
+
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      names: ''
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: redis1234
+      timeout: 3s
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 4
+          min-idle: 0
+          max-wait: 5s
+
+elasticsearch:
+  host: localhost
+  port: 9200
+
+logging:
+  level:
+    com.techfork: DEBUG
+    org.springframework.batch: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
