@@ -91,7 +91,7 @@ public class RssCrawlingJobConfig {
     @Bean
     public Step extractMetadataStep() {
         return new StepBuilder("extractMetadataStep", jobRepository)
-                .<Post, PostWithMetadata>chunk(5, transactionManager)
+                .<Post, PostWithMetadata>chunk(1, transactionManager)  // Rate Limit 방지를 위해 1개씩 처리
                 .reader(postMetadataReader)
                 .processor(postMetadataProcessor)
                 .writer(postMetadataWriter)
@@ -99,7 +99,7 @@ public class RssCrawlingJobConfig {
                 .faultTolerant()
                 .retryLimit(2)
                 .retry(Exception.class)
-                .skipLimit(5)
+                .skipLimit(10)  // 실패 허용 개수 증가
                 .skip(Exception.class)
                 .build();
     }
