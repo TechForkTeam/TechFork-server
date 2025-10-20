@@ -41,8 +41,10 @@ public class PostMetadataWriter implements ItemWriter<PostWithMetadata> {
         }
 
         List<PostMetadata> metadataList = new ArrayList<>();
+        List<String> allKeywordNames = new ArrayList<>();
         List<PostKeyword> postKeywords = new ArrayList<>();
 
+        // 1단계: 모든 키워드 이름 수집
         for (PostWithMetadata item : chunk.getItems()) {
             Post post = item.post();
             ExtractedMetadata metadata = item.metadata();
@@ -65,51 +67,80 @@ public class PostMetadataWriter implements ItemWriter<PostWithMetadata> {
             );
             metadataList.add(postMetadata);
 
-            // techStack의 모든 항목을 키워드로 저장
+            // techStack의 모든 항목을 키워드로 수집
             if (metadata.techStack() != null) {
-                // languages를 키워드로 추가
                 if (metadata.techStack().languages() != null) {
-                    for (String language : metadata.techStack().languages()) {
-                        addKeyword(post, language, postKeywords);
-                    }
+                    allKeywordNames.addAll(metadata.techStack().languages());
                 }
-
-                // frameworks를 키워드로 추가
                 if (metadata.techStack().frameworks() != null) {
-                    for (String framework : metadata.techStack().frameworks()) {
-                        addKeyword(post, framework, postKeywords);
-                    }
+                    allKeywordNames.addAll(metadata.techStack().frameworks());
+                }
+                if (metadata.techStack().tools() != null) {
+                    allKeywordNames.addAll(metadata.techStack().tools());
+                }
+            }
+        }
+
+        // 2단계: 중복 제거 및 빈 값 제거
+        List<String> uniqueKeywordNames = allKeywordNames.stream()
+                .filter(name -> name != null && !name.isBlank())
+                .distinct()
+                .toList();
+
+        // 3단계: 기존 키워드 조회 및 새 키워드 생성
+        List<Keyword> existingKeywords = keywordRepository.findAllByNameIn(uniqueKeywordNames);
+        List<String> existingKeywordNames = existingKeywords.stream()
+                .map(Keyword::getName)
+                .toList();
+
+        List<Keyword> newKeywords = uniqueKeywordNames.stream()
+                .filter(name -> !existingKeywordNames.contains(name))
+                .map(Keyword::create)
+                .toList();
+
+        // 새 키워드 일괄 저장
+        if (!newKeywords.isEmpty()) {
+            keywordRepository.saveAll(newKeywords);
+        }
+
+        // 4단계: 모든 키워드 맵 생성 (이름 -> Keyword 엔티티)
+        List<Keyword> allKeywords = new ArrayList<>(existingKeywords);
+        allKeywords.addAll(newKeywords);
+        var keywordMap = allKeywords.stream()
+                .collect(java.util.stream.Collectors.toMap(Keyword::getName, k -> k));
+
+        // 5단계: PostKeyword 생성
+        for (PostWithMetadata item : chunk.getItems()) {
+            Post post = item.post();
+            ExtractedMetadata metadata = item.metadata();
+
+            if (metadata.techStack() != null) {
+                List<String> techStackNames = new ArrayList<>();
+                if (metadata.techStack().languages() != null) {
+                    techStackNames.addAll(metadata.techStack().languages());
+                }
+                if (metadata.techStack().frameworks() != null) {
+                    techStackNames.addAll(metadata.techStack().frameworks());
+                }
+                if (metadata.techStack().tools() != null) {
+                    techStackNames.addAll(metadata.techStack().tools());
                 }
 
-                // tools를 키워드로 추가
-                if (metadata.techStack().tools() != null) {
-                    for (String tool : metadata.techStack().tools()) {
-                        addKeyword(post, tool, postKeywords);
+                for (String keywordName : techStackNames) {
+                    if (keywordName != null && !keywordName.isBlank()) {
+                        Keyword keyword = keywordMap.get(keywordName);
+                        if (keyword != null) {
+                            postKeywords.add(PostKeyword.create(post, keyword));
+                        }
                     }
                 }
             }
         }
 
+        // 6단계: 메타데이터 및 PostKeyword 일괄 저장
         postMetadataRepository.saveAll(metadataList);
         postKeywordRepository.saveAll(postKeywords);
 
         log.info("{}개 게시글 메타데이터 저장 완료 (키워드 {}개)", chunk.size(), postKeywords.size());
-    }
-
-    /**
-     * 키워드를 추가하는 헬퍼 메서드
-     */
-    private void addKeyword(Post post, String keywordName, List<PostKeyword> postKeywords) {
-        if (keywordName == null || keywordName.isBlank()) {
-            return;
-        }
-
-        Keyword keyword = keywordRepository.findByName(keywordName)
-                .orElseGet(() -> {
-                    Keyword newKeyword = Keyword.create(keywordName);
-                    return keywordRepository.save(newKeyword);
-                });
-
-        postKeywords.add(PostKeyword.create(post, keyword));
     }
 }
