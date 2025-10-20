@@ -1,5 +1,6 @@
 package com.techfork.domain.post.repository;
 
+import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.entity.PostMetadata;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -20,4 +21,11 @@ public interface PostMetadataRepository extends JpaRepository<PostMetadata, Long
             "(pm.tools IS NULL OR pm.tools = '') AND " +
             "(pm.mainTopics IS NULL OR pm.mainTopics = '')")
     List<PostMetadata> findEmptyMetadata();
+
+    /**
+     * 메타데이터가 없는 Post 조회 (LEFT JOIN으로 효율적으로)
+     */
+    @Query("SELECT p FROM Post p " +
+            "LEFT JOIN FETCH PostMetadata pm ON p.id = pm.post.id WHERE pm.id IS NULL")
+    List<Post> findPostsWithoutMetadata();
 }

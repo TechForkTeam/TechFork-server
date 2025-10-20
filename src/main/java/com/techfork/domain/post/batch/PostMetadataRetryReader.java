@@ -42,21 +42,23 @@ public class PostMetadataRetryReader implements ItemReader<Post> {
     }
 
     private void initializePostIterator() {
-        // 메타데이터가 없거나 비어있는 Post들 조회
-        List<Post> postsWithoutMetadata = postRepository.findAll().stream()
-                .filter(post -> !postMetadataRepository.existsByPostId(post.getId()))
-                .collect(Collectors.toList());
-
-        // 메타데이터는 있지만 내용이 비어있는 Post들 조회
+        // 1. 메타데이터는 있지만 내용이 비어있는 Post들 조회
         List<PostMetadata> emptyMetadata = postMetadataRepository.findEmptyMetadata();
         List<Post> postsWithEmptyMetadata = emptyMetadata.stream()
                 .map(PostMetadata::getPost)
-                .collect(Collectors.toList());
+                .toList();
 
-        // 두 리스트 합치기
-        postsWithoutMetadata.addAll(postsWithEmptyMetadata);
+        // 2. 메타데이터가 없는 Post들 조회 (효율적인 쿼리)
+        List<Post> postsWithoutMetadata = postMetadataRepository.findPostsWithoutMetadata();
 
-        this.postIterator = postsWithoutMetadata.iterator();
-        log.info("메타데이터 재처리 대상: {}개 게시글", postsWithoutMetadata.size());
+        // 3. 두 리스트 합치기 (중복 제거)
+        List<Post> allPosts = java.util.stream.Stream.concat(
+                postsWithoutMetadata.stream(),
+                postsWithEmptyMetadata.stream()
+        ).distinct().toList();
+
+        this.postIterator = allPosts.iterator();
+        log.info("메타데이터 재처리 대상: {}개 게시글 (메타데이터 없음: {}, 비어있음: {})",
+                allPosts.size(), postsWithoutMetadata.size(), postsWithEmptyMetadata.size());
     }
 }
