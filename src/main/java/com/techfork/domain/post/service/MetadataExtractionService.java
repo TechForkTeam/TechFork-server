@@ -91,9 +91,9 @@ public class MetadataExtractionService {
             String cleanedResponse = response
                     .replaceAll("```json\\s*", "")
                     .replaceAll("```\\s*", "")
+                    .replaceAll("\\s*```", "")
                     .trim();
 
-            log.debug("정제된 Claude 응답: {}", cleanedResponse);
             ExtractedMetadata metadata = objectMapper.readValue(cleanedResponse, ExtractedMetadata.class);
             return metadata;
         } catch (JsonProcessingException e) {
