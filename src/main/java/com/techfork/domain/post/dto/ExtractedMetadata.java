@@ -6,13 +6,23 @@ import com.techfork.domain.post.enums.EDifficultyLevel;
 import java.util.List;
 
 public record ExtractedMetadata(
+        @JsonProperty("main_topics")
         List<String> mainTopics,
+
+        @JsonProperty("tech_stack")
         TechStack techStack,
+
+        @JsonProperty("difficulty")
         String difficulty
 ) {
     public record TechStack(
+            @JsonProperty("languages")
             List<String> languages,
+
+            @JsonProperty("frameworks")
             List<String> frameworks,
+
+            @JsonProperty("tools")
             List<String> tools
     ) {}
 
