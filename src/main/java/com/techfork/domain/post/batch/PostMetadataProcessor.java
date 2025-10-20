@@ -28,8 +28,15 @@ public class PostMetadataProcessor implements ItemProcessor<Post, PostWithMetada
                     post.getFullContent()
             );
 
+            // Rate Limit 방지를 위해 각 처리 후 2초 대기
+            Thread.sleep(2000);
+
             return PostWithMetadata.of(post, metadata);
 
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("메타데이터 추출 중단됨 (Post ID: {})", post.getId());
+            return PostWithMetadata.of(post, createDefaultMetadata());
         } catch (Exception e) {
             log.error("메타데이터 추출 실패 (Post ID: {}): {}", post.getId(), e.getMessage(), e);
             // 실패해도 기본 메타데이터로 계속 진행

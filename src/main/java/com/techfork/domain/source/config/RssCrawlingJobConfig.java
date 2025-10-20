@@ -2,6 +2,7 @@ package com.techfork.domain.source.config;
 
 import com.techfork.domain.post.batch.PostMetadataProcessor;
 import com.techfork.domain.post.batch.PostMetadataReader;
+import com.techfork.domain.post.batch.PostMetadataRetryReader;
 import com.techfork.domain.post.batch.PostMetadataWriter;
 import com.techfork.domain.post.dto.PostWithMetadata;
 import com.techfork.domain.post.entity.Post;
@@ -58,11 +59,20 @@ public class RssCrawlingJobConfig {
     private final PostMetadataProcessor postMetadataProcessor;
     private final PostMetadataWriter postMetadataWriter;
 
+    private final PostMetadataRetryReader postMetadataRetryReader;
+
     @Bean
     public Job rssCrawlingJob() {
         return new JobBuilder("rssCrawlingJob", jobRepository)
                 .start(fetchAndSaveRssStep())
                 .next(extractMetadataStep())
+                .build();
+    }
+
+    @Bean
+    public Job metadataRetryJob() {
+        return new JobBuilder("metadataRetryJob", jobRepository)
+                .start(retryMetadataStep())
                 .build();
     }
 
@@ -100,6 +110,25 @@ public class RssCrawlingJobConfig {
                 .retryLimit(2)
                 .retry(Exception.class)
                 .skipLimit(10)  // 실패 허용 개수 증가
+                .skip(Exception.class)
+                .build();
+    }
+
+    /**
+     * 메타데이터 재처리 Step
+     * - 실패한 게시글만 대상으로 메타데이터 추출 재시도
+     */
+    @Bean
+    public Step retryMetadataStep() {
+        return new StepBuilder("retryMetadataStep", jobRepository)
+                .<Post, PostWithMetadata>chunk(1, transactionManager)
+                .reader(postMetadataRetryReader)
+                .processor(postMetadataProcessor)
+                .writer(postMetadataWriter)
+                .faultTolerant()
+                .retryLimit(2)
+                .retry(Exception.class)
+                .skipLimit(10)
                 .skip(Exception.class)
                 .build();
     }
