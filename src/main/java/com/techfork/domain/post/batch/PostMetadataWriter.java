@@ -47,6 +47,14 @@ public class PostMetadataWriter implements ItemWriter<PostWithMetadata> {
             Post post = item.post();
             ExtractedMetadata metadata = item.metadata();
 
+            log.debug("메타데이터 저장 - Post ID: {}, 난이도: {}, 주제: {}, 언어: {}, 프레임워크: {}, 도구: {}",
+                    post.getId(),
+                    metadata.getDifficultyLevel(),
+                    metadata.getMainTopicsAsString(),
+                    metadata.getLanguagesAsString(),
+                    metadata.getFrameworksAsString(),
+                    metadata.getToolsAsString());
+
             PostMetadata postMetadata = PostMetadata.create(
                     post,
                     metadata.getDifficultyLevel(),
@@ -57,19 +65,27 @@ public class PostMetadataWriter implements ItemWriter<PostWithMetadata> {
             );
             metadataList.add(postMetadata);
 
-            if (metadata.mainTopics() != null) {
-                for (String topicName : metadata.mainTopics()) {
-                    if (topicName == null || topicName.isBlank()) {
-                        continue;
+            // techStack의 모든 항목을 키워드로 저장
+            if (metadata.techStack() != null) {
+                // languages를 키워드로 추가
+                if (metadata.techStack().languages() != null) {
+                    for (String language : metadata.techStack().languages()) {
+                        addKeyword(post, language, postKeywords);
                     }
+                }
 
-                    Keyword keyword = keywordRepository.findByName(topicName)
-                            .orElseGet(() -> {
-                                Keyword newKeyword = Keyword.create(topicName);
-                                return keywordRepository.save(newKeyword);
-                            });
+                // frameworks를 키워드로 추가
+                if (metadata.techStack().frameworks() != null) {
+                    for (String framework : metadata.techStack().frameworks()) {
+                        addKeyword(post, framework, postKeywords);
+                    }
+                }
 
-                    postKeywords.add(PostKeyword.create(post, keyword));
+                // tools를 키워드로 추가
+                if (metadata.techStack().tools() != null) {
+                    for (String tool : metadata.techStack().tools()) {
+                        addKeyword(post, tool, postKeywords);
+                    }
                 }
             }
         }
@@ -77,6 +93,23 @@ public class PostMetadataWriter implements ItemWriter<PostWithMetadata> {
         postMetadataRepository.saveAll(metadataList);
         postKeywordRepository.saveAll(postKeywords);
 
-        log.info("{}개 게시글 메타데이터 저장 완료", chunk.size());
+        log.info("{}개 게시글 메타데이터 저장 완료 (키워드 {}개)", chunk.size(), postKeywords.size());
+    }
+
+    /**
+     * 키워드를 추가하는 헬퍼 메서드
+     */
+    private void addKeyword(Post post, String keywordName, List<PostKeyword> postKeywords) {
+        if (keywordName == null || keywordName.isBlank()) {
+            return;
+        }
+
+        Keyword keyword = keywordRepository.findByName(keywordName)
+                .orElseGet(() -> {
+                    Keyword newKeyword = Keyword.create(keywordName);
+                    return keywordRepository.save(newKeyword);
+                });
+
+        postKeywords.add(PostKeyword.create(post, keyword));
     }
 }

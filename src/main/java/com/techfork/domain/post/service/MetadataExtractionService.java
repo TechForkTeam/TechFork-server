@@ -93,7 +93,9 @@ public class MetadataExtractionService {
                     .replaceAll("```\\s*", "")
                     .trim();
 
-            return objectMapper.readValue(cleanedResponse, ExtractedMetadata.class);
+            log.debug("정제된 Claude 응답: {}", cleanedResponse);
+            ExtractedMetadata metadata = objectMapper.readValue(cleanedResponse, ExtractedMetadata.class);
+            return metadata;
         } catch (JsonProcessingException e) {
             log.error("JSON 파싱 실패: {}", response, e);
             return createDefaultMetadata();
