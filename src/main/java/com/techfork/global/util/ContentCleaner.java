@@ -26,8 +26,8 @@ public class ContentCleaner {
     // 마크다운 코드 블록의 마크다운 구문만 제거하고 내용은 유지: ```lang\ncode\n``` -> code
     private static final Pattern MD_CODE_BLOCK_PATTERN = Pattern.compile("```\\w*\\n?([^`]*)```", Pattern.DOTALL);
 
-    // 마크다운 인라인 코드 제거: `code`
-    private static final Pattern MD_INLINE_CODE_PATTERN = Pattern.compile("`[^`]+`");
+    // 마크다운 인라인 코드는 내용만 남김: `code` -> code
+    private static final Pattern MD_INLINE_CODE_PATTERN = Pattern.compile("`([^`]+)`");
 
     // 마크다운 볼드/이탤릭 제거: **text**, __text__, *text*, _text_
     private static final Pattern MD_BOLD_ITALIC_PATTERN = Pattern.compile("\\*\\*([^*]+)\\*\\*|__([^_]+)__|\\*([^*]+)\\*|_([^_]+)_");
