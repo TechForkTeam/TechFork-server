@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 추출된 메타데이터를 저장하는 Writer
@@ -87,29 +88,15 @@ public class PostMetadataWriter implements ItemWriter<PostWithMetadata> {
                 .distinct()
                 .toList();
 
-        // 3단계: 기존 키워드 조회 및 새 키워드 생성
-        List<Keyword> existingKeywords = keywordRepository.findAllByNameIn(uniqueKeywordNames);
-        List<String> existingKeywordNames = existingKeywords.stream()
-                .map(Keyword::getName)
-                .toList();
+        // 3단계: 키워드를 하나씩 조회 또는 생성 (동시성 안전)
+        Map<String, Keyword> keywordMap = new java.util.HashMap<>();
 
-        List<Keyword> newKeywords = uniqueKeywordNames.stream()
-                .filter(name -> !existingKeywordNames.contains(name))
-                .map(Keyword::create)
-                .toList();
-
-        // 새 키워드 일괄 저장
-        if (!newKeywords.isEmpty()) {
-            keywordRepository.saveAll(newKeywords);
+        for (String keywordName : uniqueKeywordNames) {
+            Keyword keyword = getOrCreateKeyword(keywordName);
+            keywordMap.put(keywordName, keyword);
         }
 
-        // 4단계: 모든 키워드 맵 생성 (이름 -> Keyword 엔티티)
-        List<Keyword> allKeywords = new ArrayList<>(existingKeywords);
-        allKeywords.addAll(newKeywords);
-        var keywordMap = allKeywords.stream()
-                .collect(java.util.stream.Collectors.toMap(Keyword::getName, k -> k));
-
-        // 5단계: PostKeyword 생성
+        // 4단계: PostKeyword 생성
         for (PostWithMetadata item : chunk.getItems()) {
             Post post = item.post();
             ExtractedMetadata metadata = item.metadata();
@@ -137,10 +124,30 @@ public class PostMetadataWriter implements ItemWriter<PostWithMetadata> {
             }
         }
 
-        // 6단계: 메타데이터 및 PostKeyword 일괄 저장
+        // 5단계: 메타데이터 및 PostKeyword 일괄 저장
         postMetadataRepository.saveAll(metadataList);
         postKeywordRepository.saveAll(postKeywords);
 
         log.info("{}개 게시글 메타데이터 저장 완료 (키워드 {}개)", chunk.size(), postKeywords.size());
+    }
+
+    /**
+     * 키워드 조회 또는 생성 (동시성 안전)
+     * - 먼저 조회 시도
+     * - 없으면 생성 시도
+     * - Duplicate 에러 발생 시 재조회
+     */
+    private Keyword getOrCreateKeyword(String keywordName) {
+        return keywordRepository.findByName(keywordName)
+                .orElseGet(() -> {
+                    try {
+                        return keywordRepository.save(Keyword.create(keywordName));
+                    } catch (Exception e) {
+                        // 동시 저장으로 인한 Duplicate 에러 → 재조회
+                        log.debug("키워드 동시 저장 감지, 재조회: {}", keywordName);
+                        return keywordRepository.findByName(keywordName)
+                                .orElseThrow(() -> new RuntimeException("키워드 저장/조회 실패: " + keywordName));
+                    }
+                });
     }
 }
