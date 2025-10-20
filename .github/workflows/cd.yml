@@ -53,6 +53,7 @@ jobs:
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
       REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
     steps:
       - name: Checkout code
@@ -73,7 +74,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: DOCKER_IMAGE,BRANCH,SPRING_PROFILES_ACTIVE,DB_URL,DB_USERNAME,DB_PASSWORD,REDIS_PASSWORD,DISCORD_WEBHOOK_URL
+          envs: DOCKER_IMAGE,BRANCH,SPRING_PROFILES_ACTIVE,DB_URL,DB_USERNAME,DB_PASSWORD,REDIS_PASSWORD,DISCORD_WEBHOOK_URL,ANTHROPIC_API_KEY
           script: |
             cd ~/deploy
             chmod +x deploy.sh
