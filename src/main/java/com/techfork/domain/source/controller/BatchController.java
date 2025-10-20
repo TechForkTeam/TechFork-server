@@ -26,6 +26,7 @@ public class BatchController {
 
     private final JobLauncher jobLauncher;
     private final Job rssCrawlingJob;
+    private final Job metadataRetryJob;
 
     @Operation(summary = "RSS 크롤링 실행", description = "모든 테크 블로그의 RSS를 크롤링하여 DB에 저장합니다.")
     @PostMapping("/crawl-rss")
@@ -43,6 +44,26 @@ public class BatchController {
         } catch (Exception e) {
             log.error("RSS 크롤링 Job 실행 실패", e);
             return BaseResponse.of(SuccessCode.OK, "RSS 크롤링 실행 중 오류 발생: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "메타데이터 재처리 실행",
+               description = "메타데이터가 없거나 비어있는 게시글을 다시 처리합니다. Rate Limit으로 실패한 게시글 재시도용입니다.")
+    @PostMapping("/retry-metadata")
+    public ResponseEntity<BaseResponse<String>> retryMetadata() {
+        try {
+            JobParameters jobParameters = new JobParametersBuilder()
+                    .addString("requestTime", LocalDateTime.now().toString())
+                    .toJobParameters();
+
+            jobLauncher.run(metadataRetryJob, jobParameters);
+
+            log.info("메타데이터 재처리 Job 실행 완료");
+            return BaseResponse.of(SuccessCode.OK, "메타데이터 재처리가 성공적으로 시작되었습니다.");
+
+        } catch (Exception e) {
+            log.error("메타데이터 재처리 Job 실행 실패", e);
+            return BaseResponse.of(SuccessCode.OK, "메타데이터 재처리 실행 중 오류 발생: " + e.getMessage());
         }
     }
 }
