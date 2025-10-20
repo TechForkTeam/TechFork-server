@@ -17,7 +17,7 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-        show_sql: true
+        show_sql: false  # 로깅으로만 출력 (중복 방지)
         format_sql: true
         highlight_sql: true
         use_sql_comments: true
