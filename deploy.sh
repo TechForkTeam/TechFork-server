@@ -13,6 +13,8 @@ export DB_PASSWORD=${DB_PASSWORD}
 export REDIS_HOST=${REDIS_HOST}
 export REDIS_PORT=${REDIS_PORT}
 export REDIS_PASSWORD=${REDIS_PASSWORD}
+export DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+export ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
 
 echo "🐳 Pulling latest docker image..."
 docker-compose pull
