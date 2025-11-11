@@ -8,6 +8,7 @@ import com.rometools.rome.io.XmlReader;
 import com.techfork.domain.source.dto.RssFeedItem;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.repository.TechBlogRepository;
+import com.techfork.global.util.ContentCleaner;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.configuration.annotation.StepScope;
@@ -20,6 +21,7 @@ import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -30,30 +32,47 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
 
     private final TechBlogRepository techBlogRepository;
 
-    private Iterator<TechBlog> techBlogIterator;
-    private Iterator<RssFeedItem> currentBlogItemIterator;
+    private ConcurrentLinkedQueue<RssFeedItem> itemQueue;
 
     @Override
     public RssFeedItem read() {
-        // 현재 블로그의 아이템이 남아있으면 반환
-        if (currentBlogItemIterator != null && currentBlogItemIterator.hasNext()) {
-            return currentBlogItemIterator.next();
+        // 첫 실행 시 모든 RSS 아이템을 큐에 추가
+        if (itemQueue == null) {
+            initializeQueue();
         }
 
-        // 첫 실행이거나 다음 블로그로 넘어가야 하는 경우
-        if (techBlogIterator == null) {
-            initializeTechBlogIterator();
+        // 큐에서 아이템 꺼내기 (Thread-Safe)
+        RssFeedItem item = itemQueue.poll();
+
+        if (item == null) {
+            log.info("모든 RSS 피드 수집 완료");
         }
 
-        // 다음 블로그 처리
-        while (techBlogIterator.hasNext()) {
-            TechBlog techBlog = techBlogIterator.next();
+        return item;
+    }
+
+    /**
+     * 모든 RSS 피드를 미리 수집하여 큐에 저장
+     * 한 번만 실행되며, 여러 스레드가 큐에서 안전하게 아이템을 가져감
+     */
+    private synchronized void initializeQueue() {
+        // Double-checked locking
+        if (itemQueue != null) {
+            return;
+        }
+
+        itemQueue = new ConcurrentLinkedQueue<>();
+        List<TechBlog> techBlogs = techBlogRepository.findAll();
+        log.info("총 {}개 테크 블로그 RSS 수집 시작", techBlogs.size());
+
+        int totalItems = 0;
+        for (TechBlog techBlog : techBlogs) {
             try {
                 List<RssFeedItem> items = fetchRssFeed(techBlog);
                 if (!items.isEmpty()) {
-                    currentBlogItemIterator = items.iterator();
+                    itemQueue.addAll(items);
+                    totalItems += items.size();
                     log.info("[{}] RSS 수집 성공: {}개 아이템", techBlog.getCompanyName(), items.size());
-                    return currentBlogItemIterator.next();
                 } else {
                     log.warn("[{}] RSS 피드에 아이템이 없습니다", techBlog.getCompanyName());
                 }
@@ -63,15 +82,7 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
             }
         }
 
-        // 모든 블로그 처리 완료
-        log.info("모든 RSS 피드 수집 완료");
-        return null;
-    }
-
-    private void initializeTechBlogIterator() {
-        List<TechBlog> techBlogs = techBlogRepository.findAll();
-        this.techBlogIterator = techBlogs.iterator();
-        log.info("총 {}개 테크 블로그 RSS 수집 시작", techBlogs.size());
+        log.info("RSS 수집 초기화 완료: 총 {}개 아이템을 큐에 추가", totalItems);
     }
 
     private List<RssFeedItem> fetchRssFeed(TechBlog techBlog) throws Exception {
@@ -113,6 +124,9 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
         // 본문 추출 (description 또는 content 중 더 긴 것 사용)
         String content = extractContent(entry);
 
+        // HTML 태그 및 마크다운 제거한 plain text 생성
+        String plainContent = ContentCleaner.clean(content);
+
         // 발행일 변환
         LocalDateTime publishedAt = convertToLocalDateTime(entry.getPublishedDate());
 
@@ -123,6 +137,7 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
                 .title(entry.getTitle())
                 .url(entry.getLink())
                 .content(content)
+                .plainContent(plainContent)
                 .publishedAt(publishedAt)
                 .company(techBlog.getCompanyName())
                 .techBlogId(techBlog.getId())

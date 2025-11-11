@@ -23,6 +23,9 @@ public class Post extends BaseEntity {
     @Column(columnDefinition = "MEDIUMTEXT")
     private String fullContent;
 
+    @Column(columnDefinition = "MEDIUMTEXT")
+    private String plainContent;
+
     @Column(nullable = false)
     private String company;
 
@@ -40,10 +43,11 @@ public class Post extends BaseEntity {
     private TechBlog techBlog;
 
     @Builder
-    private Post(String title, String fullContent, String company, String url,
+    private Post(String title, String fullContent, String plainContent, String company, String url,
                  LocalDateTime publishedAt, LocalDateTime crawledAt, TechBlog techBlog) {
         this.title = title;
         this.fullContent = fullContent;
+        this.plainContent = plainContent;
         this.company = company;
         this.url = url;
         this.publishedAt = publishedAt;
@@ -55,6 +59,7 @@ public class Post extends BaseEntity {
         return Post.builder()
                 .title(item.title())
                 .fullContent(item.content())
+                .plainContent(item.plainContent())
                 .company(item.company())
                 .url(item.url())
                 .publishedAt(item.publishedAt())

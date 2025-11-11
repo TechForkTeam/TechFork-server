@@ -9,6 +9,7 @@ public record RssFeedItem(
         String title,
         String url,
         String content,
+        String plainContent,
         LocalDateTime publishedAt,
         String company,
         Long techBlogId,
