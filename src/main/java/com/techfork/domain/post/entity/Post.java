@@ -26,6 +26,9 @@ public class Post extends BaseEntity {
     @Column(columnDefinition = "MEDIUMTEXT")
     private String plainContent;
 
+    @Column(columnDefinition = "TEXT")
+    private String summary;
+
     @Column(nullable = false)
     private String company;
 
@@ -66,5 +69,9 @@ public class Post extends BaseEntity {
                 .crawledAt(LocalDateTime.now())
                 .techBlog(techBlog)
                 .build();
+    }
+
+    public void updateSummary(String summary) {
+        this.summary = summary;
     }
 }

@@ -1,4 +1,4 @@
-package com.techfork.global.config;
+package com.techfork.global.llm.config;
 
 import org.springframework.ai.anthropic.AnthropicChatModel;
 import org.springframework.ai.anthropic.AnthropicChatOptions;

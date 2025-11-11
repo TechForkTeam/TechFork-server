@@ -52,6 +52,13 @@ spring:
           model: claude-3-5-haiku-20241022
           temperature: 0.3
           max-tokens: 8192
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4o-mini
+          temperature: 0.3
+          max-tokens: 8192
 
 scheduler:
   enabled: false

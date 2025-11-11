@@ -1,10 +1,8 @@
 package com.techfork.domain.source.config;
 
-import com.techfork.domain.post.batch.PostMetadataProcessor;
-import com.techfork.domain.post.batch.PostMetadataReader;
-import com.techfork.domain.post.batch.PostMetadataRetryReader;
-import com.techfork.domain.post.batch.PostMetadataWriter;
-import com.techfork.domain.post.dto.PostWithMetadata;
+import com.techfork.domain.post.batch.PostSummaryProcessor;
+import com.techfork.domain.post.batch.PostSummaryReader;
+import com.techfork.domain.post.batch.PostSummaryWriter;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.source.batch.PostBatchWriter;
 import com.techfork.domain.source.batch.RssFeedReader;
@@ -36,12 +34,12 @@ import java.util.Map;
  * Step 1: RSS 피드 수집 및 저장
  * - Reader: RSS 피드를 블로그별로 수집
  * - Processor: 중복 체크 및 Post 엔티티 변환
- * - Writer: Post를 DB에 저장
+ * - Writer: Post를 DB에 저장 (Bulk Insert)
  *
- * Step 2: 메타데이터 추출
- * - Reader: 메타데이터가 없는 Post 조회
- * - Processor: Claude API로 메타데이터 추출
- * - Writer: PostMetadata, Keyword, PostKeyword 저장
+ * Step 2: 요약 추출
+ * - Reader: 요약이 없는 Post 조회
+ * - Processor: GPT API로 구조화된 요약 추출
+ * - Writer: PostSummary 저장 (의미 기반 검색 최적화)
  */
 @Slf4j
 @Configuration
@@ -55,24 +53,15 @@ public class RssCrawlingJobConfig {
     private final RssToPostProcessor rssToPostProcessor;
     private final PostBatchWriter postBatchWriter;
 
-    private final PostMetadataReader postMetadataReader;
-    private final PostMetadataProcessor postMetadataProcessor;
-    private final PostMetadataWriter postMetadataWriter;
-
-    private final PostMetadataRetryReader postMetadataRetryReader;
+    private final PostSummaryReader postSummaryReader;
+    private final PostSummaryProcessor postSummaryProcessor;
+    private final PostSummaryWriter postSummaryWriter;
 
     @Bean
     public Job rssCrawlingJob() {
         return new JobBuilder("rssCrawlingJob", jobRepository)
                 .start(fetchAndSaveRssStep())
-                .next(extractMetadataStep())
-                .build();
-    }
-
-    @Bean
-    public Job metadataRetryJob() {
-        return new JobBuilder("metadataRetryJob", jobRepository)
-                .start(retryMetadataStep())
+                .next(extractSummaryStep())
                 .build();
     }
 
@@ -94,36 +83,17 @@ public class RssCrawlingJobConfig {
     }
 
     @Bean
-    public Step extractMetadataStep() {
-        return new StepBuilder("extractMetadataStep", jobRepository)
-                .<Post, PostWithMetadata>chunk(1, transactionManager)  // Rate Limit 방지를 위해 1개씩 처리
-                .reader(postMetadataReader)
-                .processor(postMetadataProcessor)
-                .writer(postMetadataWriter)
-                // Claude API 호출이 있으므로 재시도 정책 설정
+    public Step extractSummaryStep() {
+        return new StepBuilder("extractSummaryStep", jobRepository)
+                .<Post, Post>chunk(1, transactionManager) // Rate Limit 방지를 위해 1개씩 진행
+                .reader(postSummaryReader)
+                .processor(postSummaryProcessor)
+                .writer(postSummaryWriter)
+                // LLM API 호출이 있으므로 재시도 정책 설정
                 .faultTolerant()
                 .retryLimit(2)
                 .retry(Exception.class)
                 .skipLimit(10)  // 실패 허용 개수 증가
-                .skip(Exception.class)
-                .build();
-    }
-
-    /**
-     * 메타데이터 재처리 Step
-     * - 실패한 게시글만 대상으로 메타데이터 추출 재시도
-     */
-    @Bean
-    public Step retryMetadataStep() {
-        return new StepBuilder("retryMetadataStep", jobRepository)
-                .<Post, PostWithMetadata>chunk(1, transactionManager)
-                .reader(postMetadataRetryReader)
-                .processor(postMetadataProcessor)
-                .writer(postMetadataWriter)
-                .faultTolerant()
-                .retryLimit(2)
-                .retry(Exception.class)
-                .skipLimit(10)
                 .skip(Exception.class)
                 .build();
     }
