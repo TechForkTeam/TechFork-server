@@ -8,6 +8,7 @@ import com.rometools.rome.io.XmlReader;
 import com.techfork.domain.source.dto.RssFeedItem;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.repository.TechBlogRepository;
+import com.techfork.global.util.ContentCleaner;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.configuration.annotation.StepScope;
@@ -113,6 +114,9 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
         // 본문 추출 (description 또는 content 중 더 긴 것 사용)
         String content = extractContent(entry);
 
+        // HTML 태그 및 마크다운 제거한 plain text 생성
+        String plainContent = ContentCleaner.clean(content);
+
         // 발행일 변환
         LocalDateTime publishedAt = convertToLocalDateTime(entry.getPublishedDate());
 
@@ -123,6 +127,7 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
                 .title(entry.getTitle())
                 .url(entry.getLink())
                 .content(content)
+                .plainContent(plainContent)
                 .publishedAt(publishedAt)
                 .company(techBlog.getCompanyName())
                 .techBlogId(techBlog.getId())
