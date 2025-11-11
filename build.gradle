@@ -63,6 +63,7 @@ dependencies {
 	//	implementation 'org.springframework.ai:spring-ai-starter-vector-store-elasticsearch'
 
 	implementation 'org.springframework.ai:spring-ai-anthropic'
+	implementation 'org.springframework.ai:spring-ai-openai'
 
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 }
