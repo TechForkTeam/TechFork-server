@@ -85,12 +85,7 @@ public class RssCrawlingJobConfig {
                 .writer(postBatchWriter)
                 // 병렬 처리: 5개 스레드로 동시에 RSS 수집
                 .taskExecutor(rssTaskExecutor())
-                // 재시도 정책: 네트워크 오류 발생 시 최대 3회 재시도
                 .faultTolerant()
-                .retryLimit(3)
-                .retry(SocketTimeoutException.class)
-                .retry(Exception.class)
-                .noRetry(IllegalStateException.class) // TechBlog를 못 찾는 경우는 재시도 안 함
                 // 건너뛰기 정책: 최대 10개 아이템까지 건너뛰기 허용
                 .skipLimit(10)
                 .skip(Exception.class)
