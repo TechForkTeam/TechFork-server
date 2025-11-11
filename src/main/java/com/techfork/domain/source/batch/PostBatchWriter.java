@@ -27,8 +27,8 @@ public class PostBatchWriter implements ItemWriter<Post> {
 
     private static final String INSERT_SQL = """
             INSERT INTO posts
-            (title, full_content, plain_content, company, url, published_at, crawled_at, tech_blog_id, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            (title, full_content, plain_content, company, url, published_at, crawled_at, tech_blog_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
     @Override
