@@ -1,4 +1,4 @@
-package com.techfork.global.config;
+package com.techfork.global.llm.config;
 
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
