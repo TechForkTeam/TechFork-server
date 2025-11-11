@@ -15,6 +15,7 @@ import java.util.List;
  * Anthropic Claude 기반 LLM 클라이언트 구현체
  */
 @Slf4j
+@Component
 @RequiredArgsConstructor
 public class AnthropicLlmClient implements LlmClient {
 

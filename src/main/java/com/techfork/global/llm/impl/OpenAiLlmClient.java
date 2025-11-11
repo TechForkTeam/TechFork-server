@@ -7,6 +7,7 @@ import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.List;
  */
 @Slf4j
 @Component
+@Primary
 @RequiredArgsConstructor
 public class OpenAiLlmClient implements LlmClient {
 
