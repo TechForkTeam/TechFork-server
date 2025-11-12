@@ -61,7 +61,7 @@ spring:
           max-tokens: 8192
 
 scheduler:
-  enabled: false
+  enabled: true
 
 webhook:
   enabled: true
