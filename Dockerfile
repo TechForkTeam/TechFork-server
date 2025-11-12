@@ -1,5 +1,5 @@
-# Java 17 기반 슬림 이미지 사용
-FROM openjdk:17-slim
+# Java 17
+FROM eclipse-temurin:17-jdk
 
 ARG JAR_FILE=build/libs/*.jar
 
