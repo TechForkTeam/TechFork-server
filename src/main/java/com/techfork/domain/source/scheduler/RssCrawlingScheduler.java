@@ -33,7 +33,7 @@ public class RssCrawlingScheduler {
      * 1시간마다 RSS 크롤링 실행
      * cron: 0 0 * * * * -> 매 시간 정각
      */
-    @Scheduled(cron = "0 0 * * * *")
+    @Scheduled(cron = "0 0 5 * * *")
     public void scheduleCrawling() {
         log.info("RSS crawling scheduler triggered");
 
