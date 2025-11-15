@@ -1,6 +1,8 @@
 package com.techfork.domain.post.batch;
 
 import com.techfork.domain.post.document.PostDocument;
+import com.techfork.domain.post.entity.Post;
+import com.techfork.domain.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.Chunk;
@@ -23,6 +25,7 @@ import java.util.List;
 public class PostEmbeddingWriter implements ItemWriter<PostDocument> {
 
     private final ElasticsearchOperations elasticsearchOperations;
+    private final PostRepository postRepository;
 
     @Override
     public void write(Chunk<? extends PostDocument> chunk) throws Exception {
@@ -48,6 +51,15 @@ public class PostEmbeddingWriter implements ItemWriter<PostDocument> {
             if (result.size() != documents.size()) {
                 log.warn("일부 문서 저장 실패: 요청={}, 성공={}", documents.size(), result.size());
             }
+
+            // ES 저장 성공 후 embeddedAt Bulk 업데이트
+            List<Long> successPostIds = documents.stream()
+                    .map(PostDocument::getPostId)
+                    .toList();
+
+            postRepository.bulkUpdateEmbeddedAt(successPostIds, java.time.LocalDateTime.now());
+
+            log.info("Post embeddedAt Bulk 업데이트 완료: {} 개", successPostIds.size());
 
         } catch (Exception e) {
             log.error("Elasticsearch Bulk Insert 실패: {}", e.getMessage(), e);

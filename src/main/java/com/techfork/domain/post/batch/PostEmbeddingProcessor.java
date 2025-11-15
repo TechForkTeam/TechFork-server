@@ -66,8 +66,6 @@ public class PostEmbeddingProcessor implements ItemProcessor<Post, PostDocument>
                     contentChunks
             );
 
-            post.updateEmbedded();
-
             log.info("임베딩 처리 완료: Post ID={}, Chunks={}", post.getId(), contentChunks.size());
             return postDocument;
 
