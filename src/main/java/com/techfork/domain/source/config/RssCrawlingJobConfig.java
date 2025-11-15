@@ -115,10 +115,12 @@ public class RssCrawlingJobConfig {
     @Bean
     public Step embedAndIndexStep() {
         return new StepBuilder("embedAndIndexStep", jobRepository)
-                .<Post, PostDocument>chunk(5, transactionManager) // 5개씩 배치 처리
+                .<Post, PostDocument>chunk(20, transactionManager) // 5개씩 배치 처리
                 .reader(postEmbeddingReader)
                 .processor(postEmbeddingProcessor)
                 .writer(postEmbeddingWriter)
+                // 3개씩 병렬 처리
+                .taskExecutor(embeddingTaskExecutor())
                 // OpenAI API 호출이 있으므로 재시도 정책 설정
                 .faultTolerant()
                 .retryLimit(2)
@@ -128,12 +130,6 @@ public class RssCrawlingJobConfig {
                 .build();
     }
 
-    /**
-     * RSS 수집용 스레드 풀 설정
-     * - Core Pool Size: 5 (기본 5개 스레드)
-     * - Max Pool Size: 10 (최대 10개 스레드)
-     * - Queue Capacity: 20 (대기 큐 크기)
-     */
     @Bean
     public TaskExecutor rssTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -147,26 +143,17 @@ public class RssCrawlingJobConfig {
         return executor;
     }
 
-    /**
-     * 재시도 템플릿 설정 (필요시 사용)
-     */
     @Bean
-    public RetryTemplate retryTemplate() {
-        RetryTemplate retryTemplate = new RetryTemplate();
-
-        // 재시도할 예외 타입과 최대 재시도 횟수 설정
-        Map<Class<? extends Throwable>, Boolean> retryableExceptions = new HashMap<>();
-        retryableExceptions.put(SocketTimeoutException.class, true);
-        retryableExceptions.put(Exception.class, true);
-
-        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(3, retryableExceptions);
-        retryTemplate.setRetryPolicy(retryPolicy);
-
-        // 재시도 간격 설정 (2초)
-        FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
-        backOffPolicy.setBackOffPeriod(2000);
-        retryTemplate.setBackOffPolicy(backOffPolicy);
-
-        return retryTemplate;
+    public TaskExecutor embeddingTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(3);
+        executor.setMaxPoolSize(5);
+        executor.setQueueCapacity(20);
+        executor.setThreadNamePrefix("embedding-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(60);
+        executor.initialize();
+        return executor;
     }
+
 }
