@@ -66,7 +66,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "docker-compose.yml, deploy.sh"
+          source: "docker-compose.yml,deploy.sh,kibana.yml"
           target: "~/deploy/"
 
       - name: Deploy with docker-compose
