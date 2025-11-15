@@ -60,6 +60,10 @@ spring:
           temperature: 0.3
           max-tokens: 8192
 
+  devtools:
+    restart:
+      enabled: false
+
 scheduler:
   enabled: true
 

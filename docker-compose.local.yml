@@ -66,6 +66,19 @@ services:
       retries: 30
       start_period: 60s
 
+  kibana:
+    image: kibana:8.18.0
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    volumes:
+      - ./kibana.local.yml:/usr/share/kibana/config/kibana.local.yml:ro
+    networks:
+      - techfork-network
+
 networks:
   techfork-network:
     driver: bridge
