@@ -1,0 +1,12 @@
+server.host: "0.0.0.0"
+server.shutdownTimeout: "5s"
+elasticsearch.hosts: [ "http://tech-fork-elasticsearch:9200" ]
+
+# 암호화 키 설정
+xpack.encryptedSavedObjects.encryptionKey: "a_dummy_key_must_be_at_least_32_chars_long"
+
+# Enterprise Search 플러그인 비활성화
+enterpriseSearch.enabled: false
+
+# 모니터링 설정
+monitoring.ui.container.elasticsearch.enabled: true

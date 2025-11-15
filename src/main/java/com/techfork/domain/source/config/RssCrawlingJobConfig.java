@@ -1,8 +1,12 @@
 package com.techfork.domain.source.config;
 
+import com.techfork.domain.post.batch.PostEmbeddingProcessor;
+import com.techfork.domain.post.batch.PostEmbeddingReader;
+import com.techfork.domain.post.batch.PostEmbeddingWriter;
 import com.techfork.domain.post.batch.PostSummaryProcessor;
 import com.techfork.domain.post.batch.PostSummaryReader;
 import com.techfork.domain.post.batch.PostSummaryWriter;
+import com.techfork.domain.post.document.PostDocument;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.source.batch.PostBatchWriter;
 import com.techfork.domain.source.batch.RssFeedReader;
@@ -40,6 +44,11 @@ import java.util.Map;
  * - Reader: 요약이 없는 Post 조회
  * - Processor: GPT API로 구조화된 요약 추출
  * - Writer: PostSummary 저장 (의미 기반 검색 최적화)
+ *
+ * Step 3: 임베딩 생성 및 Elasticsearch 저장
+ * - Reader: 요약이 완료되고 임베딩되지 않은 Post 조회
+ * - Processor: Chunk 분할 + OpenAI 임베딩 생성
+ * - Writer: Elasticsearch에 PostDocument 저장
  */
 @Slf4j
 @Configuration
@@ -57,11 +66,16 @@ public class RssCrawlingJobConfig {
     private final PostSummaryProcessor postSummaryProcessor;
     private final PostSummaryWriter postSummaryWriter;
 
+    private final PostEmbeddingReader postEmbeddingReader;
+    private final PostEmbeddingProcessor postEmbeddingProcessor;
+    private final PostEmbeddingWriter postEmbeddingWriter;
+
     @Bean
     public Job rssCrawlingJob() {
         return new JobBuilder("rssCrawlingJob", jobRepository)
                 .start(fetchAndSaveRssStep())
                 .next(extractSummaryStep())
+                .next(embedAndIndexStep())
                 .build();
     }
 
@@ -98,12 +112,24 @@ public class RssCrawlingJobConfig {
                 .build();
     }
 
-    /**
-     * RSS 수집용 스레드 풀 설정
-     * - Core Pool Size: 5 (기본 5개 스레드)
-     * - Max Pool Size: 10 (최대 10개 스레드)
-     * - Queue Capacity: 20 (대기 큐 크기)
-     */
+    @Bean
+    public Step embedAndIndexStep() {
+        return new StepBuilder("embedAndIndexStep", jobRepository)
+                .<Post, PostDocument>chunk(20, transactionManager) // 5개씩 배치 처리
+                .reader(postEmbeddingReader)
+                .processor(postEmbeddingProcessor)
+                .writer(postEmbeddingWriter)
+                // 3개씩 병렬 처리
+                .taskExecutor(embeddingTaskExecutor())
+                // OpenAI API 호출이 있으므로 재시도 정책 설정
+                .faultTolerant()
+                .retryLimit(2)
+                .retry(Exception.class)
+                .skipLimit(20)  // 임베딩 실패 허용 개수
+                .skip(Exception.class)
+                .build();
+    }
+
     @Bean
     public TaskExecutor rssTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -117,26 +143,17 @@ public class RssCrawlingJobConfig {
         return executor;
     }
 
-    /**
-     * 재시도 템플릿 설정 (필요시 사용)
-     */
     @Bean
-    public RetryTemplate retryTemplate() {
-        RetryTemplate retryTemplate = new RetryTemplate();
-
-        // 재시도할 예외 타입과 최대 재시도 횟수 설정
-        Map<Class<? extends Throwable>, Boolean> retryableExceptions = new HashMap<>();
-        retryableExceptions.put(SocketTimeoutException.class, true);
-        retryableExceptions.put(Exception.class, true);
-
-        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(3, retryableExceptions);
-        retryTemplate.setRetryPolicy(retryPolicy);
-
-        // 재시도 간격 설정 (2초)
-        FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
-        backOffPolicy.setBackOffPeriod(2000);
-        retryTemplate.setBackOffPolicy(backOffPolicy);
-
-        return retryTemplate;
+    public TaskExecutor embeddingTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(3);
+        executor.setMaxPoolSize(5);
+        executor.setQueueCapacity(20);
+        executor.setThreadNamePrefix("embedding-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(60);
+        executor.initialize();
+        return executor;
     }
+
 }

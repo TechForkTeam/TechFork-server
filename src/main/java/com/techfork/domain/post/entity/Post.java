@@ -41,6 +41,9 @@ public class Post extends BaseEntity {
     @Column(nullable = false)
     private LocalDateTime crawledAt;
 
+    @Column
+    private LocalDateTime embeddedAt;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tech_blog_id", nullable = false)
     private TechBlog techBlog;
@@ -73,5 +76,9 @@ public class Post extends BaseEntity {
 
     public void updateSummary(String summary) {
         this.summary = summary;
+    }
+
+    public void updateEmbedded() {
+        this.embeddedAt = LocalDateTime.now();
     }
 }

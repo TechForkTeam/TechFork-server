@@ -1,7 +1,10 @@
 package com.techfork.global.llm.config;
 
+import org.springframework.ai.document.MetadataMode;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.ai.openai.OpenAiEmbeddingModel;
+import org.springframework.ai.openai.OpenAiEmbeddingOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -37,5 +40,19 @@ public class OpenAiConfig {
                 .openAiApi(openAiApi)
                 .defaultOptions(options)
                 .build();
+    }
+
+    @Bean
+    public OpenAiEmbeddingModel openAiEmbeddingModel() {
+        OpenAiApi openAiApi = OpenAiApi.builder()
+                .apiKey(apiKey)
+                .build();
+
+        OpenAiEmbeddingOptions options = OpenAiEmbeddingOptions.builder()
+                .model("text-embedding-3-large")
+                .dimensions(3072)
+                .build();
+
+        return new OpenAiEmbeddingModel(openAiApi, MetadataMode.EMBED, options);
     }
 }
