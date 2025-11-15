@@ -12,7 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * summary가 null인 Post들을 읽어오는 Reader
+ * summary가 null이거나 빈 문자열인 Post들을 읽어오는 Reader
  */
 @Slf4j
 @Component
@@ -27,7 +27,7 @@ public class PostSummaryReader implements ItemReader<Post> {
     public Post read() {
         if (postIterator == null) {
             List<Post> posts = postRepository.findBySummaryIsNull();
-            log.info("요약이 없는 게시글 {}개 발견", posts.size());
+            log.info("요약이 없거나 비어있는 게시글 {}개 발견", posts.size());
             postIterator = posts.iterator();
         }
 
