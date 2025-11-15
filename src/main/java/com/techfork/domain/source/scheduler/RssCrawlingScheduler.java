@@ -30,8 +30,8 @@ public class RssCrawlingScheduler {
     private static final Duration LOCK_TTL = Duration.ofMinutes(30); // 크롤링 최대 실행 시간
 
     /**
-     * 1시간마다 RSS 크롤링 실행
-     * cron: 0 0 * * * * -> 매 시간 정각
+     * 매일 오전 5시마다 RSS 크롤링 실행
+     * cron: 0 0 5 * * * -> 매 시간 정각
      */
     @Scheduled(cron = "0 0 5 * * *")
     public void scheduleCrawling() {
