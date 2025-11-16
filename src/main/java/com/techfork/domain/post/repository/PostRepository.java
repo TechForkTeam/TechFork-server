@@ -23,4 +23,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Modifying
     @Query("UPDATE Post p SET p.embeddedAt = :embeddedAt WHERE p.id IN :ids")
     void bulkUpdateEmbeddedAt(@Param("ids") List<Long> ids, @Param("embeddedAt") LocalDateTime embeddedAt);
+
+    @Query("SELECT DISTINCT p.company FROM Post p ORDER BY p.company")
+    List<String> findDistinctCompanies();
 }
