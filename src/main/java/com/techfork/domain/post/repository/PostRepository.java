@@ -1,5 +1,6 @@
 package com.techfork.domain.post.repository;
 
+import com.techfork.domain.post.dto.PostDetailDto;
 import com.techfork.domain.post.dto.PostInfoDto;
 import com.techfork.domain.post.entity.Post;
 import org.springframework.data.domain.Page;
@@ -70,6 +71,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             Pageable pageable
     );
 
-    @Query("SELECT p FROM Post p JOIN FETCH p.techBlog WHERE p.id = :id")
-    Optional<Post> findByIdWithTechBlog(@Param("id") Long id);
+    @Query("""
+            SELECT new com.techfork.domain.post.dto.PostDetailDto(
+            p.id, p.title, p.summary, t.companyName, p.url, t.logoUrl, p.publishedAt)
+            FROM Post p
+            JOIN TechBlog t on p.techBlog.id = t.id
+            WHERE p.id = :id
+            """)
+    Optional<PostDetailDto> findByIdWithTechBlog(@Param("id") Long id);
 }

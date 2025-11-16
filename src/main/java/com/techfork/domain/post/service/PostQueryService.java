@@ -49,9 +49,7 @@ public class PostQueryService {
     }
 
     public PostDetailDto getPostDetail(Long postId) {
-        Post post = postRepository.findByIdWithTechBlog(postId)
+        return postRepository.findByIdWithTechBlog(postId)
                 .orElseThrow(() -> new GeneralException(CommonErrorCode.NOT_FOUND));
-
-        return postConverter.toDetailDto(post);
     }
 }
