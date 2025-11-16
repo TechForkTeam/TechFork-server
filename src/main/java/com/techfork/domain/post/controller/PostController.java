@@ -2,6 +2,7 @@ package com.techfork.domain.post.controller;
 
 import com.techfork.domain.post.dto.CompanyListResponse;
 import com.techfork.domain.post.dto.PostListResponse;
+import com.techfork.domain.post.dto.PostSortType;
 import com.techfork.domain.post.service.PostQueryService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
@@ -49,6 +50,23 @@ public class PostController {
             @RequestParam(defaultValue = "20") int size
     ) {
         PostListResponse response = postQueryService.getPostsByCompany(company, lastPostId, size);
+        return BaseResponse.of(SuccessCode.OK, response);
+    }
+
+    @Operation(
+            summary = "최근 게시글 조회",
+            description = "최근 생성된 게시글을 무한 스크롤 방식으로 조회합니다. sortBy로 정렬 기준을 선택할 수 있습니다."
+    )
+    @GetMapping("/recent")
+    public ResponseEntity<BaseResponse<PostListResponse>> getRecentPosts(
+            @Parameter(description = "정렬 기준 (LATEST: 최신순, POPULAR: 인기순, 기본값: LATEST)")
+            @RequestParam(defaultValue = "LATEST") PostSortType sortBy,
+            @Parameter(description = "마지막 게시글 ID (커서, 선택)")
+            @RequestParam(required = false) Long lastPostId,
+            @Parameter(description = "페이지 크기 (기본값: 20)")
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        PostListResponse response = postQueryService.getRecentPosts(sortBy, lastPostId, size);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 }

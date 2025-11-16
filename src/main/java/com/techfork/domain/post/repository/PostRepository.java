@@ -41,4 +41,26 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("lastPostId") Long lastPostId,
             Pageable pageable
     );
+
+    @Query("""
+            SELECT new com.techfork.domain.post.dto.PostSummaryDto(
+            p.id, p.title, p.summary, p.company, p.url, p.publishedAt, p.crawledAt)
+            FROM Post p WHERE :lastPostId IS NULL OR p.id < :lastPostId 
+            ORDER BY p.publishedAt DESC, p.id DESC
+            """)
+    List<PostSummaryDto> findRecentPostsWithCursor(
+            @Param("lastPostId") Long lastPostId,
+            Pageable pageable
+    );
+
+    @Query("""
+            SELECT new com.techfork.domain.post.dto.PostSummaryDto(
+            p.id, p.title, p.summary, p.company, p.url, p.publishedAt, p.crawledAt)
+            FROM Post p WHERE :lastPostId IS NULL OR p.id < :lastPostId
+            ORDER BY p.crawledAt DESC, p.id DESC
+            """)
+    List<PostSummaryDto> findPopularPostsWithCursor(
+            @Param("lastPostId") Long lastPostId,
+            Pageable pageable
+    );
 }

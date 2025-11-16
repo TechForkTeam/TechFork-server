@@ -3,6 +3,7 @@ package com.techfork.domain.post.service;
 import com.techfork.domain.post.converter.PostConverter;
 import com.techfork.domain.post.dto.CompanyListResponse;
 import com.techfork.domain.post.dto.PostListResponse;
+import com.techfork.domain.post.dto.PostSortType;
 import com.techfork.domain.post.dto.PostSummaryDto;
 import com.techfork.domain.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,19 @@ public class PostQueryService {
     public PostListResponse getPostsByCompany(String company, Long lastPostId, int size) {
         PageRequest pageRequest = PageRequest.of(0, size + 1);
         List<PostSummaryDto> postDtos = postRepository.findByCompanyWithCursor(company, lastPostId, pageRequest);
+
+        return postConverter.toPostListResponse(postDtos, size);
+    }
+
+    public PostListResponse getRecentPosts(PostSortType sortBy, Long lastPostId, int size) {
+        PageRequest pageRequest = PageRequest.of(0, size + 1);
+        List<PostSummaryDto> postDtos;
+
+        if (sortBy == PostSortType.POPULAR) {
+            postDtos = postRepository.findPopularPostsWithCursor(lastPostId, pageRequest);
+        } else {
+            postDtos = postRepository.findRecentPostsWithCursor(lastPostId, pageRequest);
+        }
 
         return postConverter.toPostListResponse(postDtos, size);
     }
