@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
 
@@ -63,4 +64,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("lastPostId") Long lastPostId,
             Pageable pageable
     );
+
+    @Query("SELECT p FROM Post p JOIN FETCH p.techBlog WHERE p.id = :id")
+    Optional<Post> findByIdWithTechBlog(@Param("id") Long id);
 }

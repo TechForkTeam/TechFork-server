@@ -1,11 +1,11 @@
 package com.techfork.domain.post.service;
 
 import com.techfork.domain.post.converter.PostConverter;
-import com.techfork.domain.post.dto.CompanyListResponse;
-import com.techfork.domain.post.dto.PostListResponse;
-import com.techfork.domain.post.dto.PostSortType;
-import com.techfork.domain.post.dto.PostSummaryDto;
+import com.techfork.domain.post.dto.*;
+import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
+import com.techfork.global.exception.CommonErrorCode;
+import com.techfork.global.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -46,5 +46,12 @@ public class PostQueryService {
         }
 
         return postConverter.toPostListResponse(postDtos, size);
+    }
+
+    public PostDetailDto getPostDetail(Long postId) {
+        Post post = postRepository.findByIdWithTechBlog(postId)
+                .orElseThrow(() -> new GeneralException(CommonErrorCode.NOT_FOUND));
+
+        return postConverter.toDetailDto(post);
     }
 }

@@ -1,6 +1,7 @@
 package com.techfork.domain.post.controller;
 
 import com.techfork.domain.post.dto.CompanyListResponse;
+import com.techfork.domain.post.dto.PostDetailDto;
 import com.techfork.domain.post.dto.PostListResponse;
 import com.techfork.domain.post.dto.PostSortType;
 import com.techfork.domain.post.service.PostQueryService;
@@ -12,10 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Post", description = "게시글 API")
 @Slf4j
@@ -67,6 +65,19 @@ public class PostController {
             @RequestParam(defaultValue = "20") int size
     ) {
         PostListResponse response = postQueryService.getRecentPosts(sortBy, lastPostId, size);
+        return BaseResponse.of(SuccessCode.OK, response);
+    }
+
+    @Operation(
+            summary = "게시글 상세 조회",
+            description = "특정 게시글의 상세 정보를 조회합니다."
+    )
+    @GetMapping("/{postId}")
+    public ResponseEntity<BaseResponse<PostDetailDto>> getPostDetail(
+            @Parameter(description = "게시글 ID")
+            @PathVariable Long postId
+    ) {
+        PostDetailDto response = postQueryService.getPostDetail(postId);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 }
