@@ -36,14 +36,21 @@ public class TechBlog extends BaseTimeEntity {
         this.companyName = companyName;
         this.blogUrl = blogUrl;
         this.rssUrl = rssUrl;
-        this.logoUrl = logoUrl;
+
+        if (this.logoUrl != null && !this.logoUrl.isBlank()) {
+            this.logoUrl = logoUrl;
+        } else {
+            this.logoUrl = String.format("https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://%s/&size=40", this.blogUrl);
+        }
     }
 
-    public static TechBlog create(String companyName, String blogUrl, String rssUrl) {
+    public static TechBlog create(String companyName, String blogUrl, String rssUrl, String logoUrl) {
         return TechBlog.builder()
                 .companyName(companyName)
                 .blogUrl(blogUrl)
                 .rssUrl(rssUrl)
+                .logoUrl(logoUrl)
                 .build();
     }
+
 }

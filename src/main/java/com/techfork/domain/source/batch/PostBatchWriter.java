@@ -1,7 +1,6 @@
 package com.techfork.domain.source.batch;
 
 import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.global.util.JdbcBulkInsert;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
