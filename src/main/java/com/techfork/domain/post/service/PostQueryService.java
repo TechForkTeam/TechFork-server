@@ -30,14 +30,14 @@ public class PostQueryService {
 
     public PostListResponse getPostsByCompany(String company, Long lastPostId, int size) {
         PageRequest pageRequest = PageRequest.of(0, size + 1);
-        List<PostSummaryDto> postDtos = postRepository.findByCompanyWithCursor(company, lastPostId, pageRequest);
+        List<PostInfoDto> postDtos = postRepository.findByCompanyWithCursor(company, lastPostId, pageRequest);
 
         return postConverter.toPostListResponse(postDtos, size);
     }
 
     public PostListResponse getRecentPosts(PostSortType sortBy, Long lastPostId, int size) {
         PageRequest pageRequest = PageRequest.of(0, size + 1);
-        List<PostSummaryDto> postDtos;
+        List<PostInfoDto> postDtos;
 
         if (sortBy == PostSortType.POPULAR) {
             postDtos = postRepository.findPopularPostsWithCursor(lastPostId, pageRequest);

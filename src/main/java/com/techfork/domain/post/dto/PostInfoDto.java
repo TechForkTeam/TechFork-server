@@ -5,13 +5,12 @@ import lombok.Builder;
 import java.time.LocalDateTime;
 
 @Builder
-public record PostSummaryDto(
+public record PostInfoDto(
         Long id,
         String title,
-        String summary,
         String company,
         String url,
-        LocalDateTime publishedAt,
-        LocalDateTime crawledAt
+        String logoUrl,
+        LocalDateTime publishedAt
 ) {
 }

@@ -6,7 +6,7 @@ import java.util.List;
 
 @Builder
 public record PostListResponse(
-        List<PostSummaryDto> posts,
+        List<PostInfoDto> posts,
         Long lastPostId,
         boolean hasNext
 ) {

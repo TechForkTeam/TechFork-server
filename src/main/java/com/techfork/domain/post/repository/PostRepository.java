@@ -1,6 +1,6 @@
 package com.techfork.domain.post.repository;
 
-import com.techfork.domain.post.dto.PostSummaryDto;
+import com.techfork.domain.post.dto.PostInfoDto;
 import com.techfork.domain.post.entity.Post;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,37 +30,42 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     List<String> findDistinctCompanies();
 
     @Query("""
-            SELECT new com.techfork.domain.post.dto.PostSummaryDto(
-            p.id, p.title, p.summary, p.company, p.url, p.publishedAt, p.crawledAt)
+            SELECT new com.techfork.domain.post.dto.PostInfoDto(
+            p.id, p.title, t.companyName, p.url, t.logoUrl, p.publishedAt)
             FROM Post p
+            JOIN TechBlog t on p.techBlog.id = t.id
             WHERE (:company IS NULL OR p.company = :company)
             AND (:lastPostId IS NULL OR p.id < :lastPostId)
             ORDER BY p.id DESC
             """)
-    List<PostSummaryDto> findByCompanyWithCursor(
+    List<PostInfoDto> findByCompanyWithCursor(
             @Param("company") String company,
             @Param("lastPostId") Long lastPostId,
             Pageable pageable
     );
 
     @Query("""
-            SELECT new com.techfork.domain.post.dto.PostSummaryDto(
-            p.id, p.title, p.summary, p.company, p.url, p.publishedAt, p.crawledAt)
-            FROM Post p WHERE :lastPostId IS NULL OR p.id < :lastPostId 
+            SELECT new com.techfork.domain.post.dto.PostInfoDto(
+            p.id, p.title, t.companyName, p.url, t.logoUrl, p.publishedAt)
+            FROM Post p
+            JOIN TechBlog t on p.techBlog.id = t.id
+            WHERE :lastPostId IS NULL OR p.id < :lastPostId 
             ORDER BY p.publishedAt DESC, p.id DESC
             """)
-    List<PostSummaryDto> findRecentPostsWithCursor(
+    List<PostInfoDto> findRecentPostsWithCursor(
             @Param("lastPostId") Long lastPostId,
             Pageable pageable
     );
 
     @Query("""
-            SELECT new com.techfork.domain.post.dto.PostSummaryDto(
-            p.id, p.title, p.summary, p.company, p.url, p.publishedAt, p.crawledAt)
-            FROM Post p WHERE :lastPostId IS NULL OR p.id < :lastPostId
+            SELECT new com.techfork.domain.post.dto.PostInfoDto(
+            p.id, p.title, t.companyName, p.url, t.logoUrl, p.publishedAt)
+            FROM Post p
+            JOIN TechBlog t on p.techBlog.id = t.id
+            WHERE :lastPostId IS NULL OR p.id < :lastPostId
             ORDER BY p.crawledAt DESC, p.id DESC
             """)
-    List<PostSummaryDto> findPopularPostsWithCursor(
+    List<PostInfoDto> findPopularPostsWithCursor(
             @Param("lastPostId") Long lastPostId,
             Pageable pageable
     );

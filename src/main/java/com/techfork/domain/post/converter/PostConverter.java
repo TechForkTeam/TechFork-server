@@ -3,7 +3,7 @@ package com.techfork.domain.post.converter;
 import com.techfork.domain.post.dto.CompanyListResponse;
 import com.techfork.domain.post.dto.PostDetailDto;
 import com.techfork.domain.post.dto.PostListResponse;
-import com.techfork.domain.post.dto.PostSummaryDto;
+import com.techfork.domain.post.dto.PostInfoDto;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.source.entity.TechBlog;
 import org.springframework.stereotype.Component;
@@ -19,9 +19,9 @@ public class PostConverter {
                 .build();
     }
 
-    public PostListResponse toPostListResponse(List<PostSummaryDto> postDtos, int requestedSize) {
+    public PostListResponse toPostListResponse(List<PostInfoDto> postDtos, int requestedSize) {
         boolean hasNext = postDtos.size() > requestedSize;
-        List<PostSummaryDto> content = hasNext ? postDtos.subList(0, requestedSize) : postDtos;
+        List<PostInfoDto> content = hasNext ? postDtos.subList(0, requestedSize) : postDtos;
 
         Long lastPostId = content.isEmpty() ? null : content.get(content.size() - 1).id();
 
