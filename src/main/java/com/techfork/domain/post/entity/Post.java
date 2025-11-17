@@ -10,6 +10,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "posts")
@@ -48,6 +50,9 @@ public class Post extends BaseEntity {
     @JoinColumn(name = "tech_blog_id", nullable = false)
     private TechBlog techBlog;
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PostKeyword> keywords = new ArrayList<>();
+
     @Builder
     private Post(String title, String fullContent, String plainContent, String company, String url,
                  LocalDateTime publishedAt, LocalDateTime crawledAt, TechBlog techBlog) {
@@ -80,5 +85,13 @@ public class Post extends BaseEntity {
 
     public void updateEmbedded() {
         this.embeddedAt = LocalDateTime.now();
+    }
+
+    public void addKeyword(PostKeyword keyword) {
+        this.keywords.add(keyword);
+    }
+
+    public void clearKeywords() {
+        this.keywords.clear();
     }
 }

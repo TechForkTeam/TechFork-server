@@ -6,6 +6,7 @@ import com.techfork.domain.activity.entity.SearchHistory;
 import com.techfork.domain.activity.repository.ReadPostRepository;
 import com.techfork.domain.activity.repository.ScrabPostRepository;
 import com.techfork.domain.activity.repository.SearchHistoryRepository;
+import com.techfork.domain.post.entity.PostKeyword;
 import com.techfork.domain.user.document.UserProfileDocument;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.entity.UserInterestCategory;
@@ -61,8 +62,7 @@ public class UserProfileService {
                     userId,
                     profileText,
                     profileVector,
-                    activityData.interests,
-                    activityData.preferredTopics
+                    activityData.interests
             );
 
             userProfileDocumentRepository.save(profileDocument);
@@ -81,16 +81,26 @@ public class UserProfileService {
                 .map(k -> k.getKeyword().getDisplayName())
                 .toList();
 
-        // 최근 읽은 포스트 (최대 20개)
+        // 최근 읽은 포스트 (최대 20개) - 제목 + 키워드
         List<ReadPost> readPosts = readPostRepository.findRecentReadPostsByUser(user, PageRequest.of(0, 20));
-        List<String> readPostTitles = readPosts.stream()
-                .map(rp -> rp.getPost().getTitle())
+        List<PostData> readPostData = readPosts.stream()
+                .map(rp -> new PostData(
+                        rp.getPost().getTitle(),
+                        rp.getPost().getKeywords().stream()
+                                .map(PostKeyword::getKeyword)
+                                .toList()
+                ))
                 .toList();
 
-        // 스크랩한 포스트 (최대 20개)
+        // 스크랩한 포스트 (최대 20개) - 제목 + 키워드
         List<ScrabPost> scrapPosts = scrabPostRepository.findRecentScrapPostsByUser(user, PageRequest.of(0, 20));
-        List<String> scrapPostTitles = scrapPosts.stream()
-                .map(sp -> sp.getPost().getTitle())
+        List<PostData> scrapPostData = scrapPosts.stream()
+                .map(sp -> new PostData(
+                        sp.getPost().getTitle(),
+                        sp.getPost().getKeywords().stream()
+                                .map(PostKeyword::getKeyword)
+                                .toList()
+                ))
                 .toList();
 
         // 검색 기록 (최대 30개)
@@ -99,13 +109,7 @@ public class UserProfileService {
                 .map(SearchHistory::getSearchWord)
                 .toList();
 
-        // 선호 주제 (읽은 포스트의 회사명 집계)
-        List<String> preferredTopics = readPosts.stream()
-                .map(rp -> rp.getPost().getCompany())
-                .distinct()
-                .toList();
-
-        return new UserActivityData(interests, readPostTitles, scrapPostTitles, searchWords, preferredTopics);
+        return new UserActivityData(interests, readPostData, scrapPostData, searchWords);
     }
 
     private String generateProfileTextWithLLM(UserActivityData data) {
@@ -123,10 +127,10 @@ public class UserProfileService {
                 ### 관심 기술 스택 및 분야
                 %s
 
-                ### 최근 읽은 포스트 제목
+                ### 최근 읽은 포스트
                 %s
 
-                ### 스크랩한 포스트 제목
+                ### 스크랩한 포스트
                 %s
 
                 ### 검색 기록
@@ -141,8 +145,8 @@ public class UserProfileService {
                    - 선호하는 개발 분야 (백엔드, 프론트엔드, AI, 인프라 등)
 
                 2. **콘텐츠 선호 패턴** (2-3문장)
-                   - 어떤 유형의 콘텐츠를 선호하는지 (튜토리얼, 아키텍처, 트러블슈팅, 신기술 소개 등)
-                   - 어떤 회사나 팀의 기술 블로그를 자주 읽는지
+                   - 읽은 포스트와 스크랩한 포스트를 분석하여 선호하는 주제와 기술 파악
+                   - 선호하는 회사/팀이나 콘텐츠 유형 (튜토리얼, 아키텍처, 트러블슈팅 등)
 
                 3. **검색 의도 분석** (2-3문장)
                    - 검색 기록에서 드러나는 학습 목적이나 해결하려는 문제
@@ -160,8 +164,8 @@ public class UserProfileService {
                 데이터가 부족한 경우 관심 기술 스택을 기반으로 일반적인 프로필을 생성해주세요.
                 """,
                 formatList(data.interests),
-                formatList(data.readPostTitles),
-                formatList(data.scrapPostTitles),
+                formatPostDataList(data.readPostData),
+                formatPostDataList(data.scrapPostData),
                 formatList(data.searchWords)
         );
     }
@@ -172,6 +176,20 @@ public class UserProfileService {
         }
         return items.stream()
                 .map(item -> "- " + item)
+                .collect(Collectors.joining("\n"));
+    }
+
+    private String formatPostDataList(List<PostData> postDataList) {
+        if (postDataList == null || postDataList.isEmpty()) {
+            return "- (데이터 없음)";
+        }
+        return postDataList.stream()
+                .map(postData -> {
+                    String keywordsStr = postData.keywords.isEmpty()
+                            ? ""
+                            : " [키워드: " + String.join(", ", postData.keywords) + "]";
+                    return "- " + postData.title + keywordsStr;
+                })
                 .collect(Collectors.joining("\n"));
     }
 
@@ -188,9 +206,13 @@ public class UserProfileService {
 
     private record UserActivityData(
             List<String> interests,
-            List<String> readPostTitles,
-            List<String> scrapPostTitles,
-            List<String> searchWords,
-            List<String> preferredTopics
+            List<PostData> readPostData,
+            List<PostData> scrapPostData,
+            List<String> searchWords
+    ) {}
+
+    private record PostData(
+            String title,
+            List<String> keywords
     ) {}
 }

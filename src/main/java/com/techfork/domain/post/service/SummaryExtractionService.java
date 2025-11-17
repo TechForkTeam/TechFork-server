@@ -1,10 +1,16 @@
 package com.techfork.domain.post.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.techfork.domain.post.dto.SummaryWithKeywords;
 import com.techfork.global.llm.LlmClient;
 import com.techfork.global.util.ContentCleaner;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * LLM을 사용한 게시글 요약 추출 서비스
@@ -16,24 +22,35 @@ import org.springframework.stereotype.Service;
 public class SummaryExtractionService {
 
     private final LlmClient llmClient;
+    private final ObjectMapper objectMapper;
 
     private static final String SYSTEM_PROMPT = """
-            너는 기술 블로그 요약 전문가야.
-            주어진 기술 블로그 글을 분석하고, 의미 기반 검색에 최적화된 요약을 작성해줘.
+            너는 기술 블로그 분석 전문가야.
+            주어진 기술 블로그 글을 분석하고, 요약과 핵심 키워드를 추출해줘.
 
-            이 요약은 검색어와 함께 벡터 검색에 사용되어, 관련 글의 chunk를 찾는데 도움을 줘야 해.
+            응답은 반드시 아래 JSON 형식으로만 작성해:
+            {
+              "summary": "요약 내용 (300-500자)",
+              "keywords": ["키워드1", "키워드2", ...]
+            }
 
             요약 작성 원칙:
             1. 글의 전체 맥락과 흐름을 포함 (300-500자)
             2. 글에서 다루는 핵심 문제와 해결 방법을 구체적으로 기술
             3. 사용된 기술 스택, 도구, 프레임워크를 정확한 명칭으로 명시
-            4. 주요 개념과 키워드를 자연스럽게 포함 (검색 매칭용)
-            5. 관련 검색어가 다양하게 매칭될 수 있도록 유사 표현 활용
-            6. 자연스러운 한국어 문장으로 작성
-            7. 마크다운이나 특수 기호 없이 순수 텍스트로만 작성
+            4. 자연스러운 한국어 문장으로 작성
+            5. 마크다운이나 특수 기호 없이 순수 텍스트로만 작성
+
+            키워드 추출 원칙:
+            1. 10-15개의 핵심 키워드 추출
+            2. 기술 스택 (예: Spring Boot, React, Kubernetes)
+            3. 주제/개념 (예: 성능 최적화, 마이크로서비스, CI/CD)
+            4. 방법론 (예: TDD, DDD, 애자일)
+            5. 영문과 한글 키워드 모두 포함
+            6. 너무 일반적인 키워드(예: "개발", "코딩") 제외
             """;
 
-    public String extractSummary(String title, String content) {
+    public SummaryWithKeywords extractSummary(String title, String content) {
         try {
             String processedContent = content;
             if (content != null && content.length() > 50000) {
@@ -46,11 +63,31 @@ public class SummaryExtractionService {
             String response = llmClient.call(SYSTEM_PROMPT, userPrompt);
 
             log.debug("LLM API 응답 (제목: {}): {}", title, response);
-            return response.trim();
+
+            // JSON 응답 파싱
+            return parseResponse(response.trim());
 
         } catch (Exception e) {
             log.error("요약 추출 실패 (제목: {}): {}", title, e.getMessage(), e);
-            return "";
+            return new SummaryWithKeywords("", List.of());
+        }
+    }
+
+    private SummaryWithKeywords parseResponse(String response) {
+        try {
+            JsonNode jsonNode = objectMapper.readTree(response);
+            String summary = jsonNode.get("summary").asText();
+            List<String> keywords = new ArrayList<>();
+
+            JsonNode keywordsNode = jsonNode.get("keywords");
+            if (keywordsNode != null && keywordsNode.isArray()) {
+                keywordsNode.forEach(node -> keywords.add(node.asText()));
+            }
+
+            return new SummaryWithKeywords(summary, keywords);
+        } catch (Exception e) {
+            log.error("JSON 응답 파싱 실패: {}", response, e);
+            return new SummaryWithKeywords("", List.of());
         }
     }
 

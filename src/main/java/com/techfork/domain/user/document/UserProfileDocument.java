@@ -32,32 +32,27 @@ public class UserProfileDocument {
     @Field(type = FieldType.Keyword)
     private List<String> interests;
 
-    @Field(type = FieldType.Keyword)
-    private List<String> preferredTopics;
-
     @Field(type = FieldType.Date)
     private LocalDateTime generatedAt;
 
     @Builder
     private UserProfileDocument(Long userId, String profileText, float[] profileVector,
-                                 List<String> interests, List<String> preferredTopics, LocalDateTime generatedAt) {
+                                 List<String> interests, LocalDateTime generatedAt) {
         this.id = String.valueOf(userId);
         this.userId = userId;
         this.profileText = profileText;
         this.profileVector = profileVector;
         this.interests = interests;
-        this.preferredTopics = preferredTopics;
         this.generatedAt = generatedAt;
     }
 
     public static UserProfileDocument create(Long userId, String profileText, float[] profileVector,
-                                              List<String> interests, List<String> preferredTopics) {
+                                              List<String> interests) {
         return UserProfileDocument.builder()
                 .userId(userId)
                 .profileText(profileText)
                 .profileVector(profileVector)
                 .interests(interests)
-                .preferredTopics(preferredTopics)
                 .generatedAt(LocalDateTime.now())
                 .build();
     }
