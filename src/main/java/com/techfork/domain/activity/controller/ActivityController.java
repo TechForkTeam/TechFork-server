@@ -1,6 +1,7 @@
 package com.techfork.domain.activity.controller;
 
 import com.techfork.domain.activity.dto.BookmarkListResponse;
+import com.techfork.domain.activity.dto.BookmarkRequest;
 import com.techfork.domain.activity.dto.ReadPostRequest;
 import com.techfork.domain.activity.dto.SearchHistoryRequest;
 import com.techfork.domain.activity.service.ActivityCommandService;
@@ -76,4 +77,37 @@ public class ActivityController {
         BookmarkListResponse response = activityQueryService.getBookmarks(userId, lastBookmarkId, size);
         return BaseResponse.of(SuccessCode.OK, response);
     }
+
+    @Operation(
+            summary = "북마크 추가",
+            description = "특정 게시글을 북마크에 추가합니다. 중복 방지 처리가 적용됩니다."
+    )
+    @PostMapping("/bookmarks")
+    public ResponseEntity<BaseResponse<Void>> addBookmark(
+            @Valid @RequestBody BookmarkRequest request
+    ) {
+
+        // TODO: userId Auth 인증 기반으로 추출
+        Long userId = 1L;
+
+        activityCommandService.addBookmark(userId, request);
+        return BaseResponse.of(SuccessCode.CREATED);
+    }
+
+    @Operation(
+            summary = "북마크 삭제",
+            description = "특정 게시글의 북마크를 제거합니다."
+    )
+    @DeleteMapping("/bookmarks")
+    public ResponseEntity<BaseResponse<Void>> deleteBookmark(
+            @Valid @RequestBody BookmarkRequest request
+    ) {
+
+        // TODO: userId Auth 인증 기반으로 추출
+        Long userId = 1L;
+
+        activityCommandService.deleteBookmark(userId, request);
+        return BaseResponse.of(SuccessCode.NO_CONTENT);
+    }
+
 }
