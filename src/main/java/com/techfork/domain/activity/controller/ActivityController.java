@@ -107,7 +107,7 @@ public class ActivityController {
         Long userId = 1L;
 
         activityCommandService.deleteBookmark(userId, request);
-        return BaseResponse.of(SuccessCode.NO_CONTENT);
+        return BaseResponse.of(SuccessCode.OK);
     }
 
 }
