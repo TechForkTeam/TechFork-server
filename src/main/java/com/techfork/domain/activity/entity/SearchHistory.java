@@ -1,9 +1,10 @@
-package com.techfork.domain.search.entity;
+package com.techfork.domain.activity.entity;
 
 import com.techfork.domain.user.entity.User;
 import com.techfork.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -23,4 +24,19 @@ public class SearchHistory extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @Builder
+    private SearchHistory(User user, String searchWord, LocalDateTime searchedAt) {
+        this.user = user;
+        this.searchWord = searchWord;
+        this.searchedAt = searchedAt;
+    }
+
+    public static SearchHistory create(User user, String searchWord, LocalDateTime searchedAt) {
+        return SearchHistory.builder()
+                .user(user)
+                .searchWord(searchWord)
+                .searchedAt(searchedAt)
+                .build();
+    }
 }

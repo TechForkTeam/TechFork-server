@@ -5,6 +5,7 @@ import com.techfork.domain.user.entity.User;
 import com.techfork.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -33,4 +34,21 @@ public class ReadPost extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)
     private Post post;
+
+    @Builder
+    private ReadPost(User user, Post post, LocalDateTime readAt, Integer readDurationSeconds) {
+        this.user = user;
+        this.post = post;
+        this.readAt = readAt;
+        this.readDurationSeconds = readDurationSeconds;
+    }
+
+    public static ReadPost create(User user, Post post, LocalDateTime readAt, Integer readDurationSeconds) {
+        return ReadPost.builder()
+                .user(user)
+                .post(post)
+                .readAt(readAt)
+                .readDurationSeconds(readDurationSeconds)
+                .build();
+    }
 }
