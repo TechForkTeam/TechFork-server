@@ -33,23 +33,23 @@ public class ActivityCommandService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
-        Post post = postRepository.findById(request.getPostId())
+        Post post = postRepository.findById(request.postId())
                 .orElseThrow(() -> new GeneralException(PostErrorCode.POST_NOT_FOUND));
 
         if (readPostRepository.existsByUserAndPost(user, post)) {
-            log.info("User {} has already read post {}", userId, request.getPostId());
+            log.info("User {} has already read post {}", userId, request.postId());
             return;
         }
 
         ReadPost readPost = ReadPost.create(
                 user,
                 post,
-                request.getReadAt(),
-                request.getReadDurationSeconds()
+                request.readAt(),
+                request.readDurationSeconds()
         );
 
         readPostRepository.save(readPost);
-        log.info("Saved read post for user {} and post {}", userId, request.getPostId());
+        log.info("Saved read post for user {} and post {}", userId, request.postId());
     }
 
     @Transactional
@@ -59,11 +59,11 @@ public class ActivityCommandService {
 
         SearchHistory searchHistory = SearchHistory.create(
                 user,
-                request.getSearchWord(),
-                request.getSearchedAt()
+                request.searchWord(),
+                request.searchedAt()
         );
 
         searchHistoryRepository.save(searchHistory);
-        log.info("Saved search history for user {} with keyword: {}", userId, request.getSearchWord());
+        log.info("Saved search history for user {} with keyword: {}", userId, request.searchWord());
     }
 }
