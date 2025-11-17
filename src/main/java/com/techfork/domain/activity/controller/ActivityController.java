@@ -1,6 +1,7 @@
 package com.techfork.domain.activity.controller;
 
 import com.techfork.domain.activity.dto.ReadPostRequest;
+import com.techfork.domain.activity.dto.SearchHistoryRequest;
 import com.techfork.domain.activity.service.ActivityCommandService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
@@ -37,6 +38,22 @@ public class ActivityController {
         Long userId = 1L;
 
         activityCommandService.saveReadPost(userId, request);
+        return BaseResponse.of(SuccessCode.CREATED);
+    }
+
+    @Operation(
+            summary = "검색 히스토리 저장",
+            description = "사용자의 검색어 기록을 저장합니다. 검색어와 검색 시간을 기록합니다."
+    )
+    @PostMapping("/searches")
+    public ResponseEntity<BaseResponse<Void>> saveSearchHistory(
+            @Valid @RequestBody SearchHistoryRequest request
+    ) {
+
+        // TODO: userId Auth 인증 기반으로 추출
+        Long userId = 1L;
+
+        activityCommandService.saveSearchHistory(userId, request);
         return BaseResponse.of(SuccessCode.CREATED);
     }
 }
