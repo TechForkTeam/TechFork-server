@@ -27,9 +27,15 @@ public class InterestCommandService {
     private final UserRepository userRepository;
     private final UserInterestCategoryRepository userInterestCategoryRepository;
 
+    public void updateUserInterests(Long userId, SaveInterestRequest request) {
+        saveUserInterests(userId, request);
+    }
+
     public void saveUserInterests(Long userId, SaveInterestRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
+
+        userInterestCategoryRepository.deleteByUser(user);
 
         List<UserInterestCategory> categories = createCategoriesFromRequest(user, request);
         userInterestCategoryRepository.saveAll(categories);
