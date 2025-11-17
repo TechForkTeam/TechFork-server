@@ -1,7 +1,9 @@
 package com.techfork.domain.user.controller;
 
 import com.techfork.domain.user.dto.SaveInterestRequest;
+import com.techfork.domain.user.dto.UserInterestResponse;
 import com.techfork.domain.user.service.InterestCommandService;
+import com.techfork.domain.user.service.InterestQueryService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,10 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "User", description = "사용자 API")
 @Slf4j
@@ -23,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     private final InterestCommandService interestCommandService;
+    private final InterestQueryService interestQueryService;
 
     @Operation(
             summary = "내 관심사 수정",
@@ -37,5 +37,18 @@ public class UserController {
 
         interestCommandService.updateUserInterests(userId, request);
         return BaseResponse.of(SuccessCode.OK);
+    }
+
+    @Operation(
+            summary = "내 관심사 조회",
+            description = "현재 로그인한 사용자의 관심사 목록을 조회합니다."
+    )
+    @GetMapping("/me/interests")
+    public ResponseEntity<BaseResponse<UserInterestResponse>> getMyInterests() {
+        // TODO: userId Auth 인증 기반으로 추출
+        Long userId = 1L;
+
+        UserInterestResponse response = interestQueryService.getUserInterests(userId);
+        return BaseResponse.of(SuccessCode.OK, response);
     }
 }
