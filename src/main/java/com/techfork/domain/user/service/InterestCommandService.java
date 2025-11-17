@@ -26,6 +26,7 @@ public class InterestCommandService {
 
     private final UserRepository userRepository;
     private final UserInterestCategoryRepository userInterestCategoryRepository;
+    private final UserProfileService userProfileService;
 
     public void updateUserInterests(Long userId, SaveInterestRequest request) {
         saveUserInterests(userId, request);
@@ -41,6 +42,9 @@ public class InterestCommandService {
         userInterestCategoryRepository.saveAll(categories);
 
         log.info("Saved {} interest categories for user {}", categories.size(), userId);
+
+        // 관심사 저장/수정 시 사용자 프로필 재생성
+        userProfileService.generateUserProfile(userId);
     }
 
     private List<UserInterestCategory> createCategoriesFromRequest(User user, SaveInterestRequest request) {

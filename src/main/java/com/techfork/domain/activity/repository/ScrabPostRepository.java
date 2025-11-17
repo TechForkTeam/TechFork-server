@@ -34,4 +34,7 @@ public interface ScrabPostRepository extends JpaRepository<ScrabPost, Long> {
     boolean existsByUserAndPost(User user, Post post);
 
     Optional<ScrabPost> findByUserAndPost(User user, Post post);
+
+    @Query("SELECT sp FROM ScrabPost sp JOIN FETCH sp.post WHERE sp.user = :user ORDER BY sp.scrappedAt DESC")
+    List<ScrabPost> findRecentScrapPostsByUser(@Param("user") User user, Pageable pageable);
 }
