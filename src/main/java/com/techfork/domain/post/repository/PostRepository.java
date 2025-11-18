@@ -18,8 +18,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     boolean existsByUrl(String url);
 
-    @Query("SELECT p FROM Post p WHERE p.summary IS NULL OR p.summary = ''")
-    List<Post> findBySummaryIsNull();
+    @Query("""
+            SELECT p FROM Post p 
+            LEFT JOIN FETCH p.keywords
+            WHERE p.summary IS NULL OR p.summary = ''
+            """)
+    List<Post> findWithKeywordsBySummaryIsNull();
 
     Page<Post> findBySummaryIsNotNullAndEmbeddedAtIsNull(Pageable pageable);
 
