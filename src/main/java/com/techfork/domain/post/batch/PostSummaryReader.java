@@ -26,7 +26,7 @@ public class PostSummaryReader implements ItemReader<Post> {
     @Override
     public Post read() {
         if (postIterator == null) {
-            List<Post> posts = postRepository.findBySummaryIsNull();
+            List<Post> posts = postRepository.findWithKeywordsBySummaryIsNull();
             log.info("요약이 없거나 비어있는 게시글 {}개 발견", posts.size());
             postIterator = posts.iterator();
         }
