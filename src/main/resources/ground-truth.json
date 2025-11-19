@@ -1,0 +1,66 @@
+[
+  {
+    "query": "스프링",
+    "idealResultsMap": {
+      "188": 5,
+      "151": 3,
+      "506": 1
+    }
+  },
+  {
+    "query": "Java",
+    "idealResultsMap": {
+      "475": 5,
+      "103": 3,
+      "335": 1
+    }
+  },
+  {
+    "query": "Spring Boot",
+    "idealResultsMap": {
+      "50": 5,
+      "143": 3,
+      "529": 1
+    }
+  },
+  {
+    "query": "JPA",
+    "idealResultsMap": {
+      "50": 5,
+      "501": 3,
+      "506": 1
+    }
+  },
+  {
+    "query": "Docker",
+    "idealResultsMap": {
+      "54": 5,
+      "395": 3,
+      "242": 1
+    }
+  },
+  {
+    "query": "MSA",
+    "idealResultsMap": {
+      "200": 5,
+      "213": 3,
+      "234": 1
+    }
+  },
+  {
+    "query": "배치",
+    "idealResultsMap": {
+      "367": 5,
+      "81": 3,
+      "151": 1
+    }
+  },
+  {
+    "query": "클라우드",
+    "idealResultsMap": {
+      "347": 5,
+      "330": 3,
+      "183": 1
+    }
+  }
+]
