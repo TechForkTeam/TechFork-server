@@ -66,6 +66,9 @@ dependencies {
 	implementation 'org.springframework.ai:spring-ai-openai'
 
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+	testCompileOnly 'org.projectlombok:lombok'
+	testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
 dependencyManagement {
