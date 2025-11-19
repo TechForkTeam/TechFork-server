@@ -30,19 +30,23 @@ public class WebClientConfig {
             // HttpClient 설정 (Netty 기반)
             HttpClient httpClient = HttpClient.create()
                     .secure(sslContextSpec -> sslContextSpec.sslContext(sslContext))
-                    .responseTimeout(Duration.ofSeconds(10));
+                    .responseTimeout(Duration.ofSeconds(30))
+                    .followRedirect(true); // Redirect 자동 추적
 
             // WebClient 생성
             WebClient webClient = WebClient.builder()
                     .clientConnector(new ReactorClientHttpConnector(httpClient))
-                    .defaultHeader("User-Agent", "TechFork-Bot/1.0")
+                    .defaultHeader("User-Agent", "Mozilla/5.0 (compatible; TechFork-Bot/1.0)")
+                    .defaultHeader("Accept", "application/rss+xml, application/xml, application/atom+xml, text/xml, */*")
+                    .codecs(configurer -> configurer
+                            .defaultCodecs()
+                            .maxInMemorySize(10 * 1024 * 1024))
                     .build();
 
-            log.info("✅ SSL-friendly WebClient 초기화 완료");
             return webClient;
 
         } catch (SSLException e) {
-            log.error("❌ WebClient 초기화 실패", e);
+            log.error("WebClient 초기화 실패", e);
             throw new RuntimeException("WebClient 초기화 실패", e);
         }
     }
