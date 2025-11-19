@@ -2,7 +2,7 @@ package com.techfork.domain.post.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.techfork.domain.post.dto.SummaryWithKeywords;
+import com.techfork.domain.post.dto.SummaryWithKeywordsDto;
 import com.techfork.global.llm.LlmClient;
 import com.techfork.global.util.ContentCleaner;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +50,7 @@ public class SummaryExtractionService {
             6. 너무 일반적인 키워드(예: "개발", "코딩") 제외
             """;
 
-    public SummaryWithKeywords extractSummary(String title, String content) {
+    public SummaryWithKeywordsDto extractSummary(String title, String content) {
         try {
             String processedContent = content;
             if (content != null && content.length() > 50000) {
@@ -69,11 +69,11 @@ public class SummaryExtractionService {
 
         } catch (Exception e) {
             log.error("요약 추출 실패 (제목: {}): {}", title, e.getMessage(), e);
-            return new SummaryWithKeywords("", List.of());
+            return new SummaryWithKeywordsDto("", List.of());
         }
     }
 
-    private SummaryWithKeywords parseResponse(String response) {
+    private SummaryWithKeywordsDto parseResponse(String response) {
         try {
             JsonNode jsonNode = objectMapper.readTree(response);
             String summary = jsonNode.get("summary").asText();
@@ -84,10 +84,10 @@ public class SummaryExtractionService {
                 keywordsNode.forEach(node -> keywords.add(node.asText()));
             }
 
-            return new SummaryWithKeywords(summary, keywords);
+            return new SummaryWithKeywordsDto(summary, keywords);
         } catch (Exception e) {
             log.error("JSON 응답 파싱 실패: {}", response, e);
-            return new SummaryWithKeywords("", List.of());
+            return new SummaryWithKeywordsDto("", List.of());
         }
     }
 
