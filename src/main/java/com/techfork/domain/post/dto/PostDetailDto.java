@@ -3,6 +3,7 @@ package com.techfork.domain.post.dto;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Builder
 public record PostDetailDto(
@@ -12,6 +13,7 @@ public record PostDetailDto(
         String company,
         String url,
         String logoUrl,
-        LocalDateTime publishedAt
+        LocalDateTime publishedAt,
+        List<String> keywords
 ) {
 }
