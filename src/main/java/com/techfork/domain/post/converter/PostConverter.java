@@ -1,6 +1,7 @@
 package com.techfork.domain.post.converter;
 
 import com.techfork.domain.post.dto.CompanyListResponse;
+import com.techfork.domain.post.dto.PostDetailDto;
 import com.techfork.domain.post.dto.PostInfoDto;
 import com.techfork.domain.post.dto.PostListResponse;
 import org.springframework.stereotype.Component;
@@ -16,9 +17,9 @@ public class PostConverter {
                 .build();
     }
 
-    public PostListResponse toPostListResponse(List<PostInfoDto> postDtos, int requestedSize) {
-        boolean hasNext = postDtos.size() > requestedSize;
-        List<PostInfoDto> content = hasNext ? postDtos.subList(0, requestedSize) : postDtos;
+    public PostListResponse toPostListResponse(List<PostInfoDto> posts, int requestedSize) {
+        boolean hasNext = posts.size() > requestedSize;
+        List<PostInfoDto> content = hasNext ? posts.subList(0, requestedSize) : posts;
 
         Long lastPostId = content.isEmpty() ? null : content.get(content.size() - 1).id();
 
@@ -26,6 +27,19 @@ public class PostConverter {
                 .posts(content)
                 .lastPostId(lastPostId)
                 .hasNext(hasNext)
+                .build();
+    }
+
+    public PostDetailDto toPostDetailDto(PostDetailDto baseDto, List<String> keywords) {
+        return PostDetailDto.builder()
+                .id(baseDto.id())
+                .title(baseDto.title())
+                .summary(baseDto.summary())
+                .company(baseDto.company())
+                .url(baseDto.url())
+                .logoUrl(baseDto.logoUrl())
+                .publishedAt(baseDto.publishedAt())
+                .keywords(keywords)
                 .build();
     }
 }
