@@ -1,6 +1,6 @@
 package com.techfork.domain.post.batch;
 
-import com.techfork.domain.post.dto.SummaryWithKeywords;
+import com.techfork.domain.post.dto.SummaryWithKeywordsDto;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.entity.PostKeyword;
 import com.techfork.domain.post.service.SummaryExtractionService;
@@ -26,7 +26,7 @@ public class PostSummaryProcessor implements ItemProcessor<Post, Post> {
         try {
             log.debug("요약 및 키워드 추출 중: {}", post.getTitle());
 
-            SummaryWithKeywords result = summaryExtractionService.extractSummary(
+            SummaryWithKeywordsDto result = summaryExtractionService.extractSummary(
                     post.getTitle(),
                     post.getPlainContent()
             );

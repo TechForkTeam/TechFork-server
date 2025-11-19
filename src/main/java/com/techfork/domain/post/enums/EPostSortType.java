@@ -1,11 +1,11 @@
-package com.techfork.domain.post.dto;
+package com.techfork.domain.post.enums;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum PostSortType {
+public enum EPostSortType {
     LATEST("최신순"),
     POPULAR("인기순");
 

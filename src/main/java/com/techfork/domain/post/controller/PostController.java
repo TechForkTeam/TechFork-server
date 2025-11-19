@@ -3,7 +3,7 @@ package com.techfork.domain.post.controller;
 import com.techfork.domain.post.dto.CompanyListResponse;
 import com.techfork.domain.post.dto.PostDetailDto;
 import com.techfork.domain.post.dto.PostListResponse;
-import com.techfork.domain.post.dto.PostSortType;
+import com.techfork.domain.post.enums.EPostSortType;
 import com.techfork.domain.post.service.PostQueryService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
@@ -58,7 +58,7 @@ public class PostController {
     @GetMapping("/recent")
     public ResponseEntity<BaseResponse<PostListResponse>> getRecentPosts(
             @Parameter(description = "정렬 기준 (LATEST: 최신순, POPULAR: 인기순, 기본값: LATEST)")
-            @RequestParam(defaultValue = "LATEST") PostSortType sortBy,
+            @RequestParam(defaultValue = "LATEST") EPostSortType sortBy,
             @Parameter(description = "마지막 게시글 ID (커서, 선택)")
             @RequestParam(required = false) Long lastPostId,
             @Parameter(description = "페이지 크기 (기본값: 20)")
