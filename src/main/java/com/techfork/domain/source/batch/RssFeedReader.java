@@ -14,10 +14,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 public class RssFeedReader implements ItemReader<RssFeedItem> {
 
     private final TechBlogRepository techBlogRepository;
+    private final WebClient webClient;
 
     private ConcurrentLinkedQueue<RssFeedItem> itemQueue;
 
@@ -86,34 +87,27 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
     }
 
     private List<RssFeedItem> fetchRssFeed(TechBlog techBlog) throws Exception {
-        URL url = new URL(techBlog.getRssUrl());
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        // WebClient로 RSS 피드 다운로드
+        byte[] responseBytes = webClient.get()
+                .uri(techBlog.getRssUrl())
+                .retrieve()
+                .bodyToMono(byte[].class)
+                .block(); // 동기 처리 (Spring Batch에서는 동기 필요)
 
-        try {
-            // User-Agent 설정
-            connection.setRequestProperty("User-Agent", "TechFork-Bot/1.0");
-            connection.setConnectTimeout(10000); // 10초
-            connection.setReadTimeout(10000);    // 10초
+        if (responseBytes == null || responseBytes.length == 0) {
+            throw new Exception("Empty response from RSS feed");
+        }
 
-            // 응답 코드 확인
-            int responseCode = connection.getResponseCode();
-            if (responseCode != HttpURLConnection.HTTP_OK) {
-                throw new Exception("HTTP Error: " + responseCode);
-            }
+        // RSS 파싱
+        try (InputStream inputStream = new ByteArrayInputStream(responseBytes);
+             XmlReader reader = new XmlReader(inputStream)) {
 
-            // RSS 파싱
-            try (InputStream inputStream = connection.getInputStream();
-                 XmlReader reader = new XmlReader(inputStream)) {
+            SyndFeedInput input = new SyndFeedInput();
+            SyndFeed feed = input.build(reader);
 
-                SyndFeedInput input = new SyndFeedInput();
-                SyndFeed feed = input.build(reader);
-
-                return feed.getEntries().stream()
-                        .map(entry -> convertToFeedItem(entry, techBlog))
-                        .collect(Collectors.toList());
-            }
-        } finally {
-            connection.disconnect();
+            return feed.getEntries().stream()
+                    .map(entry -> convertToFeedItem(entry, techBlog))
+                    .toList();
         }
     }
 
