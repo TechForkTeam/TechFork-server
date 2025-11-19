@@ -48,16 +48,10 @@ public class UserProfileService {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
-            // 1. 사용자 데이터 수집
             UserActivityData activityData = collectUserActivityData(user);
-
-            // 2. LLM으로 프로필 텍스트 생성
             String profileText = generateProfileTextWithLLM(activityData);
-
-            // 3. 임베딩 벡터 생성
             float[] profileVector = generateEmbeddingVector(profileText);
 
-            // 4. Elasticsearch에 저장
             UserProfileDocument profileDocument = UserProfileDocument.create(
                     userId,
                     profileText,
@@ -74,36 +68,34 @@ public class UserProfileService {
     }
 
     private UserActivityData collectUserActivityData(User user) {
-        // 관심사
         List<UserInterestCategory> categories = userInterestCategoryRepository.findByUserWithKeywords(user);
         List<String> interests = categories.stream()
                 .flatMap(c -> c.getKeywords().stream())
                 .map(k -> k.getKeyword().getDisplayName())
                 .toList();
 
-        // 최근 읽은 포스트 (최대 20개) - 제목 + 키워드
-        List<ReadPost> readPosts = readPostRepository.findRecentReadPostsByUser(user, PageRequest.of(0, 20));
+        List<ReadPost> readPosts = readPostRepository.findRecentReadPostsByUserWithMinDuration(user, PageRequest.of(0, 20));
         List<PostData> readPostData = readPosts.stream()
                 .map(rp -> new PostData(
                         rp.getPost().getTitle(),
                         rp.getPost().getKeywords().stream()
                                 .map(PostKeyword::getKeyword)
-                                .toList()
+                                .toList(),
+                        convertReadingDurationToNaturalLanguage(rp.getReadDurationSeconds())
                 ))
                 .toList();
 
-        // 스크랩한 포스트 (최대 20개) - 제목 + 키워드
         List<ScrabPost> scrapPosts = scrabPostRepository.findRecentScrapPostsByUser(user, PageRequest.of(0, 20));
         List<PostData> scrapPostData = scrapPosts.stream()
                 .map(sp -> new PostData(
                         sp.getPost().getTitle(),
                         sp.getPost().getKeywords().stream()
                                 .map(PostKeyword::getKeyword)
-                                .toList()
+                                .toList(),
+                        null
                 ))
                 .toList();
 
-        // 검색 기록 (최대 30개)
         List<SearchHistory> searchHistories = searchHistoryRepository.findRecentSearchHistoriesByUser(user, PageRequest.of(0, 30));
         List<String> searchWords = searchHistories.stream()
                 .map(SearchHistory::getSearchWord)
@@ -188,13 +180,15 @@ public class UserProfileService {
                     String keywordsStr = postData.keywords.isEmpty()
                             ? ""
                             : " [키워드: " + String.join(", ", postData.keywords) + "]";
-                    return "- " + postData.title + keywordsStr;
+                    String engagementStr = postData.readingEngagement != null
+                            ? " (" + postData.readingEngagement + ")"
+                            : "";
+                    return "- " + postData.title + keywordsStr + engagementStr;
                 })
                 .collect(Collectors.joining("\n"));
     }
 
     private float[] generateEmbeddingVector(String profileText) {
-        // OpenAI text-embedding-3-large (3072 dimensions)
         List<Float> embedding = embeddingClient.embed(profileText);
 
         float[] vector = new float[embedding.size()];
@@ -202,6 +196,24 @@ public class UserProfileService {
             vector[i] = embedding.get(i);
         }
         return vector;
+    }
+
+    private String convertReadingDurationToNaturalLanguage(Integer durationSeconds) {
+        if (durationSeconds == null) {
+            return "읽음";
+        }
+
+        if (durationSeconds <= 30) {
+            return "가볍게 훑어봄";
+        } else if (durationSeconds <= 90) {
+            return "빠르게 읽음";
+        } else if (durationSeconds <= 300) {
+            return "읽음";
+        } else if (durationSeconds <= 600) {
+            return "정독함";
+        } else {
+            return "깊게 읽음";
+        }
     }
 
     private record UserActivityData(
@@ -213,6 +225,7 @@ public class UserProfileService {
 
     private record PostData(
             String title,
-            List<String> keywords
+            List<String> keywords,
+            String readingEngagement
     ) {}
 }
