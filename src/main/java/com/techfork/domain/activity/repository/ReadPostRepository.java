@@ -14,6 +14,12 @@ public interface ReadPostRepository extends JpaRepository<ReadPost, Long> {
 
     boolean existsByUserAndPost(User user, Post post);
 
-    @Query("SELECT rp FROM ReadPost rp JOIN FETCH rp.post WHERE rp.user = :user ORDER BY rp.readAt DESC")
-    List<ReadPost> findRecentReadPostsByUser(@Param("user") User user, Pageable pageable);
+    @Query("""
+            SELECT rp FROM ReadPost rp
+            JOIN FETCH rp.post 
+            WHERE rp.user = :user 
+            AND (rp.readDurationSeconds IS NULL OR rp.readDurationSeconds > 10)
+            ORDER BY rp.readAt DESC
+            """)
+    List<ReadPost> findRecentReadPostsByUserWithMinDuration(@Param("user") User user, Pageable pageable);
 }
