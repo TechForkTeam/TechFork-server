@@ -1,0 +1,26 @@
+### 1. 연결 확인
+GET http://localhost:9200/
+
+### 2. 모든 인덱스(테이블) 목록 확인
+GET http://localhost:9200/_cat/indices?v
+
+### 3. 'posts' 인덱스 데이터 10개 조회
+GET http://localhost:9200/posts/_search
+Content-Type: application/json
+
+{
+  "query": { "match_all": {} },
+  "size": 10
+}
+
+### 4. 게시글의 제목과 임베딩 벡터 존재 여부 확인
+GET http://localhost:9200/posts/_search
+Content-Type: application/json
+
+{
+  "size": 1,
+  "_source": ["postId", "title", "titleEmbedding"],
+  "query": {
+    "match_all": {}
+  }
+}
