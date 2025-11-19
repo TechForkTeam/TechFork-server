@@ -1,0 +1,236 @@
+[
+  {
+    "query": "Java Virtual Threads 성능 비교",
+    "idealResultsMap": {
+      "1001": 5,
+      "1002": 3,
+      "1003": 1
+    }
+  },
+  {
+    "query": "Spring Boot 3 마이그레이션 가이드",
+    "idealResultsMap": {
+      "1004": 5,
+      "1005": 5,
+      "1006": 3,
+      "1007": 1
+    }
+  },
+  {
+    "query": "JPA N+1 문제 해결 전략",
+    "idealResultsMap": {
+      "1008": 5,
+      "1009": 3,
+      "1010": 3
+    }
+  },
+  {
+    "query": "Kafka Streams 상태 저장소",
+    "idealResultsMap": {
+      "1011": 5,
+      "1012": 1,
+      "1013": 5
+    }
+  },
+  {
+    "query": "Redis Sentinel 고가용성",
+    "idealResultsMap": {
+      "1014": 5,
+      "1015": 3,
+      "1016": 1
+    }
+  },
+  {
+    "query": "Kotlin Coroutines 비동기 처리",
+    "idealResultsMap": {
+      "1017": 5,
+      "1018": 3
+    }
+  },
+  {
+    "query": "Kubernetes EKS 배포 전략",
+    "idealResultsMap": {
+      "1019": 5,
+      "1020": 5,
+      "1021": 3
+    }
+  },
+  {
+    "query": "Terraform을 이용한 AWS 인프라 관리",
+    "idealResultsMap": {
+      "1022": 5,
+      "1023": 5,
+      "1024": 1
+    }
+  },
+  {
+    "query": "GitHub Actions CI/CD 파이프라인 구축",
+    "idealResultsMap": {
+      "1025": 5,
+      "1026": 3
+    }
+  },
+  {
+    "query": "Prometheus와 Grafana를 이용한 모니터링",
+    "idealResultsMap": {
+      "1027": 5,
+      "1028": 5,
+      "1029": 3
+    }
+  },
+  {
+    "query": "도커 이미지 최적화 방법",
+    "idealResultsMap": {
+      "1030": 5,
+      "1031": 1
+    }
+  },
+  {
+    "query": "Istio 서비스 메시 활용",
+    "idealResultsMap": {
+      "1032": 5,
+      "1033": 3,
+      "1034": 3
+    }
+  },
+  {
+    "query": "RAG 아키텍처 구현 상세",
+    "idealResultsMap": {
+      "1035": 5,
+      "1036": 5,
+      "1037": 3,
+      "1038": 1
+    }
+  },
+  {
+    "query": "LLM 파인튜닝 비용 절감",
+    "idealResultsMap": {
+      "1039": 5,
+      "1040": 5
+    }
+  },
+  {
+    "query": "Vector Database 인덱싱 기술",
+    "idealResultsMap": {
+      "1041": 5,
+      "1042": 3,
+      "1043": 1
+    }
+  },
+  {
+    "query": "Python Pandas 대용량 데이터 처리",
+    "idealResultsMap": {
+      "1044": 5,
+      "1045": 5
+    }
+  },
+  {
+    "query": "MLOps 파이프라인 구축 with Kubeflow",
+    "idealResultsMap": {
+      "1046": 5,
+      "1047": 3,
+      "1048": 3
+    }
+  },
+  {
+    "query": "PyTorch 분산 학습",
+    "idealResultsMap": {
+      "1049": 5,
+      "1050": 1,
+      "1051": 5
+    }
+  },
+  {
+    "query": "React Hooks 성능 최적화",
+    "idealResultsMap": {
+      "1052": 5,
+      "1053": 5,
+      "1054": 3
+    }
+  },
+  {
+    "query": "Vue 3 Composition API 상태 관리",
+    "idealResultsMap": {
+      "1055": 5,
+      "1056": 3
+    }
+  },
+  {
+    "query": "Micro Frontends 아키텍처 패턴",
+    "idealResultsMap": {
+      "1057": 5,
+      "1058": 5,
+      "1059": 1
+    }
+  },
+  {
+    "query": "Next.js 서버 컴포넌트",
+    "idealResultsMap": {
+      "1060": 5,
+      "1061": 5,
+      "1062": 3,
+      "1063": 3
+    }
+  },
+  {
+    "query": "WebAssembly를 활용한 프론트엔드 최적화",
+    "idealResultsMap": {
+      "1064": 5,
+      "1065": 1
+    }
+  },
+  {
+    "query": "iOS SwiftUI 레이아웃 가이드",
+    "idealResultsMap": {
+      "1066": 5,
+      "1067": 3
+    }
+  },
+  {
+    "query": "PostgreSQL 인덱스 튜닝",
+    "idealResultsMap": {
+      "1068": 5,
+      "1069": 5,
+      "1070": 3
+    }
+  },
+  {
+    "query": "샤딩 전략과 데이터 불균형 문제",
+    "idealResultsMap": {
+      "1071": 5,
+      "1072": 5
+    }
+  },
+  {
+    "query": "CAP 이론과 NoSQL 선택",
+    "idealResultsMap": {
+      "1073": 5,
+      "1074": 3,
+      "1075": 1
+    }
+  },
+  {
+    "query": "API Gateway 설계 패턴",
+    "idealResultsMap": {
+      "1076": 5,
+      "1077": 5,
+      "1078": 3
+    }
+  },
+  {
+    "query": "로드 밸런서 알고리즘 비교",
+    "idealResultsMap": {
+      "1079": 5,
+      "1080": 3
+    }
+  },
+  {
+    "query": "쿠버네티스 CNI 플러그인",
+    "idealResultsMap": {
+      "1081": 5,
+      "1082": 3,
+      "1083": 5,
+      "1084": 1
+    }
+  }
+]
