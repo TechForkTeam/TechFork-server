@@ -1,5 +1,7 @@
-package com.techfork.domain.search;
+package com.techfork.domain.search.controller;
 
+import com.techfork.domain.search.dto.SearchResult;
+import com.techfork.domain.search.service.SearchService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;

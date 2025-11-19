@@ -1,11 +1,11 @@
-package com.techfork;
+package com.techfork.domain.search;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.techfork.domain.search.GroundTruthItem;
-import com.techfork.domain.search.SearchQualityService;
-import com.techfork.domain.search.SearchResult;
-import com.techfork.domain.search.SearchService;
+import com.techfork.domain.search.dto.SearchResult;
+import com.techfork.domain.search.service.SearchService;
+import com.techfork.domain.search_quality.GroundTruthItem;
+import com.techfork.domain.search_quality.SearchQualityService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

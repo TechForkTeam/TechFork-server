@@ -1,4 +1,4 @@
-package com.techfork.domain.search;
+package com.techfork.domain.search_quality;
 
 import org.springframework.stereotype.Service;
 
@@ -51,7 +51,6 @@ public class SearchQualityService {
         return dcg / idcg;
     }
 
-    // DCG (Discounted Cumulative Gain) 계산 - 실제 검색 결과 순서대로 점수를 매기되, 순위가 낮을수록 로그 함수로 패널티를 부여
     private double calculateDCG(List<String> actualDocIds, Map<String, Integer> idealResultsMap, int k) {
         double dcg = 0.0;
 
@@ -59,7 +58,6 @@ public class SearchQualityService {
             String docId = actualDocIds.get(i);
             int relevance = idealResultsMap.getOrDefault(docId, 0);
 
-            // 순위 패널티 적용
             if (relevance > 0) {
                 dcg += relevance / (Math.log(i + 2) / Math.log(2));
             }
@@ -67,10 +65,9 @@ public class SearchQualityService {
         return dcg;
     }
 
-    // IDCG - 정답 문서를 점수순으로 내림차순 정렬했을 때(가장 이상적인 순서)의 DCG 값
     private double calculateIDCG(Map<String, Integer> idealResultsMap, int k) {
         List<Integer> idealRelevances = idealResultsMap.values().stream()
-                .sorted(Comparator.reverseOrder()) // 점수 높은 순 정렬
+                .sorted(Comparator.reverseOrder())
                 .limit(k)
                 .toList();
 

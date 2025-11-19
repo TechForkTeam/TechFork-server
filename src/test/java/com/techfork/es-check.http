@@ -10,7 +10,7 @@ Content-Type: application/json
 
 {
   "query": { "match_all": {} },
-  "size": 10
+  "size": 2
 }
 
 ### 4. 게시글의 제목과 임베딩 벡터 존재 여부 확인
