@@ -2,7 +2,7 @@ package com.techfork.domain.post.service;
 
 import com.techfork.domain.post.converter.PostConverter;
 import com.techfork.domain.post.dto.*;
-import com.techfork.domain.post.entity.Post;
+import com.techfork.domain.post.enums.EPostSortType;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.global.exception.CommonErrorCode;
 import com.techfork.global.exception.GeneralException;
@@ -35,11 +35,11 @@ public class PostQueryService {
         return postConverter.toPostListResponse(postDtos, size);
     }
 
-    public PostListResponse getRecentPosts(PostSortType sortBy, Long lastPostId, int size) {
+    public PostListResponse getRecentPosts(EPostSortType sortBy, Long lastPostId, int size) {
         PageRequest pageRequest = PageRequest.of(0, size + 1);
         List<PostInfoDto> postDtos;
 
-        if (sortBy == PostSortType.POPULAR) {
+        if (sortBy == EPostSortType.POPULAR) {
             postDtos = postRepository.findPopularPostsWithCursor(lastPostId, pageRequest);
         } else {
             postDtos = postRepository.findRecentPostsWithCursor(lastPostId, pageRequest);
