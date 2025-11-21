@@ -55,6 +55,7 @@ public class SearchServiceImpl implements SearchService {
         log.info("general search started: with query: '{}'", query);
         List<Float> queryVector = queryEmbedding(query);
         List<SearchResult> searchResults = performHybridSearch(query, queryVector);
+        log.info("Found {} results from hybrid search.", searchResults.size());
         return searchResults.stream()
                 .map(result -> result.toBuilder().documentVector(null).build())
                 .collect(Collectors.toList());

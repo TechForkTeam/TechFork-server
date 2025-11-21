@@ -1,8 +1,6 @@
 package com.techfork.domain.search.service;
 
 import com.techfork.domain.search.dto.SearchResult;
-import com.techfork.domain.user.entity.User;
-
 import java.util.List;
 
 public interface SearchService {
