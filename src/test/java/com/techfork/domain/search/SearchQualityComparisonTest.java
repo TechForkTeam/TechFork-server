@@ -9,6 +9,8 @@ import com.techfork.domain.search.service.SearchService;
 import com.techfork.domain.search.service.SearchServiceImpl;
 import com.techfork.domain.search_quality.GroundTruthItem;
 import com.techfork.domain.search_quality.SearchQualityService;
+import com.techfork.domain.user.repository.UserProfileDocumentRepository;
+import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.llm.EmbeddingClient;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
@@ -38,6 +40,12 @@ class SearchQualityComparisonTest {
     private SearchQualityService searchQualityService;
 
     @Autowired
+    private UserProfileDocumentRepository userProfileDocumentRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     private static final int nDCG_K = 10;
@@ -62,7 +70,7 @@ class SearchQualityComparisonTest {
             List<Double> recallScores = new ArrayList<>();
 
             SearchService currentSearchService = new SearchServiceImpl(
-                    elasticsearchClient, embeddingClient, props
+                    elasticsearchClient, embeddingClient, props, userProfileDocumentRepository, userRepository
             );
 
             for (GroundTruthItem item : groundTruths) {

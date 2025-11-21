@@ -4,6 +4,9 @@ GET http://localhost:9200/
 ### 2. 모든 인덱스(테이블) 목록 확인
 GET http://localhost:9200/_cat/indices?v
 
+###
+GET http://localhost:9200/user_profiles/_search
+
 ### 3. 'posts' 인덱스 데이터 10개 조회
 GET http://localhost:9200/posts/_search
 Content-Type: application/json

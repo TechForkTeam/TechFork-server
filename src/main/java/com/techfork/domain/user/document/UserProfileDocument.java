@@ -1,10 +1,13 @@
 package com.techfork.domain.user.document;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
@@ -15,6 +18,7 @@ import java.util.List;
 @Document(indexName = "user_profiles")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class UserProfileDocument {
 
     @Id
@@ -33,6 +37,7 @@ public class UserProfileDocument {
     private List<String> interests;
 
     @Field(type = FieldType.Date)
+    @Transient
     private LocalDateTime generatedAt;
 
     @Builder
