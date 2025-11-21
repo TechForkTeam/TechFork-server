@@ -23,12 +23,22 @@ public class SearchController {
 
     private final SearchService searchService;
 
-    @Operation(summary = "1단계 검색(BM25 + 시맨틱)", description = "검색어(query)를 기반으로 BM25 + k-NN 하이브리드 검색을 수행하고 합산하여 상위 결과를 반환합니다. (개인화 미적용)")
+    @Operation(summary = "1단계 검색(BM25 + 시맨틱)", description = "검색어를 기반으로 BM25 + k-NN 하이브리드 검색을 수행하고 합산하여 상위 결과를 반환합니다. (개인화 미적용)")
     @GetMapping("/general")
     public BaseResponse<List<SearchResult>> searchGeneral(
             @RequestParam @Parameter(description = "검색어", required = true) String query
     ) {
         List<SearchResult> results = searchService.searchGeneral(query);
         return BaseResponse.of(SuccessCode.OK, results).getBody();
+    }
+
+    @Operation(summary = "2단계 검색(1단계 검색 후보군 추출 -> 순위 조정", description = "검색어를 기반으로 1차 검색(BM25 + k-NN)을 수행한 후보군을 개인화 리랭킹 적용합니다.")
+    @GetMapping("/personalized")
+    public BaseResponse<List<SearchResult>> searchPersonalized(
+            @RequestParam @Parameter(description = "검색어", required = true) String query,
+            @RequestParam @Parameter(description = "사용자 ID", required = true) Long userId
+    ) {
+       List<SearchResult> results = searchService.searchPersonalized(query, userId) ;
+       return BaseResponse.of(SuccessCode.OK, results).getBody();
     }
 }

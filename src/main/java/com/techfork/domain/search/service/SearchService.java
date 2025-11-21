@@ -12,9 +12,6 @@ public interface SearchService {
      * - 목적: 검색 품질 평가(Recall) 및 비로그인 사용자 검색
      * - 동작: RRF(BM25 + k-NN) 하이브리드 검색만 수행하여 상위 K개 결과를 반환합니다.
      * - 개인화(Re-ranking) 로직이 적용되지 않은 순수 연관도 순입니다.
-     *
-     * @param query 검색어
-     * @return 1단계 검색 결과 리스트
      */
     List<SearchResult> searchGeneral(String query);
 
@@ -25,10 +22,6 @@ public interface SearchService {
      * 1. 1단계 검색으로 후보군(Top 100) 확보
      * 2. 사용자의 프로필 벡터와 문서 간 유사도 계산 (Cosine Similarity)
      * 3. 1단계 점수와 2단계 점수를 가중합하여 재정렬
-     *
-     * @param query 검색어
-     * @param user  검색을 요청한 사용자 (프로필 벡터 활용용)
-     * @return 개인화된 최종 검색 결과 리스트 (Top 10)
      */
-    List<SearchResult> searchPersonalized(String query, User user);
+    List<SearchResult> searchPersonalized(String query, Long userId);
 }

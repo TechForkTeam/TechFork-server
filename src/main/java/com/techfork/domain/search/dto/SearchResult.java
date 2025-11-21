@@ -2,9 +2,10 @@ package com.techfork.domain.search.dto;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
-@Builder
+@Builder(toBuilder = true)
 public class SearchResult {
     private Long postId;
     private String title;
@@ -17,5 +18,6 @@ public class SearchResult {
     private double personalScore;
     private double finalScore;
 
+    @Setter
     private float[] documentVector;
 }

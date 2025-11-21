@@ -4,6 +4,8 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.techfork.domain.search.dto.SearchResult;
 import com.techfork.domain.search.service.GeneralSearchProperties;
 import com.techfork.domain.search.service.SearchServiceImpl;
+import com.techfork.domain.user.repository.UserProfileDocumentRepository;
+import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.llm.EmbeddingClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,7 +23,13 @@ class SearchServiceImplTest {
     private ElasticsearchClient elasticsearchClient;
 
     @Autowired
+    private UserProfileDocumentRepository userProfileDocumentRepository;
+
+    @Autowired
     private EmbeddingClient embeddingClient;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Test
     @DisplayName("다양한 하이퍼파라미터 시나리오별 검색 결과 비교 테스트")
@@ -110,7 +118,9 @@ class SearchServiceImplTest {
         SearchServiceImpl searchService = new SearchServiceImpl(
                 elasticsearchClient,
                 embeddingClient,
-                props
+                props,
+                userProfileDocumentRepository,
+                userRepository
         );
 
         try {
