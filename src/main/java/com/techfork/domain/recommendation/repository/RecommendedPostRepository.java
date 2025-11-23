@@ -24,4 +24,16 @@ public interface RecommendedPostRepository extends JpaRepository<RecommendedPost
     @Modifying
     @Query("DELETE FROM RecommendedPost rp WHERE rp.user = :user AND rp.recommendedAt < :before")
     void deleteByUserAndRecommendedAtBefore(@Param("user") User user, @Param("before") LocalDateTime before);
+
+    /**
+     * 사용자의 모든 추천 게시글 조회 (rank 순으로 정렬)
+     */
+    @Query("""
+           SELECT rp FROM RecommendedPost rp 
+           JOIN FETCH rp.post p 
+           JOIN FETCH p.techBlog
+           WHERE rp.user = :user 
+           ORDER BY rp.rankOrder ASC
+           """)
+    List<RecommendedPost> findByUserOrderByRankAsc(@Param("user") User user);
 }
