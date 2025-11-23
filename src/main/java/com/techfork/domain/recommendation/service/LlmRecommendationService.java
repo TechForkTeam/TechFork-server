@@ -4,8 +4,8 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
-import co.elastic.clients.json.JsonData;
 import com.techfork.domain.activity.repository.ReadPostRepository;
+import com.techfork.global.elasticsearch.query.VectorQueryBuilder;
 import com.techfork.domain.post.document.PostDocument;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
@@ -54,12 +54,13 @@ public class LlmRecommendationService implements RecommendationService {
     private final MmrService mmrService;
     private final TimeDecayStrategy timeDecayStrategy;
     private final RecommendationProperties properties;
+    private final VectorQueryBuilder vectorQueryBuilder;
 
     private static final String POSTS_INDEX = "posts";
     private static final String TITLE_EMBEDDING_FIELD = "titleEmbedding";
     private static final String SUMMARY_EMBEDDING_FIELD = "summaryEmbedding";
     private static final String CONTENT_CHUNKS_FIELD = "contentChunks";
-    private static final String CHUNK_EMBEDDING_FIELD = "chunkEmbedding";
+    private static final String CHUNK_EMBEDDING_FIELD = "embedding";
 
     @Override
     public int generateRecommendationsForUser(User user) {
@@ -144,31 +145,19 @@ public class LlmRecommendationService implements RecommendationService {
         RecommendationProperties.EmbeddingWeights weights = properties.getEmbeddingWeights();
 
         // k-NN 쿼리 (가중 평균: title + summary + content chunks)
-        String scriptSource = String.format(
-                "(" +
-                        "%.2f * cosineSimilarity(params.query_vector, '%s') + " +
-                        "%.2f * cosineSimilarity(params.query_vector, '%s') + " +
-                        "%.2f * (" +
-                        "  doc['%s.%s'].size() > 0 ? " +
-                        "  doc['%s.%s'].stream().mapToDouble(chunk -> cosineSimilarity(params.query_vector, chunk)).max().orElse(0.0) : 0.0" +
-                        ")" +
-                        ") + 1.0",
-                weights.getTitle(), TITLE_EMBEDDING_FIELD,
-                weights.getSummary(), SUMMARY_EMBEDDING_FIELD,
-                weights.getContent(),
-                CONTENT_CHUNKS_FIELD, CHUNK_EMBEDDING_FIELD,
-                CONTENT_CHUNKS_FIELD, CHUNK_EMBEDDING_FIELD
+        Query knnQuery = vectorQueryBuilder.createWeightedVectorQuery(
+                TITLE_EMBEDDING_FIELD,
+                SUMMARY_EMBEDDING_FIELD,
+                CONTENT_CHUNKS_FIELD,
+                CHUNK_EMBEDDING_FIELD,
+                userProfileVector,
+                weights.getTitle(),
+                weights.getSummary(),
+                weights.getContent()
         );
 
-        Query knnQuery = Query.of(q -> q
-                .scriptScore(ss -> ss
-                        .query(Query.of(matchAll -> matchAll.matchAll(m -> m)))
-                        .script(s -> s
-                                .source(scriptSource)
-                                .params(Map.of("query_vector", JsonData.of(userProfileVector)))
-                        )
-                )
-        );
+        log.debug("ES 쿼리 실행 - 벡터 차원: {}, 가중치 [title:{}, summary:{}, content:{}]",
+                userProfileVector.length, weights.getTitle(), weights.getSummary(), weights.getContent());
 
         SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
                         .index(POSTS_INDEX)
