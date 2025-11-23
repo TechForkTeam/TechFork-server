@@ -34,9 +34,9 @@ public class RecommendationProperties {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class EmbeddingWeights {
-        private Double title = 0.4;
-        private Double summary = 0.4;
-        private Double content = 0.2;
+        private Float title = 0.4f;
+        private Float summary = 0.4f;
+        private Float content = 0.2f;
     }
 
     @Getter
