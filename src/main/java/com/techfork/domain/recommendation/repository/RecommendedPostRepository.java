@@ -12,22 +12,15 @@ import java.util.List;
 
 public interface RecommendedPostRepository extends JpaRepository<RecommendedPost, Long> {
 
-    /**
-     * 특정 시간 이전의 추천 게시글 조회 (이력 보관용)
-     */
+
     @Query("SELECT rp FROM RecommendedPost rp WHERE rp.user = :user AND rp.recommendedAt < :before")
     List<RecommendedPost> findByUserAndRecommendedAtBefore(@Param("user") User user, @Param("before") LocalDateTime before);
 
-    /**
-     * 특정 시간 이전의 추천 게시글 삭제
-     */
+
     @Modifying
     @Query("DELETE FROM RecommendedPost rp WHERE rp.user = :user AND rp.recommendedAt < :before")
     void deleteByUserAndRecommendedAtBefore(@Param("user") User user, @Param("before") LocalDateTime before);
 
-    /**
-     * 사용자의 모든 추천 게시글 조회 (rank 순으로 정렬)
-     */
     @Query("""
            SELECT rp FROM RecommendedPost rp 
            JOIN FETCH rp.post p 
@@ -36,4 +29,8 @@ public interface RecommendedPostRepository extends JpaRepository<RecommendedPost
            ORDER BY rp.rankOrder ASC
            """)
     List<RecommendedPost> findByUserOrderByRankAsc(@Param("user") User user);
+
+    @Modifying
+    @Query("DELETE FROM RecommendedPost rp WHERE rp.user = :user")
+    void deleteByUser(@Param("user") User user);
 }

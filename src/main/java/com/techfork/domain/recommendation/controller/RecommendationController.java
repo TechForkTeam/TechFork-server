@@ -1,6 +1,7 @@
 package com.techfork.domain.recommendation.controller;
 
 import com.techfork.domain.recommendation.dto.RecommendationListResponse;
+import com.techfork.domain.recommendation.service.RecommendationCommandService;
 import com.techfork.domain.recommendation.service.RecommendationQueryService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class RecommendationController {
 
     private final RecommendationQueryService recommendationQueryService;
+    private final RecommendationCommandService recommendationCommandService;
 
     @Operation(
             summary = "추천 게시글 조회",
@@ -33,5 +36,18 @@ public class RecommendationController {
 
         RecommendationListResponse response = recommendationQueryService.getRecommendations(userId);
         return BaseResponse.of(SuccessCode.OK, response);
+    }
+
+    @Operation(
+            summary = "추천 즉시 재생성",
+            description = "사용자의 추천 게시글을 즉시 재생성합니다. 기존 추천을 삭제하고 최신 사용자 프로필 기반으로 새로운 추천을 생성합니다."
+    )
+    @PostMapping("/regenerate")
+    public ResponseEntity<BaseResponse<Void>> regenerateRecommendations() {
+        // TODO: userId Auth 인증 기반으로 추출
+        Long userId = 1L;
+
+        recommendationCommandService.regenerateRecommendations(userId);
+        return BaseResponse.of(SuccessCode.CREATED);
     }
 }
