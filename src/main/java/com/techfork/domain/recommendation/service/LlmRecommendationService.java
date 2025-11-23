@@ -20,6 +20,7 @@ import com.techfork.domain.user.document.UserProfileDocument;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
 import com.techfork.global.util.TimeDecayStrategy;
+import com.techfork.global.util.VectorUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -201,8 +202,8 @@ public class LlmRecommendationService implements RecommendationService {
         log.trace("게시글 {} 점수 조정: 원본={}, 시간가중치={}, 최종={}",
                 doc.getPostId(), score, timeDecayWeight, adjustedScore);
 
-        float[] titleVector = convertToFloatArray(doc.getTitleEmbedding());
-        float[] summaryVector = convertToFloatArray(doc.getSummaryEmbedding());
+        float[] titleVector = VectorUtil.convertToFloatArray(doc.getTitleEmbedding());
+        float[] summaryVector = VectorUtil.convertToFloatArray(doc.getSummaryEmbedding());
 
         return MmrCandidate.builder()
                 .postId(doc.getPostId())
@@ -210,17 +211,5 @@ public class LlmRecommendationService implements RecommendationService {
                 .summaryVector(summaryVector)
                 .similarityScore(adjustedScore)
                 .build();
-    }
-
-    private float[] convertToFloatArray(List<Float> embedding) {
-        if (embedding == null || embedding.isEmpty()) {
-            return null;
-        }
-
-        float[] vector = new float[embedding.size()];
-        for (int i = 0; i < embedding.size(); i++) {
-            vector[i] = embedding.get(i);
-        }
-        return vector;
     }
 }

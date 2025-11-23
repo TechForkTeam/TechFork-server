@@ -15,7 +15,7 @@ import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.llm.EmbeddingClient;
-import com.techfork.global.util.VectorSimilarityUtil;
+import com.techfork.global.util.VectorUtil;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
@@ -162,14 +162,7 @@ public class SearchServiceImpl implements SearchService {
         PostDocument doc = hit.source();
         double score = Objects.requireNonNullElse(hit.score(), 0.0);
 
-        float[] vector = null;
-        if (Objects.requireNonNull(doc).getSummaryEmbedding() != null) {
-            List<Float> embedding = doc.getSummaryEmbedding();
-            vector = new float[embedding.size()];
-            for (int i = 0; i < embedding.size(); i++) {
-                vector[i] = embedding.get(i);
-            }
-        }
+        float[] vector = VectorUtil.convertToFloatArray(Objects.requireNonNull(doc).getSummaryEmbedding());
 
         return SearchResult.builder()
                 .postId(doc.getPostId())
@@ -187,7 +180,7 @@ public class SearchServiceImpl implements SearchService {
         return initialResults.stream()
                 .filter(result -> result.getDocumentVector() != null && result.getDocumentVector().length > 0)
                 .map(result -> {
-                    double personalScore = VectorSimilarityUtil.cosineSimilarity(userProfileVector, result.getDocumentVector());
+                    double personalScore = VectorUtil.cosineSimilarity(userProfileVector, result.getDocumentVector());
                     double finalScore = (result.getHybridScore() * generalSearchProperties.getHybridScoreWeight())
                             + (personalScore * generalSearchProperties.getPersonalScoreWeight());
 

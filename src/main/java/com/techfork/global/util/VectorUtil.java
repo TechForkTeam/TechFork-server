@@ -1,13 +1,33 @@
 package com.techfork.global.util;
 
-/**
- * 벡터 유사도 계산 유틸리티
- * 임베딩 벡터 간의 유사도를 측정하는 다양한 메트릭 제공
- */
-public class VectorSimilarityUtil {
+import java.util.List;
 
-    private VectorSimilarityUtil() {
+/**
+ * 벡터 유틸리티
+ * 임베딩 벡터 변환 및 유사도 계산 기능 제공
+ */
+public class VectorUtil {
+
+    private VectorUtil() {
         // 유틸리티 클래스, 인스턴스화 방지
+    }
+
+    /**
+     * List<Float>를 float[] 배열로 변환
+     *
+     * @param embedding Float 리스트
+     * @return float 배열 (null이거나 비어있으면 null 반환)
+     */
+    public static float[] convertToFloatArray(List<Float> embedding) {
+        if (embedding == null || embedding.isEmpty()) {
+            return null;
+        }
+
+        float[] vector = new float[embedding.size()];
+        for (int i = 0; i < embedding.size(); i++) {
+            vector[i] = embedding.get(i);
+        }
+        return vector;
     }
 
     /**
