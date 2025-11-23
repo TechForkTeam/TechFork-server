@@ -1,6 +1,7 @@
 package com.techfork.domain.recommendation.service;
 
 import com.techfork.domain.recommendation.config.RecommendationProperties;
+import com.techfork.global.util.VectorSimilarityUtil;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -157,11 +158,11 @@ public class MmrService {
         double summarySim = 0.0;
 
         if (candidate1.getTitleVector() != null && candidate2.getTitleVector() != null) {
-            titleSim = cosineSimilarity(candidate1.getTitleVector(), candidate2.getTitleVector());
+            titleSim = VectorSimilarityUtil.cosineSimilarity(candidate1.getTitleVector(), candidate2.getTitleVector());
         }
 
         if (candidate1.getSummaryVector() != null && candidate2.getSummaryVector() != null) {
-            summarySim = cosineSimilarity(candidate1.getSummaryVector(), candidate2.getSummaryVector());
+            summarySim = VectorSimilarityUtil.cosineSimilarity(candidate1.getSummaryVector(), candidate2.getSummaryVector());
         }
 
         // 가중 평균 (제목 + 요약만, 콘텐츠는 제외)
@@ -170,30 +171,5 @@ public class MmrService {
         double totalWeight = titleWeight + summaryWeight;
 
         return (titleWeight * titleSim + summaryWeight * summarySim) / totalWeight;
-    }
-
-    /**
-     * 코사인 유사도 계산
-     */
-    public double cosineSimilarity(float[] vectorA, float[] vectorB) {
-        if (vectorA == null || vectorB == null || vectorA.length != vectorB.length || vectorA.length == 0) {
-            return 0.0;
-        }
-
-        double dotProduct = 0.0;
-        double normA = 0.0;
-        double normB = 0.0;
-
-        for (int i = 0; i < vectorA.length; i++) {
-            dotProduct += (double) vectorA[i] * vectorB[i];
-            normA += (double) vectorA[i] * vectorA[i];
-            normB += (double) vectorB[i] * vectorB[i];
-        }
-
-        if (normA == 0.0 || normB == 0.0) {
-            return 0.0;
-        }
-
-        return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
     }
 }
