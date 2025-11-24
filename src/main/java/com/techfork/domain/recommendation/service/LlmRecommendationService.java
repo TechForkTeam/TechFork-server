@@ -90,16 +90,15 @@ public class LlmRecommendationService implements RecommendationService {
             // 3. MMR 적용하여 최종 추천 선택
             List<MmrResult> mmrResults = mmrService.applyMmr(candidates);
 
-            // 4. 기존 추천을 이력으로 보관
-            LocalDateTime today = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
-            List<RecommendedPost> oldRecommendations = recommendedPostRepository.findByUserAndRecommendedAtBefore(user, today);
+            // 4. 기존 추천을 이력으로 보관 (오늘 생성된 추천 포함)
+            List<RecommendedPost> oldRecommendations = recommendedPostRepository.findByUserOrderByRankAsc(user);
 
             if (!oldRecommendations.isEmpty()) {
                 List<RecommendationHistory> histories = oldRecommendations.stream()
                         .map(RecommendationHistory::fromRecommendedPost)
                         .toList();
                 recommendationHistoryRepository.saveAll(histories);
-                recommendedPostRepository.deleteByUserAndRecommendedAtBefore(user, today);
+                recommendedPostRepository.deleteByUser(user);
             }
 
             // 5. 새 추천 저장
