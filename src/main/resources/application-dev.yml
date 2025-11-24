@@ -22,8 +22,6 @@ spring:
         highlight_sql: true
         use_sql_comments: true
         dialect: org.hibernate.dialect.MySQL8Dialect
-        jdbc:
-          batch_size: 20
 
   batch:
     jdbc:
