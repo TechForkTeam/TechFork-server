@@ -129,6 +129,43 @@ public class LlmRecommendationService implements RecommendationService {
     }
 
     /**
+     * 추천 생성 (평가 전용 - DB 저장 안함)
+     * @return 추천된 게시글 ID 리스트
+     */
+    public List<Long> generateRecommendationsForEvaluation(User user) {
+        // 1. 사용자 프로필 벡터 조회
+        Optional<UserProfileDocument> profileOpt = userProfileDocumentRepository.findByUserId(user.getId());
+        if (profileOpt.isEmpty() || profileOpt.get().getProfileVector() == null) {
+            log.warn("사용자 {}의 프로필 또는 벡터를 찾을 수 없음. 추천 생성 스킵.", user.getId());
+            return Collections.emptyList();
+        }
+
+        float[] userProfileVector = profileOpt.get().getProfileVector();
+
+        try {
+            // 2. k-NN 검색으로 초기 후보군 가져오기
+            List<MmrCandidate> candidates = searchCandidates(userProfileVector, user);
+
+            if (candidates.isEmpty()) {
+                log.debug("사용자 {}의 추천 후보군을 찾을 수 없음", user.getId());
+                return Collections.emptyList();
+            }
+
+            // 3. MMR 적용하여 최종 추천 선택
+            List<MmrResult> mmrResults = mmrService.applyMmr(candidates);
+
+            // 4. 추천된 게시글 ID 리스트 반환 (DB에 저장하지 않음)
+            return mmrResults.stream()
+                    .map(MmrResult::getPostId)
+                    .toList();
+
+        } catch (Exception e) {
+            log.error("사용자 {} 추천 생성 실패 (평가용)", user.getId(), e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
      * Elasticsearch k-NN 검색으로 초기 후보군 조회
      * - 이미 읽은 글 제외
      */
