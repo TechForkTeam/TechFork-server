@@ -49,6 +49,47 @@ public class VectorSearchQueryBuilder implements VectorQueryBuilder {
     }
 
     @Override
+    public Query createWeightedVectorQueryWithRandomness(
+            String titleField,
+            String summaryField,
+            String contentChunksPath,
+            String chunkEmbeddingField,
+            float[] queryVector,
+            float titleWeight,
+            float summaryWeight,
+            float contentWeight,
+            long randomSeed,
+            double randomWeight
+    ) {
+        // 기본 벡터 쿼리 생성
+        Query baseQuery = createWeightedVectorQuery(
+                titleField,
+                summaryField,
+                contentChunksPath,
+                chunkEmbeddingField,
+                queryVector,
+                titleWeight,
+                summaryWeight,
+                contentWeight
+        );
+
+        // function_score로 랜덤 요소 추가
+        return Query.of(q -> q
+                .functionScore(fs -> fs
+                        .query(baseQuery)
+                        .functions(fn -> fn
+                                .randomScore(rs -> rs
+                                        .seed(String.valueOf(randomSeed))
+                                        .field("_seq_no")
+                                )
+                                .weight(randomWeight)
+                        )
+                        .boostMode(co.elastic.clients.elasticsearch._types.query_dsl.FunctionBoostMode.Sum)
+                )
+        );
+    }
+
+    @Override
     public Query createScriptScoreQuery(String fieldName, float[] queryVector, float boost) {
         String script = String.format(COSINE_SIMILARITY_SCRIPT_TEMPLATE, fieldName);
 

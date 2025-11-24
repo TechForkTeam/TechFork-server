@@ -35,6 +35,35 @@ public interface VectorQueryBuilder {
     );
 
     /**
+     * 랜덤 시드를 포함한 가중치 벡터 쿼리 생성
+     * (추천 재생성 시 다양성 확보용)
+     *
+     * @param titleField 제목 벡터 필드명
+     * @param summaryField 요약 벡터 필드명
+     * @param contentChunksPath content chunks nested 경로
+     * @param chunkEmbeddingField chunk 임베딩 필드명
+     * @param queryVector 쿼리 벡터
+     * @param titleWeight 제목 가중치
+     * @param summaryWeight 요약 가중치
+     * @param contentWeight 컨텐츠 가중치
+     * @param randomSeed 랜덤 시드
+     * @param randomWeight 랜덤 가중치 (0.0~1.0, 보통 0.1~0.3)
+     * @return 랜덤 요소가 포함된 복합 쿼리
+     */
+    Query createWeightedVectorQueryWithRandomness(
+            String titleField,
+            String summaryField,
+            String contentChunksPath,
+            String chunkEmbeddingField,
+            float[] queryVector,
+            float titleWeight,
+            float summaryWeight,
+            float contentWeight,
+            long randomSeed,
+            double randomWeight
+    );
+
+    /**
      * 단일 필드에 대한 script_score 쿼리 생성
      *
      * @param fieldName 벡터 필드명

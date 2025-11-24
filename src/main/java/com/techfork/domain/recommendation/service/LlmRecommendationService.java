@@ -167,6 +167,7 @@ public class LlmRecommendationService implements RecommendationService {
     /**
      * Elasticsearch k-NN 검색으로 초기 후보군 조회
      * - 이미 읽은 글 제외
+     * - 랜덤 시드를 사용하여 매번 다른 후보군 생성
      */
     private List<MmrCandidate> searchCandidates(float[] userProfileVector, User user) throws IOException {
         // 이미 읽은 글 ID 목록
@@ -180,8 +181,12 @@ public class LlmRecommendationService implements RecommendationService {
         // 가중치 가져오기
         RecommendationProperties.EmbeddingWeights weights = properties.getEmbeddingWeights();
 
-        // k-NN 쿼리 (가중 평균: title + summary + content chunks)
-        Query knnQuery = vectorQueryBuilder.createWeightedVectorQuery(
+        // 랜덤 시드 생성 (현재 시간 기반)
+        long randomSeed = System.currentTimeMillis();
+        double randomWeight = 0.2; // 랜덤 가중치 20%
+
+        // k-NN 쿼리 (가중 평균: title + summary + content chunks + 랜덤 요소)
+        Query knnQuery = vectorQueryBuilder.createWeightedVectorQueryWithRandomness(
                 TITLE_EMBEDDING_FIELD,
                 SUMMARY_EMBEDDING_FIELD,
                 CONTENT_CHUNKS_FIELD,
@@ -189,11 +194,14 @@ public class LlmRecommendationService implements RecommendationService {
                 userProfileVector,
                 weights.getTitle(),
                 weights.getSummary(),
-                weights.getContent()
+                weights.getContent(),
+                randomSeed,
+                randomWeight
         );
 
-        log.debug("ES 쿼리 실행 - 벡터 차원: {}, 가중치 [title:{}, summary:{}, content:{}]",
-                userProfileVector.length, weights.getTitle(), weights.getSummary(), weights.getContent());
+        log.debug("ES 쿼리 실행 - 벡터 차원: {}, 가중치 [title:{}, summary:{}, content:{}], 랜덤시드: {}, 랜덤가중치: {}",
+                userProfileVector.length, weights.getTitle(), weights.getSummary(), weights.getContent(),
+                randomSeed, randomWeight);
 
         SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
                         .index(POSTS_INDEX)
@@ -203,7 +211,7 @@ public class LlmRecommendationService implements RecommendationService {
                 PostDocument.class
         );
 
-        // 결과를 MmrCandidate로 변환 (읽은 글 제외)
+        // 결과를 MmrCandidate로 변환 (읽은 글만 필터링)
         return response.hits().hits().stream()
                 .filter(hit -> hit.source() != null)
                 .filter(hit -> !readPostIds.contains(hit.source().getPostId()))
