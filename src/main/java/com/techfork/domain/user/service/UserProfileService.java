@@ -44,6 +44,15 @@ public class UserProfileService {
     @Async
     @Transactional
     public void generateUserProfile(Long userId) {
+        generateUserProfileSync(userId);
+    }
+
+    /**
+     * 사용자 프로필 생성 (동기 버전)
+     * 테스트 환경이나 동기 실행이 필요한 경우 사용
+     */
+    @Transactional
+    public void generateUserProfileSync(Long userId) {
         try {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
@@ -64,6 +73,7 @@ public class UserProfileService {
             log.info("User profile generated successfully for userId: {}", userId);
         } catch (Exception e) {
             log.error("Failed to generate user profile for userId: {}", userId, e);
+            throw e;
         }
     }
 

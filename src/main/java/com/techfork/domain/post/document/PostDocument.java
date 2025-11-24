@@ -1,8 +1,9 @@
 package com.techfork.domain.post.document;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.techfork.domain.post.entity.Post;
+import com.techfork.global.config.StringToLocalDateTimeConverter;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -38,9 +39,10 @@ public class PostDocument {
     @Field(type = FieldType.Keyword)
     private String url;
 
-    @Field(type = FieldType.Date)
-    @JsonIgnore
-    private LocalDateTime publishedAt;
+    @Field(type = FieldType.Keyword, name = "publishedAt")
+    @JsonProperty("publishedAt")
+    @Getter(AccessLevel.NONE)
+    private String publishedAtString;
 
     @Field(type = FieldType.Dense_Vector, dims = 3072)
     private List<Float> titleEmbedding;
@@ -50,6 +52,19 @@ public class PostDocument {
 
     @Field(type = FieldType.Nested)
     private List<ContentChunk> contentChunks;
+
+    public LocalDateTime getPublishedAt() {
+        if (publishedAtString == null) {
+            return null;
+        }
+        return new StringToLocalDateTimeConverter().convert(publishedAtString);
+    }
+
+    // Jackson 역직렬화를 위한 setter
+    @JsonProperty("publishedAt")
+    private void setPublishedAtString(String publishedAtString) {
+        this.publishedAtString = publishedAtString;
+    }
 
     public static PostDocument create(Post post, List<Float> titleEmbedding,
                                       List<Float> summaryEmbedding,
@@ -61,7 +76,7 @@ public class PostDocument {
                 .summary(post.getSummary())
                 .company(post.getCompany())
                 .url(post.getUrl())
-                .publishedAt(post.getPublishedAt())
+                .publishedAtString(post.getPublishedAt() != null ? post.getPublishedAt().toString() : null)
                 .titleEmbedding(titleEmbedding)
                 .summaryEmbedding(summaryEmbedding)
                 .contentChunks(contentChunks)

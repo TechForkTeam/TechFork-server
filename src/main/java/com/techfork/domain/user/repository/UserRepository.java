@@ -25,4 +25,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
             )
             """)
     List<User> findActiveUsersSince(@Param("since") LocalDateTime since);
+
+    /**
+     * 관심사 카테고리와 함께 사용자 조회 (Fetch Join)
+     * 주의: keywords는 Multiple Bag Fetch 문제로 제외 (필요시 별도 쿼리)
+     */
+    @Query("""
+            SELECT DISTINCT u FROM User u
+            LEFT JOIN FETCH u.interestCategories
+            WHERE u.id IN :userIds
+            """)
+    List<User> findAllWithInterestCategoriesByIds(@Param("userIds") List<Long> userIds);
 }
