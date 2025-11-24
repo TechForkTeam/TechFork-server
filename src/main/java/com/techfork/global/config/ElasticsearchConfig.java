@@ -1,16 +1,20 @@
 package com.techfork.global.config;
 
-import java.util.List;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import co.elastic.clients.transport.rest_client.RestClientTransport;
+import org.apache.http.HttpHost;
+import org.elasticsearch.client.RestClient;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.elasticsearch.client.ClientConfiguration;
-import org.springframework.data.elasticsearch.client.elc.ElasticsearchConfiguration;
 import org.springframework.data.elasticsearch.config.EnableElasticsearchAuditing;
-import org.springframework.data.elasticsearch.core.convert.ElasticsearchCustomConversions;
+import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 
 @Configuration
 @EnableElasticsearchAuditing
-public class ElasticsearchConfig extends ElasticsearchConfiguration {
+@EnableElasticsearchRepositories(basePackages = "com.techfork")
+public class ElasticsearchConfig {
 
     @Value("${elasticsearch.host:localhost}")
     private String elasticsearchHost;
@@ -18,10 +22,12 @@ public class ElasticsearchConfig extends ElasticsearchConfiguration {
     @Value("${elasticsearch.port:9200}")
     private int elasticsearchPort;
 
-    @Override
-    public ClientConfiguration clientConfiguration() {
-        return ClientConfiguration.builder()
-                .connectedTo(elasticsearchHost + ":" + elasticsearchPort)
-                .build();
+    @Bean
+    public ElasticsearchClient elasticsearchClient() {
+        RestClient restClient = RestClient.builder(
+                new HttpHost(elasticsearchHost, elasticsearchPort, "http")).build();
+        return new ElasticsearchClient(
+                new RestClientTransport(restClient, new JacksonJsonpMapper())
+        );
     }
 }
