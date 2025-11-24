@@ -87,6 +87,10 @@ public abstract class RecommendationTestBase {
         double avgIld;
         double compositeScore;
 
+        public double getOverallScore() {
+            return compositeScore;
+        }
+
         @Override
         public String toString() {
             return String.format("%-20s | Recall: %.4f | nDCG: %.4f | ILD: %.4f | Score: %.4f",
@@ -217,5 +221,65 @@ public abstract class RecommendationTestBase {
                 .map(doc -> VectorUtil.convertToFloatArray(doc.getSummaryEmbedding()))
                 .filter(Objects::nonNull)
                 .toList();
+    }
+
+    /**
+     * 특정 설정으로 평가
+     */
+    protected EvaluationResult evaluateConfig(ConfigCombo config, List<User> testUsers) {
+        log.debug("설정 평가 시작: {}", config.getName());
+
+        LlmRecommendationService service = createRecommendationService(
+                createProperties(
+                        config.getTitleWeight(),
+                        config.getSummaryWeight(),
+                        config.getContentWeight(),
+                        config.getMmrLambda()
+                )
+        );
+
+        List<UserMetrics> metrics = testUsers.stream()
+                .map(user -> evaluateUser(user, service, DEFAULT_K_VALUE))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .toList();
+
+        return calculateAverageMetrics(config.getName(), metrics);
+    }
+
+    /**
+     * 평균 메트릭 계산
+     */
+    protected EvaluationResult calculateAverageMetrics(String configName, List<UserMetrics> metrics) {
+        double avgRecall = metrics.stream().mapToDouble(UserMetrics::getRecall).average().orElse(0.0);
+        double avgNdcg = metrics.stream().mapToDouble(UserMetrics::getNdcg).average().orElse(0.0);
+        double avgIld = metrics.stream().mapToDouble(UserMetrics::getIld).average().orElse(0.0);
+        double composite = calculateCompositeScore(avgRecall, avgNdcg, avgIld);
+
+        log.debug("설정 평가 완료: {} - Recall={}, nDCG={}, ILD={}", configName, avgRecall, avgNdcg, avgIld);
+
+        return EvaluationResult.builder()
+                .configName(configName)
+                .avgRecall(avgRecall)
+                .avgNdcg(avgNdcg)
+                .avgIld(avgIld)
+                .compositeScore(composite)
+                .build();
+    }
+
+    /**
+     * 설정 비교용 테이블 헤더 출력
+     */
+    protected void printConfigComparisonHeader() {
+        log.info("\n%-20s | %-14s | %-14s | %-14s | %-14s",
+                "설정", "Recall@10", "nDCG@10", "ILD", "Composite");
+        log.info("-".repeat(90));
+    }
+
+    /**
+     * 평가 결과 출력
+     */
+    protected void printResult(String configName, EvaluationResult result) {
+        log.info(result.toString());
     }
 }
