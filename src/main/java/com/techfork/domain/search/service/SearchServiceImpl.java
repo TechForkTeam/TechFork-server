@@ -1,7 +1,6 @@
 package com.techfork.domain.search.service;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch._types.query_dsl.MultiMatchQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
@@ -22,6 +21,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +44,8 @@ public class SearchServiceImpl implements SearchService {
     private final UserProfileDocumentRepository userProfileDocumentRepository;
     private final UserRepository userRepository;
 
+    private final Executor searchExecutor = Executors.newFixedThreadPool(20);
+
     private static final class SearchConstants {
         static final String POSTS_INDEX = "posts";
         static final String TITLE_FIELD_FORMAT = "title^%.1f";
@@ -50,7 +55,6 @@ public class SearchServiceImpl implements SearchService {
         static final String MINIMUM_SHOULD_MATCH = "0";
         static final String SCRIPT_SOURCE_SEMANTIC = "cosineSimilarity(params.query_vector, 'summaryEmbedding') + 1.0";
         static final String QUERY_VECTOR_PARAM = "query_vector";
-        static final int RRF_K = 60;
     }
 
     @Override
@@ -96,45 +100,63 @@ public class SearchServiceImpl implements SearchService {
     }
 
     private List<SearchResult> performHybridSearch(String query, List<Float> queryVector) {
-        List<Hit<PostDocument>> lexicalHits = performLexicalSearch(query);
-        List<Hit<PostDocument>> semanticHits = performSemanticSearch(queryVector);
+        CompletableFuture<List<Hit<PostDocument>>> lexicalSearchFuture =
+            CompletableFuture.supplyAsync(() -> performLexicalSearch(query), searchExecutor);
 
-        Map<String, Integer> lexicalRankMap = new HashMap<>();
-        AtomicInteger rank = new AtomicInteger(1);
-        lexicalHits.forEach(hit -> lexicalRankMap.put(hit.id(), rank.getAndIncrement()));
+        CompletableFuture<List<Hit<PostDocument>>> semanticSearchFuture =
+            CompletableFuture.supplyAsync(() -> performSemanticSearch(queryVector), searchExecutor);
 
-        Map<String, Integer> semanticRankMap = new HashMap<>();
-        rank.set(1);
-        semanticHits.forEach(hit -> semanticRankMap.put(hit.id(), rank.getAndIncrement()));
+        CompletableFuture.allOf(lexicalSearchFuture, semanticSearchFuture).join();
 
-        Map<String, SearchResult> combinedResults = new HashMap<>();
-        Map<String, Double> rrfScores = new HashMap<>();
+        try {
+            List<Hit<PostDocument>> lexicalHits = lexicalSearchFuture.get();
+            List<Hit<PostDocument>> semanticHits = semanticSearchFuture.get();
 
-        lexicalHits.forEach(hit -> {
-            String docId = hit.id();
-            double score = 1.0 / (SearchConstants.RRF_K + lexicalRankMap.get(docId));
-            rrfScores.put(docId, rrfScores.getOrDefault(docId, 0.0) + score);
-            if (!combinedResults.containsKey(docId)) {
-                combinedResults.put(docId, mapToSearchResult(hit));
-            }
-        });
+            Map<String, Integer> lexicalRankMap = new HashMap<>();
+            AtomicInteger rank = new AtomicInteger(1);
+            lexicalHits.forEach(hit -> lexicalRankMap.put(hit.id(), rank.getAndIncrement()));
 
-        semanticHits.forEach(hit -> {
-            String docId = hit.id();
-            double score = 1.0 / (SearchConstants.RRF_K + semanticRankMap.get(docId));
-            rrfScores.put(docId, rrfScores.getOrDefault(docId, 0.0) + score);
-            if (!combinedResults.containsKey(docId)) {
-                combinedResults.put(docId, mapToSearchResult(hit));
-            }
-        });
+            Map<String, Integer> semanticRankMap = new HashMap<>();
+            rank.set(1);
+            semanticHits.forEach(hit -> semanticRankMap.put(hit.id(), rank.getAndIncrement()));
 
-        return combinedResults.values().stream()
-                .map(searchResult -> {
-                    double finalScore = rrfScores.get(searchResult.getPostId().toString());
-                    return searchResult.toBuilder().finalScore(finalScore).hybridScore(finalScore).build();
-                })
-                .sorted(Comparator.comparing(SearchResult::getFinalScore).reversed())
-                .collect(Collectors.toList());
+            Map<String, SearchResult> combinedResults = new HashMap<>();
+            Map<String, Double> rrfScores = new HashMap<>();
+
+            lexicalHits.forEach(hit -> {
+                String docId = hit.id();
+                double score = 1.0 / (GeneralSearchProperties.RRF_K + lexicalRankMap.get(docId));
+                rrfScores.put(docId, rrfScores.getOrDefault(docId, 0.0) + score);
+                if (!combinedResults.containsKey(docId)) {
+                    combinedResults.put(docId, mapToSearchResult(hit));
+                }
+            });
+
+            semanticHits.forEach(hit -> {
+                String docId = hit.id();
+                double score = 1.0 / (GeneralSearchProperties.RRF_K + semanticRankMap.get(docId));
+                rrfScores.put(docId, rrfScores.getOrDefault(docId, 0.0) + score);
+                if (!combinedResults.containsKey(docId)) {
+                    combinedResults.put(docId, mapToSearchResult(hit));
+                }
+            });
+
+            return combinedResults.values().stream()
+                    .map(searchResult -> {
+                        double finalScore = rrfScores.get(searchResult.getPostId().toString());
+                        return searchResult.toBuilder().finalScore(finalScore).hybridScore(finalScore).build();
+                    })
+                    .sorted(Comparator.comparing(SearchResult::getFinalScore).reversed())
+                    .limit(generalSearchProperties.getSearchSize())
+                    .collect(Collectors.toList());
+        } catch (InterruptedException | ExecutionException e) {
+            log.error("Failed to complete hybrid search", e);
+            if (!lexicalSearchFuture.isDone()) lexicalSearchFuture.cancel(true);
+            if (!semanticSearchFuture.isDone()) semanticSearchFuture.cancel(true);
+
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Hybrid search failed", e);
+        }
     }
 
     private List<Hit<PostDocument>> performLexicalSearch(String query) {
@@ -167,18 +189,15 @@ public class SearchServiceImpl implements SearchService {
         );
 
         try {
-            log.info("Performing lexical search for query: '{}'", query);
             SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
                             .index(SearchConstants.POSTS_INDEX)
-                            .size(generalSearchProperties.getSearchSize())
+                            .size(GeneralSearchProperties.RRF_WINDOW_SIZE)
                             .query(lexicalQuery),
                     PostDocument.class
             );
-            log.info("Lexical search found {} hits.", response.hits().hits().size());
             return response.hits().hits();
         } catch (IOException e) {
-            log.error("Elasticsearch lexical search failed [query={}]", query, e);
-            throw new RuntimeException("Elasticsearch lexical search failed.", e);
+            throw new RuntimeException("Lexical search failed", e);
         }
     }
 
@@ -194,18 +213,15 @@ public class SearchServiceImpl implements SearchService {
         );
 
         try {
-            log.info("Performing semantic search.");
             SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
                             .index(SearchConstants.POSTS_INDEX)
-                            .size(generalSearchProperties.getSearchSize())
+                            .size(GeneralSearchProperties.RRF_WINDOW_SIZE)
                             .query(semanticQuery),
                     PostDocument.class
             );
-            log.info("Semantic search found {} hits.", response.hits().hits().size());
             return response.hits().hits();
         } catch (IOException e) {
-            log.error("Elasticsearch semantic search failed", e);
-            throw new RuntimeException("Elasticsearch semantic search failed.", e);
+            throw new RuntimeException("Semantic search failed", e);
         }
     }
 
