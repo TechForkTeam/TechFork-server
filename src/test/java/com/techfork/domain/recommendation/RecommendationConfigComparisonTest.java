@@ -1,12 +1,13 @@
 package com.techfork.domain.recommendation;
 
-import com.techfork.domain.recommendation.service.LlmRecommendationService;
 import com.techfork.domain.user.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * 추천 시스템 설정별 성능 비교 테스트
@@ -15,16 +16,17 @@ import java.util.*;
 public class RecommendationConfigComparisonTest extends RecommendationTestBase {
 
     @Test
-    @DisplayName("여러 설정 비교 평가")
-    void compareConfigurations() {
-        log.info("===== 설정별 성능 비교 =====");
+    @DisplayName("여러 설정 비교 평가 (Train/Test Split 방식)")
+    void compareConfigurationsWithTrainTestSplit() {
+        log.info("===== 설정별 성능 비교 (Train/Test Split) =====");
+        log.info("읽은 글 100개 → Train 80개 (프로필 생성용) + Test 20개 (평가용)");
 
         List<ConfigCombo> configs = createTestConfigs();
-        List<User> testUsers = getTestUsers(DEFAULT_TEST_USER_COUNT);
+        List<User> testUsers = getTestUsers();
+        log.info("테스트 사용자: {} 명 (IDs: {})", testUsers.size(), TEST_USER_IDS);
 
-        printConfigComparisonHeader();
-        List<EvaluationResult> results = evaluateAllConfigs(configs, testUsers);
-        printBestResult(results);
+        printImprovedConfigComparisonHeader();
+        List<ImprovedEvaluationResult> results = evaluateAllConfigsWithTrainTestSplit(configs, testUsers);
     }
 
     /**
@@ -60,29 +62,19 @@ public class RecommendationConfigComparisonTest extends RecommendationTestBase {
     }
 
     /**
-     * 모든 설정 평가
+     * 모든 설정 평가 (Train/Test Split)
      */
-    private List<EvaluationResult> evaluateAllConfigs(List<ConfigCombo> configs, List<User> testUsers) {
-        List<EvaluationResult> results = new ArrayList<>();
+    private List<ImprovedEvaluationResult> evaluateAllConfigsWithTrainTestSplit(
+            List<ConfigCombo> configs,
+            List<User> testUsers) {
+        List<ImprovedEvaluationResult> results = new ArrayList<>();
 
         for (ConfigCombo config : configs) {
-            EvaluationResult result = evaluateConfig(config, testUsers);
+            ImprovedEvaluationResult result = evaluateConfigWithTrainTestSplit(config, testUsers);
             results.add(result);
             log.info(result.toString());
         }
 
         return results;
-    }
-
-    /**
-     * 최고 성능 설정 출력
-     */
-    private void printBestResult(List<EvaluationResult> results) {
-        EvaluationResult best = results.stream()
-                .max(Comparator.comparing(EvaluationResult::getCompositeScore))
-                .orElseThrow(() -> new IllegalStateException("평가 결과가 없습니다"));
-
-        log.info("\n===== 최고 성능 설정 =====");
-        log.info(best.toString());
     }
 }

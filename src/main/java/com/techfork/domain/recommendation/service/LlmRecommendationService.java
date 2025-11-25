@@ -165,6 +165,99 @@ public class LlmRecommendationService implements RecommendationService {
     }
 
     /**
+     * 추천 생성 (평가 전용 - Train/Test Split 지원)
+     * 특정 읽은 글 목록(Train Set)만 제외하고 추천 생성
+     *
+     * @param user 사용자
+     * @param trainPostIds Train Set 게시글 ID 목록 (제외할 글)
+     * @return 추천된 게시글 ID 리스트
+     */
+    public List<Long> generateRecommendationsForEvaluation(User user, Set<Long> trainPostIds) {
+        // 1. 사용자 프로필 벡터 조회
+        Optional<UserProfileDocument> profileOpt = userProfileDocumentRepository.findByUserId(user.getId());
+        if (profileOpt.isEmpty() || profileOpt.get().getProfileVector() == null) {
+            log.warn("사용자 {}의 프로필 또는 벡터를 찾을 수 없음. 추천 생성 스킵.", user.getId());
+            return Collections.emptyList();
+        }
+
+        float[] userProfileVector = profileOpt.get().getProfileVector();
+
+        try {
+            // 2. k-NN 검색으로 초기 후보군 가져오기 (Train Set만 제외)
+            List<MmrCandidate> candidates = searchCandidatesWithCustomReadHistory(userProfileVector, user, trainPostIds);
+
+            if (candidates.isEmpty()) {
+                log.debug("사용자 {}의 추천 후보군을 찾을 수 없음 (Train Set {} 개 제외)", user.getId(), trainPostIds.size());
+                return Collections.emptyList();
+            }
+
+            // 3. MMR 적용하여 최종 추천 선택
+            List<MmrResult> mmrResults = mmrService.applyMmr(candidates);
+
+            // 4. 추천된 게시글 ID 리스트 반환
+            return mmrResults.stream()
+                    .map(MmrResult::getPostId)
+                    .toList();
+
+        } catch (Exception e) {
+            log.error("사용자 {} 추천 생성 실패 (Train/Test Split 평가용)", user.getId(), e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Elasticsearch k-NN 검색으로 초기 후보군 조회 (커스텀 읽은 글 목록)
+     * Train/Test Split 평가를 위해 Train Set만 제외
+     */
+    private List<MmrCandidate> searchCandidatesWithCustomReadHistory(
+            float[] userProfileVector,
+            User user,
+            Set<Long> readPostIds) throws IOException {
+
+        log.debug("사용자 {}의 읽은 게시글 {} 개 제외 (Train Set)", user.getId(), readPostIds.size());
+
+        // 가중치 가져오기
+        RecommendationProperties.EmbeddingWeights weights = properties.getEmbeddingWeights();
+
+        // 랜덤 시드 생성 (현재 시간 기반)
+        long randomSeed = System.currentTimeMillis();
+        double randomWeight = 0.2; // 랜덤 가중치 20%
+
+        // k-NN 쿼리 (가중 평균: title + summary + content chunks + 랜덤 요소)
+        Query knnQuery = vectorQueryBuilder.createWeightedVectorQueryWithRandomness(
+                TITLE_EMBEDDING_FIELD,
+                SUMMARY_EMBEDDING_FIELD,
+                CONTENT_CHUNKS_FIELD,
+                CHUNK_EMBEDDING_FIELD,
+                userProfileVector,
+                weights.getTitle(),
+                weights.getSummary(),
+                weights.getContent(),
+                randomSeed,
+                randomWeight
+        );
+
+        log.debug("ES 쿼리 실행 (Train/Test Split) - 벡터 차원: {}, 가중치 [title:{}, summary:{}, content:{}]",
+                userProfileVector.length, weights.getTitle(), weights.getSummary(), weights.getContent());
+
+        SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
+                        .index(POSTS_INDEX)
+                        .query(knnQuery)
+                        .size(properties.getKnnSearchSize())
+                ,
+                PostDocument.class
+        );
+
+        // 결과를 MmrCandidate로 변환 (Train Set만 필터링)
+        return response.hits().hits().stream()
+                .filter(hit -> hit.source() != null)
+                .filter(hit -> !readPostIds.contains(hit.source().getPostId()))
+                .map(this::mapToMmrCandidate)
+                .filter(candidate -> candidate.getSummaryVector() != null)
+                .toList();
+    }
+
+    /**
      * Elasticsearch k-NN 검색으로 초기 후보군 조회
      * - 이미 읽은 글 제외
      * - 랜덤 시드를 사용하여 매번 다른 후보군 생성

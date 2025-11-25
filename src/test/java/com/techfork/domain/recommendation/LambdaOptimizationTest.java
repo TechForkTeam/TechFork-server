@@ -6,27 +6,32 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Slf4j
 public class LambdaOptimizationTest extends RecommendationTestBase {
 
     @Test
-    @DisplayName("Lambda 최적화 - 요약 중심 vs 현재 기본값")
-    void optimizeLambda() {
-        log.info("===== Lambda 최적화 테스트 =====");
+    @DisplayName("Lambda 최적화 - 3가지 가중치 조합 (Train/Test Split 방식)")
+    void optimizeLambdaWithTrainTestSplit() {
+        log.info("===== Lambda 최적화 테스트 (Train/Test Split) =====");
+        log.info("읽은 글 100개 → Train 80개 (프로필 생성용) + Test 20개 (평가용)");
+        log.info("가중치 조합: 컨텐츠중심, 요약중심, 기본값");
+        log.info("Lambda 범위: 0.0 ~ 1.0 (0.1 단위)");
 
         List<ConfigCombo> configs = createLambdaTestConfigs();
-        List<User> testUsers = getTestUsers(DEFAULT_TEST_USER_COUNT);
+        List<User> testUsers = getTestUsers();
+        log.info("테스트 사용자: {} 명 (IDs: {})", testUsers.size(), TEST_USER_IDS);
 
-        printConfigComparisonHeader();
-        List<EvaluationResult> results = evaluateAllConfigs(configs, testUsers);
-        printBestResult(results);
+        printImprovedConfigComparisonHeader();
+        List<ImprovedEvaluationResult> results = evaluateAllConfigsWithTrainTestSplit(configs, testUsers);
+        printBestImprovedResultByWeightType(results);
     }
 
     /**
      * Lambda 0.0 ~ 1.0 (0.1 단위) 테스트 설정 생성
-     * 요약 중심 + 현재 기본값 조합
+     * 컨텐츠 중심
      */
     private List<ConfigCombo> createLambdaTestConfigs() {
         List<ConfigCombo> configs = new ArrayList<>();
@@ -35,53 +40,51 @@ public class LambdaOptimizationTest extends RecommendationTestBase {
         for (int i = 0; i <= 10; i++) {
             double lambda = i / 10.0;
 
-            // 1. 요약 중심 (title:0.2, summary:0.6, content:0.2)
             configs.add(ConfigCombo.builder()
-                    .name(String.format("요약중심 λ=%.1f", lambda))
+                    .name(String.format("컨텐츠중심 λ=%.1f", lambda))
                     .titleWeight(0.2f)
-                    .summaryWeight(0.6f)
-                    .contentWeight(0.2f)
-                    .mmrLambda(lambda)
-                    .build());
-
-            // 2. 현재 기본값 (title:0.4, summary:0.4, content:0.2)
-            configs.add(ConfigCombo.builder()
-                    .name(String.format("기본값 λ=%.1f", lambda))
-                    .titleWeight(DEFAULT_TITLE_WEIGHT)
-                    .summaryWeight(DEFAULT_SUMMARY_WEIGHT)
-                    .contentWeight(DEFAULT_CONTENT_WEIGHT)
+                    .summaryWeight(0.2f)
+                    .contentWeight(0.6f)
                     .mmrLambda(lambda)
                     .build());
         }
 
+        log.info("총 {} 개 설정 생성", configs.size());
         return configs;
     }
 
     /**
-     * 모든 설정 평가
+     * 모든 설정 평가 (Train/Test Split)
      */
-    private List<EvaluationResult> evaluateAllConfigs(List<ConfigCombo> configs, List<User> testUsers) {
+    private List<ImprovedEvaluationResult> evaluateAllConfigsWithTrainTestSplit(
+            List<ConfigCombo> configs,
+            List<User> testUsers) {
         return configs.stream()
                 .map(config -> {
-                    log.debug("설정 평가 시작: {}", config.getName());
-                    EvaluationResult result = evaluateConfig(config, testUsers);
-                    log.debug("설정 평가 완료: {} - Recall={}, nDCG={}, ILD={}",
+                    log.debug("설정 평가 시작 (Train/Test Split): {}", config.getName());
+                    ImprovedEvaluationResult result = evaluateConfigWithTrainTestSplit(config, testUsers);
+                    log.debug("설정 평가 완료 (Train/Test Split): {} - Recall={}, nDCG={}, ILD={}",
                             config.getName(), result.getAvgRecall(), result.getAvgNdcg(), result.getAvgIld());
-                    printResult(config.getName(), result);
+                    log.info(result.toString());
                     return result;
                 })
                 .toList();
     }
 
     /**
-     * 최고 성능 설정 출력
+     * 가중치 타입별 최고 성능 설정 출력 (Train/Test Split)
      */
-    private void printBestResult(List<EvaluationResult> results) {
-        EvaluationResult best = results.stream()
-                .max((a, b) -> Double.compare(a.getOverallScore(), b.getOverallScore()))
-                .orElseThrow();
+    private void printBestImprovedResultByWeightType(List<ImprovedEvaluationResult> results) {
+        log.info("\n===== 가중치 타입별 최고 성능 설정 (Train/Test Split) =====");
 
-        log.info("\n===== 최고 성능 설정 =====");
-        printResult(best.getConfigName(), best);
+        // 컨텐츠 중심
+        ImprovedEvaluationResult bestContent = results.stream()
+                .filter(r -> r.getConfigName().startsWith("컨텐츠중심"))
+                .max(Comparator.comparingDouble(ImprovedEvaluationResult::getCompositeScore))
+                .orElse(null);
+        if (bestContent != null) {
+            log.info("\n[컨텐츠 중심 최고]");
+            log.info(bestContent.toString());
+        }
     }
 }

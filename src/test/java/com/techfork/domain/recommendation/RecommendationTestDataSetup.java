@@ -30,7 +30,7 @@ public class RecommendationTestDataSetup extends RecommendationTestBase {
 
         for (int i = 0; i < 5; i++) {
             List<EInterestCategory> interests = interestCombos.get(i % interestCombos.size());
-            User user = testDataGenerator.createTestUser(interests, 30);
+            User user = testDataGenerator.createTestUser(interests, 100);
             log.info("사용자 생성 완료: ID={}, 관심사={}", user.getId(), interests);
         }
 
