@@ -17,5 +17,6 @@ public class SearchResult {
     private double personalScore;
     private double finalScore;
 
-    private float[] documentVector;
+    private float[] titleVector;
+    private float[] summaryVector;
 }

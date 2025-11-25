@@ -27,3 +27,11 @@ Content-Type: application/json
     "match_all": {}
   }
 }
+
+### 일반 검색 테스트
+GET http://localhost:8080/api/v1/search/general?query=spring
+Content-Type: application/json
+
+### 개인화 검색 테스트
+GET http://localhost:8080/api/v1/search/personalized?query=도커&userId=1
+Content-Type: application/json

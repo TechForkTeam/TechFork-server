@@ -1,13 +1,11 @@
 package com.techfork.domain.search.service;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.KnnSearch;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
-import co.elastic.clients.elasticsearch._types.query_dsl.FunctionScoreQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.FunctionScoreMode;
-import co.elastic.clients.elasticsearch._types.query_dsl.FunctionBoostMode;
-import co.elastic.clients.elasticsearch._types.query_dsl.Query;
-import co.elastic.clients.json.JsonData;
 import com.techfork.domain.post.document.PostDocument;
 import com.techfork.domain.search.dto.SearchResult;
 import com.techfork.domain.user.document.UserProfileDocument;
@@ -17,11 +15,16 @@ import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.llm.EmbeddingClient;
 import com.techfork.global.util.VectorUtil;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,17 +42,7 @@ public class SearchServiceImpl implements SearchService {
     private final GeneralSearchProperties generalSearchProperties;
     private final UserProfileDocumentRepository userProfileDocumentRepository;
     private final UserRepository userRepository;
-
-    private static final class SearchConstants {
-        static final String POSTS_INDEX = "posts";
-        static final String TITLE_FIELD_FORMAT = "title^%.1f";
-        static final String SUMMARY_FIELD_FORMAT = "summary^%.1f";
-        static final String CONTENT_CHUNKS_PATH = "contentChunks";
-        static final String CHUNK_TEXT_FIELD = "contentChunks.chunkText";
-        static final String MINIMUM_SHOULD_MATCH = "0";
-        static final String SCRIPT_SOURCE = "cosineSimilarity(params.query_vector, 'summaryEmbedding') + 1.0";
-        static final String QUERY_VECTOR_PARAM = "query_vector";
-    }
+    private final Executor searchAsyncExecutor;
 
     @Override
     public List<SearchResult> searchGeneral(String query) {
@@ -58,7 +51,7 @@ public class SearchServiceImpl implements SearchService {
         List<SearchResult> searchResults = performHybridSearch(query, queryVector);
         log.info("Found {} results from hybrid search.", searchResults.size());
         return searchResults.stream()
-                .map(result -> result.toBuilder().documentVector(null).build())
+                .map(result -> result.toBuilder().summaryVector(null).build())
                 .collect(Collectors.toList());
     }
 
@@ -78,7 +71,7 @@ public class SearchServiceImpl implements SearchService {
         if (userProfileOpt.map(UserProfileDocument::getProfileVector).isEmpty()) {
             log.warn("User profile or vector not found for userId: {}. Returning non-personalized results.", user.getId());
             return initialResults.stream()
-                    .map(result -> result.toBuilder().documentVector(null).build())
+                    .map(result -> result.toBuilder().summaryVector(null).build())
                     .collect(Collectors.toList());
         }
 
@@ -94,67 +87,167 @@ public class SearchServiceImpl implements SearchService {
     }
 
     private List<SearchResult> performHybridSearch(String query, List<Float> queryVector) {
+        CompletableFuture<List<Hit<PostDocument>>> lexicalFuture =
+                CompletableFuture.supplyAsync(() -> performLexicalSearch(query), searchAsyncExecutor);
+        CompletableFuture<List<Hit<PostDocument>>> semanticFuture =
+                CompletableFuture.supplyAsync(() -> performSemanticSearch(queryVector), searchAsyncExecutor);
+
+        CompletableFuture<List<SearchResult>> hybridResultFuture = lexicalFuture
+                .thenCombine(semanticFuture, this::calculateRRF)
+                .exceptionally(ex -> {
+                    log.error("Hybrid search failed", ex);
+                    throw new RuntimeException("통합 검색 중 오류 발생", ex);
+                });
+
+        return hybridResultFuture.join();
+    }
+
+    private List<SearchResult> calculateRRF(List<Hit<PostDocument>> lexicalHits, List<Hit<PostDocument>> semanticHits) {
+        Map<String, Integer> lexicalRankMap = new HashMap<>();
+        AtomicInteger rank = new AtomicInteger(1);
+        lexicalHits.forEach(hit -> lexicalRankMap.put(hit.id(), rank.getAndIncrement()));
+
+        Map<String, Integer> semanticRankMap = new HashMap<>();
+        rank.set(1);
+        semanticHits.forEach(hit -> semanticRankMap.put(hit.id(), rank.getAndIncrement()));
+
+        Map<String, SearchResult> combinedResults = new HashMap<>();
+        Map<String, Double> rrfScores = new HashMap<>();
+
+        processHitsForRRF(lexicalHits, lexicalRankMap, rrfScores, combinedResults);
+        processHitsForRRF(semanticHits, semanticRankMap, rrfScores, combinedResults);
+
+        return combinedResults.values().stream()
+                .map(searchResult -> {
+                    double finalScore = rrfScores.get(searchResult.getPostId().toString());
+                    return searchResult.toBuilder()
+                            .hybridScore(finalScore)
+                            .finalScore(finalScore)
+                            .build();
+                })
+                .sorted(Comparator.comparing(SearchResult::getFinalScore).reversed())
+                .limit(generalSearchProperties.getSearchSize())
+                .collect(Collectors.toList());
+    }
+
+    private void processHitsForRRF(List<Hit<PostDocument>> hits,
+                                   Map<String, Integer> rankMap,
+                                   Map<String, Double> rrfScores,
+                                   Map<String, SearchResult> combinedResults) {
+        hits.forEach(hit -> {
+            String docId = hit.id();
+            double score = 1.0 / (generalSearchProperties.getRRF_K() + rankMap.get(docId));
+            rrfScores.merge(docId, score, Double::sum);
+
+            SearchResult newResult = mapToSearchResult(hit);
+
+            if (!combinedResults.containsKey(docId)) {
+                combinedResults.put(docId, newResult);
+            } else {
+                SearchResult existing = combinedResults.get(docId);
+                boolean needUpdate = false;
+                SearchResult.SearchResultBuilder builder = existing.toBuilder();
+
+                if (existing.getTitleVector() == null && newResult.getTitleVector() != null) {
+                    builder.titleVector(newResult.getTitleVector());
+                    needUpdate = true;
+                }
+
+                if (existing.getSummaryVector() == null && newResult.getSummaryVector() != null) {
+                    builder.summaryVector(newResult.getSummaryVector());
+                    needUpdate = true;
+                }
+
+                if (needUpdate) {
+                    combinedResults.put(docId, builder.build());
+                }
+            }
+        });
+    }
+
+    private List<Hit<PostDocument>> performLexicalSearch(String query) {
         String titleField = String.format(SearchConstants.TITLE_FIELD_FORMAT, generalSearchProperties.getTitleBoost());
         String summaryField = String.format(SearchConstants.SUMMARY_FIELD_FORMAT, generalSearchProperties.getSummaryBoost());
 
+        Query lexicalQuery = Query.of(q -> q
+                .bool(b -> b
+                        .should(sh -> sh
+                                .multiMatch(m -> m
+                                        .query(query)
+                                        .type(TextQueryType.MostFields)
+                                        .fields(titleField, summaryField)
+                                )
+                        )
+                        .should(sh -> sh
+                                .nested(n -> n
+                                        .path(SearchConstants.CONTENT_CHUNKS_PATH)
+                                        .query(nq -> nq
+                                                .match(m -> m
+                                                        .field(SearchConstants.CHUNK_TEXT_FIELD)
+                                                        .query(query)
+                                                )
+                                        )
+                                        .boost(generalSearchProperties.getChunkBoost())
+                                )
+                        )
+                        .minimumShouldMatch(SearchConstants.MINIMUM_SHOULD_MATCH)
+                )
+        );
+
         try {
-            Query baseQuery = Query.of(q -> q
-                    .bool(b -> b
-                            .should(sh -> sh
-                                    .multiMatch(m -> m
-                                            .query(query)
-                                            .fields(titleField, summaryField)
-                                    )
-                            )
-                            .should(sh -> sh
-                                    .nested(n -> n
-                                            .path(SearchConstants.CONTENT_CHUNKS_PATH)
-                                            .query(nq -> nq
-                                                    .match(m -> m
-                                                            .field(SearchConstants.CHUNK_TEXT_FIELD)
-                                                            .query(query)
-                                                    )
-                                            )
-                                            .boost(generalSearchProperties.getChunkBoost())
-                                    )
-                            )
-                            .minimumShouldMatch(SearchConstants.MINIMUM_SHOULD_MATCH)
-                    )
-            );
-
-            FunctionScoreQuery functionScoreQuery = FunctionScoreQuery.of(fs -> fs
-                    .query(baseQuery)
-                    .functions(f -> f
-                            .scriptScore(ss -> ss
-                                    .script(s -> s
-                                            .source(SearchConstants.SCRIPT_SOURCE)
-                                            .params(Map.of(
-                                                    SearchConstants.QUERY_VECTOR_PARAM, JsonData.of(queryVector)
-                                            ))
-                                    )
-                            )
-                            .weight((double) generalSearchProperties.getSemanticBoost())
-                    )
-                    .scoreMode(FunctionScoreMode.Sum)
-                    .boostMode(FunctionBoostMode.Sum)
-            );
-
             SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
                             .index(SearchConstants.POSTS_INDEX)
-                            .size(generalSearchProperties.getSearchSize())
-                            .query(q -> q.functionScore(functionScoreQuery))
-                    ,
+                            .size(generalSearchProperties.getRRF_WINDOW_SIZE())
+                            .query(lexicalQuery),
+                    PostDocument.class
+            );
+            return response.hits().hits();
+        } catch (IOException e) {
+            throw new RuntimeException("Lexical search failed", e);
+        }
+    }
+
+    private List<Hit<PostDocument>> performSemanticSearch(List<Float> queryVector) {
+        int k = generalSearchProperties.getKnnK();
+        int numCandidates = generalSearchProperties.getKnnNumCandidates();
+
+        List<KnnSearch> knnSearches = new ArrayList<>();
+
+        knnSearches.add(KnnSearch.of(ks -> ks
+                .field("titleEmbedding")
+                .queryVector(queryVector)
+                .k(k)
+                .numCandidates(numCandidates)
+                .boost(generalSearchProperties.getVectorTitleBoost())
+        ));
+
+        knnSearches.add(KnnSearch.of(ks -> ks
+                .field("summaryEmbedding")
+                .queryVector(queryVector)
+                .k(k)
+                .numCandidates(numCandidates)
+                .boost(generalSearchProperties.getVectorSummaryBoost())
+        ));
+
+        knnSearches.add(KnnSearch.of(ks -> ks
+                .field("contentChunks.embedding")
+                .queryVector(queryVector)
+                .k(k)
+                .numCandidates(numCandidates)
+                .boost(generalSearchProperties.getVectorContentChunkBoost())
+        ));
+
+        try {
+            SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
+                            .index(SearchConstants.POSTS_INDEX)
+                            .size(generalSearchProperties.getRRF_WINDOW_SIZE())
+                            .knn(knnSearches),
                     PostDocument.class
             );
 
-            return response.hits().hits().stream()
-                    .filter(hit -> hit.source() != null)
-                    .map(this::mapToSearchResult)
-                    .collect(Collectors.toList());
-
+            return response.hits().hits();
         } catch (IOException e) {
-            log.error("Elasticsearch hybrid search failed [query={}]", query, e);
-            throw new RuntimeException("Elasticsearch 검색 중 오류가 발생했습니다.", e);
+            throw new RuntimeException("Semantic search failed", e);
         }
     }
 
@@ -162,7 +255,8 @@ public class SearchServiceImpl implements SearchService {
         PostDocument doc = hit.source();
         double score = Objects.requireNonNullElse(hit.score(), 0.0);
 
-        float[] vector = VectorUtil.convertToFloatArray(Objects.requireNonNull(doc).getSummaryEmbedding());
+        float[] titleVector = VectorUtil.convertToFloatArray(Objects.requireNonNull(doc).getTitleEmbedding());
+        float[] summaryVector = VectorUtil.convertToFloatArray(Objects.requireNonNull(doc).getSummaryEmbedding());
 
         return SearchResult.builder()
                 .postId(doc.getPostId())
@@ -172,22 +266,34 @@ public class SearchServiceImpl implements SearchService {
                 .url(doc.getUrl())
                 .hybridScore(score)
                 .finalScore(score)
-                .documentVector(vector)
+                .titleVector(titleVector)
+                .summaryVector(summaryVector)
                 .build();
     }
 
     private List<SearchResult> personalReranking(List<SearchResult> initialResults, float[] userProfileVector) {
         return initialResults.stream()
-                .filter(result -> result.getDocumentVector() != null && result.getDocumentVector().length > 0)
                 .map(result -> {
-                    double personalScore = VectorUtil.cosineSimilarity(userProfileVector, result.getDocumentVector());
+                    double titleSim = 0.0;
+                    if (result.getTitleVector() != null && result.getTitleVector().length > 0) {
+                        titleSim = VectorUtil.cosineSimilarity(userProfileVector, result.getTitleVector());
+                    }
+
+                    double summarySim = 0.0;
+                    if (result.getSummaryVector() != null) {
+                        summarySim = VectorUtil.cosineSimilarity(userProfileVector, result.getSummaryVector());
+                    }
+
+                    double personalScore = (titleSim * generalSearchProperties.getRerankDocumentTitleWeight()) + (summarySim * generalSearchProperties.getRerankDocumentSummaryWeight());
+
                     double finalScore = (result.getHybridScore() * generalSearchProperties.getHybridScoreWeight())
                             + (personalScore * generalSearchProperties.getPersonalScoreWeight());
 
                     return result.toBuilder()
                             .personalScore(personalScore)
                             .finalScore(finalScore)
-                            .documentVector(null)
+                            .titleVector(null)
+                            .summaryVector(null)
                             .build();
                 })
                 .sorted(Comparator.comparing(SearchResult::getFinalScore).reversed())
