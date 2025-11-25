@@ -48,4 +48,8 @@ public class GeneralSearchProperties {
 
     // RRF 계산을 위해 각 쿼리(BM25, Vector)에서 가져올 상위 문서 수
     static final int RRF_WINDOW_SIZE = 60;
+
+    // --- [rerank 가중치 설정] ---
+    private double rerankDocumentTitleWeight = 0.6;
+    private double rerankDocumentSummaryWeight = 0.4;
 }

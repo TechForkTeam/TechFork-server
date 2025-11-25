@@ -52,7 +52,7 @@ public class SearchServiceImpl implements SearchService {
         List<SearchResult> searchResults = performHybridSearch(query, queryVector);
         log.info("Found {} results from hybrid search.", searchResults.size());
         return searchResults.stream()
-                .map(result -> result.toBuilder().documentVector(null).build())
+                .map(result -> result.toBuilder().summaryVector(null).build())
                 .collect(Collectors.toList());
     }
 
@@ -72,7 +72,7 @@ public class SearchServiceImpl implements SearchService {
         if (userProfileOpt.map(UserProfileDocument::getProfileVector).isEmpty()) {
             log.warn("User profile or vector not found for userId: {}. Returning non-personalized results.", user.getId());
             return initialResults.stream()
-                    .map(result -> result.toBuilder().documentVector(null).build())
+                    .map(result -> result.toBuilder().summaryVector(null).build())
                     .collect(Collectors.toList());
         }
 
@@ -237,7 +237,8 @@ public class SearchServiceImpl implements SearchService {
         PostDocument doc = hit.source();
         double score = Objects.requireNonNullElse(hit.score(), 0.0);
 
-        float[] vector = VectorUtil.convertToFloatArray(Objects.requireNonNull(doc).getSummaryEmbedding());
+        float[] titleVector = VectorUtil.convertToFloatArray(Objects.requireNonNull(doc).getTitleEmbedding());
+        float[] summaryVector = VectorUtil.convertToFloatArray(Objects.requireNonNull(doc).getSummaryEmbedding());
 
         return SearchResult.builder()
                 .postId(doc.getPostId())
@@ -247,22 +248,35 @@ public class SearchServiceImpl implements SearchService {
                 .url(doc.getUrl())
                 .hybridScore(score)
                 .finalScore(score)
-                .documentVector(vector)
+                .titleVector(titleVector)
+                .summaryVector(summaryVector)
                 .build();
     }
 
     private List<SearchResult> personalReranking(List<SearchResult> initialResults, float[] userProfileVector) {
         return initialResults.stream()
-                .filter(result -> result.getDocumentVector() != null && result.getDocumentVector().length > 0)
+                .filter(result -> result.getSummaryVector() != null && result.getSummaryVector().length > 0)
                 .map(result -> {
-                    double personalScore = VectorUtil.cosineSimilarity(userProfileVector, result.getDocumentVector());
+                    double titleSim = 0.0;
+                    if (result.getTitleVector() != null) {
+                        titleSim = VectorUtil.cosineSimilarity(userProfileVector, result.getTitleVector());
+                    }
+
+                    double summarySim = 0.0;
+                    if (result.getSummaryVector() != null) {
+                        summarySim = VectorUtil.cosineSimilarity(userProfileVector, result.getSummaryVector());
+                    }
+
+                    double personalScore = (titleSim * generalSearchProperties.getRerankDocumentTitleWeight()) + (summarySim * generalSearchProperties.getRerankDocumentSummaryWeight());
+
                     double finalScore = (result.getHybridScore() * generalSearchProperties.getHybridScoreWeight())
                             + (personalScore * generalSearchProperties.getPersonalScoreWeight());
 
                     return result.toBuilder()
                             .personalScore(personalScore)
                             .finalScore(finalScore)
-                            .documentVector(null)
+                            .titleVector(null)
+                            .summaryVector(null)
                             .build();
                 })
                 .sorted(Comparator.comparing(SearchResult::getFinalScore).reversed())
