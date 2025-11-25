@@ -4,7 +4,9 @@ import com.techfork.domain.activity.entity.ReadPost;
 import com.techfork.domain.activity.repository.ReadPostRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
+import com.techfork.domain.recommendation_quality.ImprovedRecommendationTestCase;
 import com.techfork.domain.recommendation_quality.RecommendationTestCase;
+import com.techfork.domain.recommendation_quality.TrainTestSplit;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.entity.UserInterestCategory;
 import com.techfork.domain.user.entity.UserInterestKeyword;
@@ -23,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * 추천 시스템 테스트를 위한 데이터 생성기
@@ -46,7 +47,7 @@ public class TestDataGenerator {
      * 테스트용 사용자 생성 및 읽은 글 이력 추가
      *
      * @param interestCategories 관심사 카테고리 목록
-     * @param readPostCount 읽은 글 개수
+     * @param readPostCount      읽은 글 개수
      * @return 생성된 사용자
      */
     @Transactional
@@ -65,7 +66,7 @@ public class TestDataGenerator {
             // 해당 카테고리의 키워드 중 랜덤하게 2~4개 선택
             List<EInterestKeyword> availableKeywords = EInterestKeyword.getKeywordsByCategory(category);
             Collections.shuffle(availableKeywords);
-            int keywordCount = 2 + (int)(Math.random() * 3); // 2~4개
+            int keywordCount = 2 + (int) (Math.random() * 3); // 2~4개
 
             for (int i = 0; i < Math.min(keywordCount, availableKeywords.size()); i++) {
                 UserInterestKeyword keyword = UserInterestKeyword.create(
@@ -253,10 +254,94 @@ public class TestDataGenerator {
         // 회사명이 유명 기업이면 기본 2점
         String company = post.getTechBlog().getCompanyName().toLowerCase();
         if (company.contains("네이버") || company.contains("kakao") ||
-            company.contains("line") || company.contains("쿠팡")) {
+                company.contains("line") || company.contains("쿠팡")) {
             return 2;
         }
 
         return 1; // 기본 점수
+    }
+
+    /**
+     * 읽은 글 이력을 Train/Test로 분할 (8:2 비율)
+     *
+     * @param readPostIds 전체 읽은 글 ID 목록
+     * @param trainRatio  Train 세트 비율 (기본 0.8)
+     * @return Train/Test 분할 결과
+     */
+    public TrainTestSplit splitReadHistory(List<Long> readPostIds, double trainRatio) {
+        if (readPostIds == null || readPostIds.isEmpty()) {
+            return TrainTestSplit.builder()
+                    .trainPostIds(Collections.emptyList())
+                    .testPostIds(Collections.emptyList())
+                    .build();
+        }
+
+        // 시간순으로 정렬된 리스트를 Train/Test로 분할
+        int totalSize = readPostIds.size();
+        int trainSize = (int) (totalSize * trainRatio);
+
+        List<Long> trainIds = readPostIds.subList(0, trainSize);
+        List<Long> testIds = readPostIds.subList(trainSize, totalSize);
+
+        log.info("Train/Test Split 완료: Train={}, Test={}, 비율={:.2f}",
+                trainIds.size(), testIds.size(), trainRatio);
+
+        return TrainTestSplit.builder()
+                .trainPostIds(new ArrayList<>(trainIds))
+                .testPostIds(new ArrayList<>(testIds))
+                .build();
+    }
+
+    /**
+     * Train/Test Split 기반 개선된 테스트 케이스 생성
+     *
+     * @param user       평가 대상 사용자
+     * @param interests  사용자 관심사
+     * @param trainRatio Train 세트 비율 (기본 0.8)
+     * @return Train/Test Split 기반 테스트 케이스
+     */
+    @Transactional(readOnly = true)
+    public ImprovedRecommendationTestCase generateImprovedTestCase(
+            User user,
+            List<EInterestCategory> interests,
+            double trainRatio) {
+
+        // 읽은 글 이력 조회 (시간순)
+        List<Long> readPostIds = readPostRepository
+                .findRecentReadPostsByUserWithMinDuration(user, PageRequest.of(0, 1000))
+                .stream()
+                .map(rp -> rp.getPost().getId())
+                .toList();
+
+        // Train/Test Split
+        TrainTestSplit split = splitReadHistory(readPostIds, trainRatio);
+
+        List<String> interestNames = interests.stream()
+                .map(EInterestCategory::getDisplayName)
+                .toList();
+
+        log.info("===== 개선된 테스트 케이스 생성 =====");
+        log.info("사용자 ID: {}", user.getId());
+        log.info("관심사: {}", interestNames);
+        log.info("전체 읽은 글: {} 개", readPostIds.size());
+        log.info("Train Set: {} 개", split.getTrainSize());
+        log.info("Test Set: {} 개", split.getTestSize());
+        log.info("Test Set ID 샘플: {}", split.getTestPostIds().stream().limit(5).toList());
+
+        return ImprovedRecommendationTestCase.builder()
+                .userId(user.getId())
+                .interests(interestNames)
+                .trainTestSplit(split)
+                .build();
+    }
+
+    /**
+     * Train/Test Split 기반 개선된 테스트 케이스 생성 (기본 비율 0.8)
+     */
+    @Transactional(readOnly = true)
+    public ImprovedRecommendationTestCase generateImprovedTestCase(
+            User user,
+            List<EInterestCategory> interests) {
+        return generateImprovedTestCase(user, interests, 0.8);
     }
 }
