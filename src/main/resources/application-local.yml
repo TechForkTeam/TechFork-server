@@ -62,11 +62,11 @@ spring:
     restart:
       enabled: false
 
+  elasticsearch:
+    uris: http://elasticsearch:9200
+
 scheduler:
   enabled: true
-
-elasticsearch:
-  uris: http://elasticsearch:9200
 
 webhook:
   enabled: true
