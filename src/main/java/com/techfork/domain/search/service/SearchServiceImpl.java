@@ -1,6 +1,7 @@
 package com.techfork.domain.search.service;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.elasticsearch._types.query_dsl.FunctionScoreQuery;
@@ -103,6 +104,7 @@ public class SearchServiceImpl implements SearchService {
                             .should(sh -> sh
                                     .multiMatch(m -> m
                                             .query(query)
+                                            .type(TextQueryType.MostFields)
                                             .fields(titleField, summaryField)
                                     )
                             )
