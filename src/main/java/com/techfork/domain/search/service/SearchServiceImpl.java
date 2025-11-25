@@ -1,11 +1,11 @@
 package com.techfork.domain.search.service;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.KnnSearch;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
-import co.elastic.clients.json.JsonData;
 import com.techfork.domain.post.document.PostDocument;
 import com.techfork.domain.search.dto.SearchResult;
 import com.techfork.domain.user.document.UserProfileDocument;
@@ -15,6 +15,7 @@ import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.llm.EmbeddingClient;
 import com.techfork.global.util.VectorUtil;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -24,12 +25,10 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,9 +43,7 @@ public class SearchServiceImpl implements SearchService {
     private final GeneralSearchProperties generalSearchProperties;
     private final UserProfileDocumentRepository userProfileDocumentRepository;
     private final UserRepository userRepository;
-
-    @Qualifier("searchAsyncExecutor")
-    private final Executor searchExecutor;
+    private final Executor searchAsyncExecutor;
 
     @Override
     public List<SearchResult> searchGeneral(String query) {
@@ -92,10 +89,10 @@ public class SearchServiceImpl implements SearchService {
 
     private List<SearchResult> performHybridSearch(String query, List<Float> queryVector) {
         CompletableFuture<List<Hit<PostDocument>>> lexicalSearchFuture =
-            CompletableFuture.supplyAsync(() -> performLexicalSearch(query), searchExecutor);
+            CompletableFuture.supplyAsync(() -> performLexicalSearch(query), searchAsyncExecutor);
 
         CompletableFuture<List<Hit<PostDocument>>> semanticSearchFuture =
-            CompletableFuture.supplyAsync(() -> performSemanticSearch(queryVector), searchExecutor);
+            CompletableFuture.supplyAsync(() -> performSemanticSearch(queryVector), searchAsyncExecutor);
 
         CompletableFuture.allOf(lexicalSearchFuture, semanticSearchFuture).join();
 
@@ -193,23 +190,43 @@ public class SearchServiceImpl implements SearchService {
     }
 
     private List<Hit<PostDocument>> performSemanticSearch(List<Float> queryVector) {
-        Query semanticQuery = Query.of(q -> q
-                .scriptScore(ss -> ss
-                        .query(Query.of(iq -> iq.matchAll(ma -> ma)))
-                        .script(s -> s
-                                .source(SearchConstants.SCRIPT_SOURCE_SEMANTIC)
-                                .params(Map.of(SearchConstants.QUERY_VECTOR_PARAM, JsonData.of(queryVector)))
-                        )
-                )
-        );
+        int k = generalSearchProperties.getKnnK();
+        int numCandidates = generalSearchProperties.getKnnNumCandidates();
+
+        List<KnnSearch> knnSearches = new ArrayList<>();
+
+        knnSearches.add(KnnSearch.of(ks -> ks
+                .field("titleEmbedding")
+                .queryVector(queryVector)
+                .k(k)
+                .numCandidates(numCandidates)
+                .boost(generalSearchProperties.getVectorTitleBoost())
+        ));
+
+        knnSearches.add(KnnSearch.of(ks -> ks
+                .field("summaryEmbedding")
+                .queryVector(queryVector)
+                .k(k)
+                .numCandidates(numCandidates)
+                .boost(generalSearchProperties.getVectorSummaryBoost())
+        ));
+
+        knnSearches.add(KnnSearch.of(ks -> ks
+                .field("contentChunks.embedding")
+                .queryVector(queryVector)
+                .k(k)
+                .numCandidates(numCandidates)
+                .boost(generalSearchProperties.getVectorContentChunkBoost())
+        ));
 
         try {
             SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
                             .index(SearchConstants.POSTS_INDEX)
                             .size(GeneralSearchProperties.RRF_WINDOW_SIZE)
-                            .query(semanticQuery),
+                            .knn(knnSearches),
                     PostDocument.class
             );
+
             return response.hits().hits();
         } catch (IOException e) {
             throw new RuntimeException("Semantic search failed", e);
