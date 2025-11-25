@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,7 +45,8 @@ public class SearchServiceImpl implements SearchService {
     private final UserProfileDocumentRepository userProfileDocumentRepository;
     private final UserRepository userRepository;
 
-    private final Executor searchExecutor = Executors.newFixedThreadPool(20);
+    @Qualifier("searchAsyncExecutor")
+    private final Executor searchExecutor;
 
     private static final class SearchConstants {
         static final String POSTS_INDEX = "posts";
