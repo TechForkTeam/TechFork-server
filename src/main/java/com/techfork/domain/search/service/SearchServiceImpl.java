@@ -1,13 +1,11 @@
 package com.techfork.domain.search.service;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.query_dsl.MultiMatchQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
-import co.elastic.clients.elasticsearch._types.query_dsl.FunctionScoreQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.FunctionScoreMode;
-import co.elastic.clients.elasticsearch._types.query_dsl.FunctionBoostMode;
-import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.json.JsonData;
 import com.techfork.domain.post.document.PostDocument;
 import com.techfork.domain.search.dto.SearchResult;
@@ -19,10 +17,12 @@ import com.techfork.global.llm.EmbeddingClient;
 import com.techfork.global.util.VectorUtil;
 import java.io.IOException;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,8 +48,9 @@ public class SearchServiceImpl implements SearchService {
         static final String CONTENT_CHUNKS_PATH = "contentChunks";
         static final String CHUNK_TEXT_FIELD = "contentChunks.chunkText";
         static final String MINIMUM_SHOULD_MATCH = "0";
-        static final String SCRIPT_SOURCE = "cosineSimilarity(params.query_vector, 'summaryEmbedding') + 1.0";
+        static final String SCRIPT_SOURCE_SEMANTIC = "cosineSimilarity(params.query_vector, 'summaryEmbedding') + 1.0";
         static final String QUERY_VECTOR_PARAM = "query_vector";
+        static final int RRF_K = 60;
     }
 
     @Override
@@ -95,68 +96,116 @@ public class SearchServiceImpl implements SearchService {
     }
 
     private List<SearchResult> performHybridSearch(String query, List<Float> queryVector) {
+        List<Hit<PostDocument>> lexicalHits = performLexicalSearch(query);
+        List<Hit<PostDocument>> semanticHits = performSemanticSearch(queryVector);
+
+        Map<String, Integer> lexicalRankMap = new HashMap<>();
+        AtomicInteger rank = new AtomicInteger(1);
+        lexicalHits.forEach(hit -> lexicalRankMap.put(hit.id(), rank.getAndIncrement()));
+
+        Map<String, Integer> semanticRankMap = new HashMap<>();
+        rank.set(1);
+        semanticHits.forEach(hit -> semanticRankMap.put(hit.id(), rank.getAndIncrement()));
+
+        Map<String, SearchResult> combinedResults = new HashMap<>();
+        Map<String, Double> rrfScores = new HashMap<>();
+
+        lexicalHits.forEach(hit -> {
+            String docId = hit.id();
+            double score = 1.0 / (SearchConstants.RRF_K + lexicalRankMap.get(docId));
+            rrfScores.put(docId, rrfScores.getOrDefault(docId, 0.0) + score);
+            if (!combinedResults.containsKey(docId)) {
+                combinedResults.put(docId, mapToSearchResult(hit));
+            }
+        });
+
+        semanticHits.forEach(hit -> {
+            String docId = hit.id();
+            double score = 1.0 / (SearchConstants.RRF_K + semanticRankMap.get(docId));
+            rrfScores.put(docId, rrfScores.getOrDefault(docId, 0.0) + score);
+            if (!combinedResults.containsKey(docId)) {
+                combinedResults.put(docId, mapToSearchResult(hit));
+            }
+        });
+
+        return combinedResults.values().stream()
+                .map(searchResult -> {
+                    double finalScore = rrfScores.get(searchResult.getPostId().toString());
+                    return searchResult.toBuilder().finalScore(finalScore).hybridScore(finalScore).build();
+                })
+                .sorted(Comparator.comparing(SearchResult::getFinalScore).reversed())
+                .collect(Collectors.toList());
+    }
+
+    private List<Hit<PostDocument>> performLexicalSearch(String query) {
         String titleField = String.format(SearchConstants.TITLE_FIELD_FORMAT, generalSearchProperties.getTitleBoost());
         String summaryField = String.format(SearchConstants.SUMMARY_FIELD_FORMAT, generalSearchProperties.getSummaryBoost());
 
+        Query lexicalQuery = Query.of(q -> q
+                .bool(b -> b
+                        .should(sh -> sh
+                                .multiMatch(m -> m
+                                        .query(query)
+                                        .type(TextQueryType.MostFields)
+                                        .fields(titleField, summaryField)
+                                )
+                        )
+                        .should(sh -> sh
+                                .nested(n -> n
+                                        .path(SearchConstants.CONTENT_CHUNKS_PATH)
+                                        .query(nq -> nq
+                                                .match(m -> m
+                                                        .field(SearchConstants.CHUNK_TEXT_FIELD)
+                                                        .query(query)
+                                                )
+                                        )
+                                        .boost(generalSearchProperties.getChunkBoost())
+                                )
+                        )
+                        .minimumShouldMatch(SearchConstants.MINIMUM_SHOULD_MATCH)
+                )
+        );
+
         try {
-            Query baseQuery = Query.of(q -> q
-                    .bool(b -> b
-                            .should(sh -> sh
-                                    .multiMatch(m -> m
-                                            .query(query)
-                                            .type(TextQueryType.MostFields)
-                                            .fields(titleField, summaryField)
-                                    )
-                            )
-                            .should(sh -> sh
-                                    .nested(n -> n
-                                            .path(SearchConstants.CONTENT_CHUNKS_PATH)
-                                            .query(nq -> nq
-                                                    .match(m -> m
-                                                            .field(SearchConstants.CHUNK_TEXT_FIELD)
-                                                            .query(query)
-                                                    )
-                                            )
-                                            .boost(generalSearchProperties.getChunkBoost())
-                                    )
-                            )
-                            .minimumShouldMatch(SearchConstants.MINIMUM_SHOULD_MATCH)
-                    )
-            );
-
-            FunctionScoreQuery functionScoreQuery = FunctionScoreQuery.of(fs -> fs
-                    .query(baseQuery)
-                    .functions(f -> f
-                            .scriptScore(ss -> ss
-                                    .script(s -> s
-                                            .source(SearchConstants.SCRIPT_SOURCE)
-                                            .params(Map.of(
-                                                    SearchConstants.QUERY_VECTOR_PARAM, JsonData.of(queryVector)
-                                            ))
-                                    )
-                            )
-                            .weight((double) generalSearchProperties.getSemanticBoost())
-                    )
-                    .scoreMode(FunctionScoreMode.Sum)
-                    .boostMode(FunctionBoostMode.Sum)
-            );
-
+            log.info("Performing lexical search for query: '{}'", query);
             SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
                             .index(SearchConstants.POSTS_INDEX)
                             .size(generalSearchProperties.getSearchSize())
-                            .query(q -> q.functionScore(functionScoreQuery))
-                    ,
+                            .query(lexicalQuery),
                     PostDocument.class
             );
-
-            return response.hits().hits().stream()
-                    .filter(hit -> hit.source() != null)
-                    .map(this::mapToSearchResult)
-                    .collect(Collectors.toList());
-
+            log.info("Lexical search found {} hits.", response.hits().hits().size());
+            return response.hits().hits();
         } catch (IOException e) {
-            log.error("Elasticsearch hybrid search failed [query={}]", query, e);
-            throw new RuntimeException("Elasticsearch 검색 중 오류가 발생했습니다.", e);
+            log.error("Elasticsearch lexical search failed [query={}]", query, e);
+            throw new RuntimeException("Elasticsearch lexical search failed.", e);
+        }
+    }
+
+    private List<Hit<PostDocument>> performSemanticSearch(List<Float> queryVector) {
+        Query semanticQuery = Query.of(q -> q
+                .scriptScore(ss -> ss
+                        .query(Query.of(iq -> iq.matchAll(ma -> ma)))
+                        .script(s -> s
+                                .source(SearchConstants.SCRIPT_SOURCE_SEMANTIC)
+                                .params(Map.of(SearchConstants.QUERY_VECTOR_PARAM, JsonData.of(queryVector)))
+                        )
+                )
+        );
+
+        try {
+            log.info("Performing semantic search.");
+            SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
+                            .index(SearchConstants.POSTS_INDEX)
+                            .size(generalSearchProperties.getSearchSize())
+                            .query(semanticQuery),
+                    PostDocument.class
+            );
+            log.info("Semantic search found {} hits.", response.hits().hits().size());
+            return response.hits().hits();
+        } catch (IOException e) {
+            log.error("Elasticsearch semantic search failed", e);
+            throw new RuntimeException("Elasticsearch semantic search failed.", e);
         }
     }
 
