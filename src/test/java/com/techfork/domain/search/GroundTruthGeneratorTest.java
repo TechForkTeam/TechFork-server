@@ -7,6 +7,7 @@ import com.techfork.domain.search.service.SearchServiceImpl;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.llm.EmbeddingClient;
+import java.util.concurrent.Executor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,14 +37,16 @@ class GroundTruthGeneratorTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private Executor searchAsyncExecutor;
+
     @Test
     @DisplayName("실제 DB 데이터를 기반으로 ground-truth.json 템플릿 생성")
     void generateGroundTruthTemplate() {
         List<String> keywords = List.of("스프링", "Java", "Spring Boot", "JPA", "Docker", "MSA", "배치", "클라우드");
 
         SearchServiceImpl searchService = new SearchServiceImpl(
-                elasticsearchClient, embeddingClient, generalSearchProperties, userProfileDocumentRepository, userRepository
-        );
+                elasticsearchClient, embeddingClient, generalSearchProperties, userProfileDocumentRepository, userRepository, searchAsyncExecutor);
 
         System.out.println("========== [Copy Below JSON] ==========");
         System.out.println("[");

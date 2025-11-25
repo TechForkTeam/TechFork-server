@@ -17,7 +17,7 @@ public class GeneralSearchProperties {
 
     // --- [기본 검색 설정] ---
 
-    // 최종 사용자에게 보여줄 결과 개수
+    // 최종 검색 결과 개수
     private Integer searchSize = 20;
 
     // BM25 가중치
@@ -27,27 +27,18 @@ public class GeneralSearchProperties {
 
     // --- [Vector & KNN 설정] ---
 
-    // KNN 검색 시 가져올 개수.
     private Integer knnK = 60;
-
-    private Integer knnNumCandidates = 200;
+    private Integer knnNumCandidates = 100;
     private Float vectorTitleBoost = 3.0f;
     private Float vectorSummaryBoost = 1.5f;
     private Float vectorContentChunkBoost = 0.8f;
 
     // --- [RRF 및 가중치 설정] ---
 
-    // 1차 검색 점수(RRF) 가중치
     private double hybridScoreWeight = 50.0;
-
-    // 2차 개인화 점수 가중치
     private double personalScoreWeight = 1.0;
-
-    // RRF 상수 (k).
-    static final int RRF_K = 60;
-
-    // RRF 계산을 위해 각 쿼리(BM25, Vector)에서 가져올 상위 문서 수
-    static final int RRF_WINDOW_SIZE = 60;
+    private int RRF_K = 60;
+    private int RRF_WINDOW_SIZE = 60;
 
     // --- [rerank 가중치 설정] ---
     private double rerankDocumentTitleWeight = 0.6;

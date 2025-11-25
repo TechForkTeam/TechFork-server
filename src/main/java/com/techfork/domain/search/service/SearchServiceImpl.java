@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -88,63 +87,82 @@ public class SearchServiceImpl implements SearchService {
     }
 
     private List<SearchResult> performHybridSearch(String query, List<Float> queryVector) {
-        CompletableFuture<List<Hit<PostDocument>>> lexicalSearchFuture =
-            CompletableFuture.supplyAsync(() -> performLexicalSearch(query), searchAsyncExecutor);
+        CompletableFuture<List<Hit<PostDocument>>> lexicalFuture =
+                CompletableFuture.supplyAsync(() -> performLexicalSearch(query), searchAsyncExecutor);
+        CompletableFuture<List<Hit<PostDocument>>> semanticFuture =
+                CompletableFuture.supplyAsync(() -> performSemanticSearch(queryVector), searchAsyncExecutor);
 
-        CompletableFuture<List<Hit<PostDocument>>> semanticSearchFuture =
-            CompletableFuture.supplyAsync(() -> performSemanticSearch(queryVector), searchAsyncExecutor);
+        CompletableFuture<List<SearchResult>> hybridResultFuture = lexicalFuture
+                .thenCombine(semanticFuture, this::calculateRRF)
+                .exceptionally(ex -> {
+                    log.error("Hybrid search failed", ex);
+                    throw new RuntimeException("통합 검색 중 오류 발생", ex);
+                });
 
-        CompletableFuture.allOf(lexicalSearchFuture, semanticSearchFuture).join();
+        return hybridResultFuture.join();
+    }
 
-        try {
-            List<Hit<PostDocument>> lexicalHits = lexicalSearchFuture.get();
-            List<Hit<PostDocument>> semanticHits = semanticSearchFuture.get();
+    private List<SearchResult> calculateRRF(List<Hit<PostDocument>> lexicalHits, List<Hit<PostDocument>> semanticHits) {
+        Map<String, Integer> lexicalRankMap = new HashMap<>();
+        AtomicInteger rank = new AtomicInteger(1);
+        lexicalHits.forEach(hit -> lexicalRankMap.put(hit.id(), rank.getAndIncrement()));
 
-            Map<String, Integer> lexicalRankMap = new HashMap<>();
-            AtomicInteger rank = new AtomicInteger(1);
-            lexicalHits.forEach(hit -> lexicalRankMap.put(hit.id(), rank.getAndIncrement()));
+        Map<String, Integer> semanticRankMap = new HashMap<>();
+        rank.set(1);
+        semanticHits.forEach(hit -> semanticRankMap.put(hit.id(), rank.getAndIncrement()));
 
-            Map<String, Integer> semanticRankMap = new HashMap<>();
-            rank.set(1);
-            semanticHits.forEach(hit -> semanticRankMap.put(hit.id(), rank.getAndIncrement()));
+        Map<String, SearchResult> combinedResults = new HashMap<>();
+        Map<String, Double> rrfScores = new HashMap<>();
 
-            Map<String, SearchResult> combinedResults = new HashMap<>();
-            Map<String, Double> rrfScores = new HashMap<>();
+        processHitsForRRF(lexicalHits, lexicalRankMap, rrfScores, combinedResults);
+        processHitsForRRF(semanticHits, semanticRankMap, rrfScores, combinedResults);
 
-            lexicalHits.forEach(hit -> {
-                String docId = hit.id();
-                double score = 1.0 / (GeneralSearchProperties.RRF_K + lexicalRankMap.get(docId));
-                rrfScores.put(docId, rrfScores.getOrDefault(docId, 0.0) + score);
-                if (!combinedResults.containsKey(docId)) {
-                    combinedResults.put(docId, mapToSearchResult(hit));
+        return combinedResults.values().stream()
+                .map(searchResult -> {
+                    double finalScore = rrfScores.get(searchResult.getPostId().toString());
+                    return searchResult.toBuilder()
+                            .hybridScore(finalScore)
+                            .finalScore(finalScore)
+                            .build();
+                })
+                .sorted(Comparator.comparing(SearchResult::getFinalScore).reversed())
+                .limit(generalSearchProperties.getSearchSize())
+                .collect(Collectors.toList());
+    }
+
+    private void processHitsForRRF(List<Hit<PostDocument>> hits,
+                                   Map<String, Integer> rankMap,
+                                   Map<String, Double> rrfScores,
+                                   Map<String, SearchResult> combinedResults) {
+        hits.forEach(hit -> {
+            String docId = hit.id();
+            double score = 1.0 / (generalSearchProperties.getRRF_K() + rankMap.get(docId));
+            rrfScores.merge(docId, score, Double::sum);
+
+            SearchResult newResult = mapToSearchResult(hit);
+
+            if (!combinedResults.containsKey(docId)) {
+                combinedResults.put(docId, newResult);
+            } else {
+                SearchResult existing = combinedResults.get(docId);
+                boolean needUpdate = false;
+                SearchResult.SearchResultBuilder builder = existing.toBuilder();
+
+                if (existing.getTitleVector() == null && newResult.getTitleVector() != null) {
+                    builder.titleVector(newResult.getTitleVector());
+                    needUpdate = true;
                 }
-            });
 
-            semanticHits.forEach(hit -> {
-                String docId = hit.id();
-                double score = 1.0 / (GeneralSearchProperties.RRF_K + semanticRankMap.get(docId));
-                rrfScores.put(docId, rrfScores.getOrDefault(docId, 0.0) + score);
-                if (!combinedResults.containsKey(docId)) {
-                    combinedResults.put(docId, mapToSearchResult(hit));
+                if (existing.getSummaryVector() == null && newResult.getSummaryVector() != null) {
+                    builder.summaryVector(newResult.getSummaryVector());
+                    needUpdate = true;
                 }
-            });
 
-            return combinedResults.values().stream()
-                    .map(searchResult -> {
-                        double finalScore = rrfScores.get(searchResult.getPostId().toString());
-                        return searchResult.toBuilder().finalScore(finalScore).hybridScore(finalScore).build();
-                    })
-                    .sorted(Comparator.comparing(SearchResult::getFinalScore).reversed())
-                    .limit(generalSearchProperties.getSearchSize())
-                    .collect(Collectors.toList());
-        } catch (InterruptedException | ExecutionException e) {
-            log.error("Failed to complete hybrid search", e);
-            if (!lexicalSearchFuture.isDone()) lexicalSearchFuture.cancel(true);
-            if (!semanticSearchFuture.isDone()) semanticSearchFuture.cancel(true);
-
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Hybrid search failed", e);
-        }
+                if (needUpdate) {
+                    combinedResults.put(docId, builder.build());
+                }
+            }
+        });
     }
 
     private List<Hit<PostDocument>> performLexicalSearch(String query) {
@@ -179,7 +197,7 @@ public class SearchServiceImpl implements SearchService {
         try {
             SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
                             .index(SearchConstants.POSTS_INDEX)
-                            .size(GeneralSearchProperties.RRF_WINDOW_SIZE)
+                            .size(generalSearchProperties.getRRF_WINDOW_SIZE())
                             .query(lexicalQuery),
                     PostDocument.class
             );
@@ -222,7 +240,7 @@ public class SearchServiceImpl implements SearchService {
         try {
             SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
                             .index(SearchConstants.POSTS_INDEX)
-                            .size(GeneralSearchProperties.RRF_WINDOW_SIZE)
+                            .size(generalSearchProperties.getRRF_WINDOW_SIZE())
                             .knn(knnSearches),
                     PostDocument.class
             );
@@ -255,10 +273,9 @@ public class SearchServiceImpl implements SearchService {
 
     private List<SearchResult> personalReranking(List<SearchResult> initialResults, float[] userProfileVector) {
         return initialResults.stream()
-                .filter(result -> result.getSummaryVector() != null && result.getSummaryVector().length > 0)
                 .map(result -> {
                     double titleSim = 0.0;
-                    if (result.getTitleVector() != null) {
+                    if (result.getTitleVector() != null && result.getTitleVector().length > 0) {
                         titleSim = VectorUtil.cosineSimilarity(userProfileVector, result.getTitleVector());
                     }
 
