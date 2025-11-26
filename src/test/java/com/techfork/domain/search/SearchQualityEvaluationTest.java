@@ -41,9 +41,6 @@ class SearchQualityEvaluationTest {
     private UserProfileDocumentRepository userProfileDocumentRepository;
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
     @Qualifier("searchAsyncExecutor")
     private Executor searchAsyncExecutor;
 
@@ -77,7 +74,6 @@ class SearchQualityEvaluationTest {
                     embeddingClient,
                     props,
                     userProfileDocumentRepository,
-                    userRepository,
                     searchAsyncExecutor
             );
 

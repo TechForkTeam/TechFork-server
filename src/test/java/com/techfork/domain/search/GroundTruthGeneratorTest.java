@@ -35,9 +35,6 @@ class GroundTruthGeneratorTest {
     private UserProfileDocumentRepository userProfileDocumentRepository;
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
     private Executor searchAsyncExecutor;
 
     @Test
@@ -46,7 +43,7 @@ class GroundTruthGeneratorTest {
         List<String> keywords = List.of("스프링", "Java", "Spring Boot", "JPA", "Docker", "MSA", "배치", "클라우드");
 
         SearchServiceImpl searchService = new SearchServiceImpl(
-                elasticsearchClient, embeddingClient, generalSearchProperties, userProfileDocumentRepository, userRepository, searchAsyncExecutor);
+                elasticsearchClient, embeddingClient, generalSearchProperties, userProfileDocumentRepository, searchAsyncExecutor);
 
         System.out.println("========== [Copy Below JSON] ==========");
         System.out.println("[");
