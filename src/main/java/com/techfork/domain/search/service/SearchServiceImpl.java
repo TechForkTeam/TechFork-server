@@ -45,13 +45,32 @@ public class SearchServiceImpl implements SearchService {
     private final Executor searchAsyncExecutor;
 
     @Override
+    public List<SearchResult> searchOnlyBm25(String query) {
+        log.info("DEBUG MODE: Performing Lexical Search Only (BM25)");
+        List<SearchResult> searchResults = searchOnlyBM25(query);
+        log.info("Found {} results from lexical search.", searchResults.size());
+        return searchResults.stream()
+                .map(result -> result.toBuilder().titleVector(null).summaryVector(null).build())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<SearchResult> searchOnlySemantic(String query) {
+        log.info("DEBUG MODE: Performing Semantic Search Only");
+        List<SearchResult> searchResults = searchOnlySemantic(queryEmbedding(query));
+        log.info("Found {} results from semantic search.", searchResults.size());
+        return searchResults.stream()
+                .map(result -> result.toBuilder().titleVector(null).summaryVector(null).build())
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<SearchResult> searchGeneral(String query) {
         log.info("general search started: with query: '{}'", query);
-        List<Float> queryVector = queryEmbedding(query);
-        List<SearchResult> searchResults = performHybridSearch(query, queryVector);
+        List<SearchResult> searchResults = performHybridSearch(query, queryEmbedding(query));
         log.info("Found {} results from hybrid search.", searchResults.size());
         return searchResults.stream()
-                .map(result -> result.toBuilder().summaryVector(null).build())
+                .map(result -> result.toBuilder().titleVector(null).summaryVector(null).build())
                 .collect(Collectors.toList());
     }
 
@@ -100,6 +119,26 @@ public class SearchServiceImpl implements SearchService {
                 });
 
         return hybridResultFuture.join();
+    }
+
+    private List<SearchResult> searchOnlyBM25(String query) {
+        log.info("DEBUG MODE: Performing Lexical Search Only (BM25)");
+
+        List<Hit<PostDocument>> lexicalHits = performLexicalSearch(query);
+
+        return lexicalHits.stream()
+                .map(this::mapToSearchResult)
+                .collect(Collectors.toList());
+    }
+
+    private List<SearchResult> searchOnlySemantic(List<Float> queryVector) {
+        log.info("DEBUG MODE: Performing Semantic Search Only");
+
+        List<Hit<PostDocument>> semanticHits = performSemanticSearch(queryVector);
+
+        return semanticHits.stream()
+                .map(this::mapToSearchResult)
+                .toList();
     }
 
     private List<SearchResult> calculateRRF(List<Hit<PostDocument>> lexicalHits, List<Hit<PostDocument>> semanticHits) {
@@ -176,6 +215,17 @@ public class SearchServiceImpl implements SearchService {
                                         .query(query)
                                         .type(TextQueryType.MostFields)
                                         .fields(titleField, summaryField)
+                                        .boost(generalSearchProperties.getExactBoost())
+                                )
+                        )
+                        .should(sh -> sh
+                                .multiMatch(m -> m
+                                        .query(query)
+                                        .fields(titleField, summaryField)
+                                        .type(TextQueryType.MostFields)
+                                        .fuzziness("AUTO")
+                                        .prefixLength(1)
+                                        .boost(generalSearchProperties.getFuzzyBoost())
                                 )
                         )
                         .should(sh -> sh
