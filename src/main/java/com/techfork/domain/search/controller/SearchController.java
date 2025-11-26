@@ -23,6 +23,25 @@ public class SearchController {
 
     private final SearchService searchService;
 
+    @Operation(summary = "테스트용 : 1단계 검색 - BM25")
+    @GetMapping("/bm25")
+    public BaseResponse<List<SearchResult>> searchBm25(
+            @RequestParam @Parameter(description = "검색어", required = true) String query
+    ) {
+        List<SearchResult> results = searchService.searchOnlyBm25(query);
+        return BaseResponse.of(SuccessCode.OK, results).getBody();
+    }
+
+    @Operation(summary = "테스트용 : 1단계 검색 - semantic")
+    @GetMapping("/semantic")
+    public BaseResponse<List<SearchResult>> searchSemantic(
+            @RequestParam @Parameter(description = "검색어", required = true) String query
+    ) {
+        List<SearchResult> results = searchService.searchOnlySemantic(query);
+        return BaseResponse.of(SuccessCode.OK, results).getBody();
+    }
+
+
     @Operation(summary = "1단계 검색(BM25 + 시맨틱)", description = "검색어를 기반으로 BM25 + k-NN 하이브리드 검색을 수행하고 합산하여 상위 결과를 반환합니다. (개인화 미적용)")
     @GetMapping("/general")
     public BaseResponse<List<SearchResult>> searchGeneral(

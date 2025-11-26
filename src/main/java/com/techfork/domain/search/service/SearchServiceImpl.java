@@ -9,9 +9,7 @@ import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.techfork.domain.post.document.PostDocument;
 import com.techfork.domain.search.dto.SearchResult;
 import com.techfork.domain.user.document.UserProfileDocument;
-import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
-import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.llm.EmbeddingClient;
 import com.techfork.global.util.VectorUtil;
 import java.io.IOException;
@@ -33,7 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
-@Transactional
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class SearchServiceImpl implements SearchService {
 
@@ -41,45 +39,82 @@ public class SearchServiceImpl implements SearchService {
     private final EmbeddingClient embeddingClient;
     private final GeneralSearchProperties generalSearchProperties;
     private final UserProfileDocumentRepository userProfileDocumentRepository;
-    private final UserRepository userRepository;
     private final Executor searchAsyncExecutor;
 
     @Override
+    public List<SearchResult> searchOnlyBm25(String query) {
+        List<SearchResult> searchResults = searchOnlyBM25(query);
+        return stripVectors(searchResults);
+    }
+
+    @Override
+    public List<SearchResult> searchOnlySemantic(String query) {
+        List<SearchResult> searchResults = searchOnlySemantic(queryEmbedding(query));
+        return stripVectors(searchResults);
+    }
+
+    @Override
     public List<SearchResult> searchGeneral(String query) {
-        log.info("general search started: with query: '{}'", query);
+        log.debug("general search started: with query: '{}'", query);
+        long startTime = System.currentTimeMillis();
+
         List<Float> queryVector = queryEmbedding(query);
         List<SearchResult> searchResults = performHybridSearch(query, queryVector);
-        log.info("Found {} results from hybrid search.", searchResults.size());
-        return searchResults.stream()
-                .map(result -> result.toBuilder().summaryVector(null).build())
-                .collect(Collectors.toList());
+
+        long duration = System.currentTimeMillis() - startTime;
+        log.info("Search completed. Query='{}', Results={}, Time={}ms", query, searchResults.size(), duration);
+
+        return stripVectors(searchResults);
     }
 
     @Override
     public List<SearchResult> searchPersonalized(String query, Long userId) {
-        log.info("Personalized search started for userId: {} with query: '{}'", userId, query);
+        log.debug("Personalized search started for userId: {} with query: '{}'", userId, query);
+        long startTime = System.currentTimeMillis();
+
         List<Float> queryVector = queryEmbedding(query);
+
         List<SearchResult> initialResults = performHybridSearch(query, queryVector);
-        log.info("Found {} initial results from hybrid search.", initialResults.size());
+        log.debug("Initial hybrid search found {} documents.", initialResults.size());
 
-        User user = userRepository.getReferenceById(userId);
+        Optional<UserProfileDocument> userProfileOpt = userProfileDocumentRepository.findByUserId(userId);
+        boolean hasProfile = userProfileOpt.isPresent() && userProfileOpt.get().getProfileVector() != null;
 
-        log.info("Attempting to find user profile for userId: {}", user.getId());
-        Optional<UserProfileDocument> userProfileOpt = userProfileDocumentRepository.findByUserId(user.getId());
-        log.info("Successfully fetched user profile optional. isPresent: {}", userProfileOpt.isPresent());
-
-        if (userProfileOpt.map(UserProfileDocument::getProfileVector).isEmpty()) {
-            log.warn("User profile or vector not found for userId: {}. Returning non-personalized results.", user.getId());
-            return initialResults.stream()
-                    .map(result -> result.toBuilder().summaryVector(null).build())
-                    .collect(Collectors.toList());
+        if (!hasProfile) {
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("Personalized Search [FALLBACK]. UserID={}, Query='{}', Results={}, Time={}ms (Reason: No Profile)",
+                    userId, query, initialResults.size(), duration);
+            return stripVectors(initialResults);
         }
 
-        log.info("User profile and vector found. Proceeding to personal reranking.");
         float[] userProfileVector = userProfileOpt.get().getProfileVector();
         List<SearchResult> rerankedResults = personalReranking(initialResults, userProfileVector);
-        log.info("Personal reranking complete. Returning {} results.", rerankedResults.size());
-        return rerankedResults;
+
+        long duration = System.currentTimeMillis() - startTime;
+        log.info("Personalized Search [RERANKED]. UserID={}, Query='{}', Results={}, Time={}ms",
+                userId, query, rerankedResults.size(), duration);
+
+        return stripVectors(rerankedResults);
+    }
+
+    private List<SearchResult> searchOnlyBM25(String query) {
+        log.info("DEBUG MODE: Performing Lexical Search Only (BM25)");
+
+        List<Hit<PostDocument>> lexicalHits = performLexicalSearch(query);
+
+        return lexicalHits.stream()
+                .map(this::mapToSearchResult)
+                .collect(Collectors.toList());
+    }
+
+    private List<SearchResult> searchOnlySemantic(List<Float> queryVector) {
+        log.info("DEBUG MODE: Performing Semantic Search Only");
+
+        List<Hit<PostDocument>> semanticHits = performSemanticSearch(queryVector);
+
+        return semanticHits.stream()
+                .map(this::mapToSearchResult)
+                .toList();
     }
 
     private List<Float> queryEmbedding(String query) {
@@ -87,19 +122,117 @@ public class SearchServiceImpl implements SearchService {
     }
 
     private List<SearchResult> performHybridSearch(String query, List<Float> queryVector) {
-        CompletableFuture<List<Hit<PostDocument>>> lexicalFuture =
-                CompletableFuture.supplyAsync(() -> performLexicalSearch(query), searchAsyncExecutor);
-        CompletableFuture<List<Hit<PostDocument>>> semanticFuture =
-                CompletableFuture.supplyAsync(() -> performSemanticSearch(queryVector), searchAsyncExecutor);
+        CompletableFuture<List<Hit<PostDocument>>> lexicalFuture = CompletableFuture.supplyAsync(() -> {
+                    long t = System.currentTimeMillis();
+                    var result = performLexicalSearch(query);
+                    log.debug("Lexical search done. Hits={}, Time={}ms", result.size(), System.currentTimeMillis() - t);
+                    return result;
+                }, searchAsyncExecutor);
+
+        CompletableFuture<List<Hit<PostDocument>>> semanticFuture = CompletableFuture.supplyAsync(() -> {
+                    long t = System.currentTimeMillis();
+                    var result = performSemanticSearch(queryVector);
+                    log.debug("Semantic search done. Hits={}, Time={}ms", result.size(), System.currentTimeMillis() - t);
+                    return result;
+                }, searchAsyncExecutor);
 
         CompletableFuture<List<SearchResult>> hybridResultFuture = lexicalFuture
-                .thenCombine(semanticFuture, this::calculateRRF)
+                .thenCombine(semanticFuture, (lexicalHits, semanticHits) -> {
+                    log.debug("Merging results: Lexical Hits={}, Semantic Hits={}", lexicalHits.size(), semanticHits.size());
+                    return calculateRRF(lexicalHits, semanticHits);
+                })
                 .exceptionally(ex -> {
-                    log.error("Hybrid search failed", ex);
+                    log.error("Hybrid search failed for query: '{}'", query, ex);
                     throw new RuntimeException("통합 검색 중 오류 발생", ex);
                 });
 
         return hybridResultFuture.join();
+    }
+
+    private List<Hit<PostDocument>> performLexicalSearch(String query) {
+        String titleField = String.format(SearchConstants.TITLE_FIELD_FORMAT, generalSearchProperties.getTitleBoost());
+        String summaryField = String.format(SearchConstants.SUMMARY_FIELD_FORMAT, generalSearchProperties.getSummaryBoost());
+
+        Query lexicalQuery = Query.of(q -> q
+                .bool(b -> b
+                        .should(sh -> sh
+                                .multiMatch(m -> m
+                                        .query(query)
+                                        .type(TextQueryType.MostFields)
+                                        .fields(titleField, summaryField)
+                                        .boost(generalSearchProperties.getExactBoost())
+                                )
+                        )
+                        .should(sh -> sh
+                                .multiMatch(m -> m
+                                        .query(query)
+                                        .fields(titleField, summaryField)
+                                        .type(TextQueryType.MostFields)
+                                        .fuzziness("AUTO")
+                                        .prefixLength(1)
+                                        .boost(generalSearchProperties.getFuzzyBoost())
+                                )
+                        )
+                        .should(sh -> sh
+                                .nested(n -> n
+                                        .path(SearchConstants.CONTENT_CHUNKS_PATH)
+                                        .query(nq -> nq
+                                                .match(m -> m
+                                                        .field(SearchConstants.CHUNK_TEXT_FIELD)
+                                                        .query(query)
+                                                )
+                                        )
+                                        .boost(generalSearchProperties.getChunkBoost())
+                                )
+                        )
+                        .minimumShouldMatch(SearchConstants.MINIMUM_SHOULD_MATCH)
+                )
+        );
+
+        try {
+            SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
+                            .index(SearchConstants.POSTS_INDEX)
+                            .size(generalSearchProperties.getRRF_WINDOW_SIZE())
+                            .query(lexicalQuery),
+                    PostDocument.class
+            );
+            return response.hits().hits();
+        } catch (IOException e) {
+            throw new RuntimeException("Lexical search failed", e);
+        }
+    }
+
+    private List<Hit<PostDocument>> performSemanticSearch(List<Float> queryVector) {
+        int k = generalSearchProperties.getKnnK();
+        int numCandidates = generalSearchProperties.getKnnNumCandidates();
+
+        List<KnnSearch> knnSearches = new ArrayList<>();
+        knnSearches.add(createKnnSearch("titleEmbedding", queryVector, k, numCandidates, generalSearchProperties.getVectorTitleBoost()));
+        knnSearches.add(createKnnSearch("summaryEmbedding", queryVector, k, numCandidates, generalSearchProperties.getVectorSummaryBoost()));
+        knnSearches.add(createKnnSearch("contentChunks.embedding", queryVector, k, numCandidates, generalSearchProperties.getVectorContentChunkBoost()));
+
+        try {
+            SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
+                            .index(SearchConstants.POSTS_INDEX)
+                            .size(generalSearchProperties.getRRF_WINDOW_SIZE())
+                            .knn(knnSearches),
+                    PostDocument.class
+            );
+
+            return response.hits().hits();
+        } catch (IOException e) {
+            throw new RuntimeException("Semantic search failed", e);
+        }
+    }
+
+    private KnnSearch createKnnSearch(String field, List<Float> vector, int k, int numCandidates, float boost) {
+        return KnnSearch.of(ks -> ks
+                .field(field)
+                .queryVector(vector)
+                .k(k)
+                .numCandidates(numCandidates)
+                .boost(boost)
+        );
     }
 
     private List<SearchResult> calculateRRF(List<Hit<PostDocument>> lexicalHits, List<Hit<PostDocument>> semanticHits) {
@@ -165,92 +298,6 @@ public class SearchServiceImpl implements SearchService {
         });
     }
 
-    private List<Hit<PostDocument>> performLexicalSearch(String query) {
-        String titleField = String.format(SearchConstants.TITLE_FIELD_FORMAT, generalSearchProperties.getTitleBoost());
-        String summaryField = String.format(SearchConstants.SUMMARY_FIELD_FORMAT, generalSearchProperties.getSummaryBoost());
-
-        Query lexicalQuery = Query.of(q -> q
-                .bool(b -> b
-                        .should(sh -> sh
-                                .multiMatch(m -> m
-                                        .query(query)
-                                        .type(TextQueryType.MostFields)
-                                        .fields(titleField, summaryField)
-                                )
-                        )
-                        .should(sh -> sh
-                                .nested(n -> n
-                                        .path(SearchConstants.CONTENT_CHUNKS_PATH)
-                                        .query(nq -> nq
-                                                .match(m -> m
-                                                        .field(SearchConstants.CHUNK_TEXT_FIELD)
-                                                        .query(query)
-                                                )
-                                        )
-                                        .boost(generalSearchProperties.getChunkBoost())
-                                )
-                        )
-                        .minimumShouldMatch(SearchConstants.MINIMUM_SHOULD_MATCH)
-                )
-        );
-
-        try {
-            SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
-                            .index(SearchConstants.POSTS_INDEX)
-                            .size(generalSearchProperties.getRRF_WINDOW_SIZE())
-                            .query(lexicalQuery),
-                    PostDocument.class
-            );
-            return response.hits().hits();
-        } catch (IOException e) {
-            throw new RuntimeException("Lexical search failed", e);
-        }
-    }
-
-    private List<Hit<PostDocument>> performSemanticSearch(List<Float> queryVector) {
-        int k = generalSearchProperties.getKnnK();
-        int numCandidates = generalSearchProperties.getKnnNumCandidates();
-
-        List<KnnSearch> knnSearches = new ArrayList<>();
-
-        knnSearches.add(KnnSearch.of(ks -> ks
-                .field("titleEmbedding")
-                .queryVector(queryVector)
-                .k(k)
-                .numCandidates(numCandidates)
-                .boost(generalSearchProperties.getVectorTitleBoost())
-        ));
-
-        knnSearches.add(KnnSearch.of(ks -> ks
-                .field("summaryEmbedding")
-                .queryVector(queryVector)
-                .k(k)
-                .numCandidates(numCandidates)
-                .boost(generalSearchProperties.getVectorSummaryBoost())
-        ));
-
-        knnSearches.add(KnnSearch.of(ks -> ks
-                .field("contentChunks.embedding")
-                .queryVector(queryVector)
-                .k(k)
-                .numCandidates(numCandidates)
-                .boost(generalSearchProperties.getVectorContentChunkBoost())
-        ));
-
-        try {
-            SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
-                            .index(SearchConstants.POSTS_INDEX)
-                            .size(generalSearchProperties.getRRF_WINDOW_SIZE())
-                            .knn(knnSearches),
-                    PostDocument.class
-            );
-
-            return response.hits().hits();
-        } catch (IOException e) {
-            throw new RuntimeException("Semantic search failed", e);
-        }
-    }
-
     private SearchResult mapToSearchResult(Hit<PostDocument> hit) {
         PostDocument doc = hit.source();
         double score = Objects.requireNonNullElse(hit.score(), 0.0);
@@ -297,6 +344,15 @@ public class SearchServiceImpl implements SearchService {
                             .build();
                 })
                 .sorted(Comparator.comparing(SearchResult::getFinalScore).reversed())
+                .collect(Collectors.toList());
+    }
+
+    private List<SearchResult> stripVectors(List<SearchResult> results) {
+        return results.stream()
+                .map(result -> result.toBuilder()
+                        .titleVector(null)
+                        .summaryVector(null)
+                        .build())
                 .collect(Collectors.toList());
     }
 }

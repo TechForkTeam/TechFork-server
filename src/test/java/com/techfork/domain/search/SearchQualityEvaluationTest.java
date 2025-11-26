@@ -41,9 +41,6 @@ class SearchQualityEvaluationTest {
     private UserProfileDocumentRepository userProfileDocumentRepository;
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
     @Qualifier("searchAsyncExecutor")
     private Executor searchAsyncExecutor;
 
@@ -77,7 +74,6 @@ class SearchQualityEvaluationTest {
                     embeddingClient,
                     props,
                     userProfileDocumentRepository,
-                    userRepository,
                     searchAsyncExecutor
             );
 
@@ -133,9 +129,25 @@ class SearchQualityEvaluationTest {
         scenarios.put("4. Title Focus (제목 키워드 & 벡터 최우선)",
                 createProperties(10.0f, 0.5f, 0.1f, 10.0f, 1.0f, 0.5f, 30.0, 60, 200));
 
-        // 5. Balanced High Recall (넓게 찾기)
-        scenarios.put("5. High Recall (탐색 범위 확장)",
-                createProperties(3.0f, 2.0f, 1.0f, 3.0f, 2.0f, 1.0f, 20.0, 150, 400));
+        // 6. Content Deep Dive (본문 내용 집중)
+        // 목적: 제목이나 요약에는 없지만, 본문 구석에 있는 구체적인 해결책이나 에러 로그 등을 찾을 때 유리한지 확인
+        scenarios.put("5. Content Deep Dive (본문 청크 집중)",
+                createProperties(1.0f, 1.0f, 5.0f, 1.0f, 1.0f, 4.0f, 30.0, 60, 200));
+
+        // 7. Summary Oriented (요약문 집중)
+        // 목적: 제목이 너무 함축적(예: "나의 회고")일 때, 요약문에 포함된 핵심 의도를 잘 파악하는지 확인
+        scenarios.put("6. Summary Oriented (요약문 집중)",
+                createProperties(1.0f, 4.0f, 1.0f, 1.0f, 4.0f, 1.0f, 30.0, 60, 200));
+
+        // 8. High Precision / Low Latency (속도 최적화 & 상위 매칭)
+        // 목적: 검색 후보군(Candidates)을 줄였을 때, 정확도(nDCG) 손실은 적으면서 응답 속도(Latency)가 얼마나 개선되는지 확인
+        scenarios.put("7. High Precision (속도 중시, 후보군 축소)",
+                createProperties(3.0f, 1.0f, 0.5f, 3.0f, 1.5f, 0.8f, 30.0, 20, 40));
+
+        // 10. Equal Balance (모든 필드 동등 가중치)
+        // 목적: 특정 필드에 가중치를 주지 않고 기계적으로 동등하게 설정했을 때의 베이스라인 품질 확인
+        scenarios.put("8. Equal Balance (모든 가중치 동일)",
+                createProperties(1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 30.0, 60, 200));
 
         return scenarios;
     }

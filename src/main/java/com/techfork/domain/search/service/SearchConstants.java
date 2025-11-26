@@ -6,5 +6,5 @@ public class SearchConstants {
     static final String SUMMARY_FIELD_FORMAT = "summary^%.1f";
     static final String CONTENT_CHUNKS_PATH = "contentChunks";
     static final String CHUNK_TEXT_FIELD = "contentChunks.chunkText";
-    static final String MINIMUM_SHOULD_MATCH = "0";
+    static final String MINIMUM_SHOULD_MATCH = "1";
 }
