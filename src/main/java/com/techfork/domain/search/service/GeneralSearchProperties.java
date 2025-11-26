@@ -23,9 +23,9 @@ public class GeneralSearchProperties {
     // BM25 가중치
     private Float exactBoost = 2.0f;
     private Float titleBoost = 3.0f;
-    private Float summaryBoost = 1.0f;
+    private Float summaryBoost = 1.5f;
     private Float fuzzyBoost = 1.0f;
-    private Float chunkBoost = 0.5f;
+    private Float chunkBoost = 1.0f;
 
     // --- [Vector & KNN 설정] ---
 
