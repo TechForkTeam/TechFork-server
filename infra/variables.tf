@@ -31,7 +31,7 @@ variable "db_password" {
 variable "ec2_instance_type" {
   description = "EC2 인스턴스 타입"
   type        = string
-  default     = "t3.small"
+  default     = "t3.medium"
 }
 
 variable "rds_instance_class" {
