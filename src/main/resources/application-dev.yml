@@ -52,6 +52,7 @@ spring:
           max-tokens: 8192
     openai:
       api-key: ${OPENAI_API_KEY}
+      timeout: 60
       chat:
         options:
           model: gpt-4o-mini
