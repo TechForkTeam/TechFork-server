@@ -1,7 +1,10 @@
 package com.techfork.domain.post.service;
 
 import com.techfork.domain.post.converter.PostConverter;
-import com.techfork.domain.post.dto.*;
+import com.techfork.domain.post.dto.CompanyListResponse;
+import com.techfork.domain.post.dto.PostDetailDto;
+import com.techfork.domain.post.dto.PostInfoDto;
+import com.techfork.domain.post.dto.PostListResponse;
 import com.techfork.domain.post.entity.PostKeyword;
 import com.techfork.domain.post.enums.EPostSortType;
 import com.techfork.domain.post.repository.PostKeywordRepository;
@@ -90,6 +93,7 @@ public class PostQueryService {
                         .url(post.url())
                         .logoUrl(post.logoUrl())
                         .publishedAt(post.publishedAt())
+                        .viewCount(post.viewCount())
                         .keywords(keywordMap.getOrDefault(post.id(), List.of()))
                         .build())
                 .toList();
