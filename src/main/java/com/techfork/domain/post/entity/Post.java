@@ -46,6 +46,9 @@ public class Post extends BaseEntity {
     @Column
     private LocalDateTime embeddedAt;
 
+    @Column(nullable = false)
+    private Long viewCount = 0L;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tech_blog_id", nullable = false)
     private TechBlog techBlog;
@@ -93,5 +96,9 @@ public class Post extends BaseEntity {
 
     public void clearKeywords() {
         this.keywords.clear();
+    }
+
+    public void incrementViewCount() {
+        this.viewCount++;
     }
 }
