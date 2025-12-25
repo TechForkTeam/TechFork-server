@@ -13,6 +13,7 @@ public record PostInfoDto(
         String url,
         String logoUrl,
         LocalDateTime publishedAt,
+        Long viewCount,
         List<String> keywords
 ) {
 }
