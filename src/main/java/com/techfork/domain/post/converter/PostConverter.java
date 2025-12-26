@@ -39,6 +39,7 @@ public class PostConverter {
                 .url(baseDto.url())
                 .logoUrl(baseDto.logoUrl())
                 .publishedAt(baseDto.publishedAt())
+                .viewCount(baseDto.viewCount())
                 .keywords(keywords)
                 .build();
     }

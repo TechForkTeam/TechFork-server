@@ -43,9 +43,9 @@ public class ActivityCommandService {
         Post post = postRepository.findById(request.postId())
                 .orElseThrow(() -> new GeneralException(PostErrorCode.POST_NOT_FOUND));
 
-        if (readPostRepository.existsByUserAndPost(user, post)) {
-            log.info("User {} has already read post {}", userId, request.postId());
-            return;
+        boolean isFirstRead = !readPostRepository.existsByUserAndPost(user, post);
+        if (isFirstRead) {
+            post.incrementViewCount();
         }
 
         ReadPost readPost = ReadPost.create(
@@ -56,7 +56,8 @@ public class ActivityCommandService {
         );
 
         readPostRepository.save(readPost);
-        log.info("Saved read post for user {} and post {}", userId, request.postId());
+        log.info("Saved read post for user {} and post {} (viewCount incremented: {})",
+                userId, request.postId(), isFirstRead);
     }
 
     @Transactional

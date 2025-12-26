@@ -1,0 +1,241 @@
+package com.techfork.domain.post.repository;
+
+import com.techfork.domain.post.dto.PostDetailDto;
+import com.techfork.domain.post.dto.PostInfoDto;
+import com.techfork.domain.post.entity.Post;
+import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.repository.TechBlogRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.test.context.ActiveProfiles;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * PostRepository 테스트
+ * - @DataJpaTest: JPA 관련 컴포넌트만 로드
+ * - @ActiveProfiles("test"): H2 in-memory database 사용
+ * - 복잡한 JPQL 쿼리, 커서 페이징, 프로젝션 검증
+ */
+@DataJpaTest
+@ActiveProfiles("test")
+class PostRepositoryTest {
+
+    @Autowired
+    private PostRepository postRepository;
+
+    @Autowired
+    private TechBlogRepository techBlogRepository;
+
+    private TechBlog techBlog1;
+    private TechBlog techBlog2;
+
+    @BeforeEach
+    void setUp() {
+        // Given: 테스트용 TechBlog 생성
+        techBlog1 = TechBlog.builder()
+                .companyName("카카오")
+                .blogUrl("https://kakao.com/blog")
+                .rssUrl("https://kakao.com/rss")
+                .build();
+        techBlogRepository.save(techBlog1);
+
+        techBlog2 = TechBlog.builder()
+                .companyName("네이버")
+                .blogUrl("https://naver.com/blog")
+                .rssUrl("https://naver.com/rss")
+                .build();
+        techBlogRepository.save(techBlog2);
+    }
+
+    @Test
+    @DisplayName("findPopularPostsWithCursor - lastPostId가 null이면 첫 페이지 조회 (조회수 높은 순)")
+    void findPopularPostsWithCursor_FirstPage_OrderByViewCountDesc() {
+        // Given: 조회수가 다른 게시글 3개
+        Post post1 = createPost("게시글1", techBlog1, LocalDateTime.now().minusDays(3), 100L);
+        Post post2 = createPost("게시글2", techBlog1, LocalDateTime.now().minusDays(2), 500L);
+        Post post3 = createPost("게시글3", techBlog1, LocalDateTime.now().minusDays(1), 300L);
+        postRepository.saveAll(List.of(post1, post2, post3));
+
+        // When: lastPostId = null, size = 10
+        PageRequest pageRequest = PageRequest.of(0, 10);
+        List<PostInfoDto> result = postRepository.findPopularPostsWithCursor(null, pageRequest);
+
+        // Then: 조회수 높은 순으로 정렬 (500 > 300 > 100)
+        assertThat(result).hasSize(3);
+        assertThat(result.get(0).viewCount()).isEqualTo(500L);
+        assertThat(result.get(1).viewCount()).isEqualTo(300L);
+        assertThat(result.get(2).viewCount()).isEqualTo(100L);
+    }
+
+    @Test
+    @DisplayName("findPopularPostsWithCursor - lastPostId 지정 시 해당 ID 이후 게시글만 조회")
+    void findPopularPostsWithCursor_NextPage_FilterByLastPostId() {
+        // Given: 게시글 5개 생성
+        Post post1 = createPost("게시글1", techBlog1, LocalDateTime.now().minusDays(5), 500L);
+        Post post2 = createPost("게시글2", techBlog1, LocalDateTime.now().minusDays(4), 400L);
+        Post post3 = createPost("게시글3", techBlog1, LocalDateTime.now().minusDays(3), 300L);
+        Post post4 = createPost("게시글4", techBlog1, LocalDateTime.now().minusDays(2), 200L);
+        Post post5 = createPost("게시글5", techBlog1, LocalDateTime.now().minusDays(1), 100L);
+        postRepository.saveAll(List.of(post1, post2, post3, post4, post5));
+
+        // When: lastPostId = post3.id (커서 기준)
+        PageRequest pageRequest = PageRequest.of(0, 10);
+        List<PostInfoDto> result = postRepository.findPopularPostsWithCursor(post3.getId(), pageRequest);
+
+        // Then: post3.id보다 작은 ID만 반환 (post4, post5는 제외)
+        assertThat(result).hasSize(2);
+        assertThat(result).allMatch(dto -> dto.id() < post3.getId());
+    }
+
+    @Test
+    @DisplayName("findRecentPostsWithCursor - 최신 발행일 순으로 정렬")
+    void findRecentPostsWithCursor_OrderByPublishedAtDesc() {
+        // Given: 발행일이 다른 게시글 3개
+        LocalDateTime now = LocalDateTime.now();
+        Post post1 = createPost("게시글1", techBlog1, now.minusDays(3), 100L);
+        Post post2 = createPost("게시글2", techBlog1, now.minusDays(1), 200L);
+        Post post3 = createPost("게시글3", techBlog1, now.minusDays(2), 300L);
+        postRepository.saveAll(List.of(post1, post2, post3));
+
+        // When: 최신순 조회
+        PageRequest pageRequest = PageRequest.of(0, 10);
+        List<PostInfoDto> result = postRepository.findRecentPostsWithCursor(null, pageRequest);
+
+        // Then: 발행일 최신순 (post2 > post3 > post1)
+        assertThat(result).hasSize(3);
+        assertThat(result.get(0).publishedAt()).isAfter(result.get(1).publishedAt());
+        assertThat(result.get(1).publishedAt()).isAfter(result.get(2).publishedAt());
+    }
+
+    @Test
+    @DisplayName("findByCompanyWithCursor - company가 null이면 모든 게시글 조회")
+    void findByCompanyWithCursor_NullCompany_ReturnsAll() {
+        // Given: 다른 회사의 게시글 2개
+        Post kakaoPost = createPost("카카오 게시글", techBlog1, LocalDateTime.now(), 100L);
+        Post naverPost = createPost("네이버 게시글", techBlog2, LocalDateTime.now(), 200L);
+        postRepository.saveAll(List.of(kakaoPost, naverPost));
+
+        // When: company = null
+        PageRequest pageRequest = PageRequest.of(0, 10);
+        List<PostInfoDto> result = postRepository.findByCompanyWithCursor(null, null, pageRequest);
+
+        // Then: 모든 게시글 반환
+        assertThat(result).hasSize(2);
+        assertThat(result).extracting(PostInfoDto::company)
+                .containsExactlyInAnyOrder("카카오", "네이버");
+    }
+
+    @Test
+    @DisplayName("findByCompanyWithCursor - company 지정 시 해당 회사 게시글만 조회")
+    void findByCompanyWithCursor_SpecificCompany_ReturnsFiltered() {
+        // Given: 다른 회사의 게시글 3개
+        Post kakaoPost1 = createPost("카카오 게시글1", techBlog1, LocalDateTime.now().minusDays(2), 100L);
+        Post kakaoPost2 = createPost("카카오 게시글2", techBlog1, LocalDateTime.now().minusDays(1), 200L);
+        Post naverPost = createPost("네이버 게시글", techBlog2, LocalDateTime.now(), 300L);
+        postRepository.saveAll(List.of(kakaoPost1, kakaoPost2, naverPost));
+
+        // When: company = "카카오"
+        PageRequest pageRequest = PageRequest.of(0, 10);
+        List<PostInfoDto> result = postRepository.findByCompanyWithCursor("카카오", null, pageRequest);
+
+        // Then: 카카오 게시글만 반환
+        assertThat(result).hasSize(2);
+        assertThat(result).allMatch(dto -> dto.company().equals("카카오"));
+    }
+
+    @Test
+    @DisplayName("findByIdWithTechBlog - JOIN하여 게시글 상세 정보 조회 성공")
+    void findByIdWithTechBlog_Success_ReturnsPostDetailDto() {
+        // Given: 게시글 생성
+        Post post = createPost("테스트 게시글", techBlog1, LocalDateTime.now(), 100L);
+        post = postRepository.save(post);
+
+        // When: ID로 조회
+        Optional<PostDetailDto> result = postRepository.findByIdWithTechBlog(post.getId());
+
+        // Then: PostDetailDto 프로젝션 성공
+        assertThat(result).isPresent();
+        PostDetailDto dto = result.get();
+        assertThat(dto.id()).isEqualTo(post.getId());
+        assertThat(dto.title()).isEqualTo("테스트 게시글");
+        assertThat(dto.company()).isEqualTo("카카오");
+        assertThat(dto.viewCount()).isEqualTo(100L);
+        assertThat(dto.keywords()).isNull(); // 키워드는 별도 조회
+    }
+
+    @Test
+    @DisplayName("findByIdWithTechBlog - 존재하지 않는 ID 조회 시 Empty 반환")
+    void findByIdWithTechBlog_NotFound_ReturnsEmpty() {
+        // When: 존재하지 않는 ID 조회
+        Optional<PostDetailDto> result = postRepository.findByIdWithTechBlog(99999L);
+
+        // Then: Empty 반환
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findDistinctCompanies - 중복 없이 회사 목록 조회")
+    void findDistinctCompanies_ReturnsUniqueCompanies() {
+        // Given: 같은 회사의 게시글 여러 개
+        Post kakaoPost1 = createPost("카카오 게시글1", techBlog1, LocalDateTime.now(), 100L);
+        Post kakaoPost2 = createPost("카카오 게시글2", techBlog1, LocalDateTime.now(), 200L);
+        Post naverPost = createPost("네이버 게시글", techBlog2, LocalDateTime.now(), 300L);
+        postRepository.saveAll(List.of(kakaoPost1, kakaoPost2, naverPost));
+
+        // When: 회사 목록 조회
+        List<String> result = postRepository.findDistinctCompanies();
+
+        // Then: 중복 없이 2개 회사 반환
+        assertThat(result).hasSize(2);
+        assertThat(result).containsExactlyInAnyOrder("카카오", "네이버");
+    }
+
+    @Test
+    @DisplayName("커서 페이징 - size+1 조회하여 hasNext 판단 가능")
+    void cursorPaging_SizePlusOne_CanDetermineHasNext() {
+        // Given: 게시글 5개
+        for (int i = 1; i <= 5; i++) {
+            Post post = createPost("게시글" + i, techBlog1, LocalDateTime.now().minusDays(i), (long) (i * 100));
+            postRepository.save(post);
+        }
+
+        // When: size = 3으로 조회 (실제로는 4개 조회)
+        PageRequest pageRequest = PageRequest.of(0, 4);
+        List<PostInfoDto> result = postRepository.findRecentPostsWithCursor(null, pageRequest);
+
+        // Then: 4개 조회되면 hasNext = true
+        assertThat(result).hasSize(4);
+        boolean hasNext = result.size() > 3;
+        assertThat(hasNext).isTrue();
+    }
+
+    // 헬퍼 메서드
+    private Post createPost(String title, TechBlog techBlog, LocalDateTime publishedAt, Long viewCount) {
+        Post post = Post.builder()
+                .title(title)
+                .fullContent("<p>" + title + " 내용</p>")
+                .plainContent(title + " 내용")
+                .company(techBlog.getCompanyName())
+                .url("https://test.com/" + title)
+                .publishedAt(publishedAt)
+                .crawledAt(LocalDateTime.now())
+                .techBlog(techBlog)
+                .build();
+
+        // viewCount 설정 (reflection 또는 여러 번 증가)
+        for (int i = 0; i < viewCount; i++) {
+            post.incrementViewCount();
+        }
+
+        return post;
+    }
+}
