@@ -1,6 +1,8 @@
 package com.techfork.domain.post.controller;
 
-import com.techfork.domain.post.dto.PostResponseDto;
+import com.techfork.domain.post.dto.CompanyListResponse;
+import com.techfork.domain.post.dto.PostDetailDto;
+import com.techfork.domain.post.dto.PostListResponse;
 import com.techfork.domain.post.enums.EPostSortType;
 import com.techfork.domain.post.service.PostQueryService;
 import com.techfork.global.common.code.SuccessCode;
@@ -27,8 +29,8 @@ public class PostController {
             description = "게시글이 존재하는 회사명 목록을 조회합니다. (필터링 칩용)"
     )
     @GetMapping("/companies")
-    public ResponseEntity<BaseResponse<PostResponseDto.CompanyList>> getCompanies() {
-        PostResponseDto.CompanyList response = postQueryService.getCompanies();
+    public ResponseEntity<BaseResponse<CompanyListResponse>> getCompanies() {
+        CompanyListResponse response = postQueryService.getCompanies();
         return BaseResponse.of(SuccessCode.OK, response);
     }
 
@@ -37,7 +39,7 @@ public class PostController {
             description = "특정 기업의 게시글을 무한 스크롤 방식으로 조회합니다. company 파라미터가 없으면 전체 게시글을 조회합니다."
     )
     @GetMapping("/by-company")
-    public ResponseEntity<BaseResponse<PostResponseDto.PostList>> getPostsByCompany(
+    public ResponseEntity<BaseResponse<PostListResponse>> getPostsByCompany(
             @Parameter(description = "회사명 필터 (선택, 없으면 전체 조회)")
             @RequestParam(required = false) String company,
             @Parameter(description = "마지막 게시글 ID (커서, 선택)")
@@ -45,7 +47,7 @@ public class PostController {
             @Parameter(description = "페이지 크기 (기본값: 20)")
             @RequestParam(defaultValue = "20") int size
     ) {
-        PostResponseDto.PostList response = postQueryService.getPostsByCompany(company, lastPostId, size);
+        PostListResponse response = postQueryService.getPostsByCompany(company, lastPostId, size);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 
@@ -54,7 +56,7 @@ public class PostController {
             description = "최근 생성된 게시글을 무한 스크롤 방식으로 조회합니다. sortBy로 정렬 기준을 선택할 수 있습니다."
     )
     @GetMapping("/recent")
-    public ResponseEntity<BaseResponse<PostResponseDto.PostList>> getRecentPosts(
+    public ResponseEntity<BaseResponse<PostListResponse>> getRecentPosts(
             @Parameter(description = "정렬 기준 (LATEST: 최신순, POPULAR: 인기순, 기본값: LATEST)")
             @RequestParam(defaultValue = "LATEST") EPostSortType sortBy,
             @Parameter(description = "마지막 게시글 ID (커서, 선택)")
@@ -62,7 +64,7 @@ public class PostController {
             @Parameter(description = "페이지 크기 (기본값: 20)")
             @RequestParam(defaultValue = "20") int size
     ) {
-        PostResponseDto.PostList response = postQueryService.getRecentPosts(sortBy, lastPostId, size);
+        PostListResponse response = postQueryService.getRecentPosts(sortBy, lastPostId, size);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 
@@ -71,11 +73,11 @@ public class PostController {
             description = "특정 게시글의 상세 정보를 조회합니다."
     )
     @GetMapping("/{postId}")
-    public ResponseEntity<BaseResponse<PostResponseDto.Detail>> getPostDetail(
+    public ResponseEntity<BaseResponse<PostDetailDto>> getPostDetail(
             @Parameter(description = "게시글 ID")
             @PathVariable Long postId
     ) {
-        PostResponseDto.Detail response = postQueryService.getPostDetail(postId);
+        PostDetailDto response = postQueryService.getPostDetail(postId);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 }

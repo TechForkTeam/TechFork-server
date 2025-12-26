@@ -1,6 +1,9 @@
 package com.techfork.domain.post.converter;
 
-import com.techfork.domain.post.dto.PostResponseDto;
+import com.techfork.domain.post.dto.CompanyListResponse;
+import com.techfork.domain.post.dto.PostDetailDto;
+import com.techfork.domain.post.dto.PostInfoDto;
+import com.techfork.domain.post.dto.PostListResponse;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -8,27 +11,27 @@ import java.util.List;
 @Component
 public class PostConverter {
 
-    public PostResponseDto.CompanyList toCompanyListResponse(List<String> companies) {
-        return PostResponseDto.CompanyList.builder()
+    public CompanyListResponse toCompanyListResponse(List<String> companies) {
+        return CompanyListResponse.builder()
                 .companies(companies)
                 .build();
     }
 
-    public PostResponseDto.PostList toPostListResponse(List<PostResponseDto.Info> posts, int requestedSize) {
+    public PostListResponse toPostListResponse(List<PostInfoDto> posts, int requestedSize) {
         boolean hasNext = posts.size() > requestedSize;
-        List<PostResponseDto.Info> content = hasNext ? posts.subList(0, requestedSize) : posts;
+        List<PostInfoDto> content = hasNext ? posts.subList(0, requestedSize) : posts;
 
         Long lastPostId = content.isEmpty() ? null : content.get(content.size() - 1).id();
 
-        return PostResponseDto.PostList.builder()
+        return PostListResponse.builder()
                 .posts(content)
                 .lastPostId(lastPostId)
                 .hasNext(hasNext)
                 .build();
     }
 
-    public PostResponseDto.Detail toPostDetailDto(PostResponseDto.Detail baseDto, List<String> keywords) {
-        return PostResponseDto.Detail.builder()
+    public PostDetailDto toPostDetailDto(PostDetailDto baseDto, List<String> keywords) {
+        return PostDetailDto.builder()
                 .id(baseDto.id())
                 .title(baseDto.title())
                 .summary(baseDto.summary())

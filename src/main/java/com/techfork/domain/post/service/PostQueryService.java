@@ -1,7 +1,10 @@
 package com.techfork.domain.post.service;
 
 import com.techfork.domain.post.converter.PostConverter;
-import com.techfork.domain.post.dto.PostResponseDto;
+import com.techfork.domain.post.dto.CompanyListResponse;
+import com.techfork.domain.post.dto.PostDetailDto;
+import com.techfork.domain.post.dto.PostInfoDto;
+import com.techfork.domain.post.dto.PostListResponse;
 import com.techfork.domain.post.entity.PostKeyword;
 import com.techfork.domain.post.enums.EPostSortType;
 import com.techfork.domain.post.repository.PostKeywordRepository;
@@ -28,21 +31,21 @@ public class PostQueryService {
     private final PostKeywordRepository postKeywordRepository;
     private final PostConverter postConverter;
 
-    public PostResponseDto.CompanyList getCompanies() {
+    public CompanyListResponse getCompanies() {
         List<String> companies = postRepository.findDistinctCompanies();
         return postConverter.toCompanyListResponse(companies);
     }
 
-    public PostResponseDto.PostList getPostsByCompany(String company, Long lastPostId, int size) {
+    public PostListResponse getPostsByCompany(String company, Long lastPostId, int size) {
         PageRequest pageRequest = PageRequest.of(0, size + 1);
-        List<PostResponseDto.Info> posts = postRepository.findByCompanyWithCursor(company, lastPostId, pageRequest);
-        List<PostResponseDto.Info> postsWithKeywords = attachKeywordsToPostInfoList(posts);
+        List<PostInfoDto> posts = postRepository.findByCompanyWithCursor(company, lastPostId, pageRequest);
+        List<PostInfoDto> postsWithKeywords = attachKeywordsToPostInfoList(posts);
         return postConverter.toPostListResponse(postsWithKeywords, size);
     }
 
-    public PostResponseDto.PostList getRecentPosts(EPostSortType sortBy, Long lastPostId, int size) {
+    public PostListResponse getRecentPosts(EPostSortType sortBy, Long lastPostId, int size) {
         PageRequest pageRequest = PageRequest.of(0, size + 1);
-        List<PostResponseDto.Info> posts;
+        List<PostInfoDto> posts;
 
         if (sortBy == EPostSortType.POPULAR) {
             posts = postRepository.findPopularPostsWithCursor(lastPostId, pageRequest);
@@ -50,12 +53,12 @@ public class PostQueryService {
             posts = postRepository.findRecentPostsWithCursor(lastPostId, pageRequest);
         }
 
-        List<PostResponseDto.Info> postsWithKeywords = attachKeywordsToPostInfoList(posts);
+        List<PostInfoDto> postsWithKeywords = attachKeywordsToPostInfoList(posts);
         return postConverter.toPostListResponse(postsWithKeywords, size);
     }
 
-    public PostResponseDto.Detail getPostDetail(Long postId) {
-        PostResponseDto.Detail postDetail = postRepository.findByIdWithTechBlog(postId)
+    public PostDetailDto getPostDetail(Long postId) {
+        PostDetailDto postDetail = postRepository.findByIdWithTechBlog(postId)
                 .orElseThrow(() -> new GeneralException(CommonErrorCode.NOT_FOUND));
 
         List<String> keywords = postKeywordRepository.findByPostIdIn(List.of(postId))
@@ -66,13 +69,13 @@ public class PostQueryService {
         return postConverter.toPostDetailDto(postDetail, keywords);
     }
 
-    private List<PostResponseDto.Info> attachKeywordsToPostInfoList(List<PostResponseDto.Info> posts) {
+    private List<PostInfoDto> attachKeywordsToPostInfoList(List<PostInfoDto> posts) {
         if (posts.isEmpty()) {
             return posts;
         }
 
         List<Long> postIds = posts.stream()
-                .map(PostResponseDto.Info::id)
+                .map(PostInfoDto::id)
                 .toList();
 
         Map<Long, List<String>> keywordMap = postKeywordRepository.findByPostIdIn(postIds)
@@ -83,7 +86,7 @@ public class PostQueryService {
                 ));
 
         return posts.stream()
-                .map(post -> PostResponseDto.Info.builder()
+                .map(post -> PostInfoDto.builder()
                         .id(post.id())
                         .title(post.title())
                         .company(post.company())
