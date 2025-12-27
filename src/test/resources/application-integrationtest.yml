@@ -1,0 +1,39 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
+        highlight_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      names: ''
+
+  ai:
+    anthropic:
+      api-key: test-dummy-key
+      chat:
+        options:
+          model: claude-3-5-haiku-20241022
+          temperature: 0.3
+          max-tokens: 8192
+    openai:
+      api-key: test-dummy-key
+      timeout: 60
+      chat:
+        options:
+          model: gpt-4o-mini
+          temperature: 0.3
+          max-tokens: 8192
+
+logging:
+  level:
+    com.techfork: DEBUG
+    org.springframework.batch: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.tool.schema: ERROR
