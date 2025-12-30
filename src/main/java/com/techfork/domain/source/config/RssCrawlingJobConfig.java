@@ -1,11 +1,6 @@
 package com.techfork.domain.source.config;
 
-import com.techfork.domain.post.batch.PostEmbeddingProcessor;
-import com.techfork.domain.post.batch.PostEmbeddingReader;
-import com.techfork.domain.post.batch.PostEmbeddingWriter;
-import com.techfork.domain.post.batch.PostSummaryProcessor;
-import com.techfork.domain.post.batch.PostSummaryReader;
-import com.techfork.domain.post.batch.PostSummaryWriter;
+import com.techfork.domain.post.batch.*;
 import com.techfork.domain.post.document.PostDocument;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.source.batch.PostBatchWriter;
@@ -22,15 +17,8 @@ import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
-import org.springframework.retry.backoff.FixedBackOffPolicy;
-import org.springframework.retry.policy.SimpleRetryPolicy;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
-
-import java.net.SocketTimeoutException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * RSS 크롤링 Job 설정

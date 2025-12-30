@@ -1,6 +1,5 @@
 package com.techfork.domain.source.batch;
 
-import com.rometools.rome.feed.synd.SyndCategory;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
@@ -20,9 +19,9 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -124,9 +123,6 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
         // 발행일 변환
         LocalDateTime publishedAt = convertToLocalDateTime(entry.getPublishedDate());
 
-        // 태그 추출
-        String tags = extractTags(entry);
-
         return RssFeedItem.builder()
                 .title(entry.getTitle())
                 .url(entry.getLink())
@@ -134,8 +130,8 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
                 .plainContent(plainContent)
                 .publishedAt(publishedAt)
                 .company(techBlog.getCompanyName())
+                .logoUrl(techBlog.getLogoUrl())
                 .techBlogId(techBlog.getId())
-                .tags(tags)
                 .build();
     }
 
@@ -163,24 +159,10 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
      */
     private LocalDateTime convertToLocalDateTime(Date date) {
         if (date == null) {
-            log.debug("발행일이 없는 RSS 아이템 발견, 현재 시각 사용");
             return LocalDateTime.now();
         }
         return date.toInstant()
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime();
-    }
-
-    /**
-     * RSS entry에서 태그 추출
-     */
-    private String extractTags(SyndEntry entry) {
-        if (entry.getCategories() == null || entry.getCategories().isEmpty()) {
-            return "";
-        }
-
-        return entry.getCategories().stream()
-                .map(SyndCategory::getName)
-                .collect(Collectors.joining(","));
     }
 }

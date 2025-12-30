@@ -36,9 +36,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("""
             SELECT new com.techfork.domain.post.dto.PostInfoDto(
-            p.id, p.title, t.companyName, p.url, t.logoUrl, p.publishedAt, p.viewCount, null)
+            p.id, p.title, p.company, p.url, p.logoUrl, p.publishedAt, p.viewCount, null)
             FROM Post p
-            JOIN TechBlog t on p.techBlog.id = t.id
             WHERE (:company IS NULL OR p.company = :company)
             AND (:lastPostId IS NULL OR p.id < :lastPostId)
             ORDER BY p.id DESC
@@ -51,9 +50,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("""
             SELECT new com.techfork.domain.post.dto.PostInfoDto(
-            p.id, p.title, t.companyName, p.url, t.logoUrl, p.publishedAt, p.viewCount, null)
+            p.id, p.title, p.company, p.url, p.logoUrl, p.publishedAt, p.viewCount, null)
             FROM Post p
-            JOIN TechBlog t on p.techBlog.id = t.id
             WHERE :lastPostId IS NULL OR p.id < :lastPostId
             ORDER BY p.publishedAt DESC, p.id DESC
             """)
@@ -64,9 +62,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("""
             SELECT new com.techfork.domain.post.dto.PostInfoDto(
-            p.id, p.title, t.companyName, p.url, t.logoUrl, p.publishedAt, p.viewCount, null)
+            p.id, p.title, p.company, p.url, p.logoUrl, p.publishedAt, p.viewCount, null)
             FROM Post p
-            JOIN TechBlog t on p.techBlog.id = t.id
             WHERE :lastPostId IS NULL OR p.id < :lastPostId
             ORDER BY p.viewCount DESC, p.id DESC
             """)
@@ -77,9 +74,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("""
             SELECT new com.techfork.domain.post.dto.PostDetailDto(
-            p.id, p.title, p.summary, t.companyName, p.url, t.logoUrl, p.publishedAt, p.viewCount, null)
+            p.id, p.title, p.summary, p.company, p.url, p.logoUrl, p.publishedAt, p.viewCount, null)
             FROM Post p
-            JOIN TechBlog t on p.techBlog.id = t.id
             WHERE p.id = :id
             """)
     Optional<PostDetailDto> findByIdWithTechBlog(@Param("id") Long id);

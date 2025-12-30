@@ -34,6 +34,9 @@ public class Post extends BaseEntity {
     @Column(nullable = false)
     private String company;
 
+    @Column(length = 500)
+    private String logoUrl;
+
     @Column(unique = true, nullable = false, length = 1000)
     private String url;
 
@@ -57,12 +60,13 @@ public class Post extends BaseEntity {
     private List<PostKeyword> keywords = new ArrayList<>();
 
     @Builder
-    private Post(String title, String fullContent, String plainContent, String company, String url,
+    private Post(String title, String fullContent, String plainContent, String company, String logoUrl, String url,
                  LocalDateTime publishedAt, LocalDateTime crawledAt, TechBlog techBlog) {
         this.title = title;
         this.fullContent = fullContent;
         this.plainContent = plainContent;
         this.company = company;
+        this.logoUrl = logoUrl;
         this.url = url;
         this.publishedAt = publishedAt;
         this.crawledAt = crawledAt;
@@ -75,6 +79,7 @@ public class Post extends BaseEntity {
                 .fullContent(item.content())
                 .plainContent(item.plainContent())
                 .company(item.company())
+                .logoUrl(item.logoUrl())
                 .url(item.url())
                 .publishedAt(item.publishedAt())
                 .crawledAt(LocalDateTime.now())
@@ -84,10 +89,6 @@ public class Post extends BaseEntity {
 
     public void updateSummary(String summary) {
         this.summary = summary;
-    }
-
-    public void updateEmbedded() {
-        this.embeddedAt = LocalDateTime.now();
     }
 
     public void addKeyword(PostKeyword keyword) {
