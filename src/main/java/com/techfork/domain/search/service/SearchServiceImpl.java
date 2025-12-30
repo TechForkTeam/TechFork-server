@@ -311,6 +311,7 @@ public class SearchServiceImpl implements SearchService {
                 .summary(doc.getSummary())
                 .companyName(doc.getCompany())
                 .url(doc.getUrl())
+                .logoUrl(doc.getLogoUrl())
                 .hybridScore(score)
                 .finalScore(score)
                 .titleVector(titleVector)
