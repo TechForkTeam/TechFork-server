@@ -159,7 +159,6 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
      */
     private LocalDateTime convertToLocalDateTime(Date date) {
         if (date == null) {
-            log.debug("발행일이 없는 RSS 아이템 발견, 현재 시각 사용");
             return LocalDateTime.now();
         }
         return date.toInstant()
