@@ -6,6 +6,7 @@ import com.techfork.domain.post.repository.PostKeywordRepository;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.repository.TechBlogRepository;
+import com.techfork.global.configuration.MySQLTestConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,12 +14,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,20 +29,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * PostController 통합 테스트
  * - @SpringBootTest: 전체 애플리케이션 컨텍스트 로드
- * - Testcontainers: 실제 MySQL 컨테이너로 통합 테스트
+ * - MySQLTestConfig.class: 실제 MySQL 컨테이너로 통합 테스트
  * - 모든 레이어(Controller, Service, Repository) 통합 테스트
  * - MockMvc로 HTTP 요청/응답 테스트
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Testcontainers
+@Import(MySQLTestConfig.class)
 @ActiveProfiles("integrationtest")
 class PostControllerIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0");
-
     @Autowired
     private MockMvc mockMvc;
 
