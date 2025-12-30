@@ -37,8 +37,10 @@ dependencies {
 
 	// Test Containers
 	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
-	testImplementation 'org.testcontainers:mysql:1.19.3'
-	testImplementation 'org.testcontainers:junit-jupiter:1.19.3'
+	testImplementation 'org.testcontainers:mysql:1.21.4'
+	testImplementation 'org.testcontainers:elasticsearch:1.21.4'
+	testImplementation 'org.testcontainers:junit-jupiter:1.21.4'
+	testImplementation 'com.redis:testcontainers-redis:2.2.4'
 
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
