@@ -26,7 +26,7 @@ public class PostBatchWriter implements ItemWriter<Post> {
 
     private static final String INSERT_SQL = """
             INSERT INTO posts
-            (title, full_content, plain_content, company, url, published_at, crawled_at, tech_blog_id)
+            (title, full_content, plain_content, company, url, logo_url, published_at, crawled_at, tech_blog_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
@@ -44,9 +44,10 @@ public class PostBatchWriter implements ItemWriter<Post> {
             ps.setString(3, post.getPlainContent());
             ps.setString(4, post.getCompany());
             ps.setString(5, post.getUrl());
-            ps.setTimestamp(6, JdbcBulkInsert.toTimestamp(post.getPublishedAt()));
-            ps.setTimestamp(7, JdbcBulkInsert.toTimestamp(post.getCrawledAt()));
-            ps.setLong(8, post.getTechBlog().getId());
+            ps.setString(6, post.getLogoUrl());
+            ps.setTimestamp(7, JdbcBulkInsert.toTimestamp(post.getPublishedAt()));
+            ps.setTimestamp(8, JdbcBulkInsert.toTimestamp(post.getCrawledAt()));
+            ps.setLong(9, post.getTechBlog().getId());
         });
 
         log.info("{}개 게시글 Bulk Insert 완료", inserted);

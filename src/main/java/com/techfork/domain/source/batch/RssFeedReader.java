@@ -134,6 +134,7 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
                 .plainContent(plainContent)
                 .publishedAt(publishedAt)
                 .company(techBlog.getCompanyName())
+                .logoUrl(techBlog.getLogoUrl())
                 .techBlogId(techBlog.getId())
                 .tags(tags)
                 .build();

@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 public record RssFeedItem(
         String title,
         String url,
+        String logoUrl,
         String content,
         String plainContent,
         LocalDateTime publishedAt,
