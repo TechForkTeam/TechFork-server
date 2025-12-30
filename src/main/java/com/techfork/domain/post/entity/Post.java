@@ -91,10 +91,6 @@ public class Post extends BaseEntity {
         this.summary = summary;
     }
 
-    public void updateEmbedded() {
-        this.embeddedAt = LocalDateTime.now();
-    }
-
     public void addKeyword(PostKeyword keyword) {
         this.keywords.add(keyword);
     }

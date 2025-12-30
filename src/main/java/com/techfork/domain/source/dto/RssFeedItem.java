@@ -13,7 +13,6 @@ public record RssFeedItem(
         String plainContent,
         LocalDateTime publishedAt,
         String company,
-        Long techBlogId,
-        String tags
+        Long techBlogId
 ) {
 }
