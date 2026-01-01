@@ -100,5 +100,6 @@ networks:
     driver: bridge
 
 volumes:
+  mysql-data:
   redis-data:
   elasticsearch-data:
