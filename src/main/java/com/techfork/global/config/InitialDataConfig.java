@@ -35,7 +35,7 @@ public class InitialDataConfig {
                     TechBlog.create("여기어때", "https://techblog.gccompany.co.kr", "https://techblog.gccompany.co.kr/rss", "https://miro.medium.com/v2/resize:fill:128:128/1*rGdUGkMoxT5SfrVKVAqbEw.png"),
                     TechBlog.create("인프랩", "https://tech.inflab.com", "https://tech.inflab.com/rss.xml", null),
 
-                    TechBlog.create("네이버D2", "https://d2.naver.com/home", "https://d2.naver.com/d2.atom", " "),
+                    TechBlog.create("네이버D2", "https://d2.naver.com/home", "https://d2.naver.com/d2.atom", "https://d2.naver.com/favicon.ico"),
                     TechBlog.create("요기요", "https://techblog.yogiyo.co.kr", "https://techblog.yogiyo.co.kr/feed", "https://miro.medium.com/v2/resize:fill:128:128/1*yMAs19hb_LGVSSVcalnkHw.jpeg"),
                     TechBlog.create("올리브영", "https://oliveyoung.tech", "https://oliveyoung.tech/rss.xml", null),
                     TechBlog.create("쏘카", "https://tech.socarcorp.kr/", "https://tech.socarcorp.kr/feed", null),
@@ -46,7 +46,7 @@ public class InitialDataConfig {
                     TechBlog.create("토스", "https://toss.tech", "https://toss.tech/rss.xml", null),
                     TechBlog.create("리디", "https://www.ridicorp.com/story-category/tech-blog/", "https://www.ridicorp.com/story-category/tech-blog/feed/", null),
 
-                    TechBlog.create("SK C&C", "https://engineering-skcc.github.io", "https://engineering-skcc.github.io/feed.xml", " "),
+                    TechBlog.create("SK C&C", "https://engineering-skcc.github.io", "https://engineering-skcc.github.io/feed.xml", "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://skax.co.kr&size=40"),
                     TechBlog.create("카카오엔터프라이즈", "https://tech.kakaoenterprise.com", "https://tech.kakaoenterprise.com/feed", null),
                     TechBlog.create("NHN", "https://meetup.nhncloud.com", "https://meetup.nhncloud.com/rss", null),
                     TechBlog.create("원티드", "https://medium.com/wantedjobs", "https://medium.com/feed/wantedjobs", "https://miro.medium.com/v2/resize:fill:128:128/1*FJkqW-xbLo_-zwoSzR1C6Q.jpeg"),
