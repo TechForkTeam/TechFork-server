@@ -37,7 +37,7 @@ public class TechBlog extends BaseTimeEntity {
         this.blogUrl = blogUrl;
         this.rssUrl = rssUrl;
 
-        if (this.logoUrl != null) {
+        if (logoUrl != null) {
             this.logoUrl = logoUrl;
         } else {
             this.logoUrl = String.format("https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=%s/&size=40", this.blogUrl);
