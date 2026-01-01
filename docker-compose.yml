@@ -9,7 +9,7 @@ services:
       - JAVA_OPTS=-Xms2g -Xmx2g
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
       - DB_URL=${DB_URL}
-      - DB_USERNAME=${DB_USERNAME}
+      - DB_USERNAME=techfork
       - DB_PASSWORD=${DB_PASSWORD}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
@@ -33,7 +33,7 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
       - MYSQL_DATABASE=techblog
-      - MYSQL_USER=${DB_USERNAME}
+      - MYSQL_USER=techfork
       - MYSQL_PASSWORD=${DB_PASSWORD}
       - TZ=Asia/Seoul
     command:
