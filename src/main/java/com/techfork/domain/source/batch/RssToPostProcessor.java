@@ -30,10 +30,7 @@ public class RssToPostProcessor implements ItemProcessor<RssFeedItem, Post> {
             return null; // null 반환 시 Writer에서 처리 안 함
         }
 
-        TechBlog techBlog = techBlogRepository.findById(item.techBlogId())
-                .orElseThrow(() -> new IllegalStateException(
-                        "TechBlog를 찾을 수 없습니다. ID: " + item.techBlogId()));
-
+        TechBlog techBlog = techBlogRepository.getReferenceById(item.techBlogId());
         return Post.create(item, techBlog);
     }
 }
