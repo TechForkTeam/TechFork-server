@@ -26,9 +26,7 @@ public class RssToPostProcessor implements ItemProcessor<RssFeedItem, Post> {
 
     @Override
     public Post process(RssFeedItem item) {
-        // 중복 체크
         if (postRepository.existsByUrl(item.url())) {
-            log.debug("중복 URL 스킵: {}", item.url());
             return null; // null 반환 시 Writer에서 처리 안 함
         }
 
