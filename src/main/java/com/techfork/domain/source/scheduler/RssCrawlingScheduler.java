@@ -14,7 +14,7 @@ import java.time.Duration;
 
 /**
  * RSS 크롤링 스케줄러
- * - 1시간마다 RSS 피드 크롤링 실행
+ * - 24시간마다 RSS 피드 크롤링 실행
  * - Redis 분산 락으로 중복 실행 방지
  */
 @Slf4j
