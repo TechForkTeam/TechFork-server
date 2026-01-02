@@ -31,7 +31,7 @@ public class RssCrawlingScheduler {
 
     /**
      * 매일 오전 5시마다 RSS 크롤링 실행
-     * cron: 0 0 5 * * * -> 매 시간 정각
+     * cron: 0 0 5 * * * -> 매일 오전 5시
      */
     @Scheduled(cron = "0 0 5 * * *")
     public void scheduleCrawling() {
@@ -50,17 +50,11 @@ public class RssCrawlingScheduler {
             log.error("Unexpected error during scheduled crawling", e);
         } finally {
             distributedLock.unlock(CRAWLING_LOCK_KEY, lockValue);
+            cleanupStaleHistories();
         }
     }
 
-    /**
-     * 5분마다 오래된 RUNNING 상태의 이력을 정리 (좀비 프로세스 방지)
-     * cron: 매 5분마다 실행
-     */
-    @Scheduled(cron = "0 */5 * * * *")
-    public void cleanupStaleHistories() {
-        log.debug("Checking for stale crawling histories");
-
+    private void cleanupStaleHistories() {
         var staleHistories = crawlingHistoryRepository.findByStatusAndStartedAtBefore(
                 ECrawlingStatus.RUNNING, java.time.LocalDateTime.now().minusHours(1)
         );
