@@ -22,6 +22,7 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.stream.Stream;
 
 @Slf4j
 @Component
@@ -57,32 +58,27 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
      */
     private synchronized void initializeQueue() {
         // Double-checked locking
-        if (itemQueue != null) {
-            return;
-        }
+        if (itemQueue != null) return;
 
         itemQueue = new ConcurrentLinkedQueue<>();
         List<TechBlog> techBlogs = techBlogRepository.findAll();
         log.info("총 {}개 테크 블로그 RSS 수집 시작", techBlogs.size());
 
-        int totalItems = 0;
-        for (TechBlog techBlog : techBlogs) {
-            try {
-                List<RssFeedItem> items = fetchRssFeed(techBlog);
-                if (!items.isEmpty()) {
-                    itemQueue.addAll(items);
-                    totalItems += items.size();
-                    log.info("[{}] RSS 수집 성공: {}개 아이템", techBlog.getCompanyName(), items.size());
-                } else {
-                    log.warn("[{}] RSS 피드에 아이템이 없습니다", techBlog.getCompanyName());
-                }
-            } catch (Exception e) {
-                log.error("[{}] RSS 수집 실패: {}", techBlog.getCompanyName(), e.getMessage(), e);
-                // 실패해도 다음 블로그 계속 처리
-            }
-        }
+        List<RssFeedItem> allItems = techBlogs.parallelStream()
+                .flatMap(techBlog -> {
+                    try {
+                        List<RssFeedItem> items = fetchRssFeed(techBlog);
+                        log.info("[{}] RSS 수집 성공: {}개", techBlog.getCompanyName(), items.size());
+                        return items.stream();
+                    } catch (Exception e) {
+                        log.error("[{}] RSS 수집 실패: {}", techBlog.getCompanyName(), e.getMessage());
+                        return Stream.empty();
+                    }
+                })
+                .toList();
 
-        log.info("RSS 수집 초기화 완료: 총 {}개 아이템을 큐에 추가", totalItems);
+        itemQueue.addAll(allItems);
+        log.info("RSS 수집 초기화 완료: 총 {}개 아이템을 큐에 추가", allItems.size());
     }
 
     private List<RssFeedItem> fetchRssFeed(TechBlog techBlog) throws Exception {

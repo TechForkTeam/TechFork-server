@@ -74,8 +74,6 @@ public class RssCrawlingJobConfig {
                 .reader(rssFeedReader)
                 .processor(rssToPostProcessor)
                 .writer(postBatchWriter)
-                // 병렬 처리: 5개 스레드로 동시에 RSS 수집
-                .taskExecutor(rssTaskExecutor())
                 .faultTolerant()
                 // 건너뛰기 정책: 최대 10개 아이템까지 건너뛰기 허용
                 .skipLimit(10)
@@ -116,19 +114,6 @@ public class RssCrawlingJobConfig {
                 .skipLimit(20)  // 임베딩 실패 허용 개수
                 .skip(Exception.class)
                 .build();
-    }
-
-    @Bean
-    public TaskExecutor rssTaskExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(5);
-        executor.setMaxPoolSize(10);
-        executor.setQueueCapacity(20);
-        executor.setThreadNamePrefix("rss-crawl-");
-        executor.setWaitForTasksToCompleteOnShutdown(true);
-        executor.setAwaitTerminationSeconds(60);
-        executor.initialize();
-        return executor;
     }
 
     @Bean
