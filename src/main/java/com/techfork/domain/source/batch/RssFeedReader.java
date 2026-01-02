@@ -33,43 +33,33 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
     private final TechBlogRepository techBlogRepository;
     private final WebClient webClient;
 
-    private ConcurrentLinkedQueue<RssFeedItem> itemQueue;
+    private List<RssFeedItem> items;
+    private int currentIndex = 0;
 
     @Override
     public RssFeedItem read() {
-        // 첫 실행 시 모든 RSS 아이템을 큐에 추가
-        if (itemQueue == null) {
-            initializeQueue();
+        if (items == null) {
+            initializeItems();
         }
 
-        // 큐에서 아이템 꺼내기 (Thread-Safe)
-        RssFeedItem item = itemQueue.poll();
-
-        if (item == null) {
-            log.info("모든 RSS 피드 수집 완료");
+        if (currentIndex >= items.size()) {
+            log.info("모든 RSS 피드 수집 완료: 총 {}개", items.size());
+            return null;
         }
 
-        return item;
+        return items.get(currentIndex++);
     }
 
-    /**
-     * 모든 RSS 피드를 미리 수집하여 큐에 저장
-     * 한 번만 실행되며, 여러 스레드가 큐에서 안전하게 아이템을 가져감
-     */
-    private synchronized void initializeQueue() {
-        // Double-checked locking
-        if (itemQueue != null) return;
-
-        itemQueue = new ConcurrentLinkedQueue<>();
+    private void initializeItems() {
         List<TechBlog> techBlogs = techBlogRepository.findAll();
         log.info("총 {}개 테크 블로그 RSS 수집 시작", techBlogs.size());
 
-        List<RssFeedItem> allItems = techBlogs.parallelStream()
+        items = techBlogs.parallelStream()
                 .flatMap(techBlog -> {
                     try {
-                        List<RssFeedItem> items = fetchRssFeed(techBlog);
-                        log.info("[{}] RSS 수집 성공: {}개", techBlog.getCompanyName(), items.size());
-                        return items.stream();
+                        List<RssFeedItem> feedItems = fetchRssFeed(techBlog);
+                        log.info("[{}] RSS 수집 성공: {}개", techBlog.getCompanyName(), feedItems.size());
+                        return feedItems.stream();
                     } catch (Exception e) {
                         log.error("[{}] RSS 수집 실패: {}", techBlog.getCompanyName(), e.getMessage());
                         return Stream.empty();
@@ -77,8 +67,7 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
                 })
                 .toList();
 
-        itemQueue.addAll(allItems);
-        log.info("RSS 수집 초기화 완료: 총 {}개 아이템을 큐에 추가", allItems.size());
+        log.info("RSS 수집 초기화 완료: 총 {}개 아이템", items.size());
     }
 
     private List<RssFeedItem> fetchRssFeed(TechBlog techBlog) throws Exception {
