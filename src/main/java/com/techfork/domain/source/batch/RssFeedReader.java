@@ -4,6 +4,7 @@ import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
+import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.source.dto.RssFeedItem;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.repository.TechBlogRepository;
@@ -21,7 +22,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.Set;
+import java.util.stream.Stream;
 
 @Slf4j
 @Component
@@ -30,59 +32,52 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class RssFeedReader implements ItemReader<RssFeedItem> {
 
     private final TechBlogRepository techBlogRepository;
+    private final PostRepository postRepository;
     private final WebClient webClient;
 
-    private ConcurrentLinkedQueue<RssFeedItem> itemQueue;
+    private List<RssFeedItem> items;
+    private int currentIndex = 0;
 
     @Override
     public RssFeedItem read() {
-        // 첫 실행 시 모든 RSS 아이템을 큐에 추가
-        if (itemQueue == null) {
-            initializeQueue();
+        if (items == null) {
+            initializeItems();
         }
 
-        // 큐에서 아이템 꺼내기 (Thread-Safe)
-        RssFeedItem item = itemQueue.poll();
-
-        if (item == null) {
-            log.info("모든 RSS 피드 수집 완료");
+        if (currentIndex >= items.size()) {
+            log.info("모든 RSS 피드 수집 완료: 총 {}개", items.size());
+            return null;
         }
 
-        return item;
+        return items.get(currentIndex++);
     }
 
-    /**
-     * 모든 RSS 피드를 미리 수집하여 큐에 저장
-     * 한 번만 실행되며, 여러 스레드가 큐에서 안전하게 아이템을 가져감
-     */
-    private synchronized void initializeQueue() {
-        // Double-checked locking
-        if (itemQueue != null) {
-            return;
-        }
-
-        itemQueue = new ConcurrentLinkedQueue<>();
+    private void initializeItems() {
         List<TechBlog> techBlogs = techBlogRepository.findAll();
         log.info("총 {}개 테크 블로그 RSS 수집 시작", techBlogs.size());
 
-        int totalItems = 0;
-        for (TechBlog techBlog : techBlogs) {
-            try {
-                List<RssFeedItem> items = fetchRssFeed(techBlog);
-                if (!items.isEmpty()) {
-                    itemQueue.addAll(items);
-                    totalItems += items.size();
-                    log.info("[{}] RSS 수집 성공: {}개 아이템", techBlog.getCompanyName(), items.size());
-                } else {
-                    log.warn("[{}] RSS 피드에 아이템이 없습니다", techBlog.getCompanyName());
-                }
-            } catch (Exception e) {
-                log.error("[{}] RSS 수집 실패: {}", techBlog.getCompanyName(), e.getMessage(), e);
-                // 실패해도 다음 블로그 계속 처리
-            }
-        }
+        List<RssFeedItem> allItems = techBlogs.parallelStream()
+                .flatMap(techBlog -> {
+                    try {
+                        List<RssFeedItem> feedItems = fetchRssFeed(techBlog);
+                        log.info("[{}] RSS 수집 성공: {}개", techBlog.getCompanyName(), feedItems.size());
+                        return feedItems.stream();
+                    } catch (Exception e) {
+                        log.error("[{}] RSS 수집 실패: {}", techBlog.getCompanyName(), e.getMessage());
+                        return Stream.empty();
+                    }
+                })
+                .toList();
 
-        log.info("RSS 수집 초기화 완료: 총 {}개 아이템을 큐에 추가", totalItems);
+        Set<String> existingUrls = postRepository.findExistingUrls(
+                allItems.stream().map(RssFeedItem::url).toList()
+        );
+
+        items = allItems.stream()
+                .filter(item -> !existingUrls.contains(item.url()))
+                .toList();
+
+        log.info("RSS 수집 초기화 완료: 총 {}개 아이템", items.size());
     }
 
     private List<RssFeedItem> fetchRssFeed(TechBlog techBlog) throws Exception {
