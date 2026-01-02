@@ -4,6 +4,7 @@ import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
+import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.source.dto.RssFeedItem;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.repository.TechBlogRepository;
@@ -21,6 +22,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -30,6 +32,7 @@ import java.util.stream.Stream;
 public class RssFeedReader implements ItemReader<RssFeedItem> {
 
     private final TechBlogRepository techBlogRepository;
+    private final PostRepository postRepository;
     private final WebClient webClient;
 
     private List<RssFeedItem> items;
@@ -53,7 +56,7 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
         List<TechBlog> techBlogs = techBlogRepository.findAll();
         log.info("총 {}개 테크 블로그 RSS 수집 시작", techBlogs.size());
 
-        items = techBlogs.parallelStream()
+        List<RssFeedItem> allItems = techBlogs.parallelStream()
                 .flatMap(techBlog -> {
                     try {
                         List<RssFeedItem> feedItems = fetchRssFeed(techBlog);
@@ -64,6 +67,14 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
                         return Stream.empty();
                     }
                 })
+                .toList();
+
+        Set<String> existingUrls = postRepository.findExistingUrls(
+                allItems.stream().map(RssFeedItem::url).toList()
+        );
+
+        items = allItems.stream()
+                .filter(item -> !existingUrls.contains(item.url()))
                 .toList();
 
         log.info("RSS 수집 초기화 완료: 총 {}개 아이템", items.size());
