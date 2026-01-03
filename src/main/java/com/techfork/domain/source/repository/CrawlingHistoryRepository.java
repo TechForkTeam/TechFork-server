@@ -13,4 +13,6 @@ import java.util.Optional;
 public interface CrawlingHistoryRepository extends JpaRepository<CrawlingHistory, Long> {
 
     List<CrawlingHistory> findByStatusAndStartedAtBefore(ECrawlingStatus status, LocalDateTime dateTime);
+
+    Optional<CrawlingHistory> findByJobExecutionId(Long jobExecutionId);
 }
