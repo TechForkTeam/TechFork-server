@@ -7,6 +7,7 @@ import com.techfork.domain.source.batch.PostBatchWriter;
 import com.techfork.domain.source.batch.RssFeedReader;
 import com.techfork.domain.source.batch.RssToPostProcessor;
 import com.techfork.domain.source.dto.RssFeedItem;
+import com.techfork.domain.source.listener.RssCrawlingJobListener;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
@@ -58,9 +59,12 @@ public class RssCrawlingJobConfig {
     private final PostEmbeddingProcessor postEmbeddingProcessor;
     private final PostEmbeddingWriter postEmbeddingWriter;
 
+    private final RssCrawlingJobListener rssCrawlingJobListener;
+
     @Bean
     public Job rssCrawlingJob() {
         return new JobBuilder("rssCrawlingJob", jobRepository)
+                .listener(rssCrawlingJobListener)
                 .start(fetchAndSaveRssStep())
                 .next(extractSummaryStep())
                 .next(embedAndIndexStep())
