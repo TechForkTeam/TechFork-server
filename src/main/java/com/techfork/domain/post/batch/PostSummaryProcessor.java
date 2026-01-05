@@ -23,31 +23,24 @@ public class PostSummaryProcessor implements ItemProcessor<Post, Post> {
 
     @Override
     public Post process(Post post) {
-        try {
-            log.debug("요약 및 키워드 추출 중: {}", post.getTitle());
+        log.debug("요약 및 키워드 추출 중: {}", post.getTitle());
 
-            SummaryWithKeywordsDto result = summaryExtractionService.extractSummary(
-                    post.getTitle(),
-                    post.getPlainContent()
-            );
+        SummaryWithKeywordsDto result = summaryExtractionService.extractSummary(
+                post.getTitle(),
+                post.getPlainContent()
+        );
 
-            // 요약 업데이트
-            post.updateSummary(result.summary());
+        // 요약 업데이트
+        post.updateSummary(result.summary());
 
-            // 기존 키워드 삭제 후 새 키워드 추가
-            post.clearKeywords();
-            result.keywords().forEach(keyword -> {
-                PostKeyword postKeyword = PostKeyword.create(keyword, post);
-                post.addKeyword(postKeyword);
-            });
+        // 기존 키워드 삭제 후 새 키워드 추가
+        post.clearKeywords();
+        result.keywords().forEach(keyword -> {
+            PostKeyword postKeyword = PostKeyword.create(keyword, post);
+            post.addKeyword(postKeyword);
+        });
 
-            log.debug("요약 및 키워드 추출 완료: {} (키워드 {}개)", post.getTitle(), result.keywords().size());
-            return post;
-
-        } catch (Exception e) {
-            log.error("요약 및 키워드 추출 실패 (Post ID: {}): {}", post.getId(), e.getMessage(), e);
-            post.updateSummary("");
-            return post;
-        }
+        log.debug("요약 및 키워드 추출 완료: {} (키워드 {}개)", post.getTitle(), result.keywords().size());
+        return post;
     }
 }

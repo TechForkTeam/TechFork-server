@@ -22,7 +22,7 @@ public class PostEmbeddingProcessor implements ItemProcessor<Post, PostDocument>
     private final EmbeddingClient embeddingClient;
 
     @Override
-    public PostDocument process(Post post) throws Exception {
+    public PostDocument process(Post post) {
         log.info("임베딩 처리 시작: Post ID={}, Title={}", post.getId(), post.getTitle());
 
         if (post.getTitle() == null || post.getTitle().isBlank()) {
@@ -34,44 +34,38 @@ public class PostEmbeddingProcessor implements ItemProcessor<Post, PostDocument>
             return null;
         }
 
-        try {
-            List<Float> titleEmbedding = embeddingClient.embed(post.getTitle());
-            List<Float> summaryEmbedding = embeddingClient.embed(post.getSummary());
+        List<Float> titleEmbedding = embeddingClient.embed(post.getTitle());
+        List<Float> summaryEmbedding = embeddingClient.embed(post.getSummary());
 
-            List<String> rawChunks = contentChunkerService.chunkContent(post.getFullContent());
+        List<String> rawChunks = contentChunkerService.chunkContent(post.getFullContent());
 
-            List<String> validChunks = rawChunks.stream()
-                    .filter(chunk -> chunk != null && !chunk.isBlank())
-                    .toList();
+        List<String> validChunks = rawChunks.stream()
+                .filter(chunk -> chunk != null && !chunk.isBlank())
+                .toList();
 
-            log.info("Post ID={} 청크 개수: (원본: {}, 유효: {})", post.getId(), rawChunks.size(), validChunks.size());
+        log.info("Post ID={} 청크 개수: (원본: {}, 유효: {})", post.getId(), rawChunks.size(), validChunks.size());
 
-            if (validChunks.isEmpty()) {
-                log.warn("Post ID={}의 본문에서 유효한 텍스트 청크를 찾을 수 없어 스킵합니다.", post.getId());
-                return null;
-            }
-
-            List<List<Float>> chunkEmbeddings = embeddingClient.embedBatch(validChunks);
-
-            List<ContentChunk> contentChunks = new ArrayList<>();
-            for (int i = 0; i < validChunks.size(); i++) {
-                ContentChunk chunk = ContentChunk.create(i, validChunks.get(i), chunkEmbeddings.get(i));
-                contentChunks.add(chunk);
-            }
-
-            PostDocument postDocument = PostDocument.create(
-                    post,
-                    titleEmbedding,
-                    summaryEmbedding,
-                    contentChunks
-            );
-
-            log.info("임베딩 처리 완료: Post ID={}, Chunks={}", post.getId(), contentChunks.size());
-            return postDocument;
-
-        } catch (Exception e) {
-            log.error("임베딩 처리 실패: Post ID={}, Error={}", post.getId(), e.getMessage(), e);
-            throw e;
+        if (validChunks.isEmpty()) {
+            log.warn("Post ID={}의 본문에서 유효한 텍스트 청크를 찾을 수 없어 스킵합니다.", post.getId());
+            return null;
         }
+
+        List<List<Float>> chunkEmbeddings = embeddingClient.embedBatch(validChunks);
+
+        List<ContentChunk> contentChunks = new ArrayList<>();
+        for (int i = 0; i < validChunks.size(); i++) {
+            ContentChunk chunk = ContentChunk.create(i, validChunks.get(i), chunkEmbeddings.get(i));
+            contentChunks.add(chunk);
+        }
+
+        PostDocument postDocument = PostDocument.create(
+                post,
+                titleEmbedding,
+                summaryEmbedding,
+                contentChunks
+        );
+
+        log.info("임베딩 처리 완료: Post ID={}, Chunks={}", post.getId(), contentChunks.size());
+        return postDocument;
     }
 }

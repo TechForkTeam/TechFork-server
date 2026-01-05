@@ -89,14 +89,15 @@ public class RssCrawlingJobConfig {
     @Bean
     public Step extractSummaryStep() {
         return new StepBuilder("extractSummaryStep", jobRepository)
-                .<Post, Post>chunk(1, transactionManager) // Rate Limit 방지를 위해 1개씩 진행
+                .<Post, Post>chunk(5, transactionManager) // Rate Limiter(15/min)를 고려한 chunk size
                 .reader(postSummaryReader)
                 .processor(postSummaryProcessor)
                 .writer(postSummaryWriter)
-                // LLM API 호출이 있으므로 재시도 정책 설정
+                // 2개씩 병렬 처리 (Resilience4j Rate Limiter가 호출 제어)
+                .taskExecutor(summaryTaskExecutor())
+                // Resilience4j가 Retry를 담당
+                // Skip 로직만 유지: 실패한 아이템을 건너뛰고 다음 아이템 처리
                 .faultTolerant()
-                .retryLimit(2)
-                .retry(Exception.class)
                 .skipLimit(10)  // 실패 허용 개수 증가
                 .skip(Exception.class)
                 .build();
@@ -111,13 +112,25 @@ public class RssCrawlingJobConfig {
                 .writer(postEmbeddingWriter)
                 // 3개씩 병렬 처리
                 .taskExecutor(embeddingTaskExecutor())
-                // OpenAI API 호출이 있으므로 재시도 정책 설정
+                // Resilience4j가 Retry를 담당
+                // Skip 로직만 유지: 실패한 아이템을 건너뛰고 다음 아이템 처리
                 .faultTolerant()
-                .retryLimit(2)
-                .retry(Exception.class)
                 .skipLimit(20)  // 임베딩 실패 허용 개수
                 .skip(Exception.class)
                 .build();
+    }
+
+    @Bean
+    public TaskExecutor summaryTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(2);
+        executor.setQueueCapacity(10);
+        executor.setThreadNamePrefix("summary-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(60);
+        executor.initialize();
+        return executor;
     }
 
     @Bean

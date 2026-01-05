@@ -1,6 +1,48 @@
 spring:
   profiles:
     default: local-tunnel
+
+# Resilience4j 설정 (LLM API 호출용)
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 60
+        slow-call-rate-threshold: 70
+        slow-call-duration-threshold: 45s
+        wait-duration-in-open-state: 60s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        record-exceptions:
+          - java.net.ConnectException
+          - java.net.SocketTimeoutException
+          - java.io.IOException
+          - org.springframework.web.client.ResourceAccessException
+
+  ratelimiter:
+    configs:
+      default:
+        limit-for-period: 15
+        limit-refresh-period: 1m
+        timeout-duration: 10s
+
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 2s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        exponential-max-wait-duration: 10s
+        retry-exceptions:
+          - java.net.ConnectException
+          - java.net.SocketTimeoutException
+          - java.io.IOException
+          - org.springframework.web.client.ResourceAccessException
+
 ---
 spring:
   config:
