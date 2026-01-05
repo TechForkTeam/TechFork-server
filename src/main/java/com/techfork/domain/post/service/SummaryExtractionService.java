@@ -51,26 +51,20 @@ public class SummaryExtractionService {
             """;
 
     public SummaryWithKeywordsDto extractSummary(String title, String content) {
-        try {
-            String processedContent = content;
-            if (content != null && content.length() > 50000) {
-                processedContent = ContentCleaner.cleanAndLimit(content, 50000);
-                log.debug("콘텐츠가 너무 길어 50,000자로 제한: {} (원본: {}자 -> 정제 후: {}자)",
-                        title, content.length(), processedContent.length());
-            }
-
-            String userPrompt = buildUserPrompt(title, processedContent);
-            String response = llmClient.call(SYSTEM_PROMPT, userPrompt);
-
-            log.debug("LLM API 응답 (제목: {}): {}", title, response);
-
-            // JSON 응답 파싱
-            return parseResponse(response.trim());
-
-        } catch (Exception e) {
-            log.error("요약 추출 실패 (제목: {}): {}", title, e.getMessage(), e);
-            return new SummaryWithKeywordsDto("", List.of());
+        String processedContent = content;
+        if (content != null && content.length() > 50000) {
+            processedContent = ContentCleaner.cleanAndLimit(content, 50000);
+            log.debug("콘텐츠가 너무 길어 50,000자로 제한: {} (원본: {}자 -> 정제 후: {}자)",
+                    title, content.length(), processedContent.length());
         }
+
+        String userPrompt = buildUserPrompt(title, processedContent);
+        String response = llmClient.call(SYSTEM_PROMPT, userPrompt);
+
+        log.debug("LLM API 응답 (제목: {}): {}", title, response);
+
+        // JSON 응답 파싱 (파싱 실패 시 빈 DTO 반환)
+        return parseResponse(response.trim());
     }
 
     private SummaryWithKeywordsDto parseResponse(String response) {

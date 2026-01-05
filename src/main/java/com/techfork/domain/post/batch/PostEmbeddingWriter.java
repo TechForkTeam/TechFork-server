@@ -35,35 +35,29 @@ public class PostEmbeddingWriter implements ItemWriter<PostDocument> {
             return;
         }
 
-        try {
-            List<IndexQuery> queries = documents.stream()
-                    .map(doc -> new IndexQueryBuilder()
-                            .withId(doc.getId())
-                            .withObject(doc)
-                            .build())
-                    .toList();
+        List<IndexQuery> queries = documents.stream()
+                .map(doc -> new IndexQueryBuilder()
+                        .withId(doc.getId())
+                        .withObject(doc)
+                        .build())
+                .toList();
 
-            IndexCoordinates index = IndexCoordinates.of("posts");
-            List<IndexedObjectInformation> result = elasticsearchOperations.bulkIndex(queries, index);
+        IndexCoordinates index = IndexCoordinates.of("posts");
+        List<IndexedObjectInformation> result = elasticsearchOperations.bulkIndex(queries, index);
 
-            log.info("Elasticsearch Bulk Insert 완료: {} 개 성공", result.size());
+        log.info("Elasticsearch Bulk Insert 완료: {} 개 성공", result.size());
 
-            if (result.size() != documents.size()) {
-                log.warn("일부 문서 저장 실패: 요청={}, 성공={}", documents.size(), result.size());
-            }
-
-            // ES 저장 성공 후 embeddedAt Bulk 업데이트
-            List<Long> successPostIds = documents.stream()
-                    .map(PostDocument::getPostId)
-                    .toList();
-
-            postRepository.bulkUpdateEmbeddedAt(successPostIds, java.time.LocalDateTime.now());
-
-            log.info("Post embeddedAt Bulk 업데이트 완료: {} 개", successPostIds.size());
-
-        } catch (Exception e) {
-            log.error("Elasticsearch Bulk Insert 실패: {}", e.getMessage(), e);
-            throw e;
+        if (result.size() != documents.size()) {
+            log.warn("일부 문서 저장 실패: 요청={}, 성공={}", documents.size(), result.size());
         }
+
+        // ES 저장 성공 후 embeddedAt Bulk 업데이트
+        List<Long> successPostIds = documents.stream()
+                .map(PostDocument::getPostId)
+                .toList();
+
+        postRepository.bulkUpdateEmbeddedAt(successPostIds, java.time.LocalDateTime.now());
+
+        log.info("Post embeddedAt Bulk 업데이트 완료: {} 개", successPostIds.size());
     }
 }
