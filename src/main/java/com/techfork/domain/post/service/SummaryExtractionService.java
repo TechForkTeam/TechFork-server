@@ -30,24 +30,9 @@ public class SummaryExtractionService {
 
             응답은 반드시 아래 JSON 형식으로만 작성해:
             {
-              "summary": "요약 내용 (300-500자)",
+              "summary": "요약 내용",
               "keywords": ["키워드1", "키워드2", ...]
             }
-
-            요약 작성 원칙:
-            1. 글의 전체 맥락과 흐름을 포함 (300-500자)
-            2. 글에서 다루는 핵심 문제와 해결 방법을 구체적으로 기술
-            3. 사용된 기술 스택, 도구, 프레임워크를 정확한 명칭으로 명시
-            4. 자연스러운 한국어 문장으로 작성
-            5. 마크다운이나 특수 기호 없이 순수 텍스트로만 작성
-
-            키워드 추출 원칙:
-            1. 10-15개의 핵심 키워드 추출
-            2. 기술 스택 (예: Spring Boot, React, Kubernetes)
-            3. 주제/개념 (예: 성능 최적화, 마이크로서비스, CI/CD)
-            4. 방법론 (예: TDD, DDD, 애자일)
-            5. 영문과 한글 키워드 모두 포함
-            6. 너무 일반적인 키워드(예: "개발", "코딩") 제외
             """;
 
     public SummaryWithKeywordsDto extractSummary(String title, String content) {
@@ -87,18 +72,25 @@ public class SummaryExtractionService {
 
     private String buildUserPrompt(String title, String content) {
         return String.format("""
-                다음 기술 블로그 글을 간결하게 요약해줘:
+                다음 기술 블로그 글을 분석해서 요약과 키워드를 추출해줘:
 
                 제목: %s
                 내용: %s
 
                 요약 작성 가이드:
-                - 이 글이 다루는 핵심 주제와 문제
-                - 제시된 해결 방법이나 기술적 접근
-                - 주요 기술 스택이나 도구
-                - 독자가 얻을 수 있는 인사이트
+                - 글의 전체 맥락과 흐름을 포함 (300-500자)
+                - 글에서 다루는 핵심 문제와 해결 방법을 구체적으로 기술
+                - 사용된 기술 스택, 도구, 프레임워크를 정확한 명칭으로 명시
+                - 자연스러운 한국어 문장으로 작성
+                - 마크다운이나 특수 기호 없이 순수 텍스트로만 작성
 
-                자연스러운 문장으로 요약해줘.
+                키워드 추출 가이드:
+                - 10-15개의 핵심 키워드 추출
+                - 기술 스택 (예: Spring Boot, React, Kubernetes)
+                - 주제/개념 (예: 성능 최적화, 마이크로서비스, CI/CD)
+                - 방법론 (예: TDD, DDD, 애자일)
+                - 영문과 한글 키워드 모두 포함
+                - 너무 일반적인 키워드(예: "개발", "코딩")는 제외
                 """, title, content != null ? content : "");
     }
 }
