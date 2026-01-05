@@ -1,6 +1,9 @@
 package com.techfork.global.llm.impl;
 
 import com.techfork.global.llm.EmbeddingClient;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.embedding.EmbeddingResponse;
@@ -13,6 +16,7 @@ import java.util.List;
 
 /**
  * OpenAI text-embedding-3-large 모델을 사용한 임베딩 클라이언트
+ * Resilience4j를 통한 Circuit Breaker, Rate Limiter, Retry 패턴 적용
  */
 @Slf4j
 @Component
@@ -25,53 +29,42 @@ public class OpenAiEmbeddingClient implements EmbeddingClient {
     private static final int EMBEDDING_DIMENSIONS = 3072;
 
     @Override
+    @Retry(name = "llmApi")
+    @CircuitBreaker(name = "llmApi")
+    @RateLimiter(name = "llmApi")
     public List<Float> embed(String text) {
         if (text == null || text.isBlank()) {
-            log.warn("빈 텍스트에 대한 임베딩 요청");
-            return createZeroEmbedding();
+            throw new IllegalArgumentException("텍스트가 비어있습니다");
         }
 
-        try {
-            EmbeddingResponse response = embeddingModel.embedForResponse(List.of(text));
+        EmbeddingResponse response = embeddingModel.embedForResponse(List.of(text));
 
-            if (response.getResults().isEmpty()) {
-                log.error("임베딩 응답이 비어있음");
-                return createZeroEmbedding();
-            }
-
-            float[] embedding = response.getResults().get(0).getOutput();
-            return convertToFloatList(embedding);
-
-        } catch (Exception e) {
-            log.error("OpenAI 임베딩 생성 실패: {}", e.getMessage(), e);
-            return createZeroEmbedding();
+        if (response.getResults().isEmpty()) {
+            throw new RuntimeException("임베딩 응답이 비어있습니다");
         }
+
+        float[] embedding = response.getResults().get(0).getOutput();
+        return convertToFloatList(embedding);
     }
 
     @Override
+    @Retry(name = "llmApi")
+    @CircuitBreaker(name = "llmApi")
+    @RateLimiter(name = "llmApi")
     public List<List<Float>> embedBatch(List<String> texts) {
         if (texts == null || texts.isEmpty()) {
-            return List.of();
+            throw new IllegalArgumentException("텍스트 리스트가 비어있습니다");
         }
 
-        try {
-            EmbeddingResponse response = embeddingModel.embedForResponse(texts);
+        EmbeddingResponse response = embeddingModel.embedForResponse(texts);
 
-            List<List<Float>> embeddings = new ArrayList<>();
-            for (var result : response.getResults()) {
-                float[] embedding = result.getOutput();
-                embeddings.add(convertToFloatList(embedding));
-            }
-
-            return embeddings;
-
-        } catch (Exception e) {
-            log.error("OpenAI 배치 임베딩 생성 실패: {}", e.getMessage(), e);
-            // 실패 시 각 텍스트마다 제로 벡터 반환
-            return texts.stream()
-                    .map(text -> createZeroEmbedding())
-                    .toList();
+        List<List<Float>> embeddings = new ArrayList<>();
+        for (var result : response.getResults()) {
+            float[] embedding = result.getOutput();
+            embeddings.add(convertToFloatList(embedding));
         }
+
+        return embeddings;
     }
 
     /**
@@ -85,14 +78,4 @@ public class OpenAiEmbeddingClient implements EmbeddingClient {
         return result;
     }
 
-    /**
-     * 제로 벡터 생성 (오류 발생 시 대체용)
-     */
-    private List<Float> createZeroEmbedding() {
-        List<Float> zeros = new ArrayList<>(EMBEDDING_DIMENSIONS);
-        for (int i = 0; i < EMBEDDING_DIMENSIONS; i++) {
-            zeros.add(0.0f);
-        }
-        return zeros;
-    }
 }
