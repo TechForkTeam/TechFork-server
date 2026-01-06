@@ -1,8 +1,5 @@
 package com.techfork.domain.source.scheduler;
 
-import com.techfork.domain.source.entity.CrawlingHistory;
-import com.techfork.domain.source.enums.ECrawlingStatus;
-import com.techfork.domain.source.repository.CrawlingHistoryRepository;
 import com.techfork.domain.source.service.CrawlingService;
 import com.techfork.global.lock.DistributedLock;
 import lombok.RequiredArgsConstructor;
@@ -14,8 +11,10 @@ import java.time.Duration;
 
 /**
  * RSS 크롤링 스케줄러
- * - 24시간마다 RSS 피드 크롤링 실행
+ * - 매일 오전 5시마다 RSS 피드 크롤링 실행
  * - Redis 분산 락으로 중복 실행 방지
+ *
+ * Note: Job 실행 이력은 Spring Batch의 BATCH_JOB_EXECUTION 테이블에서 관리
  */
 @Slf4j
 @Component
@@ -24,7 +23,6 @@ public class RssCrawlingScheduler {
 
     private final CrawlingService crawlingService;
     private final DistributedLock distributedLock;
-    private final CrawlingHistoryRepository crawlingHistoryRepository;
 
     private static final String CRAWLING_LOCK_KEY = "rss-crawling";
     private static final Duration LOCK_TTL = Duration.ofMinutes(30); // 크롤링 최대 실행 시간
@@ -50,20 +48,6 @@ public class RssCrawlingScheduler {
             log.error("Unexpected error during scheduled crawling", e);
         } finally {
             distributedLock.unlock(CRAWLING_LOCK_KEY, lockValue);
-            cleanupStaleHistories();
-        }
-    }
-
-    private void cleanupStaleHistories() {
-        var staleHistories = crawlingHistoryRepository.findByStatusAndStartedAtBefore(
-                ECrawlingStatus.RUNNING, java.time.LocalDateTime.now().minusHours(1)
-        );
-
-        for (CrawlingHistory history : staleHistories) {
-            log.warn("Found stale crawling history: id={}, startedAt={}",
-                    history.getId(), history.getStartedAt());
-            history.fail("Crawling job timed out or was interrupted");
-            crawlingHistoryRepository.save(history);
         }
     }
 }
