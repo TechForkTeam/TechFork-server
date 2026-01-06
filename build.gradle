@@ -56,6 +56,7 @@ dependencies {
 
 	// Spring Batch
 	implementation 'org.springframework.boot:spring-boot-starter-batch'
+	implementation 'org.springframework.batch:spring-batch-integration'
 	testImplementation 'org.springframework.batch:spring-batch-test'
 
 	// RSS Parsing

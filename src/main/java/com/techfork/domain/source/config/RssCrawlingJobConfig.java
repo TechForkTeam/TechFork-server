@@ -15,11 +15,17 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.integration.async.AsyncItemProcessor;
+import org.springframework.batch.integration.async.AsyncItemWriter;
+import org.springframework.batch.item.ItemProcessor;
+import org.springframework.batch.item.ItemWriter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
+
+import java.util.concurrent.Future;
 
 /**
  * RSS 크롤링 Job 설정
@@ -29,14 +35,14 @@ import org.springframework.transaction.PlatformTransactionManager;
  * - Processor: 중복 체크 및 Post 엔티티 변환
  * - Writer: Post를 DB에 저장 (Bulk Insert)
  *
- * Step 2: 요약 추출
- * - Reader: 요약이 없는 Post 조회
- * - Processor: GPT API로 구조화된 요약 추출
- * - Writer: PostSummary 저장 (의미 기반 검색 최적화)
+ * Step 2: 요약 추출 (비동기 처리)
+ * - Reader: 요약이 없는 Post 조회 (단일 스레드)
+ * - Processor: GPT API로 구조화된 요약 추출 (멀티 스레드)
+ * - Writer: PostSummary 저장
  *
- * Step 3: 임베딩 생성 및 Elasticsearch 저장
- * - Reader: 요약이 완료되고 임베딩되지 않은 Post 조회
- * - Processor: Chunk 분할 + OpenAI 임베딩 생성
+ * Step 3: 임베딩 생성 및 Elasticsearch 저장 (비동기 처리)
+ * - Reader: 요약이 완료되고 임베딩되지 않은 Post 조회 (단일 스레드)
+ * - Processor: Chunk 분할 + OpenAI 임베딩 생성 (멀티 스레드)
  * - Writer: Elasticsearch에 PostDocument 저장
  */
 @Slf4j
@@ -89,12 +95,10 @@ public class RssCrawlingJobConfig {
     @Bean
     public Step extractSummaryStep() {
         return new StepBuilder("extractSummaryStep", jobRepository)
-                .<Post, Post>chunk(5, transactionManager) // Rate Limiter(15/min)를 고려한 chunk size
+                .<Post, Future<Post>>chunk(5, transactionManager) // Rate Limiter(15/min)를 고려한 chunk size
                 .reader(postSummaryReader)
-                .processor(postSummaryProcessor)
-                .writer(postSummaryWriter)
-                // 2개씩 병렬 처리 (Resilience4j Rate Limiter가 호출 제어)
-                .taskExecutor(summaryTaskExecutor())
+                .processor(asyncSummaryProcessor())
+                .writer(asyncSummaryWriter())
                 // Resilience4j가 Retry를 담당
                 // Skip 로직만 유지: 실패한 아이템을 건너뛰고 다음 아이템 처리
                 .faultTolerant()
@@ -106,18 +110,47 @@ public class RssCrawlingJobConfig {
     @Bean
     public Step embedAndIndexStep() {
         return new StepBuilder("embedAndIndexStep", jobRepository)
-                .<Post, PostDocument>chunk(20, transactionManager) // 5개씩 배치 처리
+                .<Post, Future<PostDocument>>chunk(20, transactionManager) // 5개씩 배치 처리
                 .reader(postEmbeddingReader)
-                .processor(postEmbeddingProcessor)
-                .writer(postEmbeddingWriter)
-                // 3개씩 병렬 처리
-                .taskExecutor(embeddingTaskExecutor())
+                .processor(asyncEmbeddingProcessor())
+                .writer(asyncEmbeddingWriter())
                 // Resilience4j가 Retry를 담당
                 // Skip 로직만 유지: 실패한 아이템을 건너뛰고 다음 아이템 처리
                 .faultTolerant()
                 .skipLimit(20)  // 임베딩 실패 허용 개수
                 .skip(Exception.class)
                 .build();
+    }
+
+
+    @Bean
+    public ItemProcessor<Post, Future<Post>> asyncSummaryProcessor() {
+        AsyncItemProcessor<Post, Post> asyncItemProcessor = new AsyncItemProcessor<>();
+        asyncItemProcessor.setDelegate(postSummaryProcessor);
+        asyncItemProcessor.setTaskExecutor(summaryTaskExecutor());
+        return asyncItemProcessor;
+    }
+
+    @Bean
+    public ItemWriter<Future<Post>> asyncSummaryWriter() {
+        AsyncItemWriter<Post> asyncItemWriter = new AsyncItemWriter<>();
+        asyncItemWriter.setDelegate(postSummaryWriter);
+        return asyncItemWriter;
+    }
+
+    @Bean
+    public ItemProcessor<Post, Future<PostDocument>> asyncEmbeddingProcessor() {
+        AsyncItemProcessor<Post, PostDocument> asyncItemProcessor = new AsyncItemProcessor<>();
+        asyncItemProcessor.setDelegate(postEmbeddingProcessor);
+        asyncItemProcessor.setTaskExecutor(embeddingTaskExecutor());
+        return asyncItemProcessor;
+    }
+
+    @Bean
+    public ItemWriter<Future<PostDocument>> asyncEmbeddingWriter() {
+        AsyncItemWriter<PostDocument> asyncItemWriter = new AsyncItemWriter<>();
+        asyncItemWriter.setDelegate(postEmbeddingWriter);
+        return asyncItemWriter;
     }
 
     @Bean
