@@ -12,26 +12,26 @@ import java.sql.Timestamp;
 import java.util.List;
 
 /**
- * JDBC Batch Insert를 위한 유틸리티 클래스
- * JPA의 saveAll보다 훨씬 빠른 대량 삽입 제공
+ * JDBC Batch 실행을 위한 유틸리티 클래스
+ * INSERT, UPDATE, DELETE를 배치로 처리하여 성능 최적화
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class JdbcBulkInsert {
+public class JdbcBatchExecutor {
 
     private final JdbcTemplate jdbcTemplate;
 
     /**
-     * Batch Insert 실행
+     * Batch 쿼리 실행 (INSERT, UPDATE, DELETE 모두 지원)
      *
-     * @param sql INSERT 쿼리 (PreparedStatement 형식)
-     * @param items 삽입할 데이터 리스트
+     * @param sql SQL 쿼리 (PreparedStatement 형식)
+     * @param items 처리할 데이터 리스트
      * @param setter 각 항목에 대한 PreparedStatement 설정 로직
      * @param <T> 데이터 타입
-     * @return 실제로 삽입된 행의 수
+     * @return 실제로 처리된 행의 수
      */
-    public <T> int batchInsert(String sql, List<T> items, BatchParameterSetter<T> setter) {
+    public <T> int batchExecute(String sql, List<T> items, BatchParameterSetter<T> setter) {
         if (items == null || items.isEmpty()) {
             return 0;
         }
@@ -55,7 +55,7 @@ public class JdbcBulkInsert {
             }
         }
 
-        log.debug("Bulk insert 완료: {}개 항목 중 {}개 삽입됨", items.size(), totalInserted);
+        log.debug("Batch operation 완료: {}개 항목 중 {}개 처리됨", items.size(), totalInserted);
         return totalInserted;
     }
 
