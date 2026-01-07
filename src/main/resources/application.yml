@@ -17,10 +17,10 @@ resilience4j:
         permitted-number-of-calls-in-half-open-state: 3
         automatic-transition-from-open-to-half-open-enabled: true
         record-exceptions:
-          - java.net.ConnectException
-          - java.net.SocketTimeoutException
-          - java.io.IOException
-          - org.springframework.web.client.ResourceAccessException
+          - com.techfork.global.llm.exception.LlmException
+        ignore-exceptions:
+          - com.techfork.global.llm.exception.LlmNetworkException
+          - com.techfork.global.llm.exception.LlmRateLimitException
 
   ratelimiter:
     configs:
@@ -38,10 +38,8 @@ resilience4j:
         exponential-backoff-multiplier: 2
         exponential-max-wait-duration: 10s
         retry-exceptions:
-          - java.net.ConnectException
-          - java.net.SocketTimeoutException
-          - java.io.IOException
-          - org.springframework.web.client.ResourceAccessException
+          - com.techfork.global.llm.exception.LlmNetworkException
+          - com.techfork.global.llm.exception.LlmRateLimitException
 
 ---
 spring:

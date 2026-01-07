@@ -28,6 +28,9 @@ Content-Type: application/json
   }
 }
 
+### 5. 게시글 전체 인덱싱 삭제
+DELETE http://localhost:9200/posts
+
 ### 일반 검색 테스트
 GET http://localhost:8080/api/v1/search/general?query=spring
 Content-Type: application/json
