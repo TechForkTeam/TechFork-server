@@ -1,7 +1,7 @@
 package com.techfork.domain.source.batch;
 
 import com.techfork.domain.post.entity.Post;
-import com.techfork.global.util.JdbcBulkInsert;
+import com.techfork.global.util.JdbcBatchExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.configuration.annotation.StepScope;
@@ -22,7 +22,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PostBatchWriter implements ItemWriter<Post> {
 
-    private final JdbcBulkInsert jdbcBulkInsert;
+    private final JdbcBatchExecutor jdbcBatchExecutor;
 
     private static final String INSERT_SQL = """
             INSERT INTO posts
@@ -38,15 +38,15 @@ public class PostBatchWriter implements ItemWriter<Post> {
 
         List<? extends Post> items = chunk.getItems();
 
-        int inserted = jdbcBulkInsert.batchInsert(INSERT_SQL, items, (ps, post, i) -> {
+        int inserted = jdbcBatchExecutor.batchExecute(INSERT_SQL, items, (ps, post, i) -> {
             ps.setString(1, post.getTitle());
             ps.setString(2, post.getFullContent());
             ps.setString(3, post.getPlainContent());
             ps.setString(4, post.getCompany());
             ps.setString(5, post.getUrl());
             ps.setString(6, post.getLogoUrl());
-            ps.setTimestamp(7, JdbcBulkInsert.toTimestamp(post.getPublishedAt()));
-            ps.setTimestamp(8, JdbcBulkInsert.toTimestamp(post.getCrawledAt()));
+            ps.setTimestamp(7, JdbcBatchExecutor.toTimestamp(post.getPublishedAt()));
+            ps.setTimestamp(8, JdbcBatchExecutor.toTimestamp(post.getCrawledAt()));
             ps.setLong(9, 0L);
             ps.setLong(10, post.getTechBlog().getId());
         });
