@@ -34,7 +34,7 @@ public class AnthropicLlmClient implements LlmClient {
     @Override
     @Retry(name = "llmApi")
     @CircuitBreaker(name = "llmApi")
-    @RateLimiter(name = "llmApi")
+    @RateLimiter(name = "llmSummary")
     public String call(String systemPrompt, String userPrompt) {
         try {
             Prompt prompt = new Prompt(List.of(

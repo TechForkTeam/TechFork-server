@@ -32,12 +32,10 @@ public class OpenAiEmbeddingClient implements EmbeddingClient {
 
     private final OpenAiEmbeddingModel embeddingModel;
 
-    private static final int EMBEDDING_DIMENSIONS = 3072;
-
     @Override
     @Retry(name = "llmApi")
     @CircuitBreaker(name = "llmApi")
-    @RateLimiter(name = "llmApi")
+    @RateLimiter(name = "llmEmbedding")
     public List<Float> embed(String text) {
         if (text == null || text.isBlank()) {
             throw new IllegalArgumentException("텍스트가 비어있습니다");
@@ -73,7 +71,7 @@ public class OpenAiEmbeddingClient implements EmbeddingClient {
     @Override
     @Retry(name = "llmApi")
     @CircuitBreaker(name = "llmApi")
-    @RateLimiter(name = "llmApi")
+    @RateLimiter(name = "llmEmbedding")  // Embedding 생성용 Rate Limiter (28 req/min)
     public List<List<Float>> embedBatch(List<String> texts) {
         if (texts == null || texts.isEmpty()) {
             throw new IllegalArgumentException("텍스트 리스트가 비어있습니다");

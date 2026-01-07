@@ -25,9 +25,26 @@ resilience4j:
   ratelimiter:
     configs:
       default:
-        limit-for-period: 15
+        limit-for-period: 37
         limit-refresh-period: 1m
         timeout-duration: 10s
+    instances:
+      llmSummary:
+        base-config: default
+        # OpenAI gpt-4o-mini: 500 RPM, 200k TPM
+        # Summary: 평균 4350 tokens/req → ~46 req/min
+        # 안전 마진 20% 적용: 37 req/min
+        limit-for-period: 37
+        limit-refresh-period: 1m
+        timeout-duration: 15s
+      llmEmbedding:
+        base-config: default
+        # OpenAI text-embedding-3-large: 3k RPM, 1M TPM
+        # 계산: 1,000,000 / 1350 ≈ 740 req/min
+        # 안전 마진 20% 적용: 590 req/min
+        limit-for-period: 590
+        limit-refresh-period: 1m
+        timeout-duration: 5s
 
   retry:
     configs:
