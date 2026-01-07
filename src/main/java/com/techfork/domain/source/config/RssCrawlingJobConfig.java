@@ -169,9 +169,9 @@ public class RssCrawlingJobConfig {
     @Bean
     public TaskExecutor embeddingTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(3);
-        executor.setMaxPoolSize(5);
-        executor.setQueueCapacity(20);
+        executor.setCorePoolSize(10);
+        executor.setMaxPoolSize(20);
+        executor.setQueueCapacity(50);
         executor.setThreadNamePrefix("embedding-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(60);
