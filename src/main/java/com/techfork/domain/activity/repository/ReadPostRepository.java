@@ -15,8 +15,9 @@ public interface ReadPostRepository extends JpaRepository<ReadPost, Long> {
     boolean existsByUserAndPost(User user, Post post);
 
     @Query("""
-            SELECT rp FROM ReadPost rp
-            JOIN FETCH rp.post
+            SELECT DISTINCT rp FROM ReadPost rp
+            JOIN FETCH rp.post p
+            LEFT JOIN FETCH p.keywords
             WHERE rp.user.id = :userId
             AND (rp.readDurationSeconds IS NULL OR rp.readDurationSeconds > 10)
             ORDER BY rp.readAt DESC

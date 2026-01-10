@@ -9,8 +9,7 @@ import java.util.List;
 
 public interface UserInterestCategoryRepository extends JpaRepository<UserInterestCategory, Long> {
     @Query("""
-            SELECT uic
-            FROM UserInterestCategory uic
+            SELECT DISTINCT uic FROM UserInterestCategory uic
             LEFT JOIN FETCH uic.keywords
             WHERE uic.user.id = :userId
             """)
