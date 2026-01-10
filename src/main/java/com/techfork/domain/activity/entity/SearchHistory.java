@@ -7,6 +7,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.PersistenceCreator;
 
 import java.time.LocalDateTime;
 
@@ -25,8 +26,9 @@ public class SearchHistory extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @PersistenceCreator
     @Builder
-    private SearchHistory(User user, String searchWord, LocalDateTime searchedAt) {
+    SearchHistory(User user, String searchWord, LocalDateTime searchedAt) {
         this.user = user;
         this.searchWord = searchWord;
         this.searchedAt = searchedAt;

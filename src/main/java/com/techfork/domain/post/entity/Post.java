@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.BatchSize;
+import org.springframework.data.annotation.PersistenceCreator;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -61,9 +62,10 @@ public class Post extends BaseEntity {
     @BatchSize(size = 100)
     private List<PostKeyword> keywords = new ArrayList<>();
 
+    @PersistenceCreator
     @Builder
-    private Post(String title, String fullContent, String plainContent, String company, String logoUrl, String url,
-                 LocalDateTime publishedAt, LocalDateTime crawledAt, TechBlog techBlog) {
+    Post(String title, String fullContent, String plainContent, String company, String logoUrl, String url,
+                 LocalDateTime publishedAt, LocalDateTime crawledAt, LocalDateTime embeddedAt, TechBlog techBlog) {
         this.title = title;
         this.fullContent = fullContent;
         this.plainContent = plainContent;
@@ -72,6 +74,7 @@ public class Post extends BaseEntity {
         this.url = url;
         this.publishedAt = publishedAt;
         this.crawledAt = crawledAt;
+        this.embeddedAt = embeddedAt;
         this.techBlog = techBlog;
     }
 

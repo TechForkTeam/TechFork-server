@@ -29,7 +29,7 @@ public class User extends BaseTimeEntity {
 
     @PersistenceCreator
     @Builder
-    private User(String nickName, String email, String description) {
+    User(String nickName, String email, String description) {
         this.nickName = nickName;
         this.email = email;
         this.description = description;

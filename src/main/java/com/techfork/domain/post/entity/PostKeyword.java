@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.PersistenceCreator;
 
 @Entity
 @Table(name = "post_keywords")
@@ -20,8 +21,9 @@ public class PostKeyword extends BaseEntity {
     @JoinColumn(name = "post_id", nullable = false)
     private Post post;
 
+    @PersistenceCreator
     @Builder
-    private PostKeyword(String keyword, Post post) {
+    PostKeyword(String keyword, Post post) {
         this.keyword = keyword;
         this.post = post;
     }

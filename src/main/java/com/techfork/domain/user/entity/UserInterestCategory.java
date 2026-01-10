@@ -7,6 +7,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.PersistenceCreator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,8 +29,9 @@ public class UserInterestCategory extends BaseEntity {
     @OneToMany(mappedBy = "userInterestCategory", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserInterestKeyword> keywords = new ArrayList<>();
 
+    @PersistenceCreator
     @Builder
-    private UserInterestCategory(User user, EInterestCategory category) {
+    UserInterestCategory(User user, EInterestCategory category) {
         this.user = user;
         this.category = category;
     }
