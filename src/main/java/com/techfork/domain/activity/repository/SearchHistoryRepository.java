@@ -1,7 +1,6 @@
 package com.techfork.domain.activity.repository;
 
 import com.techfork.domain.activity.entity.SearchHistory;
-import com.techfork.domain.user.entity.User;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

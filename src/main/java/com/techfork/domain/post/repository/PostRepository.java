@@ -20,7 +20,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Set<String> findExistingUrls(@Param("urls") List<String> urls);
 
     @Query("""
-            SELECT p FROM Post p 
+            SELECT DISTINCT p FROM Post p 
             LEFT JOIN FETCH p.keywords
             WHERE p.summary IS NULL OR p.summary = ''
             """)
