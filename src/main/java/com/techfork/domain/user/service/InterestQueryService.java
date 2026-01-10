@@ -37,7 +37,7 @@ public class InterestQueryService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
-        List<UserInterestCategory> categories = userInterestCategoryRepository.findByUserWithKeywords(user);
+        List<UserInterestCategory> categories = userInterestCategoryRepository.findByUserIdWithKeywords(user.getId());
         List<UserInterestDto> userInterestDtos = interestConverter.toUserInterestDtoList(categories);
 
         return UserInterestResponse.builder()

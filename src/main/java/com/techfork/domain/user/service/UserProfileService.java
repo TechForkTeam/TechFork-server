@@ -8,13 +8,9 @@ import com.techfork.domain.activity.repository.ScrabPostRepository;
 import com.techfork.domain.activity.repository.SearchHistoryRepository;
 import com.techfork.domain.post.entity.PostKeyword;
 import com.techfork.domain.user.document.UserProfileDocument;
-import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.entity.UserInterestCategory;
-import com.techfork.domain.user.exception.UserErrorCode;
 import com.techfork.domain.user.repository.UserInterestCategoryRepository;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
-import com.techfork.domain.user.repository.UserRepository;
-import com.techfork.global.exception.GeneralException;
 import com.techfork.global.llm.EmbeddingClient;
 import com.techfork.global.llm.LlmClient;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +28,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserProfileService {
 
-    private final UserRepository userRepository;
     private final UserInterestCategoryRepository userInterestCategoryRepository;
     private final ReadPostRepository readPostRepository;
     private final ScrabPostRepository scrabPostRepository;
@@ -54,10 +49,7 @@ public class UserProfileService {
     @Transactional
     public void generateUserProfileSync(Long userId) {
         try {
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
-
-            UserActivityData activityData = collectUserActivityData(user);
+            UserActivityData activityData = collectUserActivityData(userId);
             String profileText = generateProfileTextWithLLM(activityData);
             float[] profileVector = generateEmbeddingVector(profileText);
 
@@ -77,14 +69,14 @@ public class UserProfileService {
         }
     }
 
-    private UserActivityData collectUserActivityData(User user) {
-        List<UserInterestCategory> categories = userInterestCategoryRepository.findByUserWithKeywords(user);
+    private UserActivityData collectUserActivityData(Long userId) {
+        List<UserInterestCategory> categories = userInterestCategoryRepository.findByUserIdWithKeywords(userId);
         List<String> interests = categories.stream()
                 .flatMap(c -> c.getKeywords().stream())
                 .map(k -> k.getKeyword().getDisplayName())
                 .toList();
 
-        List<ReadPost> readPosts = readPostRepository.findRecentReadPostsByUserWithMinDuration(user, PageRequest.of(0, 20));
+        List<ReadPost> readPosts = readPostRepository.findRecentReadPostsByUserIdWithMinDuration(userId, PageRequest.of(0, 20));
         List<PostData> readPostData = readPosts.stream()
                 .map(rp -> new PostData(
                         rp.getPost().getTitle(),
@@ -95,7 +87,7 @@ public class UserProfileService {
                 ))
                 .toList();
 
-        List<ScrabPost> scrapPosts = scrabPostRepository.findRecentScrapPostsByUser(user, PageRequest.of(0, 20));
+        List<ScrabPost> scrapPosts = scrabPostRepository.findRecentScrapPostsByUserId(userId, PageRequest.of(0, 20));
         List<PostData> scrapPostData = scrapPosts.stream()
                 .map(sp -> new PostData(
                         sp.getPost().getTitle(),
@@ -106,7 +98,7 @@ public class UserProfileService {
                 ))
                 .toList();
 
-        List<SearchHistory> searchHistories = searchHistoryRepository.findRecentSearchHistoriesByUser(user, PageRequest.of(0, 30));
+        List<SearchHistory> searchHistories = searchHistoryRepository.findRecentSearchHistoriesByUserId(userId, PageRequest.of(0, 30));
         List<String> searchWords = searchHistories.stream()
                 .map(SearchHistory::getSearchWord)
                 .toList();

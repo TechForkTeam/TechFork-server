@@ -16,10 +16,10 @@ public interface ReadPostRepository extends JpaRepository<ReadPost, Long> {
 
     @Query("""
             SELECT rp FROM ReadPost rp
-            JOIN FETCH rp.post 
-            WHERE rp.user = :user 
+            JOIN FETCH rp.post
+            WHERE rp.user.id = :userId
             AND (rp.readDurationSeconds IS NULL OR rp.readDurationSeconds > 10)
             ORDER BY rp.readAt DESC
             """)
-    List<ReadPost> findRecentReadPostsByUserWithMinDuration(@Param("user") User user, Pageable pageable);
+    List<ReadPost> findRecentReadPostsByUserIdWithMinDuration(@Param("userId") Long userId, Pageable pageable);
 }
