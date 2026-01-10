@@ -53,7 +53,7 @@ public class TestDataGenerator {
     @Transactional
     public User createTestUser(List<EInterestCategory> interestCategories, int readPostCount) {
         // 사용자 생성
-        User user = new User();
+        User user = User.create();
         user = userRepository.save(user);
 
         log.info("테스트 사용자 생성: ID: {}", user.getId());
