@@ -1,9 +1,9 @@
 package com.techfork.domain.user.controller;
 
 import com.techfork.domain.user.dto.InterestListResponse;
-import com.techfork.domain.user.dto.SaveInterestRequest;
-import com.techfork.domain.user.service.InterestCommandService;
+import com.techfork.domain.user.dto.OnboardingRequest;
 import com.techfork.domain.user.service.InterestQueryService;
+import com.techfork.domain.user.service.UserCommandService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 public class OnboardingController {
 
     private final InterestQueryService interestQueryService;
-    private final InterestCommandService interestCommandService;
+    private final UserCommandService userCommandService;
 
     @Operation(
             summary = "관심사 목록 조회",
@@ -35,17 +35,15 @@ public class OnboardingController {
     }
 
     @Operation(
-            summary = "내 관심사 저장",
-            description = "온보딩 시 사용자가 선택한 관심사를 저장합니다. 카테고리별로 세부 키워드를 선택할 수 있습니다."
+            summary = "내 정보 및 관심사 저장",
+            description = "온보딩 시 사용자의 정보와 선택한 관심사를 저장합니다. 카테고리별로 세부 키워드를 선택할 수 있습니다."
     )
-    @PostMapping("/interests")
-    public ResponseEntity<BaseResponse<Void>> saveInterests(
-            @Valid @RequestBody SaveInterestRequest request
+    @PostMapping("/complete")
+    public ResponseEntity<BaseResponse<Void>> completeOnboarding(
+            @RequestHeader(value = "X-User-Id", required = false, defaultValue = "1") Long userId,
+            @Valid @RequestBody OnboardingRequest request
     ) {
-        // TODO: userId Auth 인증 기반으로 추출
-        Long userId = 1L;
-
-        interestCommandService.saveUserInterests(userId, request);
+        userCommandService.completeOnboarding(userId, request);
         return BaseResponse.of(SuccessCode.CREATED);
     }
 }

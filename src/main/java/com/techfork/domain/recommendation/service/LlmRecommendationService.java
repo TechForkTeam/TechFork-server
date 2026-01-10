@@ -264,7 +264,7 @@ public class LlmRecommendationService implements RecommendationService {
      */
     private List<MmrCandidate> searchCandidates(float[] userProfileVector, User user) throws IOException {
         // 이미 읽은 글 ID 목록
-        Set<Long> readPostIds = readPostRepository.findRecentReadPostsByUserWithMinDuration(user, PageRequest.of(0, 1000))
+        Set<Long> readPostIds = readPostRepository.findRecentReadPostsByUserIdWithMinDuration(user.getId(), PageRequest.of(0, 1000))
                 .stream()
                 .map(readPost -> readPost.getPost().getId())
                 .collect(Collectors.toSet());

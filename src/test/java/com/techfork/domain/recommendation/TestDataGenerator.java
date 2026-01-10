@@ -53,7 +53,7 @@ public class TestDataGenerator {
     @Transactional
     public User createTestUser(List<EInterestCategory> interestCategories, int readPostCount) {
         // 사용자 생성
-        User user = new User();
+        User user = User.create();
         user = userRepository.save(user);
 
         log.info("테스트 사용자 생성: ID: {}", user.getId());
@@ -167,7 +167,7 @@ public class TestDataGenerator {
      */
     @Transactional(readOnly = true)
     public RecommendationTestCase generateTestCase(User user, List<EInterestCategory> interests) {
-        List<Long> readPostIds = readPostRepository.findRecentReadPostsByUserWithMinDuration(user, PageRequest.of(0, 1000)).stream()
+        List<Long> readPostIds = readPostRepository.findRecentReadPostsByUserIdWithMinDuration(user.getId(), PageRequest.of(0, 1000)).stream()
                 .map(rp -> rp.getPost().getId())
                 .toList();
 
@@ -308,7 +308,7 @@ public class TestDataGenerator {
 
         // 읽은 글 이력 조회 (시간순)
         List<Long> readPostIds = readPostRepository
-                .findRecentReadPostsByUserWithMinDuration(user, PageRequest.of(0, 1000))
+                .findRecentReadPostsByUserIdWithMinDuration(user.getId(), PageRequest.of(0, 1000))
                 .stream()
                 .map(rp -> rp.getPost().getId())
                 .toList();

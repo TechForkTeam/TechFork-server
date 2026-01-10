@@ -8,7 +8,6 @@ import com.techfork.domain.user.entity.UserInterestKeyword;
 import com.techfork.domain.user.enums.EInterestCategory;
 import com.techfork.domain.user.enums.EInterestKeyword;
 import com.techfork.domain.user.exception.UserErrorCode;
-import com.techfork.domain.user.repository.UserInterestCategoryRepository;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
@@ -25,26 +24,23 @@ import java.util.List;
 public class InterestCommandService {
 
     private final UserRepository userRepository;
-    private final UserInterestCategoryRepository userInterestCategoryRepository;
     private final UserProfileService userProfileService;
 
     public void updateUserInterests(Long userId, SaveInterestRequest request) {
-        saveUserInterests(userId, request);
-    }
-
-    public void saveUserInterests(Long userId, SaveInterestRequest request) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdWithInterestCategories(userId)
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
-        userInterestCategoryRepository.deleteByUser(user);
+        saveUserInterests(user, request);
+    }
 
+    void saveUserInterests(User user, SaveInterestRequest request) {
+        user.getInterestCategories().clear();
         List<UserInterestCategory> categories = createCategoriesFromRequest(user, request);
-        userInterestCategoryRepository.saveAll(categories);
+        user.getInterestCategories().addAll(categories);
 
-        log.info("Saved {} interest categories for user {}", categories.size(), userId);
+        log.info("Saved {} interest categories for user {}", categories.size(), user.getId());
 
-        // 관심사 저장/수정 시 사용자 프로필 재생성
-        userProfileService.generateUserProfile(userId);
+        userProfileService.generateUserProfile(user.getId());
     }
 
     private List<UserInterestCategory> createCategoriesFromRequest(User user, SaveInterestRequest request) {

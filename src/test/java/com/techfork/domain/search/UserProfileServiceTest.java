@@ -50,7 +50,7 @@ class UserProfileServiceTest {
         );
 
         IntStream.range(0, 10).forEach(i -> {
-            User user = new User();
+            User user = User.create();
 
             userRepository.save(user);
 

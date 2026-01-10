@@ -7,8 +7,16 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
+
+    @Query("""
+            SELECT DISTINCT u FROM User u
+            LEFT JOIN FETCH u.interestCategories
+            WHERE u.id = :userId
+            """)
+    Optional<User> findByIdWithInterestCategories(@Param("userId") Long userId);
 
     /**
      * 최근 특정 시간 이후 활동한 사용자 조회
