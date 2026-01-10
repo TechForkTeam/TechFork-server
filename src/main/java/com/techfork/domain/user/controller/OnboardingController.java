@@ -40,11 +40,9 @@ public class OnboardingController {
     )
     @PostMapping("/complete")
     public ResponseEntity<BaseResponse<Void>> completeOnboarding(
+            @RequestHeader(value = "X-User-Id", required = false, defaultValue = "1") Long userId,
             @Valid @RequestBody OnboardingRequest request
     ) {
-        // TODO: userId Auth 인증 기반으로 추출
-        Long userId = 1L;
-
         userCommandService.completeOnboarding(userId, request);
         return BaseResponse.of(SuccessCode.CREATED);
     }
