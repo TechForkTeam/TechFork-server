@@ -8,6 +8,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.PersistenceCreator;
 
 import java.time.LocalDateTime;
 
@@ -31,11 +32,14 @@ public class TechBlog extends BaseTimeEntity {
 
     private LocalDateTime lastCrawledAt;
 
+    @PersistenceCreator
     @Builder
-    private TechBlog(String companyName, String blogUrl, String rssUrl, String logoUrl) {
+    TechBlog(String companyName, String blogUrl, String rssUrl,
+                     String logoUrl, LocalDateTime lastCrawledAt) {
         this.companyName = companyName;
         this.blogUrl = blogUrl;
         this.rssUrl = rssUrl;
+        this.lastCrawledAt = lastCrawledAt;
 
         if (logoUrl != null) {
             this.logoUrl = logoUrl;

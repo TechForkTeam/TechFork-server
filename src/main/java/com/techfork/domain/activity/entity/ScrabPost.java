@@ -8,6 +8,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.PersistenceCreator;
 
 import java.time.LocalDateTime;
 
@@ -32,8 +33,9 @@ public class ScrabPost extends BaseEntity {
     @JoinColumn(name = "post_id", nullable = false)
     private Post post;
 
+    @PersistenceCreator
     @Builder
-    private ScrabPost(User user, Post post, LocalDateTime scrappedAt) {
+    ScrabPost(User user, Post post, LocalDateTime scrappedAt) {
         this.user = user;
         this.post = post;
         this.scrappedAt = scrappedAt;

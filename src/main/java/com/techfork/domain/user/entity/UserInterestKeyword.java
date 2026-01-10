@@ -7,6 +7,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.PersistenceCreator;
 
 @Entity
 @Table(name = "user_interest_keywords")
@@ -22,8 +23,9 @@ public class UserInterestKeyword extends BaseEntity {
     @Column(nullable = false, length = 50)
     private EInterestKeyword keyword;
 
+    @PersistenceCreator
     @Builder
-    private UserInterestKeyword(UserInterestCategory userInterestCategory, EInterestKeyword keyword) {
+    UserInterestKeyword(UserInterestCategory userInterestCategory, EInterestKeyword keyword) {
         this.userInterestCategory = userInterestCategory;
         this.keyword = keyword;
     }
