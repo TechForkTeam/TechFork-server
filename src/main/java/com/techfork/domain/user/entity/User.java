@@ -24,4 +24,10 @@ public class User extends BaseTimeEntity {
     @OneToMany
     @JoinColumn(name = "user_id")
     private List<UserInterestCategory> interestCategories;
+
+    public void updateUser(String nickName, String email, String description) {
+        this.nickName = nickName;
+        this.email = email;
+        this.description = description;
+    }
 }
