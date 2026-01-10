@@ -8,7 +8,6 @@ import com.techfork.domain.user.entity.UserInterestKeyword;
 import com.techfork.domain.user.enums.EInterestCategory;
 import com.techfork.domain.user.enums.EInterestKeyword;
 import com.techfork.domain.user.exception.UserErrorCode;
-import com.techfork.domain.user.repository.UserInterestCategoryRepository;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,6 @@ import java.util.List;
 public class InterestCommandService {
 
     private final UserRepository userRepository;
-    private final UserInterestCategoryRepository userInterestCategoryRepository;
     private final UserProfileService userProfileService;
 
     public void updateUserInterests(Long userId, SaveInterestRequest request) {
@@ -36,9 +34,9 @@ public class InterestCommandService {
     }
 
     void saveUserInterests(User user, SaveInterestRequest request) {
-        userInterestCategoryRepository.deleteByUser(user);
+        user.getInterestCategories().clear();
         List<UserInterestCategory> categories = createCategoriesFromRequest(user, request);
-        userInterestCategoryRepository.saveAll(categories);
+        user.getInterestCategories().addAll(categories);
 
         log.info("Saved {} interest categories for user {}", categories.size(), user.getId());
 

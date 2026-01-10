@@ -1,6 +1,5 @@
 package com.techfork.domain.user.repository;
 
-import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.entity.UserInterestCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -9,9 +8,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface UserInterestCategoryRepository extends JpaRepository<UserInterestCategory, Long> {
-
-    void deleteByUser(User user);
-
     @Query("""
             SELECT uic
             FROM UserInterestCategory uic

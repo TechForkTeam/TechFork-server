@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -21,9 +22,8 @@ public class User extends BaseTimeEntity {
 
     private String description;
 
-    @OneToMany
-    @JoinColumn(name = "user_id")
-    private List<UserInterestCategory> interestCategories;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserInterestCategory> interestCategories = new ArrayList<>();
 
     public void updateUser(String nickName, String email, String description) {
         this.nickName = nickName;
