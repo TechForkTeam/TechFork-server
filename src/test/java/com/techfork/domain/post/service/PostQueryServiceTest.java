@@ -5,7 +5,6 @@ import com.techfork.domain.post.dto.CompanyListResponse;
 import com.techfork.domain.post.dto.PostDetailDto;
 import com.techfork.domain.post.dto.PostInfoDto;
 import com.techfork.domain.post.dto.PostListResponse;
-import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.entity.PostKeyword;
 import com.techfork.domain.post.enums.EPostSortType;
 import com.techfork.domain.post.repository.PostKeywordRepository;
@@ -66,7 +65,10 @@ class PostQueryServiceTest {
         // Then
         assertThat(result).isNotNull();
         assertThat(result.companies()).hasSize(3);
-        assertThat(result.companies()).contains("카카오", "네이버", "라인");
+
+        @SuppressWarnings("unchecked")
+        List<String> companies = (List<String>) result.companies();
+        assertThat(companies).contains("카카오", "네이버", "라인");
 
         verify(postRepository, times(1)).findDistinctCompanies();
         verify(postConverter, times(1)).toCompanyListResponse(mockCompanies);
