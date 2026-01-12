@@ -1,17 +1,24 @@
 package com.techfork.domain.post.controller;
 
 import com.techfork.domain.post.dto.CompanyListResponse;
+import com.techfork.domain.post.dto.PostListResponse;
 import com.techfork.domain.post.service.PostQueryService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Tag(name = "Post V2", description = "게시글 API V2")
 @Slf4j
@@ -34,6 +41,35 @@ public class PostControllerV2 {
     @GetMapping("/companies")
     public ResponseEntity<BaseResponse<CompanyListResponse>> getCompanies() {
         CompanyListResponse response = postQueryService.getCompaniesV2();
+        return BaseResponse.of(SuccessCode.OK, response);
+    }
+
+    @Operation(
+            summary = "기업별 게시글 조회 (V2)",
+            description = """
+                        여러 기업의 게시글을 무한 스크롤 방식으로 조회합니다.
+                        companies 파라미터가 없으면 전체 게시글을 조회합니다.
+                        초기에는 lastPublishedAt과 lastPostId를 빈 채로 호출하고, 
+                        페이징을 할 땐 lastPublishedAt과 lastPostId를 둘 다 동시에 보내주셔야 합니다.
+                        페이징 관련 값은 응답으로 반환됩니다.
+                        """
+    )
+    @GetMapping("/by-company")
+    public ResponseEntity<BaseResponse<PostListResponse>> getPostsByCompany(
+            @Parameter(description = "회사명 필터 (선택, 없으면 전체 조회)")
+            @RequestParam(required = false) List<String> companies,
+
+            @Parameter(description = "마지막 게시글 발행시간 (커서 1, 선택)")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            @RequestParam(required = false) LocalDateTime lastPublishedAt,
+
+            @Parameter(description = "마지막 게시글 ID (커서 2, 선택)")
+            @RequestParam(required = false) Long lastPostId,
+
+            @Parameter(description = "페이지 크기 (기본값: 20)")
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        PostListResponse response = postQueryService.getPostsByCompanyV2(companies, lastPublishedAt, lastPostId, size);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 }
