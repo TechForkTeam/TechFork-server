@@ -417,6 +417,118 @@ class PostRepositoryTest {
         assertThat(hasNext).isTrue();
     }
 
+    @Test
+    @DisplayName("findRecentPostsWithCursorV2 - publishedAt과 id로 커서 페이징")
+    void findRecentPostsWithCursorV2_CursorPagingWithPublishedAtAndId() {
+        // Given: 같은 publishedAt을 가진 게시글 3개
+        LocalDateTime now = LocalDateTime.now();
+        Post post1 = createPost("게시글1", techBlog1, now, 100L);
+        Post post2 = createPost("게시글2", techBlog1, now, 200L);
+        Post post3 = createPost("게시글3", techBlog1, now, 300L);
+        postRepository.saveAll(List.of(post1, post2, post3));
+
+        // When: 첫 페이지 조회
+        PageRequest pageRequest = PageRequest.of(0, 10);
+        List<PostInfoDto> page1 = postRepository.findRecentPostsWithCursorV2(null, null, pageRequest);
+
+        // Then: publishedAt 같으면 id 내림차순으로 정렬
+        assertThat(page1).hasSize(3);
+        assertThat(page1.get(0).id()).isGreaterThan(page1.get(1).id());
+        assertThat(page1.get(1).id()).isGreaterThan(page1.get(2).id());
+    }
+
+    @Test
+    @DisplayName("findRecentPostsWithCursorV2 - 커서 기반 다음 페이지 조회")
+    void findRecentPostsWithCursorV2_NextPageWithCursor() {
+        // Given: 발행일이 다른 게시글 5개
+        LocalDateTime now = LocalDateTime.now();
+        Post post1 = createPost("게시글1", techBlog1, now.minusDays(1), 100L);
+        Post post2 = createPost("게시글2", techBlog1, now.minusDays(2), 200L);
+        Post post3 = createPost("게시글3", techBlog1, now.minusDays(3), 300L);
+        Post post4 = createPost("게시글4", techBlog1, now.minusDays(4), 400L);
+        Post post5 = createPost("게시글5", techBlog1, now.minusDays(5), 500L);
+        postRepository.saveAll(List.of(post1, post2, post3, post4, post5));
+
+        // When: 첫 페이지 조회 후 두 번째 페이지 조회
+        PageRequest pageRequest = PageRequest.of(0, 2);
+        List<PostInfoDto> page1 = postRepository.findRecentPostsWithCursorV2(null, null, pageRequest);
+
+        PostInfoDto lastPost = page1.get(1);
+        List<PostInfoDto> page2 = postRepository.findRecentPostsWithCursorV2(
+                lastPost.publishedAt(), lastPost.id(), pageRequest
+        );
+
+        // Then: 커서 이후 게시글만 반환
+        assertThat(page1).hasSize(2);
+        assertThat(page2).hasSize(2);
+        assertThat(page2.get(0).publishedAt()).isBefore(lastPost.publishedAt());
+    }
+
+    @Test
+    @DisplayName("findPopularPostsWithCursorV2 - viewCount와 id로 커서 페이징")
+    void findPopularPostsWithCursorV2_CursorPagingWithViewCountAndId() {
+        // Given: 조회수가 다른 게시글 3개
+        Post post1 = createPost("게시글1", techBlog1, LocalDateTime.now().minusDays(1), 500L);
+        Post post2 = createPost("게시글2", techBlog1, LocalDateTime.now().minusDays(2), 300L);
+        Post post3 = createPost("게시글3", techBlog1, LocalDateTime.now().minusDays(3), 100L);
+        postRepository.saveAll(List.of(post1, post2, post3));
+
+        // When: 첫 페이지 조회
+        PageRequest pageRequest = PageRequest.of(0, 10);
+        List<PostInfoDto> result = postRepository.findPopularPostsWithCursorV2(null, null, pageRequest);
+
+        // Then: viewCount 내림차순으로 정렬 (500 > 300 > 100)
+        assertThat(result).hasSize(3);
+        assertThat(result.get(0).viewCount()).isEqualTo(500L);
+        assertThat(result.get(1).viewCount()).isEqualTo(300L);
+        assertThat(result.get(2).viewCount()).isEqualTo(100L);
+    }
+
+    @Test
+    @DisplayName("findPopularPostsWithCursorV2 - 같은 viewCount일 때 id로 정렬")
+    void findPopularPostsWithCursorV2_SameViewCount_OrderById() {
+        // Given: 같은 조회수를 가진 게시글 3개
+        Post post1 = createPost("게시글1", techBlog1, LocalDateTime.now().minusDays(1), 500L);
+        Post post2 = createPost("게시글2", techBlog1, LocalDateTime.now().minusDays(2), 500L);
+        Post post3 = createPost("게시글3", techBlog1, LocalDateTime.now().minusDays(3), 500L);
+        postRepository.saveAll(List.of(post1, post2, post3));
+
+        // When: 조회
+        PageRequest pageRequest = PageRequest.of(0, 10);
+        List<PostInfoDto> result = postRepository.findPopularPostsWithCursorV2(null, null, pageRequest);
+
+        // Then: viewCount 같으면 id 내림차순
+        assertThat(result).hasSize(3);
+        assertThat(result.get(0).id()).isGreaterThan(result.get(1).id());
+        assertThat(result.get(1).id()).isGreaterThan(result.get(2).id());
+    }
+
+    @Test
+    @DisplayName("findPopularPostsWithCursorV2 - 커서 기반 다음 페이지 조회")
+    void findPopularPostsWithCursorV2_NextPageWithCursor() {
+        // Given: 조회수가 다른 게시글 5개
+        Post post1 = createPost("게시글1", techBlog1, LocalDateTime.now().minusDays(1), 500L);
+        Post post2 = createPost("게시글2", techBlog1, LocalDateTime.now().minusDays(2), 400L);
+        Post post3 = createPost("게시글3", techBlog1, LocalDateTime.now().minusDays(3), 300L);
+        Post post4 = createPost("게시글4", techBlog1, LocalDateTime.now().minusDays(4), 200L);
+        Post post5 = createPost("게시글5", techBlog1, LocalDateTime.now().minusDays(5), 100L);
+        postRepository.saveAll(List.of(post1, post2, post3, post4, post5));
+
+        // When: 첫 페이지 조회 후 두 번째 페이지 조회
+        PageRequest pageRequest = PageRequest.of(0, 2);
+        List<PostInfoDto> page1 = postRepository.findPopularPostsWithCursorV2(null, null, pageRequest);
+
+        PostInfoDto lastPost = page1.get(1);
+        List<PostInfoDto> page2 = postRepository.findPopularPostsWithCursorV2(
+                lastPost.viewCount().intValue(), lastPost.id(), pageRequest
+        );
+
+        // Then: 커서 이후 게시글만 반환
+        assertThat(page1).hasSize(2);
+        assertThat(page2).hasSize(2);
+        assertThat(page2.get(0).viewCount()).isLessThanOrEqualTo(lastPost.viewCount());
+    }
+
     // 헬퍼 메서드
     private Post createPost(String title, TechBlog techBlog, LocalDateTime publishedAt, Long viewCount) {
         Post post = Post.builder()
