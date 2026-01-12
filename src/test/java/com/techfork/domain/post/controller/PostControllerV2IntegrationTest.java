@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -275,5 +276,141 @@ class PostControllerV2IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.posts[0].title").value("최신 게시글"))
                 .andExpect(jsonPath("$.data.posts[1].title").value("오늘의 게시글"));
+    }
+
+    @Test
+    @DisplayName("GET /api/v2/posts/recent - LATEST 정렬로 최근 게시글 조회")
+    void getRecentPosts_Latest_Success() throws Exception {
+        mockMvc.perform(get("/api/v2/posts/recent")
+                        .param("sortBy", "LATEST")
+                        .param("size", "20"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.posts").isArray())
+                .andExpect(jsonPath("$.data.posts.length()").value(2))
+                .andExpect(jsonPath("$.data.posts[0].title").value("오늘의 게시글"))
+                .andExpect(jsonPath("$.data.posts[1].title").value("어제의 게시글"))
+                .andExpect(jsonPath("$.data.hasNext").value(false))
+                .andExpect(jsonPath("$.data.lastPostId").exists())
+                .andExpect(jsonPath("$.data.lastPublishedAt").exists());
+    }
+
+    @Test
+    @DisplayName("GET /api/v2/posts/recent - POPULAR 정렬로 인기 게시글 조회")
+    void getRecentPosts_Popular_Success() throws Exception {
+        // Given: 조회수 증가
+        for (int i = 0; i < 100; i++) {
+            todayPost.incrementViewCount();
+        }
+        for (int i = 0; i < 50; i++) {
+            oldPost.incrementViewCount();
+        }
+        postRepository.saveAll(List.of(todayPost, oldPost));
+
+        // When & Then: 조회수 높은 순으로 정렬
+        mockMvc.perform(get("/api/v2/posts/recent")
+                        .param("sortBy", "POPULAR")
+                        .param("size", "20"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.posts").isArray())
+                .andExpect(jsonPath("$.data.posts.length()").value(2))
+                .andExpect(jsonPath("$.data.posts[0].title").value("오늘의 게시글"))
+                .andExpect(jsonPath("$.data.posts[1].title").value("어제의 게시글"))
+                .andExpect(jsonPath("$.data.hasNext").value(false))
+                .andExpect(jsonPath("$.data.lastPostId").exists())
+                .andExpect(jsonPath("$.data.lastViewCount").exists());
+    }
+
+    @Test
+    @DisplayName("GET /api/v2/posts/recent - LATEST 커서 페이징")
+    void getRecentPosts_Latest_CursorPaging() throws Exception {
+        // Given: 추가 게시글 생성
+        for (int i = 1; i <= 5; i++) {
+            Post post = Post.builder()
+                    .title("게시글 " + i)
+                    .fullContent("<p>내용 " + i + "</p>")
+                    .plainContent("내용 " + i)
+                    .company("카카오")
+                    .url("https://kakao.com/post/" + i)
+                    .logoUrl("https://kakao.com/logo.png")
+                    .publishedAt(LocalDateTime.now().minusHours(i + 1))
+                    .crawledAt(LocalDateTime.now())
+                    .techBlog(testTechBlog1)
+                    .build();
+            postRepository.save(post);
+        }
+
+        // When: 첫 페이지 조회 (size=3)
+        mockMvc.perform(get("/api/v2/posts/recent")
+                        .param("sortBy", "LATEST")
+                        .param("size", "3"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.posts.length()").value(3))
+                .andExpect(jsonPath("$.data.hasNext").value(true));
+    }
+
+    @Test
+    @DisplayName("GET /api/v2/posts/recent - POPULAR 커서 페이징")
+    void getRecentPosts_Popular_CursorPaging() throws Exception {
+        // Given: 다양한 조회수를 가진 게시글 생성
+        for (int i = 1; i <= 5; i++) {
+            Post post = Post.builder()
+                    .title("인기 게시글 " + i)
+                    .fullContent("<p>내용 " + i + "</p>")
+                    .plainContent("내용 " + i)
+                    .company("카카오")
+                    .url("https://kakao.com/post/popular/" + i)
+                    .logoUrl("https://kakao.com/logo.png")
+                    .publishedAt(LocalDateTime.now().minusHours(i))
+                    .crawledAt(LocalDateTime.now())
+                    .techBlog(testTechBlog1)
+                    .build();
+
+            // 조회수 설정
+            for (int j = 0; j < (6 - i) * 100; j++) {
+                post.incrementViewCount();
+            }
+            postRepository.save(post);
+        }
+
+        // When: 첫 페이지 조회 (size=3)
+        mockMvc.perform(get("/api/v2/posts/recent")
+                        .param("sortBy", "POPULAR")
+                        .param("size", "3"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.posts.length()").value(3))
+                .andExpect(jsonPath("$.data.hasNext").value(true))
+                .andExpect(jsonPath("$.data.lastViewCount").exists());
+    }
+
+    @Test
+    @DisplayName("GET /api/v2/posts/recent - 기본값은 LATEST 정렬")
+    void getRecentPosts_DefaultSortByLatest() throws Exception {
+        mockMvc.perform(get("/api/v2/posts/recent")
+                        .param("size", "20"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.posts").isArray())
+                .andExpect(jsonPath("$.data.posts[0].title").value("오늘의 게시글"));
+    }
+
+    @Test
+    @DisplayName("GET /api/v2/posts/recent - 게시글이 없으면 빈 배열 반환")
+    void getRecentPosts_EmptyWhenNoPosts() throws Exception {
+        // Given: 모든 게시글 삭제
+        postRepository.deleteAll();
+
+        // When & Then: 빈 배열 반환
+        mockMvc.perform(get("/api/v2/posts/recent")
+                        .param("sortBy", "LATEST")
+                        .param("size", "20"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.posts").isArray())
+                .andExpect(jsonPath("$.data.posts.length()").value(0))
+                .andExpect(jsonPath("$.data.hasNext").value(false));
     }
 }
