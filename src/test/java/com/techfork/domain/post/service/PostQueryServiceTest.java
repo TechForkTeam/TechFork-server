@@ -51,7 +51,7 @@ class PostQueryServiceTest {
     void getCompanies_Success() {
         // Given
         List<String> mockCompanies = List.of("카카오", "네이버", "라인");
-        CompanyListResponse expectedResponse = new CompanyListResponse(mockCompanies);
+        CompanyListResponse expectedResponse = new CompanyListResponse(3, mockCompanies);
 
         given(postRepository.findDistinctCompanies()).willReturn(mockCompanies);
         given(postConverter.toCompanyListResponse(mockCompanies)).willReturn(expectedResponse);
@@ -89,6 +89,7 @@ class PostQueryServiceTest {
         );
 
         CompanyListResponse expectedResponse = CompanyListResponse.builder()
+                .totalNumber(2)
                 .companies(mockCompanies)
                 .build();
 

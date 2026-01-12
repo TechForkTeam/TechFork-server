@@ -16,6 +16,7 @@ public class PostConverter {
 
     public CompanyListResponse toCompanyListResponseV2(List<CompanyDto> companies) {
         return CompanyListResponse.builder()
+                .totalNumber(companies.size())
                 .companies(companies)
                 .build();
     }

@@ -113,6 +113,7 @@ class PostControllerV2IntegrationTest {
         mockMvc.perform(get("/api/v2/posts/companies"))
                 .andDo(print())
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalNumber").value(2))
                 .andExpect(jsonPath("$.data.companies").isArray())
                 .andExpect(jsonPath("$.data.companies.length()").value(2))
                 // 첫 번째 회사 (카카오 - 오늘 발행)
@@ -135,6 +136,7 @@ class PostControllerV2IntegrationTest {
         mockMvc.perform(get("/api/v2/posts/companies"))
                 .andDo(print())
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalNumber").value(0))
                 .andExpect(jsonPath("$.data.companies").isArray())
                 .andExpect(jsonPath("$.data.companies.length()").value(0));
     }
