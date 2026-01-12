@@ -39,7 +39,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("""
             SELECT new com.techfork.domain.post.dto.CompanyDto(
                 p.company,
-                (COUNT(CASE WHEN FUNCTION('DATE', p.publishedAt) = CURRENT_DATE THEN 1 END) > 0),
+                (COUNT(CASE WHEN p.publishedAt >= CURRENT_DATE THEN 1 END) > 0),
                 MAX(p.logoUrl)
             )
             FROM Post p
