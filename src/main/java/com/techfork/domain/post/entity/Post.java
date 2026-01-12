@@ -17,9 +17,9 @@ import java.util.List;
 
 @Entity
 @Table(name = "posts", indexes = {
-        @Index(name = "idx_post_published_at", columnList = "publishedAt"),
-        @Index(name = "idx_post_view_count_id", columnList = "viewCount, publishedAt"),
-        @Index(name = "idx_post_company_published_at", columnList = "company, publishedAt")
+        @Index(name = "idx_post_published_at_id", columnList = "publishedAt, id"),
+        @Index(name = "idx_post_view_count_id", columnList = "viewCount, id"),
+        @Index(name = "idx_post_company_published_at_id", columnList = "company, publishedAt, id")
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

@@ -3,6 +3,7 @@ package com.techfork.domain.post.converter;
 import com.techfork.domain.post.dto.*;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
@@ -25,11 +26,22 @@ public class PostConverter {
         boolean hasNext = posts.size() > requestedSize;
         List<PostInfoDto> content = hasNext ? posts.subList(0, requestedSize) : posts;
 
-        Long lastPostId = content.isEmpty() ? null : content.get(content.size() - 1).id();
+        Long lastPostId = null;
+        Long lastViewCount = null;
+        LocalDateTime lastPublishedAt = null;
+
+        if (!content.isEmpty()) {
+            PostInfoDto lastPost = content.get(content.size() - 1);
+            lastPostId = lastPost.id();
+            lastViewCount = lastPost.viewCount();
+            lastPublishedAt = lastPost.publishedAt();
+        }
 
         return PostListResponse.builder()
                 .posts(content)
                 .lastPostId(lastPostId)
+                .lastViewCount(lastViewCount)
+                .lastPublishedAt(lastPublishedAt)
                 .hasNext(hasNext)
                 .build();
     }

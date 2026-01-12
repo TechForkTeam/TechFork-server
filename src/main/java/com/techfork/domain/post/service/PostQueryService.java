@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -45,6 +46,13 @@ public class PostQueryService {
         return postConverter.toPostListResponse(postsWithKeywords, size);
     }
 
+    public PostListResponse getPostsByCompanyV2(List<String> companies, LocalDateTime lastPublishedAt, Long lastPostId, int size) {
+        PageRequest pageRequest = PageRequest.of(0, size + 1);
+        List<PostInfoDto> posts = postRepository.findByCompanyNamesWithCursor(companies, lastPublishedAt, lastPostId, pageRequest);
+        List<PostInfoDto> postsWithKeywords = attachKeywordsToPostInfoList(posts);
+        return postConverter.toPostListResponse(postsWithKeywords, size);
+    }
+
     public PostListResponse getRecentPosts(EPostSortType sortBy, Long lastPostId, int size) {
         PageRequest pageRequest = PageRequest.of(0, size + 1);
         List<PostInfoDto> posts;
@@ -53,6 +61,20 @@ public class PostQueryService {
             posts = postRepository.findPopularPostsWithCursor(lastPostId, pageRequest);
         } else {
             posts = postRepository.findRecentPostsWithCursor(lastPostId, pageRequest);
+        }
+
+        List<PostInfoDto> postsWithKeywords = attachKeywordsToPostInfoList(posts);
+        return postConverter.toPostListResponse(postsWithKeywords, size);
+    }
+
+    public PostListResponse getRecentPostsV2(EPostSortType sortBy, Integer lastViewCount, LocalDateTime lastPublishedAt, Long lastPostId, int size) {
+        PageRequest pageRequest = PageRequest.of(0, size + 1);
+        List<PostInfoDto> posts;
+
+        if (sortBy == EPostSortType.POPULAR) {
+            posts = postRepository.findPopularPostsWithCursorV2(lastViewCount, lastPostId, pageRequest);
+        } else {
+            posts = postRepository.findRecentPostsWithCursorV2(lastPublishedAt, lastPostId, pageRequest);
         }
 
         List<PostInfoDto> postsWithKeywords = attachKeywordsToPostInfoList(posts);

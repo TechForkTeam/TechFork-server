@@ -337,4 +337,373 @@ class PostQueryServiceTest {
 
         verify(postRepository, times(1)).findByCompanyWithCursor(eq(company), eq(lastPostId), any(PageRequest.class));
     }
+
+    @Test
+    @DisplayName("getPostsByCompanyV2() - 여러 회사의 게시글 조회 성공")
+    void getPostsByCompanyV2_Success() {
+        // Given
+        List<String> companies = List.of("카카오", "네이버");
+        LocalDateTime lastPublishedAt = null;
+        Long lastPostId = null;
+        int size = 20;
+
+        LocalDateTime now = LocalDateTime.now();
+        List<PostInfoDto> mockPosts = List.of(
+                PostInfoDto.builder()
+                        .id(2L)
+                        .title("네이버 게시글")
+                        .company("네이버")
+                        .url("https://test.com/2")
+                        .logoUrl("https://test.com/naver-logo.png")
+                        .publishedAt(now)
+                        .viewCount(100L)
+                        .keywords(null)
+                        .build(),
+                PostInfoDto.builder()
+                        .id(1L)
+                        .title("카카오 게시글")
+                        .company("카카오")
+                        .url("https://test.com/1")
+                        .logoUrl("https://test.com/kakao-logo.png")
+                        .publishedAt(now.minusHours(1))
+                        .viewCount(50L)
+                        .keywords(null)
+                        .build()
+        );
+
+        PostListResponse expectedResponse = PostListResponse.builder()
+                .posts(mockPosts)
+                .lastPostId(1L)
+                .lastPublishedAt(now.minusHours(1))
+                .hasNext(false)
+                .build();
+
+        given(postRepository.findByCompanyNamesWithCursor(eq(companies), eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class)))
+                .willReturn(mockPosts);
+        given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
+        given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
+
+        // When
+        PostListResponse result = postQueryService.getPostsByCompanyV2(companies, lastPublishedAt, lastPostId, size);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.posts()).hasSize(2);
+        assertThat(result.posts().get(0).company()).isEqualTo("네이버");
+        assertThat(result.posts().get(1).company()).isEqualTo("카카오");
+        assertThat(result.posts().get(0).publishedAt()).isAfter(result.posts().get(1).publishedAt());
+
+        verify(postRepository, times(1)).findByCompanyNamesWithCursor(eq(companies), eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class));
+        verify(postKeywordRepository, times(1)).findByPostIdIn(any());
+        verify(postConverter, times(1)).toPostListResponse(any(), eq(size));
+    }
+
+    @Test
+    @DisplayName("getPostsByCompanyV2() - companies가 null이면 전체 게시글 조회")
+    void getPostsByCompanyV2_NullCompanies_ReturnsAll() {
+        // Given
+        List<String> companies = null;
+        LocalDateTime lastPublishedAt = null;
+        Long lastPostId = null;
+        int size = 20;
+
+        LocalDateTime now = LocalDateTime.now();
+        List<PostInfoDto> mockPosts = List.of(
+                PostInfoDto.builder()
+                        .id(3L)
+                        .title("라인 게시글")
+                        .company("라인")
+                        .url("https://test.com/3")
+                        .logoUrl("https://test.com/line-logo.png")
+                        .publishedAt(now)
+                        .viewCount(200L)
+                        .keywords(null)
+                        .build(),
+                PostInfoDto.builder()
+                        .id(2L)
+                        .title("네이버 게시글")
+                        .company("네이버")
+                        .url("https://test.com/2")
+                        .logoUrl("https://test.com/naver-logo.png")
+                        .publishedAt(now.minusHours(1))
+                        .viewCount(100L)
+                        .keywords(null)
+                        .build()
+        );
+
+        PostListResponse expectedResponse = PostListResponse.builder()
+                .posts(mockPosts)
+                .lastPostId(2L)
+                .lastPublishedAt(now.minusHours(1))
+                .hasNext(false)
+                .build();
+
+        given(postRepository.findByCompanyNamesWithCursor(eq(companies), eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class)))
+                .willReturn(mockPosts);
+        given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
+        given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
+
+        // When
+        PostListResponse result = postQueryService.getPostsByCompanyV2(companies, lastPublishedAt, lastPostId, size);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.posts()).hasSize(2);
+
+        verify(postRepository, times(1)).findByCompanyNamesWithCursor(eq(companies), eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class));
+    }
+
+    @Test
+    @DisplayName("getPostsByCompanyV2() - 커서 페이징으로 다음 페이지 조회")
+    void getPostsByCompanyV2_WithCursor_ReturnsNextPage() {
+        // Given
+        List<String> companies = List.of("카카오");
+        LocalDateTime lastPublishedAt = LocalDateTime.now().minusHours(2);
+        Long lastPostId = 100L;
+        int size = 20;
+
+        List<PostInfoDto> mockPosts = List.of(
+                PostInfoDto.builder()
+                        .id(99L)
+                        .title("카카오 게시글 99")
+                        .company("카카오")
+                        .url("https://test.com/99")
+                        .logoUrl("https://test.com/kakao-logo.png")
+                        .publishedAt(lastPublishedAt.minusMinutes(10))
+                        .viewCount(50L)
+                        .keywords(null)
+                        .build()
+        );
+
+        PostListResponse expectedResponse = PostListResponse.builder()
+                .posts(mockPosts)
+                .lastPostId(99L)
+                .lastPublishedAt(lastPublishedAt.minusMinutes(10))
+                .hasNext(false)
+                .build();
+
+        given(postRepository.findByCompanyNamesWithCursor(eq(companies), eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class)))
+                .willReturn(mockPosts);
+        given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
+        given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
+
+        // When
+        PostListResponse result = postQueryService.getPostsByCompanyV2(companies, lastPublishedAt, lastPostId, size);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.posts()).hasSize(1);
+        assertThat(result.posts().get(0).id()).isEqualTo(99L);
+
+        verify(postRepository, times(1)).findByCompanyNamesWithCursor(eq(companies), eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class));
+    }
+
+    @Test
+    @DisplayName("getRecentPostsV2() - LATEST 정렬로 최근 게시글 조회")
+    void getRecentPostsV2_Latest_Success() {
+        // Given
+        EPostSortType sortBy = EPostSortType.LATEST;
+        Integer lastViewCount = null;
+        LocalDateTime lastPublishedAt = null;
+        Long lastPostId = null;
+        int size = 20;
+
+        LocalDateTime now = LocalDateTime.now();
+        List<PostInfoDto> mockPosts = List.of(
+                PostInfoDto.builder()
+                        .id(2L)
+                        .title("게시글 2")
+                        .company("카카오")
+                        .url("https://test.com/2")
+                        .logoUrl("https://test.com/logo.png")
+                        .publishedAt(now)
+                        .viewCount(50L)
+                        .keywords(null)
+                        .build(),
+                PostInfoDto.builder()
+                        .id(1L)
+                        .title("게시글 1")
+                        .company("네이버")
+                        .url("https://test.com/1")
+                        .logoUrl("https://test.com/logo.png")
+                        .publishedAt(now.minusDays(1))
+                        .viewCount(100L)
+                        .keywords(null)
+                        .build()
+        );
+
+        PostListResponse expectedResponse = PostListResponse.builder()
+                .posts(mockPosts)
+                .lastPostId(1L)
+                .lastPublishedAt(now.minusDays(1))
+                .hasNext(false)
+                .build();
+
+        given(postRepository.findRecentPostsWithCursorV2(eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class)))
+                .willReturn(mockPosts);
+        given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
+        given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
+
+        // When
+        PostListResponse result = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.posts()).hasSize(2);
+        assertThat(result.posts().get(0).publishedAt()).isAfter(result.posts().get(1).publishedAt());
+        assertThat(result.hasNext()).isFalse();
+
+        verify(postRepository, times(1)).findRecentPostsWithCursorV2(eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class));
+        verify(postRepository, never()).findPopularPostsWithCursorV2(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("getRecentPostsV2() - POPULAR 정렬로 인기 게시글 조회")
+    void getRecentPostsV2_Popular_Success() {
+        // Given
+        EPostSortType sortBy = EPostSortType.POPULAR;
+        Integer lastViewCount = null;
+        LocalDateTime lastPublishedAt = null;
+        Long lastPostId = null;
+        int size = 20;
+
+        LocalDateTime now = LocalDateTime.now();
+        List<PostInfoDto> mockPosts = List.of(
+                PostInfoDto.builder()
+                        .id(1L)
+                        .title("인기 게시글 1")
+                        .company("카카오")
+                        .url("https://test.com/1")
+                        .logoUrl("https://test.com/logo.png")
+                        .publishedAt(now)
+                        .viewCount(1000L)
+                        .keywords(null)
+                        .build(),
+                PostInfoDto.builder()
+                        .id(2L)
+                        .title("인기 게시글 2")
+                        .company("네이버")
+                        .url("https://test.com/2")
+                        .logoUrl("https://test.com/logo.png")
+                        .publishedAt(now)
+                        .viewCount(500L)
+                        .keywords(null)
+                        .build()
+        );
+
+        PostListResponse expectedResponse = PostListResponse.builder()
+                .posts(mockPosts)
+                .lastPostId(2L)
+                .lastViewCount(500L)
+                .hasNext(false)
+                .build();
+
+        given(postRepository.findPopularPostsWithCursorV2(eq(lastViewCount), eq(lastPostId), any(PageRequest.class)))
+                .willReturn(mockPosts);
+        given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
+        given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
+
+        // When
+        PostListResponse result = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.posts()).hasSize(2);
+        assertThat(result.posts().get(0).viewCount()).isGreaterThan(result.posts().get(1).viewCount());
+
+        verify(postRepository, times(1)).findPopularPostsWithCursorV2(eq(lastViewCount), eq(lastPostId), any(PageRequest.class));
+        verify(postRepository, never()).findRecentPostsWithCursorV2(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("getRecentPostsV2() - POPULAR 정렬 커서 페이징")
+    void getRecentPostsV2_Popular_WithCursor() {
+        // Given
+        EPostSortType sortBy = EPostSortType.POPULAR;
+        Integer lastViewCount = 500;
+        LocalDateTime lastPublishedAt = LocalDateTime.now();
+        Long lastPostId = 100L;
+        int size = 20;
+
+        List<PostInfoDto> mockPosts = List.of(
+                PostInfoDto.builder()
+                        .id(99L)
+                        .title("인기 게시글 99")
+                        .company("카카오")
+                        .url("https://test.com/99")
+                        .logoUrl("https://test.com/logo.png")
+                        .publishedAt(lastPublishedAt.minusHours(1))
+                        .viewCount(400L)
+                        .keywords(null)
+                        .build()
+        );
+
+        PostListResponse expectedResponse = PostListResponse.builder()
+                .posts(mockPosts)
+                .lastPostId(99L)
+                .lastViewCount(400L)
+                .hasNext(false)
+                .build();
+
+        given(postRepository.findPopularPostsWithCursorV2(eq(lastViewCount), eq(lastPostId), any(PageRequest.class)))
+                .willReturn(mockPosts);
+        given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
+        given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
+
+        // When
+        PostListResponse result = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.posts()).hasSize(1);
+        assertThat(result.posts().get(0).viewCount()).isLessThan(lastViewCount);
+
+        verify(postRepository, times(1)).findPopularPostsWithCursorV2(eq(lastViewCount), eq(lastPostId), any(PageRequest.class));
+    }
+
+    @Test
+    @DisplayName("getRecentPostsV2() - LATEST 정렬 커서 페이징")
+    void getRecentPostsV2_Latest_WithCursor() {
+        // Given
+        EPostSortType sortBy = EPostSortType.LATEST;
+        Integer lastViewCount = null;
+        LocalDateTime lastPublishedAt = LocalDateTime.now().minusHours(2);
+        Long lastPostId = 100L;
+        int size = 20;
+
+        List<PostInfoDto> mockPosts = List.of(
+                PostInfoDto.builder()
+                        .id(99L)
+                        .title("게시글 99")
+                        .company("카카오")
+                        .url("https://test.com/99")
+                        .logoUrl("https://test.com/logo.png")
+                        .publishedAt(lastPublishedAt.minusHours(1))
+                        .viewCount(50L)
+                        .keywords(null)
+                        .build()
+        );
+
+        PostListResponse expectedResponse = PostListResponse.builder()
+                .posts(mockPosts)
+                .lastPostId(99L)
+                .lastPublishedAt(lastPublishedAt.minusHours(1))
+                .hasNext(false)
+                .build();
+
+        given(postRepository.findRecentPostsWithCursorV2(eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class)))
+                .willReturn(mockPosts);
+        given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
+        given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
+
+        // When
+        PostListResponse result = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.posts()).hasSize(1);
+        assertThat(result.posts().get(0).publishedAt()).isBefore(lastPublishedAt);
+
+        verify(postRepository, times(1)).findRecentPostsWithCursorV2(eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class));
+    }
 }
