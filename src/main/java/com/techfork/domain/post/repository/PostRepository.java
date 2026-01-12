@@ -54,7 +54,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             FROM Post p
             WHERE (:company IS NULL OR p.company = :company)
             AND (:lastPostId IS NULL OR p.id < :lastPostId)
-            ORDER BY p.id DESC
+            ORDER BY p.publishedAt DESC
             """)
     List<PostInfoDto> findByCompanyWithCursor(
             @Param("company") String company,
@@ -67,7 +67,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             p.id, p.title, p.company, p.url, p.logoUrl, p.publishedAt, p.viewCount, null)
             FROM Post p
             WHERE :lastPostId IS NULL OR p.id < :lastPostId
-            ORDER BY p.publishedAt DESC, p.id DESC
+            ORDER BY p.publishedAt DESC
             """)
     List<PostInfoDto> findRecentPostsWithCursor(
             @Param("lastPostId") Long lastPostId,
@@ -79,7 +79,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             p.id, p.title, p.company, p.url, p.logoUrl, p.publishedAt, p.viewCount, null)
             FROM Post p
             WHERE :lastPostId IS NULL OR p.id < :lastPostId
-            ORDER BY p.viewCount DESC, p.id DESC
+            ORDER BY p.viewCount DESC, p.publishedAt DESC
             """)
     List<PostInfoDto> findPopularPostsWithCursor(
             @Param("lastPostId") Long lastPostId,
