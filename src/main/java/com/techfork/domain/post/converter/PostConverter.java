@@ -27,17 +27,20 @@ public class PostConverter {
         List<PostInfoDto> content = hasNext ? posts.subList(0, requestedSize) : posts;
 
         Long lastPostId = null;
+        Long lastViewCount = null;
         LocalDateTime lastPublishedAt = null;
 
         if (!content.isEmpty()) {
             PostInfoDto lastPost = content.get(content.size() - 1);
             lastPostId = lastPost.id();
+            lastViewCount = lastPost.viewCount();
             lastPublishedAt = lastPost.publishedAt();
         }
 
         return PostListResponse.builder()
                 .posts(content)
                 .lastPostId(lastPostId)
+                .lastViewCount(lastViewCount)
                 .lastPublishedAt(lastPublishedAt)
                 .hasNext(hasNext)
                 .build();

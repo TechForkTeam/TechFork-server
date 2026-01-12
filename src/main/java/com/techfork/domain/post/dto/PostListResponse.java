@@ -11,6 +11,7 @@ import java.util.List;
 public record PostListResponse(
         List<PostInfoDto> posts,
         Long lastPostId,
+        Long lastViewCount,
         LocalDateTime lastPublishedAt,
         boolean hasNext
 ) {
