@@ -1,9 +1,6 @@
 package com.techfork.domain.post.converter;
 
-import com.techfork.domain.post.dto.CompanyListResponse;
-import com.techfork.domain.post.dto.PostDetailDto;
-import com.techfork.domain.post.dto.PostInfoDto;
-import com.techfork.domain.post.dto.PostListResponse;
+import com.techfork.domain.post.dto.*;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -12,6 +9,12 @@ import java.util.List;
 public class PostConverter {
 
     public CompanyListResponse toCompanyListResponse(List<String> companies) {
+        return CompanyListResponse.builder()
+                .companies(companies)
+                .build();
+    }
+
+    public CompanyListResponse toCompanyListResponseV2(List<CompanyDto> companies) {
         return CompanyListResponse.builder()
                 .companies(companies)
                 .build();

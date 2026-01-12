@@ -1,5 +1,6 @@
 package com.techfork.domain.post.repository;
 
+import com.techfork.domain.post.dto.CompanyDto;
 import com.techfork.domain.post.dto.PostDetailDto;
 import com.techfork.domain.post.dto.PostInfoDto;
 import com.techfork.domain.post.entity.Post;
@@ -34,6 +35,18 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("SELECT DISTINCT p.company FROM Post p ORDER BY p.company")
     List<String> findDistinctCompanies();
+
+    @Query("""
+            SELECT new com.techfork.domain.post.dto.CompanyDto(
+                p.company,
+                (COUNT(CASE WHEN FUNCTION('DATE', p.publishedAt) = CURRENT_DATE THEN 1 END) > 0),
+                MAX(p.logoUrl)
+            )
+            FROM Post p
+            GROUP BY p.company
+            ORDER BY MAX(p.publishedAt) DESC
+            """)
+    List<CompanyDto> findCompaniesWithDetails();
 
     @Query("""
             SELECT new com.techfork.domain.post.dto.PostInfoDto(

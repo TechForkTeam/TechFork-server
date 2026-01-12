@@ -1,10 +1,7 @@
 package com.techfork.domain.post.service;
 
 import com.techfork.domain.post.converter.PostConverter;
-import com.techfork.domain.post.dto.CompanyListResponse;
-import com.techfork.domain.post.dto.PostDetailDto;
-import com.techfork.domain.post.dto.PostInfoDto;
-import com.techfork.domain.post.dto.PostListResponse;
+import com.techfork.domain.post.dto.*;
 import com.techfork.domain.post.entity.PostKeyword;
 import com.techfork.domain.post.enums.EPostSortType;
 import com.techfork.domain.post.repository.PostKeywordRepository;
@@ -34,6 +31,11 @@ public class PostQueryService {
     public CompanyListResponse getCompanies() {
         List<String> companies = postRepository.findDistinctCompanies();
         return postConverter.toCompanyListResponse(companies);
+    }
+
+    public CompanyListResponse getCompaniesV2() {
+        List<CompanyDto> companies = postRepository.findCompaniesWithDetails();
+        return postConverter.toCompanyListResponseV2(companies);
     }
 
     public PostListResponse getPostsByCompany(String company, Long lastPostId, int size) {
