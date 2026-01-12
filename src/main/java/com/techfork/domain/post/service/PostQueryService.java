@@ -67,6 +67,20 @@ public class PostQueryService {
         return postConverter.toPostListResponse(postsWithKeywords, size);
     }
 
+    public PostListResponse getRecentPostsV2(EPostSortType sortBy, Integer lastViewCount, LocalDateTime lastPublishedAt, Long lastPostId, int size) {
+        PageRequest pageRequest = PageRequest.of(0, size + 1);
+        List<PostInfoDto> posts;
+
+        if (sortBy == EPostSortType.POPULAR) {
+            posts = postRepository.findPopularPostsWithCursorV2(lastViewCount, lastPostId, pageRequest);
+        } else {
+            posts = postRepository.findRecentPostsWithCursorV2(lastPublishedAt, lastPostId, pageRequest);
+        }
+
+        List<PostInfoDto> postsWithKeywords = attachKeywordsToPostInfoList(posts);
+        return postConverter.toPostListResponse(postsWithKeywords, size);
+    }
+
     public PostDetailDto getPostDetail(Long postId) {
         PostDetailDto postDetail = postRepository.findByIdWithTechBlog(postId)
                 .orElseThrow(() -> new GeneralException(CommonErrorCode.NOT_FOUND));

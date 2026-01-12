@@ -93,10 +93,44 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             SELECT new com.techfork.domain.post.dto.PostInfoDto(
             p.id, p.title, p.company, p.url, p.logoUrl, p.publishedAt, p.viewCount, null)
             FROM Post p
+            WHERE (
+                :lastPublishedAt IS NULL OR
+                p.publishedAt < :lastPublishedAt OR
+                (p.publishedAt = :lastPublishedAt AND p.id < :lastPostId)
+            )
+            ORDER BY p.publishedAt DESC, p.id DESC
+            """)
+    List<PostInfoDto> findRecentPostsWithCursorV2(
+            @Param("lastPublishedAt") LocalDateTime lastPublishedAt,
+            @Param("lastPostId") Long lastPostId,
+            Pageable pageable
+    );
+
+    @Query("""
+            SELECT new com.techfork.domain.post.dto.PostInfoDto(
+            p.id, p.title, p.company, p.url, p.logoUrl, p.publishedAt, p.viewCount, null)
+            FROM Post p
             WHERE :lastPostId IS NULL OR p.id < :lastPostId
             ORDER BY p.viewCount DESC, p.publishedAt DESC
             """)
     List<PostInfoDto> findPopularPostsWithCursor(
+            @Param("lastPostId") Long lastPostId,
+            Pageable pageable
+    );
+
+    @Query("""
+            SELECT new com.techfork.domain.post.dto.PostInfoDto(
+            p.id, p.title, p.company, p.url, p.logoUrl, p.publishedAt, p.viewCount, null)
+            FROM Post p
+            WHERE (
+                :lastViewCount IS NULL OR
+                p.viewCount < :lastViewCount OR
+                (p.viewCount = :lastViewCount AND p.id < :lastPostId)
+            )
+            ORDER BY p.viewCount DESC, p.id DESC
+            """)
+    List<PostInfoDto> findPopularPostsWithCursorV2(
+            @Param("lastViewCount") Integer lastViewCount,
             @Param("lastPostId") Long lastPostId,
             Pageable pageable
     );
