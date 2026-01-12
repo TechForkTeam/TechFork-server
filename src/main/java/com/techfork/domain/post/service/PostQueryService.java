@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -41,6 +42,13 @@ public class PostQueryService {
     public PostListResponse getPostsByCompany(String company, Long lastPostId, int size) {
         PageRequest pageRequest = PageRequest.of(0, size + 1);
         List<PostInfoDto> posts = postRepository.findByCompanyWithCursor(company, lastPostId, pageRequest);
+        List<PostInfoDto> postsWithKeywords = attachKeywordsToPostInfoList(posts);
+        return postConverter.toPostListResponse(postsWithKeywords, size);
+    }
+
+    public PostListResponse getPostsByCompanyV2(List<String> companies, LocalDateTime lastPublishedAt, Long lastPostId, int size) {
+        PageRequest pageRequest = PageRequest.of(0, size + 1);
+        List<PostInfoDto> posts = postRepository.findByCompanyNamesWithCursor(companies, lastPublishedAt, lastPostId, pageRequest);
         List<PostInfoDto> postsWithKeywords = attachKeywordsToPostInfoList(posts);
         return postConverter.toPostListResponse(postsWithKeywords, size);
     }

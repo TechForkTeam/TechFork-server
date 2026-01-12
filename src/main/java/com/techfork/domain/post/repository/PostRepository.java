@@ -5,6 +5,7 @@ import com.techfork.domain.post.dto.PostDetailDto;
 import com.techfork.domain.post.dto.PostInfoDto;
 import com.techfork.domain.post.entity.Post;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -61,6 +62,20 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("lastPostId") Long lastPostId,
             Pageable pageable
     );
+
+    @Query("""
+            SELECT new com.techfork.domain.post.dto.PostInfoDto(
+            p.id, p.title, p.company, p.url, p.logoUrl, p.publishedAt, p.viewCount, null)
+            FROM Post p
+            WHERE (:companies IS NULL OR p.company IN :companies)
+            AND (
+                :lastPublishedAt IS NULL OR
+                p.publishedAt < :lastPublishedAt OR
+                (p.publishedAt = :lastPublishedAt AND p.id < :lastPostId)
+            )
+            ORDER BY p.publishedAt DESC, p.id DESC
+            """)
+    List<PostInfoDto> findByCompanyNamesWithCursor(List<String> companies, LocalDateTime lastPublishedAt, Long lastPostId, PageRequest pageRequest);
 
     @Query("""
             SELECT new com.techfork.domain.post.dto.PostInfoDto(
