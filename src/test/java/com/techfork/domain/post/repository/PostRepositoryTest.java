@@ -1,5 +1,6 @@
 package com.techfork.domain.post.repository;
 
+import com.techfork.domain.post.dto.CompanyDto;
 import com.techfork.domain.post.dto.PostDetailDto;
 import com.techfork.domain.post.dto.PostInfoDto;
 import com.techfork.domain.post.entity.Post;
@@ -13,6 +14,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -200,6 +202,86 @@ class PostRepositoryTest {
     }
 
     @Test
+    @DisplayName("findCompaniesWithDetails - 회사별 상세 정보 조회 성공")
+    void findCompaniesWithDetails_Success() {
+        // Given: 여러 회사의 게시글 생성
+        Post kakaoPost1 = createPost("카카오 게시글1", techBlog1, LocalDate.now().atStartOfDay(), 100L);
+        Post kakaoPost2 = createPost("카카오 게시글2", techBlog1, LocalDate.now().minusDays(1).atStartOfDay(), 200L);
+        Post naverPost = createPost("네이버 게시글", techBlog2, LocalDate.now().minusDays(2).atStartOfDay(), 300L);
+        postRepository.saveAll(List.of(kakaoPost1, kakaoPost2, naverPost));
+
+        // When: 회사 상세 정보 조회
+        List<CompanyDto> result = postRepository.findCompaniesWithDetails();
+
+        // Then: 회사별로 집계된 정보 반환
+        assertThat(result).hasSize(2);
+
+        // 최신 발행일 기준으로 정렬되어야 함 (카카오가 더 최신)
+        CompanyDto firstCompany = result.get(0);
+        assertThat(firstCompany.company()).isEqualTo("카카오");
+        assertThat(firstCompany.hasNewPost()).isTrue(); // 오늘 발행된 게시글 존재
+        assertThat(firstCompany.logoUrl()).isNotNull();
+
+        CompanyDto secondCompany = result.get(1);
+        assertThat(secondCompany.company()).isEqualTo("네이버");
+        assertThat(secondCompany.hasNewPost()).isFalse(); // 오늘 발행된 게시글 없음
+    }
+
+    @Test
+    @DisplayName("findCompaniesWithDetails - 오늘 발행된 게시글 여부 정확히 판단")
+    void findCompaniesWithDetails_HasNewPost_AccurateDetection() {
+        // Given: 오늘과 어제 게시글
+        Post todayPost = createPost("오늘 게시글", techBlog1, LocalDate.now().atTime(14, 30), 100L);
+        Post yesterdayPost = createPost("어제 게시글", techBlog2, LocalDate.now().minusDays(1).atStartOfDay(), 200L);
+        postRepository.saveAll(List.of(todayPost, yesterdayPost));
+
+        // When: 회사 상세 정보 조회
+        List<CompanyDto> result = postRepository.findCompaniesWithDetails();
+
+        // Then: 오늘 게시글 여부 정확히 판단
+        CompanyDto kakaoCompany = result.stream()
+                .filter(c -> c.company().equals("카카오"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(kakaoCompany.hasNewPost()).isTrue();
+
+        CompanyDto naverCompany = result.stream()
+                .filter(c -> c.company().equals("네이버"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(naverCompany.hasNewPost()).isFalse();
+    }
+
+    @Test
+    @DisplayName("findCompaniesWithDetails - 최신 발행일 기준으로 정렬")
+    void findCompaniesWithDetails_OrderByLatestPublishedAtDesc() {
+        // Given: 발행일이 다른 게시글들
+        Post oldPost = createPost("오래된 게시글", techBlog1, LocalDate.now().minusDays(10).atStartOfDay(), 100L);
+        Post recentPost = createPost("최근 게시글", techBlog2, LocalDate.now().minusDays(1).atStartOfDay(), 200L);
+        postRepository.saveAll(List.of(oldPost, recentPost));
+
+        // When: 회사 상세 정보 조회
+        List<CompanyDto> result = postRepository.findCompaniesWithDetails();
+
+        // Then: 최신 발행일 기준 정렬 (네이버가 먼저)
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).company()).isEqualTo("네이버");
+        assertThat(result.get(1).company()).isEqualTo("카카오");
+    }
+
+    @Test
+    @DisplayName("findCompaniesWithDetails - 게시글이 없으면 빈 리스트 반환")
+    void findCompaniesWithDetails_NoPosts_ReturnsEmptyList() {
+        // Given: 게시글 없음
+
+        // When: 회사 상세 정보 조회
+        List<CompanyDto> result = postRepository.findCompaniesWithDetails();
+
+        // Then: 빈 리스트 반환
+        assertThat(result).isEmpty();
+    }
+
+    @Test
     @DisplayName("커서 페이징 - size+1 조회하여 hasNext 판단 가능")
     void cursorPaging_SizePlusOne_CanDetermineHasNext() {
         // Given: 게시글 5개
@@ -226,6 +308,7 @@ class PostRepositoryTest {
                 .plainContent(title + " 내용")
                 .company(techBlog.getCompanyName())
                 .url("https://test.com/" + title)
+                .logoUrl("https://test.com/logo.png")
                 .publishedAt(publishedAt)
                 .crawledAt(LocalDateTime.now())
                 .techBlog(techBlog)
