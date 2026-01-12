@@ -1,11 +1,7 @@
 package com.techfork.domain.post.service;
 
 import com.techfork.domain.post.converter.PostConverter;
-import com.techfork.domain.post.dto.CompanyListResponse;
-import com.techfork.domain.post.dto.PostDetailDto;
-import com.techfork.domain.post.dto.PostInfoDto;
-import com.techfork.domain.post.dto.PostListResponse;
-import com.techfork.domain.post.entity.Post;
+import com.techfork.domain.post.dto.*;
 import com.techfork.domain.post.entity.PostKeyword;
 import com.techfork.domain.post.enums.EPostSortType;
 import com.techfork.domain.post.repository.PostKeywordRepository;
@@ -55,7 +51,7 @@ class PostQueryServiceTest {
     void getCompanies_Success() {
         // Given
         List<String> mockCompanies = List.of("카카오", "네이버", "라인");
-        CompanyListResponse expectedResponse = new CompanyListResponse(mockCompanies);
+        CompanyListResponse expectedResponse = new CompanyListResponse(3, mockCompanies);
 
         given(postRepository.findDistinctCompanies()).willReturn(mockCompanies);
         given(postConverter.toCompanyListResponse(mockCompanies)).willReturn(expectedResponse);
@@ -66,10 +62,56 @@ class PostQueryServiceTest {
         // Then
         assertThat(result).isNotNull();
         assertThat(result.companies()).hasSize(3);
-        assertThat(result.companies()).contains("카카오", "네이버", "라인");
+
+        @SuppressWarnings("unchecked")
+        List<String> companies = (List<String>) result.companies();
+        assertThat(companies).contains("카카오", "네이버", "라인");
 
         verify(postRepository, times(1)).findDistinctCompanies();
         verify(postConverter, times(1)).toCompanyListResponse(mockCompanies);
+    }
+
+    @Test
+    @DisplayName("getCompaniesV2() - 회사 상세 정보 포함 목록 조회 성공")
+    void getCompaniesV2_Success() {
+        // Given
+        List<CompanyDto> mockCompanies = List.of(
+                CompanyDto.builder()
+                        .company("카카오")
+                        .hasNewPost(true)
+                        .logoUrl("https://test.com/kakao-logo.png")
+                        .build(),
+                CompanyDto.builder()
+                        .company("네이버")
+                        .hasNewPost(false)
+                        .logoUrl("https://test.com/naver-logo.png")
+                        .build()
+        );
+
+        CompanyListResponse expectedResponse = CompanyListResponse.builder()
+                .totalNumber(2)
+                .companies(mockCompanies)
+                .build();
+
+        given(postRepository.findCompaniesWithDetails()).willReturn(mockCompanies);
+        given(postConverter.toCompanyListResponseV2(mockCompanies)).willReturn(expectedResponse);
+
+        // When
+        CompanyListResponse result = postQueryService.getCompaniesV2();
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.companies()).hasSize(2);
+
+        List<CompanyDto> resultCompanies = (List<CompanyDto>) result.companies();
+        assertThat(resultCompanies.get(0).company()).isEqualTo("카카오");
+        assertThat(resultCompanies.get(0).hasNewPost()).isTrue();
+        assertThat(resultCompanies.get(0).logoUrl()).isEqualTo("https://test.com/kakao-logo.png");
+        assertThat(resultCompanies.get(1).company()).isEqualTo("네이버");
+        assertThat(resultCompanies.get(1).hasNewPost()).isFalse();
+
+        verify(postRepository, times(1)).findCompaniesWithDetails();
+        verify(postConverter, times(1)).toCompanyListResponseV2(mockCompanies);
     }
 
     @Test

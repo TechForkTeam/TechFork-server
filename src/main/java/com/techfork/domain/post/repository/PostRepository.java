@@ -1,5 +1,6 @@
 package com.techfork.domain.post.repository;
 
+import com.techfork.domain.post.dto.CompanyDto;
 import com.techfork.domain.post.dto.PostDetailDto;
 import com.techfork.domain.post.dto.PostInfoDto;
 import com.techfork.domain.post.entity.Post;
@@ -36,12 +37,24 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     List<String> findDistinctCompanies();
 
     @Query("""
+            SELECT new com.techfork.domain.post.dto.CompanyDto(
+                p.company,
+                (COUNT(CASE WHEN p.publishedAt >= CURRENT_DATE THEN 1 END) > 0),
+                MAX(p.logoUrl)
+            )
+            FROM Post p
+            GROUP BY p.company
+            ORDER BY MAX(p.publishedAt) DESC
+            """)
+    List<CompanyDto> findCompaniesWithDetails();
+
+    @Query("""
             SELECT new com.techfork.domain.post.dto.PostInfoDto(
             p.id, p.title, p.company, p.url, p.logoUrl, p.publishedAt, p.viewCount, null)
             FROM Post p
             WHERE (:company IS NULL OR p.company = :company)
             AND (:lastPostId IS NULL OR p.id < :lastPostId)
-            ORDER BY p.id DESC
+            ORDER BY p.publishedAt DESC
             """)
     List<PostInfoDto> findByCompanyWithCursor(
             @Param("company") String company,
@@ -54,7 +67,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             p.id, p.title, p.company, p.url, p.logoUrl, p.publishedAt, p.viewCount, null)
             FROM Post p
             WHERE :lastPostId IS NULL OR p.id < :lastPostId
-            ORDER BY p.publishedAt DESC, p.id DESC
+            ORDER BY p.publishedAt DESC
             """)
     List<PostInfoDto> findRecentPostsWithCursor(
             @Param("lastPostId") Long lastPostId,
@@ -66,7 +79,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             p.id, p.title, p.company, p.url, p.logoUrl, p.publishedAt, p.viewCount, null)
             FROM Post p
             WHERE :lastPostId IS NULL OR p.id < :lastPostId
-            ORDER BY p.viewCount DESC, p.id DESC
+            ORDER BY p.viewCount DESC, p.publishedAt DESC
             """)
     List<PostInfoDto> findPopularPostsWithCursor(
             @Param("lastPostId") Long lastPostId,

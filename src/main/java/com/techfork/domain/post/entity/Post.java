@@ -16,7 +16,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "posts")
+@Table(name = "posts", indexes = {
+        @Index(name = "idx_post_published_at", columnList = "publishedAt"),
+        @Index(name = "idx_post_view_count_id", columnList = "viewCount, publishedAt"),
+        @Index(name = "idx_post_company_published_at", columnList = "company, publishedAt")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Post extends BaseEntity {
