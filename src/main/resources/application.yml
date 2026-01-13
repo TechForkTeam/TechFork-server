@@ -3,6 +3,22 @@ spring:
     name: TechFork
   profiles:
     default: local-tunnel
+  ai:
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY}
+      chat:
+        options:
+          model: claude-3-5-haiku-20241022
+          temperature: 0.3
+          max-tokens: 8192
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      timeout: 60
+      chat:
+        options:
+          model: gpt-4o-mini
+          temperature: 0.3
+          max-tokens: 8192
 
 # Resilience4j 설정 (LLM API 호출용)
 resilience4j:
