@@ -28,6 +28,14 @@ spring:
     job:
       names: ''
 
+scheduler:
+  enabled: true
+
+webhook:
+  enabled: true
+  discord:
+    url: ${DISCORD_WEBHOOK_URL}
+
 # Resilience4j 설정 (LLM API 호출용)
 resilience4j:
   circuitbreaker:

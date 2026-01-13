@@ -33,14 +33,6 @@ spring:
   elasticsearch:
     uris: http://elasticsearch:9200
 
-scheduler:
-  enabled: true
-
-webhook:
-  enabled: true
-  discord:
-    url: ${DISCORD_WEBHOOK_URL:}
-
 recommendation:
   knn-search-size: 100
   num-candidates: 200
