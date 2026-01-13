@@ -39,10 +39,6 @@ spring:
           min-idle: 0
           max-wait: 5s
 
-  devtools:
-    restart:
-      enabled: false
-
   elasticsearch:
     uris: http://elasticsearch:9200
 

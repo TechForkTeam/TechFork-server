@@ -19,6 +19,9 @@ spring:
           model: gpt-4o-mini
           temperature: 0.3
           max-tokens: 8192
+  devtools:
+    restart:
+      enabled: false
 
 # Resilience4j 설정 (LLM API 호출용)
 resilience4j:
