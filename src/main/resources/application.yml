@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: TechFork
   profiles:
     default: local-tunnel
 
