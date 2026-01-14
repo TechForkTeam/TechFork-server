@@ -1,0 +1,65 @@
+package com.techfork.global.security.handler;
+
+import com.techfork.domain.user.enums.UserStatus;
+import com.techfork.global.security.auth.service.RefreshTokenService;
+import com.techfork.global.security.jwt.JwtDTO;
+import com.techfork.global.security.jwt.JwtProperties;
+import com.techfork.global.security.jwt.JwtTokenProvider;
+import com.techfork.global.security.oauth.UserPrincipal;
+import com.techfork.global.util.CookieUtil;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
+    private final JwtTokenProvider jwtTokenProvider;
+    private final JwtProperties jwtProperties;
+    private final RefreshTokenService refreshTokenService;
+
+    @Value("${server.domain}")
+    private String domain;
+
+    @Override
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+                                        Authentication authentication) throws IOException, ServletException {
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+
+        JwtDTO tokens = jwtTokenProvider.generateTokens(userPrincipal.getId(), userPrincipal.getRole());
+
+        refreshTokenService.saveRefreshToken(
+                userPrincipal.getId(),
+                tokens.refreshToken(),
+                jwtProperties.getRefreshTokenExpiration()
+        );
+
+        CookieUtil.addRefreshTokenCookie(
+                response,
+                domain,
+                tokens.refreshToken(),
+                jwtProperties.getRefreshTokenExpiration()
+        );
+
+        log.info("OAuth2 login success - userId: {}, socialType: {}, email: {}, status: {}",
+                userPrincipal.getId(), userPrincipal.getSocialType(),
+                userPrincipal.getEmail(), userPrincipal.getStatus());
+
+        // 온보딩 완료 여부에 따라 리다이렉트
+        boolean isRegistered = userPrincipal.getStatus() == UserStatus.ACTIVE;
+        String targetUrl = String.format(jwtProperties.getRedirectUri(), isRegistered, tokens.accessToken());
+
+        getRedirectStrategy().sendRedirect(request, response, targetUrl);
+    }
+}
+
