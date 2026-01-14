@@ -3,7 +3,7 @@ package com.techfork.domain.post.document;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.techfork.domain.post.entity.Post;
-import com.techfork.global.config.StringToLocalDateTimeConverter;
+import com.techfork.global.util.StringToLocalDateTimeConverter;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;

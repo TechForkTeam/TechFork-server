@@ -1,6 +1,7 @@
 package com.techfork.domain.user.repository;
 
 import com.techfork.domain.user.entity.User;
+import com.techfork.domain.user.enums.SocialType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,6 +11,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
+
+    Optional<User> findBySocialTypeAndSocialId(SocialType socialType, String socialId);
 
     @Query("""
             SELECT DISTINCT u FROM User u
