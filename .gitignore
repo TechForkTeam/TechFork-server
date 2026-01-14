@@ -50,6 +50,7 @@ stop-dev-tunnel.sh
 
 ### claude code ###
 /CLAUDE.md
+/.claude
 
 ### env ###
 /.env
