@@ -38,13 +38,15 @@ spring:
             client-authentication-method: client_secret_post
             authorization-grant-type: authorization_code
             scope:
-              #- openid
-              #- account_email
+              - openid
+              - account_email
             client-name: Kakao
         provider:
           kakao:
             authorization-uri: https://kauth.kakao.com/oauth/authorize
             token-uri: https://kauth.kakao.com/oauth/token
+            jwk-set-uri: https://kauth.kakao.com/.well-known/jwks.json
+            user-name-attribute: sub
 
 jwt:
   secret: ${JWT_SECRET}

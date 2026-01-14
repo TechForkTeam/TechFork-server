@@ -5,33 +5,33 @@ import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CustomOAuth2UserService extends DefaultOAuth2UserService {
+public class CustomOAuth2UserService extends OidcUserService {
 
     private final UserRepository userRepository;
 
     @Override
     @Transactional
-    public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-        OAuth2User oAuth2User = super.loadUser(userRequest);
+    public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
+        OidcUser oidcUser = super.loadUser(userRequest);
 
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
         SocialType socialType = SocialType.fromRegistrationId(registrationId);
 
-        String socialId = oAuth2User.getAttribute("sub");
+        String socialId = oidcUser.getAttribute("sub");
         if (socialId == null) {
             throw new OAuth2AuthenticationException("socialId(sub) not found");
         }
-        String email = oAuth2User.getAttribute("email");
+        String email = oidcUser.getAttribute("email");
         if (email == null) {
             throw new OAuth2AuthenticationException("email not found");
         }
@@ -49,7 +49,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 .socialId(user.getSocialId())
                 .role(user.getRole())
                 .status(user.getStatus())
-                .attributes(oAuth2User.getAttributes())
+                .attributes(oidcUser.getAttributes())
                 .build();
     }
 

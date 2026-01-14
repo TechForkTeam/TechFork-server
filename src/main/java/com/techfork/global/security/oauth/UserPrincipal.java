@@ -7,7 +7,9 @@ import lombok.Builder;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.oauth2.core.oidc.OidcIdToken;
+import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -15,7 +17,7 @@ import java.util.Map;
 
 @Getter
 @Builder
-public class UserPrincipal implements OAuth2User {
+public class UserPrincipal implements OidcUser {
 
     private final Long id;
     private final String email;
@@ -39,5 +41,20 @@ public class UserPrincipal implements OAuth2User {
     @Override
     public String getName() {
         return String.valueOf(id);
+    }
+
+    @Override
+    public Map<String, Object> getClaims() {
+        return attributes;
+    }
+
+    @Override
+    public OidcUserInfo getUserInfo() {
+        return null;
+    }
+
+    @Override
+    public OidcIdToken getIdToken() {
+        return null;
     }
 }
