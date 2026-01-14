@@ -61,6 +61,11 @@ jobs:
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
+      KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      JWT_REDIRECT_URI: ${{ secrets.JWT_REDIRECT_URI }}
+      SERVER_DOMAIN: ${{ secrets.SERVER_DOMAIN }}
 
     steps:
       - name: Checkout code
@@ -81,7 +86,10 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: DOCKER_IMAGE,BRANCH,SPRING_PROFILES_ACTIVE,DB_URL,DB_PASSWORD,REDIS_PASSWORD,DISCORD_WEBHOOK_URL,ANTHROPIC_API_KEY,OPENAI_API_KEY
+          envs: >-
+            DOCKER_IMAGE,BRANCH,SPRING_PROFILES_ACTIVE,DB_URL,DB_PASSWORD,REDIS_PASSWORD,
+            DISCORD_WEBHOOK_URL,ANTHROPIC_API_KEY,OPENAI_API_KEY,
+            KAKAO_REST_API_KEY,KAKAO_CLIENT_SECRET,JWT_SECRET,JWT_REDIRECT_URI,SERVER_DOMAIN
           script: |
             cd ~/deploy
             chmod +x deploy.sh
