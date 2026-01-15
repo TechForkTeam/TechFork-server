@@ -3,6 +3,7 @@ package com.techfork.domain.search;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.entity.UserInterestCategory;
 import com.techfork.domain.user.enums.EInterestCategory;
+import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.repository.UserInterestCategoryRepository;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.domain.user.service.UserProfileService;
@@ -50,7 +51,7 @@ class UserProfileServiceTest {
         );
 
         IntStream.range(0, 10).forEach(i -> {
-            User user = User.create();
+            User user = User.createSocialUser(SocialType.KAKAO, "testSocialId" + i, "test" + i + "@example.com");
 
             userRepository.save(user);
 

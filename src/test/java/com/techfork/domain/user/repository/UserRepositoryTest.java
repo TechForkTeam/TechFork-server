@@ -13,6 +13,7 @@ import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.entity.UserInterestCategory;
 import com.techfork.domain.user.enums.EInterestCategory;
+import com.techfork.domain.user.enums.SocialType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -56,7 +57,7 @@ class UserRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        testUser = User.create();
+        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com");
         testUser = userRepository.save(testUser);
 
         testTechBlog = TechBlog.builder()
@@ -210,7 +211,7 @@ class UserRepositoryTest {
     @DisplayName("findAllWithInterestCategoriesByIds - 여러 유저를 관심사와 함께 조회")
     void findAllWithInterestCategoriesByIds_Success() {
         // Given: 두 번째 유저 생성
-        User user2 = User.create();
+        User user2 = User.createSocialUser(SocialType.KAKAO, "testSocialId2", "test2@example.com");
         user2 = userRepository.save(user2);
 
         UserInterestCategory category1 = UserInterestCategory.create(testUser, EInterestCategory.BACKEND);
