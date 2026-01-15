@@ -31,6 +31,109 @@ spring:
           temperature: 0.3
           max-tokens: 8192
 
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: test-kakao-client-id
+            client-secret: test-kakao-client-secret
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            client-authentication-method: client_secret_post
+            authorization-grant-type: authorization_code
+            scope:
+              - openid
+              - account_email
+            client-name: Kakao
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            jwk-set-uri: https://kauth.kakao.com/.well-known/jwks.json
+            user-name-attribute: sub
+
+jwt:
+  secret: test-jwt-secret-key-for-integration-test-must-be-at-least-256-bits
+  access-token-expiration: 900000  # 15분 (밀리초)
+  refresh-token-expiration: 1209600000  # 14일 (밀리초)
+  redirect-uri: http://localhost:5173/auth/callback?registered=%s&token=%s
+
+server:
+  domain: localhost
+
+scheduler:
+  enabled: false
+
+webhook:
+  enabled: false
+  discord:
+    url: http://test-webhook-url
+
+recommendation:
+  knn-search-size: 100
+  num-candidates: 200
+  mmr-final-size: 30
+  lambda: 0.3
+  active-user-hours: 24
+  embedding-weights:
+    title: 0.2
+    summary: 0.2
+    content: 0.6
+  time-decay:
+    days-7: 1.3
+    days-30: 1.0
+    days-90: 0.7
+    days-over: 0.4
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 60
+        slow-call-rate-threshold: 70
+        slow-call-duration-threshold: 45s
+        wait-duration-in-open-state: 60s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        record-exceptions:
+          - com.techfork.global.llm.exception.LlmException
+        ignore-exceptions:
+          - com.techfork.global.llm.exception.LlmNetworkException
+          - com.techfork.global.llm.exception.LlmRateLimitException
+
+  ratelimiter:
+    configs:
+      default:
+        limit-for-period: 37
+        limit-refresh-period: 1m
+        timeout-duration: 10s
+    instances:
+      llmSummary:
+        base-config: default
+        limit-for-period: 37
+        limit-refresh-period: 1m
+        timeout-duration: 15s
+      llmEmbedding:
+        base-config: default
+        limit-for-period: 590
+        limit-refresh-period: 1m
+        timeout-duration: 5s
+
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 2s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        exponential-max-wait-duration: 10s
+        retry-exceptions:
+          - com.techfork.global.llm.exception.LlmNetworkException
+          - com.techfork.global.llm.exception.LlmRateLimitException
+
 logging:
   level:
     com.techfork: DEBUG
