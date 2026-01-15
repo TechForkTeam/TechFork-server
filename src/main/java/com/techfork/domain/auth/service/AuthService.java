@@ -3,7 +3,6 @@ package com.techfork.domain.auth.service;
 import com.techfork.domain.auth.dto.TokenRefreshResponse;
 import com.techfork.domain.auth.exception.AuthErrorCode;
 import com.techfork.domain.user.entity.User;
-import com.techfork.domain.user.enums.Role;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.global.security.auth.service.RefreshTokenService;
@@ -55,6 +54,16 @@ public class AuthService {
                 .build();
     }
 
+    @Transactional
+    public void logout(String refreshToken, HttpServletResponse response) {
+        validateRefreshTokenRequest(refreshToken);
+
+        Long userId = jwtUtil.getUserIdFromToken(refreshToken);
+        deleteRefreshToken(response, userId);
+
+        log.info("User logged out - userId: {}", userId);
+    }
+
     private void validateRefreshTokenRequest(String refreshToken) {
         if (refreshToken == null || refreshToken.isEmpty()) {
             throw new GeneralException(AuthErrorCode.REFRESH_TOKEN_MISSING);
@@ -74,5 +83,10 @@ public class AuthService {
     private void saveAndSetRefreshToken(HttpServletResponse response, Long userId, String refreshToken, long expiration) {
         refreshTokenService.saveRefreshToken(userId, refreshToken, expiration);
         CookieUtil.addRefreshTokenCookie(response, domain, refreshToken, expiration);
+    }
+
+    private void deleteRefreshToken(HttpServletResponse response, Long userId) {
+        refreshTokenService.deleteRefreshToken(userId);
+        CookieUtil.deleteRefreshTokenCookie(response, domain);
     }
 }

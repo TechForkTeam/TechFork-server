@@ -33,4 +33,17 @@ public class AuthController {
         TokenRefreshResponse tokenResponse = authService.refreshToken(refreshToken, response);
         return BaseResponse.of(SuccessCode.OK, tokenResponse);
     }
+
+    @Operation(
+            summary = "로그아웃",
+            description = "쿠키의 리프레시 토큰을 사용하여 로그아웃합니다. Redis에서 토큰을 삭제하고 쿠키를 제거합니다."
+    )
+    @PostMapping("/logout")
+    public ResponseEntity<BaseResponse<Void>> logout(
+            @CookieValue(name = "refreshToken", required = false) String refreshToken,
+            HttpServletResponse response
+    ) {
+        authService.logout(refreshToken, response);
+        return BaseResponse.of(SuccessCode.OK);
+    }
 }

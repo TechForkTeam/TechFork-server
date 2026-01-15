@@ -27,4 +27,10 @@ public class RefreshTokenService {
 
         return storedToken != null && storedToken.equals(token);
     }
+
+    public void deleteRefreshToken(Long userId) {
+        String key = RedisKey.REFRESH_TOKEN_PREFIX + userId;
+        redisTemplate.delete(key);
+        log.info("RefreshToken deleted for userId: {}", userId);
+    }
 }
