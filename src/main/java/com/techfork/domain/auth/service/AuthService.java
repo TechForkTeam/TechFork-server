@@ -43,9 +43,10 @@ public class AuthService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(AuthErrorCode.USER_NOT_FOUND));
-        JwtDTO newTokens = jwtUtil.generateTokens(userId, user.getRole());
 
-        saveAndSetRefreshToken(response, userId, newTokens.refreshToken());
+        JwtDTO newTokens = jwtUtil.generateTokens(userId, user.getRole());
+        long expiration = jwtProperties.getRefreshTokenExpiration();
+        saveAndSetRefreshToken(response, userId, newTokens.refreshToken(), expiration);
 
         log.info("Token refreshed for userId: {}", userId);
 
@@ -56,7 +57,7 @@ public class AuthService {
 
     private void validateRefreshTokenRequest(String refreshToken) {
         if (refreshToken == null || refreshToken.isEmpty()) {
-            throw new GeneralException(AuthErrorCode.REFRESH_TOKEN_NOT_FOUND);
+            throw new GeneralException(AuthErrorCode.REFRESH_TOKEN_MISSING);
         }
         if (!jwtUtil.validateToken(refreshToken)) {
             throw new GeneralException(AuthErrorCode.INVALID_REFRESH_TOKEN);
@@ -70,18 +71,8 @@ public class AuthService {
         }
     }
 
-    private void saveAndSetRefreshToken(HttpServletResponse response, Long userId, String refreshToken) {
-        refreshTokenService.saveRefreshToken(
-                userId,
-                refreshToken,
-                jwtProperties.getRefreshTokenExpiration()
-        );
-
-        CookieUtil.addRefreshTokenCookie(
-                response,
-                domain,
-                refreshToken,
-                jwtProperties.getRefreshTokenExpiration()
-        );
+    private void saveAndSetRefreshToken(HttpServletResponse response, Long userId, String refreshToken, long expiration) {
+        refreshTokenService.saveRefreshToken(userId, refreshToken, expiration);
+        CookieUtil.addRefreshTokenCookie(response, domain, refreshToken, expiration);
     }
 }

@@ -37,7 +37,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
 
         JwtDTO tokens = jwtUtil.generateTokens(userPrincipal.getId(), userPrincipal.getRole());
-        saveAndSetRefreshToken(response, userPrincipal.getId(), tokens.refreshToken());
+        long expiration = jwtProperties.getRefreshTokenExpiration();
+        saveAndSetRefreshToken(response, userPrincipal.getId(), tokens.refreshToken(), expiration);
 
         log.info("OAuth2 login success - userId: {}, socialType: {}, email: {}, status: {}",
                 userPrincipal.getId(), userPrincipal.getSocialType(),
@@ -50,19 +51,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 
-    private void saveAndSetRefreshToken(HttpServletResponse response, Long userId, String refreshToken) {
-        refreshTokenService.saveRefreshToken(
-                userId,
-                refreshToken,
-                jwtProperties.getRefreshTokenExpiration()
-        );
-
-        CookieUtil.addRefreshTokenCookie(
-                response,
-                domain,
-                refreshToken,
-                jwtProperties.getRefreshTokenExpiration()
-        );
+    private void saveAndSetRefreshToken(HttpServletResponse response, Long userId, String refreshToken, long expiration) {
+        refreshTokenService.saveRefreshToken(userId, refreshToken, expiration);
+        CookieUtil.addRefreshTokenCookie(response, domain, refreshToken, expiration);
     }
 }
 
