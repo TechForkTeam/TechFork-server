@@ -4,6 +4,7 @@ import com.techfork.domain.user.dto.OnboardingRequest;
 import com.techfork.domain.user.dto.SaveInterestRequest;
 import com.techfork.domain.user.dto.UserInterestDto;
 import com.techfork.domain.user.entity.User;
+import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.exception.UserErrorCode;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.exception.GeneralException;
@@ -44,7 +45,7 @@ class UserCommandServiceTest {
     void completeOnboarding_Success() {
         // Given
         Long userId = 1L;
-        User mockUser = User.create();
+        User mockUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com");
 
         List<UserInterestDto> interests = List.of(
                 UserInterestDto.builder()
@@ -112,7 +113,7 @@ class UserCommandServiceTest {
     void completeOnboarding_NullDescription_Success() {
         // Given
         Long userId = 1L;
-        User mockUser = User.create();
+        User mockUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com");
 
         OnboardingRequest request = new OnboardingRequest(
                 "테크포크유저",
@@ -145,7 +146,7 @@ class UserCommandServiceTest {
     void completeOnboarding_MultipleCategories_Success() {
         // Given
         Long userId = 1L;
-        User mockUser = User.create();
+        User mockUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com");
 
         List<UserInterestDto> interests = List.of(
                 UserInterestDto.builder()

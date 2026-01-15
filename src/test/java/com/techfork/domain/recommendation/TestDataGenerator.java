@@ -12,6 +12,7 @@ import com.techfork.domain.user.entity.UserInterestCategory;
 import com.techfork.domain.user.entity.UserInterestKeyword;
 import com.techfork.domain.user.enums.EInterestCategory;
 import com.techfork.domain.user.enums.EInterestKeyword;
+import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.repository.UserInterestCategoryRepository;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
 import com.techfork.domain.user.repository.UserRepository;
@@ -53,7 +54,11 @@ public class TestDataGenerator {
     @Transactional
     public User createTestUser(List<EInterestCategory> interestCategories, int readPostCount) {
         // 사용자 생성
-        User user = User.create();
+        User user = User.createSocialUser(
+                SocialType.KAKAO,
+                "testSocialId_" + UUID.randomUUID().toString(),
+                "test_" + System.currentTimeMillis() + "@example.com"
+        );
         user = userRepository.save(user);
 
         log.info("테스트 사용자 생성: ID: {}", user.getId());

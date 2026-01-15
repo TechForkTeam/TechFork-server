@@ -17,4 +17,15 @@ public final class CookieUtil {
 
         response.addCookie(cookie);
     }
+
+    public static void deleteRefreshTokenCookie(HttpServletResponse response, String domain) {
+        Cookie cookie = new Cookie(Constants.REFRESH_TOKEN_COOKIE_NAME, null);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setDomain(domain);
+        cookie.setMaxAge(0); // 즉시 만료
+
+        response.addCookie(cookie);
+    }
 }

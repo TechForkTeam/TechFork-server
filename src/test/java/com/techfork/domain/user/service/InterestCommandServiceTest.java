@@ -4,6 +4,7 @@ import com.techfork.domain.user.dto.SaveInterestRequest;
 import com.techfork.domain.user.dto.UserInterestDto;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.entity.UserInterestCategory;
+import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.exception.UserErrorCode;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.exception.GeneralException;
@@ -42,7 +43,7 @@ class InterestCommandServiceTest {
     @DisplayName("관심사 저장 - 정상 케이스")
     void saveUserInterests_Success() {
         // Given
-        User user = User.create();
+        User user = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com");
 
         List<UserInterestDto> interests = List.of(
                 UserInterestDto.builder()
@@ -67,7 +68,7 @@ class InterestCommandServiceTest {
     @DisplayName("관심사 저장 - 키워드 없이 카테고리만 저장")
     void saveUserInterests_CategoryOnly_Success() {
         // Given
-        User user = User.create();
+        User user = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com");
 
         List<UserInterestDto> interests = List.of(
                 UserInterestDto.builder()
@@ -92,7 +93,7 @@ class InterestCommandServiceTest {
     @DisplayName("관심사 저장 - 여러 카테고리와 키워드")
     void saveUserInterests_MultipleCategories_Success() {
         // Given
-        User user = User.create();
+        User user = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com");
 
         List<UserInterestDto> interests = List.of(
                 UserInterestDto.builder()
@@ -127,7 +128,7 @@ class InterestCommandServiceTest {
     @DisplayName("관심사 저장 - 기존 관심사를 clear하고 새로 저장")
     void saveUserInterests_ClearExistingInterests_Success() {
         // Given
-        User user = User.create();
+        User user = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com");
 
         // 기존 관심사 추가
         user.getInterestCategories().add(mock(UserInterestCategory.class));
@@ -156,7 +157,7 @@ class InterestCommandServiceTest {
     @DisplayName("관심사 저장 - 잘못된 카테고리와 키워드 조합이면 예외 발생")
     void saveUserInterests_InvalidKeywordCategory_ThrowsException() {
         // Given
-        User user = User.create();
+        User user = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com");
 
         // BACKEND 카테고리에 FRONTEND 키워드를 넣으려고 시도
         List<UserInterestDto> interests = List.of(
@@ -181,7 +182,7 @@ class InterestCommandServiceTest {
     void updateUserInterests_Success() {
         // Given
         Long userId = 1L;
-        User mockUser = User.create();
+        User mockUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com");
         ReflectionTestUtils.setField(mockUser, "id", userId);
 
         List<UserInterestDto> interests = List.of(

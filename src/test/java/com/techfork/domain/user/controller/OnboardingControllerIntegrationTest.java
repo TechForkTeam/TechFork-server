@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techfork.domain.user.dto.OnboardingRequest;
 import com.techfork.domain.user.dto.UserInterestDto;
 import com.techfork.domain.user.entity.User;
+import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.configuration.ElasticsearchTestConfig;
 import com.techfork.global.configuration.MySQLTestConfig;
@@ -21,7 +22,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
@@ -63,7 +63,7 @@ class OnboardingControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        testUser = User.create();
+        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com");
         testUser = userRepository.save(testUser);
 
         // LLM 클라이언트 모킹 - 테스트용 더미 응답 반환

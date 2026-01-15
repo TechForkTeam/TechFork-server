@@ -20,4 +20,17 @@ public class RefreshTokenService {
         redisTemplate.opsForValue().set(key, token, expiration, TimeUnit.MILLISECONDS);
         log.info("RefreshToken saved for userId: {}", userId);
     }
+
+    public boolean validateRefreshToken(Long userId, String token) {
+        String key = RedisKey.REFRESH_TOKEN_PREFIX + userId;
+        String storedToken = redisTemplate.opsForValue().get(key);
+
+        return storedToken != null && storedToken.equals(token);
+    }
+
+    public void deleteRefreshToken(Long userId) {
+        String key = RedisKey.REFRESH_TOKEN_PREFIX + userId;
+        redisTemplate.delete(key);
+        log.info("RefreshToken deleted for userId: {}", userId);
+    }
 }
