@@ -131,8 +131,8 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("토큰 갱신 실패 - Redis에 토큰 없음")
-    void refreshToken_Fail_TokenNotFoundInRedis() {
+    @DisplayName("토큰 갱신 실패 - Redis에 저장된 토큰과 불일치하여 세션 무효화")
+    void refreshToken_Fail_TokenMismatchAndSessionInvalidated() {
         // Given
         given(jwtUtil.validateToken(validRefreshToken)).willReturn(true);
         given(jwtUtil.getUserIdFromToken(validRefreshToken)).willReturn(userId);
@@ -142,7 +142,10 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.refreshToken(validRefreshToken, response))
                 .isInstanceOf(GeneralException.class)
                 .extracting(ex -> ((GeneralException) ex).getCode())
-                .isEqualTo(AuthErrorCode.REFRESH_TOKEN_NOT_FOUND);
+                .isEqualTo(AuthErrorCode.REFRESH_TOKEN_MISMATCH);
+
+        // 세션 무효화를 위해 Redis 토큰 삭제가 호출되었는지 검증
+        verify(refreshTokenService).deleteRefreshToken(userId);
     }
 
     @Test
