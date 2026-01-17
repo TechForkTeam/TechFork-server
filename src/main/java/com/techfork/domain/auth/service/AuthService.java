@@ -76,7 +76,9 @@ public class AuthService {
 
     private void validateRefreshTokenInRedis(Long userId, String refreshToken) {
         if (!refreshTokenService.validateRefreshToken(userId, refreshToken)) {
-            throw new GeneralException(AuthErrorCode.REFRESH_TOKEN_NOT_FOUND);
+            refreshTokenService.deleteRefreshToken(userId);
+            log.warn("Refresh token mismatch detected for userId: {}. Session invalidated.", userId);
+            throw new GeneralException(AuthErrorCode.REFRESH_TOKEN_MISMATCH);
         }
     }
 
