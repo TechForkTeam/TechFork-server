@@ -4,10 +4,12 @@ import com.techfork.domain.search.dto.SearchResult;
 import com.techfork.domain.search.service.SearchService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
+import com.techfork.global.security.oauth.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -55,9 +57,9 @@ public class SearchController {
     @GetMapping("/personalized")
     public BaseResponse<List<SearchResult>> searchPersonalized(
             @RequestParam @Parameter(description = "검색어", required = true) String query,
-            @RequestParam @Parameter(description = "사용자 ID", required = true) Long userId
+            @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-       List<SearchResult> results = searchService.searchPersonalized(query, userId) ;
+       List<SearchResult> results = searchService.searchPersonalized(query, userPrincipal.getId()) ;
        return BaseResponse.of(SuccessCode.OK, results).getBody();
     }
 }

@@ -8,6 +8,7 @@ import com.techfork.domain.activity.service.ActivityCommandService;
 import com.techfork.domain.activity.service.ActivityQueryService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
+import com.techfork.global.security.oauth.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,6 +16,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Activity", description = "사용자 활동 API")
@@ -33,13 +35,10 @@ public class ActivityController {
     )
     @PostMapping("/read-posts")
     public ResponseEntity<BaseResponse<Void>> saveReadPost(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody ReadPostRequest request
     ) {
-
-        // TODO: userId Auth 인증 기반으로 추출
-        Long userId = 1L;
-
-        activityCommandService.saveReadPost(userId, request);
+        activityCommandService.saveReadPost(userPrincipal.getId(), request);
         return BaseResponse.of(SuccessCode.CREATED);
     }
 
@@ -49,13 +48,10 @@ public class ActivityController {
     )
     @PostMapping("/searches")
     public ResponseEntity<BaseResponse<Void>> saveSearchHistory(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody SearchHistoryRequest request
     ) {
-
-        // TODO: userId Auth 인증 기반으로 추출
-        Long userId = 1L;
-
-        activityCommandService.saveSearchHistory(userId, request);
+        activityCommandService.saveSearchHistory(userPrincipal.getId(), request);
         return BaseResponse.of(SuccessCode.CREATED);
     }
 
@@ -65,16 +61,13 @@ public class ActivityController {
     )
     @GetMapping("/bookmarks")
     public ResponseEntity<BaseResponse<BookmarkListResponse>> getBookmarks(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Parameter(description = "마지막 북마크 ID (커서, 선택)")
             @RequestParam(required = false) Long lastBookmarkId,
             @Parameter(description = "페이지 크기 (기본값: 20)")
             @RequestParam(defaultValue = "20") int size
     ) {
-
-        // TODO: userId Auth 인증 기반으로 추출
-        Long userId = 1L;
-
-        BookmarkListResponse response = activityQueryService.getBookmarks(userId, lastBookmarkId, size);
+        BookmarkListResponse response = activityQueryService.getBookmarks(userPrincipal.getId(), lastBookmarkId, size);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 
@@ -84,13 +77,10 @@ public class ActivityController {
     )
     @PostMapping("/bookmarks")
     public ResponseEntity<BaseResponse<Void>> addBookmark(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody BookmarkRequest request
     ) {
-
-        // TODO: userId Auth 인증 기반으로 추출
-        Long userId = 1L;
-
-        activityCommandService.addBookmark(userId, request);
+        activityCommandService.addBookmark(userPrincipal.getId(), request);
         return BaseResponse.of(SuccessCode.CREATED);
     }
 
@@ -100,13 +90,10 @@ public class ActivityController {
     )
     @DeleteMapping("/bookmarks")
     public ResponseEntity<BaseResponse<Void>> deleteBookmark(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody BookmarkRequest request
     ) {
-
-        // TODO: userId Auth 인증 기반으로 추출
-        Long userId = 1L;
-
-        activityCommandService.deleteBookmark(userId, request);
+        activityCommandService.deleteBookmark(userPrincipal.getId(), request);
         return BaseResponse.of(SuccessCode.OK);
     }
 

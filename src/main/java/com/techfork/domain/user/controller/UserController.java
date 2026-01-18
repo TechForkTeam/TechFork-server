@@ -6,12 +6,14 @@ import com.techfork.domain.user.service.InterestCommandService;
 import com.techfork.domain.user.service.InterestQueryService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
+import com.techfork.global.security.oauth.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "User", description = "사용자 API")
@@ -30,12 +32,10 @@ public class UserController {
     )
     @PutMapping("/me/interests")
     public ResponseEntity<BaseResponse<Void>> updateMyInterests(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody SaveInterestRequest request
     ) {
-        // TODO: userId Auth 인증 기반으로 추출
-        Long userId = 1L;
-
-        interestCommandService.updateUserInterests(userId, request);
+        interestCommandService.updateUserInterests(userPrincipal.getId(), request);
         return BaseResponse.of(SuccessCode.OK);
     }
 
@@ -44,11 +44,10 @@ public class UserController {
             description = "현재 로그인한 사용자의 관심사 목록을 조회합니다."
     )
     @GetMapping("/me/interests")
-    public ResponseEntity<BaseResponse<UserInterestResponse>> getMyInterests() {
-        // TODO: userId Auth 인증 기반으로 추출
-        Long userId = 1L;
-
-        UserInterestResponse response = interestQueryService.getUserInterests(userId);
+    public ResponseEntity<BaseResponse<UserInterestResponse>> getMyInterests(
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+    ) {
+        UserInterestResponse response = interestQueryService.getUserInterests(userPrincipal.getId());
         return BaseResponse.of(SuccessCode.OK, response);
     }
 }
