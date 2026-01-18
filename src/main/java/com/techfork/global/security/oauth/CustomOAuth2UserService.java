@@ -41,16 +41,7 @@ public class CustomOAuth2UserService extends OidcUserService {
         log.info("CustomOAuth2UserService - loaded user: id={}, email={}, socialType={}",
                 user.getId(), email, socialType);
 
-        return UserPrincipal.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .nickname(user.getNickName())
-                .socialType(user.getSocialType())
-                .socialId(user.getSocialId())
-                .role(user.getRole())
-                .status(user.getStatus())
-                .attributes(oidcUser.getAttributes())
-                .build();
+        return UserPrincipal.buildUserPrincipal(user);
     }
 
     private User getOrCreateUser(SocialType socialType, String socialId, String email) {

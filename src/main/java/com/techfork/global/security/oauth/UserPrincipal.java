@@ -1,12 +1,13 @@
 package com.techfork.global.security.oauth;
 
+import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.enums.Role;
-import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.enums.UserStatus;
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -15,27 +16,72 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+/**
+ * Spring Security 인증 주체 (Principal)
+ * - UserDetails: JWT 인증에서 사용
+ * - OidcUser: OAuth2 로그인에서 사용
+ * 두 인터페이스를 모두 구현하여 다양한 인증 방식 지원
+ *
+ * 최소 필드만 포함:
+ * - id: 사용자 고유 식별자
+ * - role: 권한 (ADMIN, USER)
+ * - status: 계정 상태 (PENDING, ACTIVE)
+ * - attributes: OAuth2 로그인용 속성 (일반 JWT에서는 null)
+ */
 @Getter
 @Builder
-public class UserPrincipal implements OidcUser {
+public class UserPrincipal implements UserDetails, OidcUser {
 
     private final Long id;
-    private final String email;
-    private final String nickname;
-    private final SocialType socialType;
-    private final String socialId;
     private final Role role;
     private final UserStatus status;
     private final Map<String, Object> attributes;
 
-    @Override
-    public Map<String, Object> getAttributes() {
-        return attributes;
-    }
+    // ===== UserDetails 구현 =====
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singletonList(new SimpleGrantedAuthority(role.getKey()));
+    }
+
+    @Override
+    public String getPassword() {
+        // 소셜 로그인 사용자이므로 비밀번호 없음
+        return null;
+    }
+
+    @Override
+    public String getUsername() {
+        return String.valueOf(id);
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        // 현재는 PENDING, ACTIVE만 존재하므로 항상 잠기지 않음
+        // 추후 SUSPENDED, DELETED 추가 시 status != SUSPENDED && status != DELETED로 변경
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return status == UserStatus.ACTIVE || status == UserStatus.PENDING;
+    }
+
+    // ===== OidcUser 구현 =====
+
+    @Override
+    public Map<String, Object> getAttributes() {
+        return attributes;
     }
 
     @Override
@@ -56,5 +102,13 @@ public class UserPrincipal implements OidcUser {
     @Override
     public OidcIdToken getIdToken() {
         return null;
+    }
+
+    public static UserPrincipal buildUserPrincipal(User user) {
+        return UserPrincipal.builder()
+                .id(user.getId())
+                .role(user.getRole())
+                .status(user.getStatus())
+                .build();
     }
 }

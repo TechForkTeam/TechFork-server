@@ -6,12 +6,14 @@ import com.techfork.domain.user.service.InterestQueryService;
 import com.techfork.domain.user.service.UserCommandService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
+import com.techfork.global.security.oauth.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Onboarding", description = "온보딩 API")
@@ -40,10 +42,10 @@ public class OnboardingController {
     )
     @PostMapping("/complete")
     public ResponseEntity<BaseResponse<Void>> completeOnboarding(
-            @RequestHeader(value = "X-User-Id", required = false, defaultValue = "1") Long userId,
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody OnboardingRequest request
     ) {
-        userCommandService.completeOnboarding(userId, request);
+        userCommandService.completeOnboarding(userPrincipal.getId(), request);
         return BaseResponse.of(SuccessCode.CREATED);
     }
 }
