@@ -40,9 +40,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         long expiration = jwtProperties.getRefreshTokenExpiration();
         saveAndSetRefreshToken(response, userPrincipal.getId(), tokens.refreshToken(), expiration);
 
-        log.info("OAuth2 login success - userId: {}, socialType: {}, email: {}, status: {}",
-                userPrincipal.getId(), userPrincipal.getSocialType(),
-                userPrincipal.getEmail(), userPrincipal.getStatus());
+        log.info("OAuth2 login success - userId: {}, role: {}, status: {}",
+                userPrincipal.getId(), userPrincipal.getRole(), userPrincipal.getStatus());
 
         // 온보딩 완료 여부에 따라 리다이렉트
         boolean isRegistered = userPrincipal.getStatus() == UserStatus.ACTIVE;

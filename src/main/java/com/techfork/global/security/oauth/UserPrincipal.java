@@ -1,7 +1,7 @@
 package com.techfork.global.security.oauth;
 
+import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.enums.Role;
-import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.enums.UserStatus;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,16 +21,18 @@ import java.util.Map;
  * - UserDetails: JWT 인증에서 사용
  * - OidcUser: OAuth2 로그인에서 사용
  * 두 인터페이스를 모두 구현하여 다양한 인증 방식 지원
+ *
+ * 최소 필드만 포함:
+ * - id: 사용자 고유 식별자
+ * - role: 권한 (ADMIN, USER)
+ * - status: 계정 상태 (PENDING, ACTIVE)
+ * - attributes: OAuth2 로그인용 속성 (일반 JWT에서는 null)
  */
 @Getter
 @Builder
 public class UserPrincipal implements UserDetails, OidcUser {
 
     private final Long id;
-    private final String email;
-    private final String nickname;
-    private final SocialType socialType;
-    private final String socialId;
     private final Role role;
     private final UserStatus status;
     private final Map<String, Object> attributes;
@@ -44,12 +46,13 @@ public class UserPrincipal implements UserDetails, OidcUser {
 
     @Override
     public String getPassword() {
+        // 소셜 로그인 사용자이므로 비밀번호 없음
         return null;
     }
 
     @Override
     public String getUsername() {
-        return nickname;
+        return String.valueOf(id);
     }
 
     @Override
@@ -71,6 +74,8 @@ public class UserPrincipal implements UserDetails, OidcUser {
 
     @Override
     public boolean isEnabled() {
+        // ACTIVE: 온보딩 완료 (활성화)
+        // PENDING: 온보딩 미완료 (비활성화)
         return status == UserStatus.ACTIVE;
     }
 
@@ -83,7 +88,7 @@ public class UserPrincipal implements UserDetails, OidcUser {
 
     @Override
     public String getName() {
-        return nickname;
+        return String.valueOf(id);
     }
 
     @Override
@@ -99,5 +104,13 @@ public class UserPrincipal implements UserDetails, OidcUser {
     @Override
     public OidcIdToken getIdToken() {
         return null;
+    }
+
+    public static UserPrincipal buildUserPrincipal(User user) {
+        return UserPrincipal.builder()
+                .id(user.getId())
+                .role(user.getRole())
+                .status(user.getStatus())
+                .build();
     }
 }
