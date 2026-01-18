@@ -19,7 +19,8 @@ public final class Constants {
             "/api/v1/recommendations",
             "/api/v2/posts/**",
             "/api/v1/posts/**",
-            "/api/v1/search/general"
+            "/api/v1/search/general",
+            "/api/v1/onboarding/**"
     };
 
     public static final String[] ADMIN_ENDPOINTS = {

@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -15,9 +16,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+/**
+ * Spring Security 인증 주체 (Principal)
+ * - UserDetails: JWT 인증에서 사용
+ * - OidcUser: OAuth2 로그인에서 사용
+ * 두 인터페이스를 모두 구현하여 다양한 인증 방식 지원
+ */
 @Getter
 @Builder
-public class UserPrincipal implements OidcUser {
+public class UserPrincipal implements UserDetails, OidcUser {
 
     private final Long id;
     private final String email;
@@ -28,10 +35,7 @@ public class UserPrincipal implements OidcUser {
     private final UserStatus status;
     private final Map<String, Object> attributes;
 
-    @Override
-    public Map<String, Object> getAttributes() {
-        return attributes;
-    }
+    // ===== UserDetails 구현 =====
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -39,8 +43,47 @@ public class UserPrincipal implements OidcUser {
     }
 
     @Override
+    public String getPassword() {
+        return null;
+    }
+
+    @Override
+    public String getUsername() {
+        return nickname;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        // 현재는 PENDING, ACTIVE만 존재하므로 항상 잠기지 않음
+        // 추후 SUSPENDED, DELETED 추가 시 status != SUSPENDED && status != DELETED로 변경
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return status == UserStatus.ACTIVE;
+    }
+
+    // ===== OidcUser 구현 =====
+
+    @Override
+    public Map<String, Object> getAttributes() {
+        return attributes;
+    }
+
+    @Override
     public String getName() {
-        return String.valueOf(id);
+        return nickname;
     }
 
     @Override
