@@ -4,12 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techfork.domain.user.dto.OnboardingRequest;
 import com.techfork.domain.user.dto.UserInterestDto;
 import com.techfork.domain.user.entity.User;
+import com.techfork.domain.user.enums.Role;
 import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.configuration.ElasticsearchTestConfig;
 import com.techfork.global.configuration.MySQLTestConfig;
 import com.techfork.global.llm.EmbeddingClient;
 import com.techfork.global.llm.LlmClient;
+import com.techfork.global.security.jwt.JwtDTO;
+import com.techfork.global.security.jwt.JwtUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -53,6 +56,9 @@ class OnboardingControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
     @MockitoBean
     private LlmClient llmClient;
 
@@ -60,11 +66,16 @@ class OnboardingControllerIntegrationTest {
     private EmbeddingClient embeddingClient;
 
     private User testUser;
+    private String accessToken;
 
     @BeforeEach
     void setUp() {
         testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com");
         testUser = userRepository.save(testUser);
+
+        // PENDING 상태 사용자용 JWT 토큰 생성
+        JwtDTO tokens = jwtUtil.generateTokens(testUser.getId(), Role.USER);
+        accessToken = tokens.accessToken();
 
         // LLM 클라이언트 모킹 - 테스트용 더미 응답 반환
         when(llmClient.call(anyString(), anyString()))
@@ -118,7 +129,7 @@ class OnboardingControllerIntegrationTest {
 
         // When & Then
         mockMvc.perform(post("/api/v1/onboarding/complete")
-                        .header("X-User-Id", testUser.getId())
+                        .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andDo(print())
@@ -153,7 +164,7 @@ class OnboardingControllerIntegrationTest {
 
         // When & Then
         mockMvc.perform(post("/api/v1/onboarding/complete")
-                        .header("X-User-Id", testUser.getId())
+                        .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andDo(print())
@@ -184,7 +195,7 @@ class OnboardingControllerIntegrationTest {
 
         // When & Then
         mockMvc.perform(post("/api/v1/onboarding/complete")
-                        .header("X-User-Id", testUser.getId())
+                        .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andDo(print())
@@ -211,7 +222,7 @@ class OnboardingControllerIntegrationTest {
 
         // When & Then
         mockMvc.perform(post("/api/v1/onboarding/complete")
-                        .header("X-User-Id", testUser.getId())
+                        .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andDo(print())
@@ -238,7 +249,7 @@ class OnboardingControllerIntegrationTest {
 
         // When & Then
         mockMvc.perform(post("/api/v1/onboarding/complete")
-                        .header("X-User-Id", testUser.getId())
+                        .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andDo(print())
@@ -260,7 +271,7 @@ class OnboardingControllerIntegrationTest {
 
         // When & Then
         mockMvc.perform(post("/api/v1/onboarding/complete")
-                        .header("X-User-Id", testUser.getId())
+                        .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andDo(print())
@@ -289,11 +300,37 @@ class OnboardingControllerIntegrationTest {
 
         // When & Then
         mockMvc.perform(post("/api/v1/onboarding/complete")
-                        .header("X-User-Id", testUser.getId())
+                        .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("온보딩 완료 - 인증 없이 접근 시 401 에러")
+    void completeOnboarding_Unauthorized() throws Exception {
+        // Given
+        OnboardingRequest request = new OnboardingRequest(
+                "테크포크유저",
+                "user@techfork.com",
+                null,
+                List.of(
+                        UserInterestDto.builder()
+                                .category("BACKEND")
+                                .keywords(List.of("JAVA"))
+                                .build()
+                )
+        );
+
+        String requestBody = objectMapper.writeValueAsString(request);
+
+        // When & Then - Authorization 헤더 없이 요청
+        mockMvc.perform(post("/api/v1/onboarding/complete")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -326,7 +363,7 @@ class OnboardingControllerIntegrationTest {
 
         // When & Then
         mockMvc.perform(post("/api/v1/onboarding/complete")
-                        .header("X-User-Id", testUser.getId())
+                        .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andDo(print())
