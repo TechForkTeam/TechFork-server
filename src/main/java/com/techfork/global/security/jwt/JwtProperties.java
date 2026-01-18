@@ -14,4 +14,5 @@ public class JwtProperties {
     private long accessTokenExpiration;
     private long refreshTokenExpiration;
     private String redirectUri;
+    private String loginFailureRedirectUri;
 }

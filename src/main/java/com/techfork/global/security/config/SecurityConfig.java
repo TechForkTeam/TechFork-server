@@ -5,7 +5,8 @@ import com.techfork.global.security.filter.JwtAuthenticationFilter;
 import com.techfork.global.security.handler.exception.CustomAccessDeniedHandler;
 import com.techfork.global.security.handler.exception.JwtAuthenticationEntryPoint;
 import com.techfork.global.security.oauth.CustomOAuth2UserService;
-import com.techfork.global.security.handler.OAuth2AuthenticationSuccessHandler;
+import com.techfork.global.security.handler.login.OAuth2AuthenticationFailureHandler;
+import com.techfork.global.security.handler.login.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,6 +29,7 @@ public class SecurityConfig {
 
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
@@ -51,6 +53,7 @@ public class SecurityConfig {
                                 .oidcUserService(customOAuth2UserService)
                         )
                         .successHandler(oAuth2AuthenticationSuccessHandler)
+                        .failureHandler(oAuth2AuthenticationFailureHandler)
                 )
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)

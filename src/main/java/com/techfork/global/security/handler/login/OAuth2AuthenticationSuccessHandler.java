@@ -1,4 +1,4 @@
-package com.techfork.global.security.handler;
+package com.techfork.global.security.handler.login;
 
 import com.techfork.domain.user.enums.UserStatus;
 import com.techfork.global.security.auth.service.RefreshTokenService;
