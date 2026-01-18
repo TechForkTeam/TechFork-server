@@ -8,6 +8,8 @@ public final class Constants {
     public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String BEARER_PREFIX = "Bearer ";
 
+    public static final String JWT_EXCEPTION_ATTRIBUTE = "jwtException";
+
     public static final String[] PUBLIC_ENDPOINTS = {
             "/api/v1/auth/**",
             "/login/**",

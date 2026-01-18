@@ -2,7 +2,7 @@ package com.techfork.global.security.config;
 
 import com.techfork.global.constant.Constants;
 import com.techfork.global.security.filter.JwtAuthenticationFilter;
-import com.techfork.global.security.handler.exception.CustomAuthenticationEntryPointHandler;
+import com.techfork.global.security.handler.exception.JwtAuthenticationEntryPoint;
 import com.techfork.global.security.oauth.CustomOAuth2UserService;
 import com.techfork.global.security.handler.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,7 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final CustomAuthenticationEntryPointHandler customAuthenticationEntryPointHandler;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -51,7 +51,7 @@ public class SecurityConfig {
                         .successHandler(oAuth2AuthenticationSuccessHandler)
                 )
                 .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint(customAuthenticationEntryPointHandler)
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
