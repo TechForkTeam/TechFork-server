@@ -2,6 +2,7 @@ package com.techfork.global.security.config;
 
 import com.techfork.global.constant.Constants;
 import com.techfork.global.security.filter.JwtAuthenticationFilter;
+import com.techfork.global.security.handler.exception.CustomAccessDeniedHandler;
 import com.techfork.global.security.handler.exception.JwtAuthenticationEntryPoint;
 import com.techfork.global.security.oauth.CustomOAuth2UserService;
 import com.techfork.global.security.handler.OAuth2AuthenticationSuccessHandler;
@@ -29,6 +30,7 @@ public class SecurityConfig {
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -52,6 +54,7 @@ public class SecurityConfig {
                 )
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                        .accessDeniedHandler(customAccessDeniedHandler)
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
