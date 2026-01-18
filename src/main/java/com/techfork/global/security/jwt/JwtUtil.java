@@ -47,12 +47,30 @@ public class JwtUtil {
         return builder.compact();
     }
 
-    public boolean validateToken(String token) {
+    /**
+     * JWT 토큰 유효성 검증 (예외 발생)
+     * - 유효하지 않은 경우 구체적인 예외를 던짐 (ExpiredJwtException, MalformedJwtException 등)
+     * - JWT 필터에서 사용하여 예외 타입별로 다른 에러 응답 반환
+     */
+    public void validateToken(String token) {
         Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token);
-        return true;
+    }
+
+    /**
+     * JWT 토큰 유효성 검증 (boolean 반환)
+     * - 유효하면 true, 유효하지 않으면 false 반환
+     * - 간단한 유효성 체크가 필요한 경우 사용
+     */
+    public boolean isValidToken(String token) {
+        try {
+            validateToken(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
     }
 
     public void validateTokenType(String token, String expectedType) {

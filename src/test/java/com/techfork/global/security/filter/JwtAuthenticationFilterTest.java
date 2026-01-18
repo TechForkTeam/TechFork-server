@@ -25,8 +25,7 @@ import java.util.Optional;
 
 import static com.techfork.global.security.jwt.JwtConstants.TOKEN_TYPE_ACCESS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
+import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class JwtAuthenticationFilterTest {
@@ -71,7 +70,7 @@ class JwtAuthenticationFilterTest {
     void doFilterInternal_Success_WithValidAccessToken() throws Exception {
         // Given
         given(request.getHeader("Authorization")).willReturn("Bearer " + validAccessToken);
-        given(jwtUtil.validateToken(validAccessToken)).willReturn(true);
+        willDoNothing().given(jwtUtil).validateToken(validAccessToken);
         given(jwtUtil.getUserIdFromToken(validAccessToken)).willReturn(userId);
         given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
 
@@ -139,7 +138,7 @@ class JwtAuthenticationFilterTest {
         // Given
         String invalidToken = "invalid.token";
         given(request.getHeader("Authorization")).willReturn("Bearer " + invalidToken);
-        given(jwtUtil.validateToken(invalidToken)).willReturn(false);
+        willThrow(new RuntimeException("Invalid token")).given(jwtUtil).validateToken(invalidToken);
 
         // When
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -159,7 +158,7 @@ class JwtAuthenticationFilterTest {
         // Given
         String refreshToken = "refresh.token";
         given(request.getHeader("Authorization")).willReturn("Bearer " + refreshToken);
-        given(jwtUtil.validateToken(refreshToken)).willReturn(true);
+        willDoNothing().given(jwtUtil).validateToken(refreshToken);
         doThrow(new RuntimeException("Token type mismatch"))
                 .when(jwtUtil).validateTokenType(refreshToken, TOKEN_TYPE_ACCESS);
 
@@ -177,13 +176,15 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    @DisplayName("JWT 인증 실패 - 사용자를 찾을 수 없음")
+    @DisplayName("JWT 인증 실패 - 사용자를 찾을 수 없음 (탈퇴 또는 삭제된 사용자)")
     void doFilterInternal_Fail_UserNotFound() throws Exception {
         // Given
-        given(request.getHeader("Authorization")).willReturn("Bearer " + validAccessToken);
-        given(jwtUtil.validateToken(validAccessToken)).willReturn(true);
-        given(jwtUtil.getUserIdFromToken(validAccessToken)).willReturn(userId);
-        given(userRepository.findById(userId)).willReturn(Optional.empty());
+        String deletedUserToken = "deleted.user.token";
+        given(request.getHeader("Authorization")).willReturn("Bearer " + deletedUserToken);
+        willDoNothing().given(jwtUtil).validateToken(deletedUserToken);
+        willDoNothing().given(jwtUtil).validateTokenType(deletedUserToken, TOKEN_TYPE_ACCESS);
+        given(jwtUtil.getUserIdFromToken(deletedUserToken)).willReturn(999L);
+        given(userRepository.findById(999L)).willReturn(Optional.empty());
 
         // When
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -192,27 +193,9 @@ class JwtAuthenticationFilterTest {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         assertThat(authentication).isNull();
 
-        verify(jwtUtil).validateToken(validAccessToken);
-        verify(jwtUtil).validateTokenType(validAccessToken, TOKEN_TYPE_ACCESS);
-        verify(userRepository).findById(userId);
-        verify(filterChain).doFilter(request, response);
-    }
-
-    @Test
-    @DisplayName("JWT 인증 실패 - 예외 발생 시에도 필터 체인은 계속 진행")
-    void doFilterInternal_Fail_ExceptionOccurred_FilterChainContinues() throws Exception {
-        // Given
-        given(request.getHeader("Authorization")).willReturn("Bearer " + validAccessToken);
-        given(jwtUtil.validateToken(validAccessToken)).willThrow(new RuntimeException("JWT parsing error"));
-
-        // When
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
-
-        // Then
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        assertThat(authentication).isNull();
-
-        verify(jwtUtil).validateToken(validAccessToken);
+        verify(jwtUtil).validateToken(deletedUserToken);
+        verify(jwtUtil).validateTokenType(deletedUserToken, TOKEN_TYPE_ACCESS);
+        verify(userRepository).findById(999L);
         verify(filterChain).doFilter(request, response);
     }
 }
