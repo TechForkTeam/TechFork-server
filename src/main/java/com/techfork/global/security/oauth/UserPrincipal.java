@@ -74,9 +74,7 @@ public class UserPrincipal implements UserDetails, OidcUser {
 
     @Override
     public boolean isEnabled() {
-        // ACTIVE: 온보딩 완료 (활성화)
-        // PENDING: 온보딩 미완료 (비활성화)
-        return status == UserStatus.ACTIVE;
+        return status == UserStatus.ACTIVE || status == UserStatus.PENDING;
     }
 
     // ===== OidcUser 구현 =====
