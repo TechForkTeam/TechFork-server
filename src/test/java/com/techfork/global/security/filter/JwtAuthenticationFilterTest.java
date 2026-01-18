@@ -3,6 +3,7 @@ package com.techfork.global.security.filter;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.enums.Role;
 import com.techfork.domain.user.enums.SocialType;
+import com.techfork.domain.user.enums.UserStatus;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.security.jwt.JwtUtil;
 import com.techfork.global.security.oauth.UserPrincipal;
@@ -23,7 +24,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.Optional;
 
 import static com.techfork.global.security.jwt.JwtConstants.TOKEN_TYPE_ACCESS;
-import static com.techfork.global.security.jwt.JwtConstants.TOKEN_TYPE_REFRESH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -85,8 +85,9 @@ class JwtAuthenticationFilterTest {
 
         UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
         assertThat(principal.getId()).isEqualTo(userId);
-        assertThat(principal.getEmail()).isEqualTo("test@example.com");
         assertThat(principal.getRole()).isEqualTo(Role.USER);
+        assertThat(principal.getStatus()).isEqualTo(UserStatus.PENDING);
+        assertThat(principal.getUsername()).isEqualTo(String.valueOf(userId));
 
         verify(jwtUtil).validateToken(validAccessToken);
         verify(jwtUtil).validateTokenType(validAccessToken, TOKEN_TYPE_ACCESS);
