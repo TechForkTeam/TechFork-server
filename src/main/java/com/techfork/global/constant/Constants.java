@@ -20,7 +20,7 @@ public final class Constants {
             "/api/v2/posts/**",
             "/api/v1/posts/**",
             "/api/v1/search/general",
-            "/api/v1/onboarding/**"
+            "/api/v1/onboarding/interests"
     };
 
     public static final String[] ADMIN_ENDPOINTS = {
