@@ -11,6 +11,8 @@ public class ElasticsearchTestConfig {
     @ServiceConnection
     ElasticsearchContainer elasticsearchContainer() {
         return new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:8.18.0")
-                .withEnv("xpack.security.enabled", "false");
+                .withEnv("xpack.security.enabled", "false")
+                .withEnv("discovery.type", "single-node")
+                .withEnv("ES_JAVA_OPTS", "-Xms256m -Xmx256m");
     }
 }
