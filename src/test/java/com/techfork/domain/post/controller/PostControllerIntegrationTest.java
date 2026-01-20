@@ -7,10 +7,7 @@ import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.global.configuration.MySQLTestConfig;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * - 모든 레이어(Controller, Service, Repository) 통합 테스트
  * - MockMvc로 HTTP 요청/응답 테스트
  */
+@Tag("integration")
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(MySQLTestConfig.class)

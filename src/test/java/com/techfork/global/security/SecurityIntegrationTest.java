@@ -12,10 +12,7 @@ import com.techfork.global.security.jwt.JwtDTO;
 import com.techfork.global.security.jwt.JwtUtil;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -38,6 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * - JWT 인증 실패 시 401 응답 검증
  * - 권한 부족 시 403 응답 검증
  */
+@Tag("integration")
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import({MySQLTestConfig.class, ElasticsearchTestConfig.class})

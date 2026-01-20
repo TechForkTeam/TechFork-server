@@ -12,10 +12,7 @@ import com.techfork.global.security.jwt.JwtDTO;
 import com.techfork.global.security.jwt.JwtProperties;
 import com.techfork.global.security.jwt.JwtUtil;
 import jakarta.servlet.http.Cookie;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -37,6 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * - 모든 레이어(Controller, Service, Repository) 통합 테스트
  * - MockMvc로 HTTP 요청/응답 테스트
  */
+@Tag("integration")
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import({MySQLTestConfig.class, RedisTestConfig.class})
