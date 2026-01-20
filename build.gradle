@@ -101,5 +101,16 @@ dependencyManagement {
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+	useJUnitPlatform {
+		if (project.hasProperty('excludeIntegration')) {
+			excludeTags 'integration'
+		}
+	}
+}
+
+tasks.register('integrationTest', Test) {
+	useJUnitPlatform {
+		includeTags 'integration'
+	}
+	shouldRunAfter tasks.named('test')
 }
