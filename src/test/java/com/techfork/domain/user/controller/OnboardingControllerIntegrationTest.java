@@ -7,6 +7,7 @@ import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.enums.Role;
 import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.repository.UserRepository;
+import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.global.configuration.ElasticsearchTestConfig;
 import com.techfork.global.configuration.MySQLTestConfig;
 import com.techfork.global.llm.EmbeddingClient;
@@ -38,12 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * OnboardingController 통합 테스트
  */
-@Tag("integration")
-@SpringBootTest
-@AutoConfigureMockMvc
-@Import({MySQLTestConfig.class, ElasticsearchTestConfig.class})
-@ActiveProfiles("integrationtest")
-class OnboardingControllerIntegrationTest {
+class OnboardingControllerIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;

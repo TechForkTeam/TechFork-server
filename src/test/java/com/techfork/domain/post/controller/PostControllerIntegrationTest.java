@@ -6,6 +6,7 @@ import com.techfork.domain.post.repository.PostKeywordRepository;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.repository.TechBlogRepository;
+import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.global.configuration.MySQLTestConfig;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,17 +26,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * PostController 통합 테스트
- * - @SpringBootTest: 전체 애플리케이션 컨텍스트 로드
- * - MySQLTestConfig.class: 실제 MySQL 컨테이너로 통합 테스트
  * - 모든 레이어(Controller, Service, Repository) 통합 테스트
  * - MockMvc로 HTTP 요청/응답 테스트
  */
-@Tag("integration")
-@SpringBootTest
-@AutoConfigureMockMvc
-@Import(MySQLTestConfig.class)
-@ActiveProfiles("integrationtest")
-class PostControllerIntegrationTest {
+class PostControllerIntegrationTest extends IntegrationTestBase {
     @Autowired
     private MockMvc mockMvc;
 

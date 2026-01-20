@@ -4,6 +4,7 @@ import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.enums.Role;
 import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.repository.UserRepository;
+import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.global.configuration.ElasticsearchTestConfig;
 import com.techfork.global.configuration.MySQLTestConfig;
 import com.techfork.global.llm.EmbeddingClient;
@@ -35,12 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * - JWT 인증 실패 시 401 응답 검증
  * - 권한 부족 시 403 응답 검증
  */
-@Tag("integration")
-@SpringBootTest
-@AutoConfigureMockMvc
-@Import({MySQLTestConfig.class, ElasticsearchTestConfig.class})
-@ActiveProfiles("integrationtest")
-class SecurityIntegrationTest {
+class SecurityIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;
