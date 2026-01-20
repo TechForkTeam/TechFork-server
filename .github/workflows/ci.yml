@@ -26,8 +26,13 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Build with Gradle
-        run: ./gradlew build -x test --no-daemon
+      - name: Build with unit tests
+        if: github.event_name == 'pull_request'
+        run: ./gradlew build -PexcludeIntegration --no-daemon
+
+      - name: Build with all tests
+        if: github.event_name == 'push'
+        run: ./gradlew build --no-daemon
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
