@@ -3,12 +3,14 @@ package com.techfork.domain.recommendation;
 import com.techfork.domain.user.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+@Tag("evaluation")
 @Slf4j
 public class LambdaOptimizationTest extends RecommendationTestBase {
 

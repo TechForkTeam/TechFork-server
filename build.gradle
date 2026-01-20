@@ -105,14 +105,39 @@ tasks.named('test') {
 		if (project.hasProperty('excludeIntegration')) {
 			excludeTags 'integration'
 		}
-		excludeTags 'evaluation-setup'
+		excludeTags 'evaluation-setup', 'evaluation'
+	}
+
+	testLogging {
+		events "passed", "skipped", "failed"
+		exceptionFormat "full"
+		showStandardStreams = false
 	}
 }
 
 tasks.register('integrationTest', Test) {
 	useJUnitPlatform {
 		includeTags 'integration'
-		excludeTags 'evaluation-setup'
+		excludeTags 'evaluation-setup', 'evaluation'
 	}
+
+	testLogging {
+		events "passed", "skipped", "failed"
+		exceptionFormat "full"
+		showStandardStreams = false
+	}
+
 	shouldRunAfter tasks.named('test')
+}
+
+tasks.register('evaluationTest', Test) {
+	useJUnitPlatform {
+		includeTags 'evaluation'
+		excludeTags 'evaluation-setup', 'integration'
+	}
+
+	testLogging {
+		events "passed", "skipped", "failed"
+		exceptionFormat "full"
+	}
 }

@@ -14,6 +14,7 @@ import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.llm.EmbeddingClient;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -24,6 +25,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Executor;
 
+@Tag("evaluation")
 @Slf4j
 @SpringBootTest
 class SearchQualityEvaluationTest {
