@@ -68,7 +68,7 @@ public class AuthService {
         if (refreshToken == null || refreshToken.isEmpty()) {
             throw new GeneralException(AuthErrorCode.REFRESH_TOKEN_MISSING);
         }
-        if (!jwtUtil.validateToken(refreshToken)) {
+        if (!jwtUtil.isValidToken(refreshToken)) {
             throw new GeneralException(AuthErrorCode.INVALID_REFRESH_TOKEN);
         }
         jwtUtil.validateTokenType(refreshToken, TOKEN_TYPE_REFRESH);

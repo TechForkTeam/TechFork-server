@@ -79,7 +79,7 @@ class AuthServiceTest {
         // Given
         JwtDTO newTokens = JwtDTO.of(newAccessToken, newRefreshToken);
 
-        given(jwtUtil.validateToken(validRefreshToken)).willReturn(true);
+        given(jwtUtil.isValidToken(validRefreshToken)).willReturn(true);
         given(jwtUtil.getUserIdFromToken(validRefreshToken)).willReturn(userId);
         given(refreshTokenService.validateRefreshToken(userId, validRefreshToken)).willReturn(true);
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
@@ -91,7 +91,7 @@ class AuthServiceTest {
 
         // Then
         assertThat(result.accessToken()).isEqualTo(newAccessToken);
-        verify(jwtUtil).validateToken(validRefreshToken);
+        verify(jwtUtil).isValidToken(validRefreshToken);
         verify(jwtUtil).validateTokenType(validRefreshToken, TOKEN_TYPE_REFRESH);
         verify(refreshTokenService).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
         verify(response).addCookie(any(Cookie.class));
@@ -121,7 +121,7 @@ class AuthServiceTest {
     @DisplayName("토큰 갱신 실패 - 유효하지 않은 토큰")
     void refreshToken_Fail_InvalidToken() {
         // Given
-        given(jwtUtil.validateToken(validRefreshToken)).willReturn(false);
+        given(jwtUtil.isValidToken(validRefreshToken)).willReturn(false);
 
         // When & Then
         assertThatThrownBy(() -> authService.refreshToken(validRefreshToken, response))
@@ -134,7 +134,7 @@ class AuthServiceTest {
     @DisplayName("토큰 갱신 실패 - Redis에 저장된 토큰과 불일치하여 세션 무효화")
     void refreshToken_Fail_TokenMismatchAndSessionInvalidated() {
         // Given
-        given(jwtUtil.validateToken(validRefreshToken)).willReturn(true);
+        given(jwtUtil.isValidToken(validRefreshToken)).willReturn(true);
         given(jwtUtil.getUserIdFromToken(validRefreshToken)).willReturn(userId);
         given(refreshTokenService.validateRefreshToken(userId, validRefreshToken)).willReturn(false);
 
@@ -152,7 +152,7 @@ class AuthServiceTest {
     @DisplayName("토큰 갱신 실패 - 사용자를 찾을 수 없음")
     void refreshToken_Fail_UserNotFound() {
         // Given
-        given(jwtUtil.validateToken(validRefreshToken)).willReturn(true);
+        given(jwtUtil.isValidToken(validRefreshToken)).willReturn(true);
         given(jwtUtil.getUserIdFromToken(validRefreshToken)).willReturn(userId);
         given(refreshTokenService.validateRefreshToken(userId, validRefreshToken)).willReturn(true);
         given(userRepository.findById(userId)).willReturn(Optional.empty());
@@ -170,14 +170,14 @@ class AuthServiceTest {
     @DisplayName("로그아웃 성공")
     void logout_Success() {
         // Given
-        given(jwtUtil.validateToken(validRefreshToken)).willReturn(true);
+        given(jwtUtil.isValidToken(validRefreshToken)).willReturn(true);
         given(jwtUtil.getUserIdFromToken(validRefreshToken)).willReturn(userId);
 
         // When
         authService.logout(validRefreshToken, response);
 
         // Then
-        verify(jwtUtil).validateToken(validRefreshToken);
+        verify(jwtUtil).isValidToken(validRefreshToken);
         verify(jwtUtil).validateTokenType(validRefreshToken, TOKEN_TYPE_REFRESH);
         verify(refreshTokenService).deleteRefreshToken(userId);
         verify(response).addCookie(any(Cookie.class));
@@ -207,7 +207,7 @@ class AuthServiceTest {
     @DisplayName("로그아웃 실패 - 유효하지 않은 토큰")
     void logout_Fail_InvalidToken() {
         // Given
-        given(jwtUtil.validateToken(validRefreshToken)).willReturn(false);
+        given(jwtUtil.isValidToken(validRefreshToken)).willReturn(false);
 
         // When & Then
         assertThatThrownBy(() -> authService.logout(validRefreshToken, response))

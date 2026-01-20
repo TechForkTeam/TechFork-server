@@ -1,8 +1,10 @@
 package com.techfork.global.security.filter;
 
+import com.techfork.domain.auth.exception.AuthErrorCode;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.constant.Constants;
+import com.techfork.global.exception.GeneralException;
 import com.techfork.global.security.jwt.JwtUtil;
 import com.techfork.global.security.oauth.UserPrincipal;
 import com.techfork.global.util.HeaderUtil;
@@ -42,27 +44,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         try {
-            String jwt = HeaderUtil.refineHeader(request, Constants.AUTHORIZATION_HEADER, Constants.BEARER_PREFIX).orElse(null);
+            String jwt = HeaderUtil.refineHeader(request, Constants.AUTHORIZATION_HEADER, Constants.BEARER_PREFIX)
+                    .orElse(null);
 
-            if (jwt != null && jwtUtil.validateToken(jwt)) {
+            if (jwt != null) {
+                jwtUtil.validateToken(jwt);
                 jwtUtil.validateTokenType(jwt, TOKEN_TYPE_ACCESS);
 
                 Long userId = jwtUtil.getUserIdFromToken(jwt);
-                User user = userRepository.findById(userId).orElse(null);
+                User user = userRepository.findById(userId)
+                        .orElseThrow(() -> new GeneralException(AuthErrorCode.USER_NOT_FOUND));
 
-                if (user != null) {
-                    UserPrincipal userPrincipal = UserPrincipal.buildUserPrincipal(user);
-                    UsernamePasswordAuthenticationToken authentication = createAuthentication(userPrincipal, request);
+                UserPrincipal userPrincipal = UserPrincipal.buildUserPrincipal(user);
+                UsernamePasswordAuthenticationToken authentication = createAuthentication(userPrincipal, request);
 
-                    SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
-                    securityContext.setAuthentication(authentication);
-                    SecurityContextHolder.setContext(securityContext);
+                SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
+                securityContext.setAuthentication(authentication);
+                SecurityContextHolder.setContext(securityContext);
 
-                    log.debug("Set authentication for user: {}", userId);
-                }
+                log.debug("Set authentication for user: {}", userId);
             }
         } catch (Exception e) {
-            log.error("Could not set user authentication in security context", e);
+            request.setAttribute(Constants.JWT_EXCEPTION_ATTRIBUTE, e);
         }
 
         filterChain.doFilter(request, response);
