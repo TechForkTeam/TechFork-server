@@ -1,8 +1,6 @@
 package com.techfork.global.common;
 
-import com.techfork.global.configuration.ElasticsearchTestConfig;
-import com.techfork.global.configuration.MySQLTestConfig;
-import com.techfork.global.configuration.RedisTestConfig;
+import com.techfork.global.configuration.IntegrationTestConfig;
 import org.junit.jupiter.api.Tag;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,7 +10,7 @@ import org.springframework.test.context.ActiveProfiles;
 @Tag("integration")
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import({MySQLTestConfig.class, RedisTestConfig.class, ElasticsearchTestConfig.class})
+@Import(IntegrationTestConfig.class)
 @ActiveProfiles("integrationtest")
 public abstract class IntegrationTestBase {
 }
