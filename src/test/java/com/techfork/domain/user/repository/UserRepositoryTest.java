@@ -24,6 +24,7 @@ import org.springframework.test.context.ActiveProfiles;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -250,7 +251,7 @@ class UserRepositoryTest {
                 .fullContent("내용")
                 .plainContent("내용")
                 .company("테스트 회사")
-                .url("https://test.com/post/" + System.currentTimeMillis())
+                .url("https://test.com/post/" + UUID.randomUUID())
                 .publishedAt(LocalDateTime.now())
                 .crawledAt(LocalDateTime.now())
                 .techBlog(testTechBlog)
