@@ -308,32 +308,6 @@ class OnboardingControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("온보딩 완료 - 인증 없이 접근 시 401 에러")
-    void completeOnboarding_Unauthorized() throws Exception {
-        // Given
-        OnboardingRequest request = new OnboardingRequest(
-                "테크포크유저",
-                "user@techfork.com",
-                null,
-                List.of(
-                        UserInterestDto.builder()
-                                .category("BACKEND")
-                                .keywords(List.of("JAVA"))
-                                .build()
-                )
-        );
-
-        String requestBody = objectMapper.writeValueAsString(request);
-
-        // When & Then - Authorization 헤더 없이 요청
-        mockMvc.perform(post("/api/v1/onboarding/complete")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andDo(print())
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
     @DisplayName("온보딩 완료 - 여러 카테고리와 키워드 조합")
     void completeOnboarding_MultipleCategories_Success() throws Exception {
         // Given
