@@ -3,6 +3,7 @@ package com.techfork.domain.recommendation;
 import com.techfork.domain.user.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import java.util.List;
 /**
  * 추천 시스템 설정별 성능 비교 테스트
  */
+@Tag("evaluation")
 @Slf4j
 public class RecommendationConfigComparisonTest extends RecommendationTestBase {
 
