@@ -7,7 +7,9 @@ import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.repository.UserInterestCategoryRepository;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.domain.user.service.UserProfileService;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,6 +22,8 @@ import java.util.stream.IntStream;
 
 import static com.techfork.domain.user.enums.EInterestCategory.*;
 
+@Tag("evaluation-setup")
+@Disabled("데이터 셋업용 - CI 제외")
 @SpringBootTest
 class UserProfileServiceTest {
 

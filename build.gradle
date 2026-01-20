@@ -105,12 +105,14 @@ tasks.named('test') {
 		if (project.hasProperty('excludeIntegration')) {
 			excludeTags 'integration'
 		}
+		excludeTags 'evaluation-setup'
 	}
 }
 
 tasks.register('integrationTest', Test) {
 	useJUnitPlatform {
 		includeTags 'integration'
+		excludeTags 'evaluation-setup'
 	}
 	shouldRunAfter tasks.named('test')
 }

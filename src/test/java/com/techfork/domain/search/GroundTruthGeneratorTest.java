@@ -8,7 +8,10 @@ import com.techfork.domain.user.repository.UserProfileDocumentRepository;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.llm.EmbeddingClient;
 import java.util.concurrent.Executor;
+
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,6 +22,8 @@ import java.util.List;
  * ground-truth.json 테스트
  * - default 하이퍼파라미터 값 적용됨.
  */
+@Tag("evaluation-setup")
+@Disabled("데이터 셋업용 - CI 제외")
 @SpringBootTest
 class GroundTruthGeneratorTest {
 

@@ -20,6 +20,8 @@ import com.techfork.domain.user.service.UserProfileService;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +33,8 @@ import java.util.*;
  * 추천 시스템 테스트를 위한 데이터 생성기
  * DB의 실제 게시글 데이터를 기반으로 테스트용 사용자 프로필과 Ground Truth 생성
  */
+@Tag("evaluation-setup")
+@Disabled("데이터 셋업용 - CI 제외")
 @Slf4j
 @Component
 @RequiredArgsConstructor
