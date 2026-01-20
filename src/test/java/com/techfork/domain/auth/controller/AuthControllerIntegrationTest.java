@@ -5,8 +5,7 @@ import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.enums.Role;
 import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.repository.UserRepository;
-import com.techfork.global.configuration.MySQLTestConfig;
-import com.techfork.global.configuration.RedisTestConfig;
+import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.global.security.auth.service.RefreshTokenService;
 import com.techfork.global.security.jwt.JwtDTO;
 import com.techfork.global.security.jwt.JwtProperties;
@@ -14,11 +13,7 @@ import com.techfork.global.security.jwt.JwtUtil;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,17 +24,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * AuthController 통합 테스트
- * - @SpringBootTest: 전체 애플리케이션 컨텍스트 로드
- * - MySQLTestConfig, RedisTestConfig: 실제 MySQL, Redis 컨테이너로 통합 테스트
+ * - IntegrationTestBase 상속으로 테스트 컨테이너 공유
+ * - @Tag("integration") 자동 적용
  * - 모든 레이어(Controller, Service, Repository) 통합 테스트
  * - MockMvc로 HTTP 요청/응답 테스트
  */
-@Tag("integration")
-@SpringBootTest
-@AutoConfigureMockMvc
-@Import({MySQLTestConfig.class, RedisTestConfig.class})
-@ActiveProfiles("integrationtest")
-class AuthControllerIntegrationTest {
+class AuthControllerIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;

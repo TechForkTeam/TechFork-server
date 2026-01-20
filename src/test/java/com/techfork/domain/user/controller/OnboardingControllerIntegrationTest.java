@@ -7,19 +7,17 @@ import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.enums.Role;
 import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.repository.UserRepository;
-import com.techfork.global.configuration.ElasticsearchTestConfig;
-import com.techfork.global.configuration.MySQLTestConfig;
+import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.global.llm.EmbeddingClient;
 import com.techfork.global.llm.LlmClient;
 import com.techfork.global.security.jwt.JwtDTO;
 import com.techfork.global.security.jwt.JwtUtil;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -38,12 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * OnboardingController 통합 테스트
  */
-@Tag("integration")
-@SpringBootTest
-@AutoConfigureMockMvc
-@Import({MySQLTestConfig.class, ElasticsearchTestConfig.class})
-@ActiveProfiles("integrationtest")
-class OnboardingControllerIntegrationTest {
+class OnboardingControllerIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;
