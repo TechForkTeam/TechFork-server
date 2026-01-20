@@ -9,9 +9,16 @@ import org.testcontainers.utility.DockerImageName;
 @TestConfiguration(proxyBeanMethods = false)
 public class RedisTestConfig {
 
+    private static final RedisContainer redis =
+            new RedisContainer(DockerImageName.parse("redis:7.2-alpine"));
+
+    static {
+        redis.start();
+    }
+
     @Bean
     @ServiceConnection
     RedisContainer redisContainer() {
-        return new RedisContainer(DockerImageName.parse("redis:7.2-alpine"));
+        return redis;
     }
 }
