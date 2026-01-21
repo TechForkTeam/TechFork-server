@@ -43,6 +43,9 @@ public class Post extends BaseEntity {
     @Column(length = 500)
     private String logoUrl;
 
+    @Column(length = 1000)
+    private String thumbnailUrl;
+
     @Column(unique = true, nullable = false, length = 1000)
     private String url;
 
@@ -68,13 +71,14 @@ public class Post extends BaseEntity {
 
     @PersistenceCreator
     @Builder
-    Post(String title, String fullContent, String plainContent, String company, String logoUrl, String url,
-                 LocalDateTime publishedAt, LocalDateTime crawledAt, LocalDateTime embeddedAt, TechBlog techBlog) {
+    Post(String title, String fullContent, String plainContent, String company, String logoUrl, String thumbnailUrl,
+                 String url, LocalDateTime publishedAt, LocalDateTime crawledAt, LocalDateTime embeddedAt, TechBlog techBlog) {
         this.title = title;
         this.fullContent = fullContent;
         this.plainContent = plainContent;
         this.company = company;
         this.logoUrl = logoUrl;
+        this.thumbnailUrl = thumbnailUrl;
         this.url = url;
         this.publishedAt = publishedAt;
         this.crawledAt = crawledAt;
@@ -89,6 +93,7 @@ public class Post extends BaseEntity {
                 .plainContent(item.plainContent())
                 .company(item.company())
                 .logoUrl(item.logoUrl())
+                .thumbnailUrl(item.thumbnailUrl())
                 .url(item.url())
                 .publishedAt(item.publishedAt())
                 .crawledAt(LocalDateTime.now())
