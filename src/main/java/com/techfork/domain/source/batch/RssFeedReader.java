@@ -1,5 +1,8 @@
 package com.techfork.domain.source.batch;
 
+import com.rometools.modules.mediarss.MediaEntryModule;
+import com.rometools.modules.mediarss.types.MediaContent;
+import com.rometools.rome.feed.synd.SyndEnclosure;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
@@ -23,6 +26,8 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -118,6 +123,9 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
         // 발행일 변환
         LocalDateTime publishedAt = convertToLocalDateTime(entry.getPublishedDate());
 
+        // 썸네일 이미지 추출
+        String thumbnailUrl = extractThumbnailUrl(entry, content);
+
         return RssFeedItem.builder()
                 .title(entry.getTitle())
                 .url(entry.getLink())
@@ -126,6 +134,7 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
                 .publishedAt(publishedAt)
                 .company(techBlog.getCompanyName())
                 .logoUrl(techBlog.getLogoUrl())
+                .thumbnailUrl(thumbnailUrl)
                 .techBlogId(techBlog.getId())
                 .build();
     }
@@ -159,5 +168,95 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
         return date.toInstant()
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime();
+    }
+
+    /**
+     * RSS 피드에서 썸네일 이미지 URL 추출
+     * 1. Media RSS 모듈 (media:thumbnail, media:content)
+     * 2. Enclosure (주로 이미지/오디오 첨부파일)
+     * 3. 본문 HTML에서 첫 번째 img 태그 추출
+     */
+    private String extractThumbnailUrl(SyndEntry entry, String content) {
+        // 1. Media RSS 모듈에서 추출 시도
+        String mediaThumbnail = extractFromMediaModule(entry);
+        if (mediaThumbnail != null) {
+            return mediaThumbnail;
+        }
+
+        // 2. Enclosure에서 이미지 추출 시도
+        String enclosureImage = extractFromEnclosure(entry);
+        if (enclosureImage != null) {
+            return enclosureImage;
+        }
+
+        // 3. 본문 HTML에서 첫 번째 이미지 추출
+        return extractImageFromHtml(content);
+    }
+
+    /**
+     * Media RSS 모듈에서 이미지 추출
+     */
+    private String extractFromMediaModule(SyndEntry entry) {
+        try {
+            Object mediaModule = entry.getModule("http://search.yahoo.com/mrss/");
+            if (mediaModule != null) {
+                // Rome Tools의 Media RSS 모듈 사용
+                MediaEntryModule media =
+                        (MediaEntryModule) mediaModule;
+
+                if (media.getMediaContents() != null && media.getMediaContents().length > 0) {
+                    MediaContent mediaContent = media.getMediaContents()[0];
+                    if (mediaContent.getReference() != null) {
+                        return mediaContent.getReference().toString();
+                    }
+                }
+
+                if (media.getMetadata() != null && media.getMetadata().getThumbnail() != null
+                        && media.getMetadata().getThumbnail().length > 0) {
+                    return media.getMetadata().getThumbnail()[0].getUrl().toString();
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Media RSS 모듈에서 이미지 추출 실패: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Enclosure에서 이미지 추출
+     */
+    private String extractFromEnclosure(SyndEntry entry) {
+        if (entry.getEnclosures() != null && !entry.getEnclosures().isEmpty()) {
+            for (SyndEnclosure enclosure : entry.getEnclosures()) {
+                String type = enclosure.getType();
+                if (type != null && type.startsWith("image/")) {
+                    return enclosure.getUrl();
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * HTML 본문에서 첫 번째 img 태그의 src 추출
+     */
+    private String extractImageFromHtml(String htmlContent) {
+        if (htmlContent == null || htmlContent.isEmpty()) {
+            return null;
+        }
+
+        // img 태그의 src 속성을 추출하는 정규식
+        Pattern pattern = Pattern.compile("<img[^>]+src=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(htmlContent);
+
+        if (matcher.find()) {
+            String imageUrl = matcher.group(1);
+            // 상대 URL이 아닌 절대 URL만 반환 (http:// 또는 https://로 시작)
+            if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+                return imageUrl;
+            }
+        }
+
+        return null;
     }
 }
