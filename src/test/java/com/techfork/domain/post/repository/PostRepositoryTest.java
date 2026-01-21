@@ -538,6 +538,7 @@ class PostRepositoryTest {
                 .company(techBlog.getCompanyName())
                 .url("https://test.com/" + title)
                 .logoUrl("https://test.com/logo.png")
+                .thumbnailUrl("https://test.com/thumb.png")
                 .publishedAt(publishedAt)
                 .crawledAt(LocalDateTime.now())
                 .techBlog(techBlog)
