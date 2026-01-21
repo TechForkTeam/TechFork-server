@@ -14,6 +14,7 @@ public record PostInfoDto(
         String company,
         String url,
         String logoUrl,
+        String thumbnailUrl,
         LocalDateTime publishedAt,
         Long viewCount,
         List<String> keywords

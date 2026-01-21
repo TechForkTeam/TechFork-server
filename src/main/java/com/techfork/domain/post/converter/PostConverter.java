@@ -54,6 +54,7 @@ public class PostConverter {
                 .company(baseDto.company())
                 .url(baseDto.url())
                 .logoUrl(baseDto.logoUrl())
+                .thumbnailUrl(baseDto.thumbnailUrl())
                 .publishedAt(baseDto.publishedAt())
                 .viewCount(baseDto.viewCount())
                 .keywords(keywords)
