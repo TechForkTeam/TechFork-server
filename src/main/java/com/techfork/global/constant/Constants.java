@@ -27,6 +27,7 @@ public final class Constants {
 
     public static final String[] ADMIN_ENDPOINTS = {
             "/api/v1/batch/**",
+            "/api/v1/admin/**"
     };
 
 }

@@ -1,8 +1,11 @@
 package com.techfork.domain.auth.service;
 
+import com.techfork.domain.auth.converter.AuthConverter;
+import com.techfork.domain.auth.dto.DeveloperTokenResponse;
 import com.techfork.domain.auth.dto.TokenRefreshResponse;
 import com.techfork.domain.auth.exception.AuthErrorCode;
 import com.techfork.domain.user.entity.User;
+import com.techfork.domain.user.enums.Role;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.global.security.auth.service.RefreshTokenService;
@@ -10,6 +13,7 @@ import com.techfork.global.security.jwt.JwtDTO;
 import com.techfork.global.security.jwt.JwtProperties;
 import com.techfork.global.security.jwt.JwtUtil;
 import com.techfork.global.util.CookieUtil;
+import jakarta.security.auth.message.config.AuthConfig;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,18 +26,18 @@ import static com.techfork.global.security.jwt.JwtConstants.TOKEN_TYPE_REFRESH;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional
 public class AuthService {
 
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
     private final UserRepository userRepository;
     private final JwtProperties jwtProperties;
+    private final AuthConverter authConverter;
 
     @Value("${server.domain}")
     private String domain;
 
-    @Transactional
     public TokenRefreshResponse refreshToken(String refreshToken, HttpServletResponse response) {
         validateRefreshTokenRequest(refreshToken);
 
@@ -54,7 +58,6 @@ public class AuthService {
                 .build();
     }
 
-    @Transactional
     public void logout(String refreshToken, HttpServletResponse response) {
         validateRefreshTokenRequest(refreshToken);
 
@@ -62,6 +65,21 @@ public class AuthService {
         deleteRefreshToken(response, userId);
 
         log.info("User logged out - userId: {}", userId);
+    }
+
+    public DeveloperTokenResponse generateDeveloperToken(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GeneralException(AuthErrorCode.USER_NOT_FOUND));
+
+        if (user.getRole() != Role.ADMIN) {
+            throw new GeneralException(AuthErrorCode.FORBIDDEN_INSUFFICIENT_PERMISSIONS);
+        }
+
+        String longLivedAccessToken = jwtUtil.generateLongLivedAccessToken(userId, user.getRole());
+
+        log.info("Developer token (long-lived access token) generated for admin userId: {}", userId);
+
+        return authConverter.toDeveloperTokenResponse(longLivedAccessToken);
     }
 
     private void validateRefreshTokenRequest(String refreshToken) {
