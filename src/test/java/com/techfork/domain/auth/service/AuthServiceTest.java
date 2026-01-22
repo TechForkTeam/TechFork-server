@@ -1,5 +1,7 @@
 package com.techfork.domain.auth.service;
 
+import com.techfork.domain.auth.converter.AuthConverter;
+import com.techfork.domain.auth.dto.DeveloperTokenResponse;
 import com.techfork.domain.auth.dto.TokenRefreshResponse;
 import com.techfork.domain.auth.exception.AuthErrorCode;
 import com.techfork.domain.user.entity.User;
@@ -48,6 +50,9 @@ class AuthServiceTest {
 
     @Mock
     private HttpServletResponse response;
+
+    @Mock
+    private AuthConverter authConverter;
 
     @InjectMocks
     private AuthService authService;
@@ -214,5 +219,73 @@ class AuthServiceTest {
                 .isInstanceOf(GeneralException.class)
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(AuthErrorCode.INVALID_REFRESH_TOKEN);
+    }
+
+    // ===== 개발자 토큰 발급 테스트 =====
+
+    @Test
+    @DisplayName("개발자 토큰 발급 성공 - ADMIN 권한으로 30일 만료 토큰 발급")
+    void generateDeveloperToken_Success() {
+        // Given
+        User adminUser = User.builder()
+                .socialType(SocialType.KAKAO)
+                .socialId("adminSocialId")
+                .email("admin@example.com")
+                .role(Role.ADMIN)
+                .build();
+        ReflectionTestUtils.setField(adminUser, "id", userId);
+
+        String developerToken = "long.lived.access.token";
+        DeveloperTokenResponse expectedResponse = DeveloperTokenResponse.builder()
+                .developerToken(developerToken)
+                .build();
+
+        given(userRepository.findById(userId)).willReturn(Optional.of(adminUser));
+        given(jwtUtil.generateLongLivedAccessToken(userId, Role.ADMIN)).willReturn(developerToken);
+        given(authConverter.toDeveloperTokenResponse(developerToken)).willReturn(expectedResponse);
+
+        // When
+        DeveloperTokenResponse result = authService.generateDeveloperToken(userId);
+
+        // Then
+        assertThat(result.developerToken()).isEqualTo(developerToken);
+        verify(userRepository).findById(userId);
+        verify(jwtUtil).generateLongLivedAccessToken(userId, Role.ADMIN);
+        verify(authConverter).toDeveloperTokenResponse(developerToken);
+    }
+
+    @Test
+    @DisplayName("개발자 토큰 발급 실패 - 사용자를 찾을 수 없음")
+    void generateDeveloperToken_Fail_UserNotFound() {
+        // Given
+        given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> authService.generateDeveloperToken(userId))
+                .isInstanceOf(GeneralException.class)
+                .extracting(ex -> ((GeneralException) ex).getCode())
+                .isEqualTo(AuthErrorCode.USER_NOT_FOUND);
+
+        verify(userRepository).findById(userId);
+        verify(jwtUtil, never()).generateLongLivedAccessToken(anyLong(), any(Role.class));
+    }
+
+    @Test
+    @DisplayName("개발자 토큰 발급 실패 - ADMIN 권한이 아닌 사용자")
+    void generateDeveloperToken_Fail_InsufficientPermissions() {
+        // Given - 일반 사용자
+        User normalUser = User.createSocialUser(SocialType.KAKAO, "userSocialId", "user@example.com");
+        ReflectionTestUtils.setField(normalUser, "id", userId);
+
+        given(userRepository.findById(userId)).willReturn(Optional.of(normalUser));
+
+        // When & Then
+        assertThatThrownBy(() -> authService.generateDeveloperToken(userId))
+                .isInstanceOf(GeneralException.class)
+                .extracting(ex -> ((GeneralException) ex).getCode())
+                .isEqualTo(AuthErrorCode.FORBIDDEN_INSUFFICIENT_PERMISSIONS);
+
+        verify(userRepository).findById(userId);
+        verify(jwtUtil, never()).generateLongLivedAccessToken(anyLong(), any(Role.class));
     }
 }
