@@ -58,7 +58,7 @@ class UserRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com");
+        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", null);
         testUser = userRepository.save(testUser);
 
         testTechBlog = TechBlog.builder()
@@ -212,7 +212,7 @@ class UserRepositoryTest {
     @DisplayName("findAllWithInterestCategoriesByIds - 여러 유저를 관심사와 함께 조회")
     void findAllWithInterestCategoriesByIds_Success() {
         // Given: 두 번째 유저 생성
-        User user2 = User.createSocialUser(SocialType.KAKAO, "testSocialId2", "test2@example.com");
+        User user2 = User.createSocialUser(SocialType.KAKAO, "testSocialId2", "test2@example.com", null);
         user2 = userRepository.save(user2);
 
         UserInterestCategory category1 = UserInterestCategory.create(testUser, EInterestCategory.BACKEND);
