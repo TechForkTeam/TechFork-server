@@ -57,7 +57,7 @@ class SecurityIntegrationTest extends IntegrationTestBase {
     @BeforeEach
     void setUp() {
         // 일반 사용자
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com");
+        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", null);
         testUser = userRepository.save(testUser);
 
         JwtDTO tokens = jwtUtil.generateTokens(testUser.getId(), Role.USER);
