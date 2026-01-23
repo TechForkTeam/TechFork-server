@@ -45,7 +45,7 @@ class UserCommandServiceTest {
     void completeOnboarding_Success() {
         // Given
         Long userId = 1L;
-        User mockUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com");
+        User mockUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", null);
 
         List<UserInterestDto> interests = List.of(
                 UserInterestDto.builder()
@@ -113,7 +113,7 @@ class UserCommandServiceTest {
     void completeOnboarding_NullDescription_Success() {
         // Given
         Long userId = 1L;
-        User mockUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com");
+        User mockUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", null);
 
         OnboardingRequest request = new OnboardingRequest(
                 "테크포크유저",
@@ -146,7 +146,7 @@ class UserCommandServiceTest {
     void completeOnboarding_MultipleCategories_Success() {
         // Given
         Long userId = 1L;
-        User mockUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com");
+        User mockUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", null);
 
         List<UserInterestDto> interests = List.of(
                 UserInterestDto.builder()

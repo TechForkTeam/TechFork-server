@@ -26,6 +26,8 @@ public class User extends BaseTimeEntity {
 
     private String email;
 
+    private String profileImage;
+
     private String description;
 
     @Enumerated(EnumType.STRING)
@@ -48,9 +50,10 @@ public class User extends BaseTimeEntity {
 
     @PersistenceCreator
     @Builder
-    User(String nickName, String email, String description, SocialType socialType, String socialId, Role role, UserStatus status) {
+    User(String nickName, String email, String profileImage, String description, SocialType socialType, String socialId, Role role, UserStatus status) {
         this.nickName = nickName;
         this.email = email;
+        this.profileImage = profileImage;
         this.description = description;
         this.socialType = socialType;
         this.socialId = socialId;
@@ -58,16 +61,12 @@ public class User extends BaseTimeEntity {
         this.status = status != null ? status : UserStatus.PENDING;
     }
 
-    public static User create() {
-        return User.builder()
-                .build();
-    }
-
-    public static User createSocialUser(SocialType socialType, String socialId, String email) {
+    public static User createSocialUser(SocialType socialType, String socialId, String email, String profileImage) {
         return User.builder()
                 .socialType(socialType)
                 .socialId(socialId)
                 .email(email)
+                .profileImage(profileImage)
                 .role(Role.USER)
                 .build();
     }

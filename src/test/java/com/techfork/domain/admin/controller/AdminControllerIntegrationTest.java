@@ -60,7 +60,7 @@ class AdminControllerIntegrationTest extends IntegrationTestBase {
         adminAccessToken = adminTokens.accessToken();
 
         // 일반 사용자 생성
-        normalUser = User.createSocialUser(SocialType.KAKAO, "userSocialId", "user@example.com");
+        normalUser = User.createSocialUser(SocialType.KAKAO, "userSocialId", "user@example.com", null);
         normalUser = userRepository.save(normalUser);
 
         JwtDTO userTokens = jwtUtil.generateTokens(normalUser.getId(), Role.USER);

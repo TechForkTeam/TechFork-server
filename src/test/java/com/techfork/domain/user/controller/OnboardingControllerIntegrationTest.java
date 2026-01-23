@@ -61,7 +61,7 @@ class OnboardingControllerIntegrationTest extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() {
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com");
+        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", null);
         testUser = userRepository.save(testUser);
 
         // PENDING 상태 사용자용 JWT 토큰 생성

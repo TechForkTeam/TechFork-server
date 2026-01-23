@@ -59,7 +59,7 @@ class JwtAuthenticationFilterTest {
         userId = 1L;
         validAccessToken = "valid.access.token";
 
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com");
+        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", null);
         ReflectionTestUtils.setField(testUser, "id", userId);
     }
 
