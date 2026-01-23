@@ -56,7 +56,7 @@ class AuthControllerIntegrationTest extends IntegrationTestBase {
     @BeforeEach
     void setUp() {
         // 테스트 사용자 생성
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com");
+        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", null);
         testUser = userRepository.save(testUser);
         userId = testUser.getId();
 

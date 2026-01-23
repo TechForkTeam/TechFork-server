@@ -72,7 +72,7 @@ class AuthServiceTest {
         newRefreshToken = "new.refresh.token";
         userId = 1L;
 
-        user = User.createSocialUser(SocialType.KAKAO, "socialId123", "test@example.com");
+        user = User.createSocialUser(SocialType.KAKAO, "socialId123", "test@example.com", null);
         ReflectionTestUtils.setField(user, "id", userId);
     }
 
@@ -274,7 +274,7 @@ class AuthServiceTest {
     @DisplayName("개발자 토큰 발급 실패 - ADMIN 권한이 아닌 사용자")
     void generateDeveloperToken_Fail_InsufficientPermissions() {
         // Given - 일반 사용자
-        User normalUser = User.createSocialUser(SocialType.KAKAO, "userSocialId", "user@example.com");
+        User normalUser = User.createSocialUser(SocialType.KAKAO, "userSocialId", "user@example.com", null);
         ReflectionTestUtils.setField(normalUser, "id", userId);
 
         given(userRepository.findById(userId)).willReturn(Optional.of(normalUser));
