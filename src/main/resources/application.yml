@@ -57,6 +57,7 @@ jwt:
 
 server:
   domain: ${SERVER_DOMAIN:localhost}
+  forward-headers-strategy: native
 
 
 
