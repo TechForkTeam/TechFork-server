@@ -26,6 +26,8 @@ import java.util.Map;
  * - id: 사용자 고유 식별자
  * - role: 권한 (ADMIN, USER)
  * - status: 계정 상태 (PENDING, ACTIVE)
+ * - email: 사용자 이메일
+ * - profileImage: 프로필 이미지 URL
  * - attributes: OAuth2 로그인용 속성 (일반 JWT에서는 null)
  */
 @Getter
@@ -35,6 +37,7 @@ public class UserPrincipal implements UserDetails, OidcUser {
     private final Long id;
     private final Role role;
     private final UserStatus status;
+    private final String email;
     private final Map<String, Object> attributes;
 
     // ===== UserDetails 구현 =====
@@ -109,6 +112,7 @@ public class UserPrincipal implements UserDetails, OidcUser {
                 .id(user.getId())
                 .role(user.getRole())
                 .status(user.getStatus())
+                .email(user.getEmail())
                 .build();
     }
 }
