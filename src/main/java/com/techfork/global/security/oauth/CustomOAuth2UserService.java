@@ -35,8 +35,9 @@ public class CustomOAuth2UserService extends OidcUserService {
         if (email == null) {
             throw new OAuth2AuthenticationException("email not found");
         }
+        String profileImage = oidcUser.getAttribute("picture");
 
-        User user = getOrCreateUser(socialType, socialId, email);
+        User user = getOrCreateUser(socialType, socialId, email, profileImage);
 
         log.info("CustomOAuth2UserService - loaded user: id={}, email={}, socialType={}",
                 user.getId(), email, socialType);
@@ -44,13 +45,13 @@ public class CustomOAuth2UserService extends OidcUserService {
         return UserPrincipal.buildUserPrincipal(user);
     }
 
-    private User getOrCreateUser(SocialType socialType, String socialId, String email) {
+    private User getOrCreateUser(SocialType socialType, String socialId, String email, String profileImage) {
         return userRepository.findBySocialTypeAndSocialId(socialType, socialId)
                 .orElseGet(() -> {
-                    User newUser = User.createSocialUser(socialType, socialId, email);
+                    User newUser = User.createSocialUser(socialType, socialId, email, profileImage);
                     User savedUser = userRepository.save(newUser);
-                    log.info("New user created - id: {}, socialType: {}, socialId: {}, email: {}",
-                            savedUser.getId(), socialType, socialId, email);
+                    log.info("New user created - id: {}, socialType: {}, socialId: {}, email: {}, profileImage: {}",
+                            savedUser.getId(), socialType, socialId, email, profileImage);
                     return savedUser;
                 });
     }
