@@ -53,7 +53,7 @@ jwt:
   secret: ${JWT_SECRET}
   access-token-expiration: 900000  # 15분 (밀리초)
   refresh-token-expiration: 1209600000  # 14일 (밀리초)
-  redirect-uri: ${JWT_REDIRECT_URI:http://localhost:5173/auth/callback?registered=%s&token=%s&email=%s&profileImage=%s}
+  redirect-uri: ${JWT_REDIRECT_URI:http://localhost:5173/auth/callback?registered=%s&token=%s&email=%s}
   login-failure-redirect-uri: ${JWT_LOGIN_FAILURE_REDIRECT_URI:http://localhost:5173/login?error=true}
 
 server:
