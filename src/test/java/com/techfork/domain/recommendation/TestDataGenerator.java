@@ -61,7 +61,8 @@ public class TestDataGenerator {
         User user = User.createSocialUser(
                 SocialType.KAKAO,
                 "testSocialId_" + UUID.randomUUID().toString(),
-                "test_" + System.currentTimeMillis() + "@example.com"
+                "test_" + System.currentTimeMillis() + "@example.com",
+                null
         );
         user = userRepository.save(user);
 

@@ -55,7 +55,7 @@ class UserProfileServiceTest {
         );
 
         IntStream.range(0, 10).forEach(i -> {
-            User user = User.createSocialUser(SocialType.KAKAO, "testSocialId" + i, "test" + i + "@example.com");
+            User user = User.createSocialUser(SocialType.KAKAO, "testSocialId" + i, "test" + i + "@example.com", null);
 
             userRepository.save(user);
 
