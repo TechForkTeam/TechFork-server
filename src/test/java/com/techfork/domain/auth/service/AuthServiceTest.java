@@ -2,11 +2,14 @@ package com.techfork.domain.auth.service;
 
 import com.techfork.domain.auth.converter.AuthConverter;
 import com.techfork.domain.auth.dto.DeveloperTokenResponse;
+import com.techfork.domain.auth.dto.KakaoLoginResponse;
 import com.techfork.domain.auth.dto.TokenRefreshResponse;
+import com.techfork.domain.auth.dto.kakao.KakaoUserInfoResponse;
 import com.techfork.domain.auth.exception.AuthErrorCode;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.enums.Role;
 import com.techfork.domain.user.enums.SocialType;
+import com.techfork.domain.user.enums.UserStatus;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.global.security.auth.service.RefreshTokenService;
@@ -53,6 +56,9 @@ class AuthServiceTest {
 
     @Mock
     private AuthConverter authConverter;
+
+    @Mock
+    private KakaoOAuthService kakaoOAuthService;
 
     @InjectMocks
     private AuthService authService;
@@ -287,5 +293,101 @@ class AuthServiceTest {
 
         verify(userRepository).findById(userId);
         verify(jwtUtil, never()).generateLongLivedAccessToken(anyLong(), any(Role.class));
+    }
+
+    // ===== 카카오 로그인 테스트 =====
+
+    @Test
+    @DisplayName("카카오 로그인 성공 - 신규 회원 가입")
+    void kakaoLogin_Success_NewUser() {
+        // Given
+        String kakaoAccessToken = "kakao.access.token";
+        String socialId = "12345";
+        String email = "newuser@kakao.com";
+        String profileImageUrl = "test.png";
+
+        KakaoUserInfoResponse.Profile profile = new KakaoUserInfoResponse.Profile("https://example.com/profile.jpg");
+        KakaoUserInfoResponse.KakaoAccount kakaoAccount = new KakaoUserInfoResponse.KakaoAccount(email, profile);
+        KakaoUserInfoResponse kakaoUserInfo = new KakaoUserInfoResponse(12345L, kakaoAccount);
+
+        User newUser = User.createSocialUser(SocialType.KAKAO, socialId, email, profileImageUrl);
+        ReflectionTestUtils.setField(newUser, "id", userId);
+
+        JwtDTO tokens = JwtDTO.of(newAccessToken, newRefreshToken);
+        KakaoLoginResponse expectedResponse = KakaoLoginResponse.builder()
+                .accessToken(newAccessToken)
+                .userId(userId)
+                .isRegistered(false)
+                .build();
+
+        given(kakaoOAuthService.getUserInfo(kakaoAccessToken)).willReturn(kakaoUserInfo);
+        given(userRepository.findBySocialTypeAndSocialId(SocialType.KAKAO, socialId)).willReturn(Optional.empty());
+        given(userRepository.save(any(User.class))).willReturn(newUser);
+        given(jwtUtil.generateTokens(userId, Role.USER)).willReturn(tokens);
+        given(jwtProperties.getRefreshTokenExpiration()).willReturn(900000L);
+        given(authConverter.toKakaoLoginResponse(newAccessToken, newUser)).willReturn(expectedResponse);
+
+        // When
+        KakaoLoginResponse result = authService.kakaoLogin(kakaoAccessToken, response);
+
+        // Then
+        assertThat(result.accessToken()).isEqualTo(newAccessToken);
+        assertThat(result.userId()).isEqualTo(userId);
+        assertThat(result.isRegistered()).isFalse(); // 신규 가입이므로 PENDING 상태
+
+        verify(kakaoOAuthService).getUserInfo(kakaoAccessToken);
+        verify(userRepository).findBySocialTypeAndSocialId(SocialType.KAKAO, socialId);
+        verify(userRepository).save(any(User.class));
+        verify(jwtUtil).generateTokens(userId, Role.USER);
+        verify(refreshTokenService).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
+        verify(response).addCookie(any(Cookie.class));
+        verify(authConverter).toKakaoLoginResponse(newAccessToken, newUser);
+    }
+
+    @Test
+    @DisplayName("카카오 로그인 성공 - 기존 회원 로그인")
+    void kakaoLogin_Success_ExistingUser() {
+        // Given
+        String kakaoAccessToken = "kakao.access.token";
+        String socialId = "12345";
+        String email = "existinguser@kakao.com";
+        String profileImageUrl = "test.png";
+
+        KakaoUserInfoResponse.Profile profile = new KakaoUserInfoResponse.Profile("https://example.com/profile.jpg");
+        KakaoUserInfoResponse.KakaoAccount kakaoAccount = new KakaoUserInfoResponse.KakaoAccount(email, profile);
+        KakaoUserInfoResponse kakaoUserInfo = new KakaoUserInfoResponse(12345L, kakaoAccount);
+
+        User existingUser = User.createSocialUser(SocialType.KAKAO, socialId, email, profileImageUrl);
+        ReflectionTestUtils.setField(existingUser, "id", userId);
+        ReflectionTestUtils.setField(existingUser, "status", UserStatus.ACTIVE);
+
+        JwtDTO tokens = JwtDTO.of(newAccessToken, newRefreshToken);
+        KakaoLoginResponse expectedResponse = KakaoLoginResponse.builder()
+                .accessToken(newAccessToken)
+                .userId(userId)
+                .isRegistered(true)
+                .build();
+
+        given(kakaoOAuthService.getUserInfo(kakaoAccessToken)).willReturn(kakaoUserInfo);
+        given(userRepository.findBySocialTypeAndSocialId(SocialType.KAKAO, socialId)).willReturn(Optional.of(existingUser));
+        given(jwtUtil.generateTokens(userId, Role.USER)).willReturn(tokens);
+        given(jwtProperties.getRefreshTokenExpiration()).willReturn(900000L);
+        given(authConverter.toKakaoLoginResponse(newAccessToken, existingUser)).willReturn(expectedResponse);
+
+        // When
+        KakaoLoginResponse result = authService.kakaoLogin(kakaoAccessToken, response);
+
+        // Then
+        assertThat(result.accessToken()).isEqualTo(newAccessToken);
+        assertThat(result.userId()).isEqualTo(userId);
+        assertThat(result.isRegistered()).isTrue(); // 기존 회원이므로 ACTIVE 상태
+
+        verify(kakaoOAuthService).getUserInfo(kakaoAccessToken);
+        verify(userRepository).findBySocialTypeAndSocialId(SocialType.KAKAO, socialId);
+        verify(userRepository, never()).save(any(User.class)); // 기존 회원이므로 save 호출 안됨
+        verify(jwtUtil).generateTokens(userId, Role.USER);
+        verify(refreshTokenService).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
+        verify(response).addCookie(any(Cookie.class));
+        verify(authConverter).toKakaoLoginResponse(newAccessToken, existingUser);
     }
 }

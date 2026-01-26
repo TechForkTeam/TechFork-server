@@ -1,9 +1,14 @@
 package com.techfork.domain.auth.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.techfork.domain.auth.dto.KakaoLoginRequest;
 import com.techfork.domain.auth.exception.AuthErrorCode;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.enums.Role;
 import com.techfork.domain.user.enums.SocialType;
+import com.techfork.domain.user.enums.UserStatus;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.global.security.auth.service.RefreshTokenService;
@@ -14,8 +19,12 @@ import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -28,8 +37,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * - @Tag("integration") 자동 적용
  * - 모든 레이어(Controller, Service, Repository) 통합 테스트
  * - MockMvc로 HTTP 요청/응답 테스트
+ * - WireMock으로 카카오 API 모킹
  */
 class AuthControllerIntegrationTest extends IntegrationTestBase {
+
+    private static WireMockServer wireMockServer;
 
     @Autowired
     private MockMvc mockMvc;
@@ -49,9 +61,30 @@ class AuthControllerIntegrationTest extends IntegrationTestBase {
     @Autowired
     private StringRedisTemplate redisTemplate;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     private User testUser;
     private String validRefreshToken;
     private Long userId;
+
+    @BeforeAll
+    static void beforeAll() {
+        wireMockServer = new WireMockServer(8089);
+        wireMockServer.start();
+        WireMock.configureFor("localhost", 8089);
+    }
+
+    @AfterAll
+    static void afterAll() {
+        wireMockServer.stop();
+    }
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.security.oauth2.client.provider.kakao.user-info-uri",
+                () -> "http://localhost:8089/v2/user/me");
+    }
 
     @BeforeEach
     void setUp() {
@@ -69,6 +102,8 @@ class AuthControllerIntegrationTest extends IntegrationTestBase {
 
     @AfterEach
     void tearDown() {
+        // WireMock 스텁 초기화
+        wireMockServer.resetAll();
         // Redis 데이터 정리
         redisTemplate.getConnectionFactory().getConnection().serverCommands().flushAll();
         // DB 데이터 정리
@@ -181,5 +216,160 @@ class AuthControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.isSuccess").value(false))
                 .andExpect(jsonPath("$.code").value(AuthErrorCode.REFRESH_TOKEN_MISSING.getReason().code()));
+    }
+
+    // ===== 카카오 로그인 iOS 테스트 =====
+
+    @Test
+    @DisplayName("카카오 로그인 성공 - 신규 회원 가입")
+    void kakaoLogin_Success_NewUser() throws Exception {
+        // Given: WireMock으로 카카오 API 응답 모킹
+        String kakaoAccessToken = "valid.kakao.access.token";
+        String kakaoApiResponse = """
+                {
+                    "id": 12345,
+                    "kakao_account": {
+                        "email": "newuser@kakao.com",
+                        "profile": {
+                            "profile_image_url": "https://example.com/profile.jpg"
+                        }
+                    }
+                }
+                """;
+
+        stubFor(get(urlEqualTo("/v2/user/me"))
+                .withHeader("Authorization", equalTo("Bearer " + kakaoAccessToken))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(kakaoApiResponse)));
+
+        KakaoLoginRequest request = new KakaoLoginRequest(kakaoAccessToken);
+
+        // When & Then
+        mockMvc.perform(post("/api/v1/auth/kakao/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isSuccess").value(true))
+                .andExpect(jsonPath("$.data.accessToken").exists())
+                .andExpect(jsonPath("$.data.userId").exists())
+                .andExpect(jsonPath("$.data.isRegistered").value(false)); // 신규 가입
+
+        // DB에 사용자가 생성되었는지 검증
+        User savedUser = userRepository.findBySocialTypeAndSocialId(SocialType.KAKAO, "12345")
+                .orElseThrow();
+        assertThat(savedUser.getEmail()).isEqualTo("newuser@kakao.com");
+        assertThat(savedUser.getStatus()).isEqualTo(UserStatus.PENDING);
+
+        // WireMock 호출 검증
+        verify(getRequestedFor(urlEqualTo("/v2/user/me"))
+                .withHeader("Authorization", equalTo("Bearer " + kakaoAccessToken)));
+    }
+
+    @Test
+    @DisplayName("카카오 로그인 성공 - 기존 회원 로그인")
+    void kakaoLogin_Success_ExistingUser() throws Exception {
+        // Given: 기존 사용자 생성
+        User existingUser = User.createSocialUser(SocialType.KAKAO, "12345", "existing@kakao.com", "test.png");
+        existingUser.updateUser("테스트", "existing@kakao.com", "테스트 사용자입니다.");
+        userRepository.save(existingUser);
+
+        // WireMock으로 카카오 API 응답 모킹
+        String kakaoAccessToken = "valid.kakao.access.token";
+        String kakaoApiResponse = """
+                {
+                    "id": 12345,
+                    "kakao_account": {
+                        "email": "existing@kakao.com",
+                        "profile": {
+                            "profile_image_url": "https://example.com/profile.jpg"
+                        }
+                    }
+                }
+                """;
+
+        stubFor(get(urlEqualTo("/v2/user/me"))
+                .withHeader("Authorization", equalTo("Bearer " + kakaoAccessToken))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(kakaoApiResponse)));
+
+        KakaoLoginRequest request = new KakaoLoginRequest(kakaoAccessToken);
+
+        // When & Then
+        mockMvc.perform(post("/api/v1/auth/kakao/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isSuccess").value(true))
+                .andExpect(jsonPath("$.data.accessToken").exists())
+                .andExpect(jsonPath("$.data.userId").exists())
+                .andExpect(jsonPath("$.data.isRegistered").value(true)); // 기존 회원
+
+        // WireMock 호출 검증
+        verify(getRequestedFor(urlEqualTo("/v2/user/me"))
+                .withHeader("Authorization", equalTo("Bearer " + kakaoAccessToken)));
+    }
+
+    @Test
+    @DisplayName("카카오 로그인 실패 - 잘못된 액세스 토큰")
+    void kakaoLogin_Fail_InvalidAccessToken() throws Exception {
+        // Given: WireMock으로 카카오 API 에러 응답 모킹
+        String invalidAccessToken = "invalid.kakao.access.token";
+
+        stubFor(get(urlEqualTo("/v2/user/me"))
+                .withHeader("Authorization", equalTo("Bearer " + invalidAccessToken))
+                .willReturn(aResponse()
+                        .withStatus(401)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"msg\":\"Invalid access token\"}")));
+
+        KakaoLoginRequest request = new KakaoLoginRequest(invalidAccessToken);
+
+        // When & Then
+        mockMvc.perform(post("/api/v1/auth/kakao/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.isSuccess").value(false))
+                .andExpect(jsonPath("$.code").value(AuthErrorCode.INVALID_KAKAO_ACCESS_TOKEN.getReason().code()));
+
+        // WireMock 호출 검증
+        verify(getRequestedFor(urlEqualTo("/v2/user/me"))
+                .withHeader("Authorization", equalTo("Bearer " + invalidAccessToken)));
+    }
+
+    @Test
+    @DisplayName("카카오 로그인 실패 - 카카오 API 장애")
+    void kakaoLogin_Fail_KakaoApiError() throws Exception {
+        // Given: WireMock으로 카카오 API 장애 응답 모킹
+        String kakaoAccessToken = "valid.kakao.access.token";
+
+        stubFor(get(urlEqualTo("/v2/user/me"))
+                .withHeader("Authorization", equalTo("Bearer " + kakaoAccessToken))
+                .willReturn(aResponse()
+                        .withStatus(500)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"msg\":\"Internal server error\"}")));
+
+        KakaoLoginRequest request = new KakaoLoginRequest(kakaoAccessToken);
+
+        // When & Then
+        mockMvc.perform(post("/api/v1/auth/kakao/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.isSuccess").value(false))
+                .andExpect(jsonPath("$.code").value(AuthErrorCode.INVALID_KAKAO_ACCESS_TOKEN.getReason().code()));
+
+        // WireMock 호출 검증
+        verify(getRequestedFor(urlEqualTo("/v2/user/me"))
+                .withHeader("Authorization", equalTo("Bearer " + kakaoAccessToken)));
     }
 }
