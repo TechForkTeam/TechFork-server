@@ -77,4 +77,8 @@ public class User extends BaseTimeEntity {
         this.description = description;
         this.status = UserStatus.ACTIVE;
     }
+
+    public boolean isActive() {
+        return status == UserStatus.ACTIVE;
+    }
 }
