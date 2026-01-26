@@ -1,10 +1,12 @@
 package com.techfork.domain.user.controller;
 
 import com.techfork.domain.user.dto.SaveInterestRequest;
+import com.techfork.domain.user.dto.UpdateUserProfileRequest;
 import com.techfork.domain.user.dto.UserInterestResponse;
 import com.techfork.domain.user.dto.UserProfileResponse;
 import com.techfork.domain.user.service.InterestCommandService;
 import com.techfork.domain.user.service.InterestQueryService;
+import com.techfork.domain.user.service.UserCommandService;
 import com.techfork.domain.user.service.UserQueryService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
@@ -27,6 +29,7 @@ public class UserController {
 
     private final InterestCommandService interestCommandService;
     private final InterestQueryService interestQueryService;
+    private final UserCommandService userCommandService;
     private final UserQueryService userQueryService;
 
     @Operation(
@@ -52,6 +55,19 @@ public class UserController {
     ) {
         UserInterestResponse response = interestQueryService.getUserInterests(userPrincipal.getId());
         return BaseResponse.of(SuccessCode.OK, response);
+    }
+
+    @Operation(
+            summary = "내 프로필 수정",
+            description = "현재 로그인한 사용자의 프로필 정보를 수정합니다. 닉네임과 자기소개를 선택적으로 수정할 수 있습니다."
+    )
+    @PatchMapping("/me/profile")
+    public ResponseEntity<BaseResponse<Void>> updateMyProfile(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @RequestBody UpdateUserProfileRequest request
+    ) {
+        userCommandService.updateUserProfile(userPrincipal.getId(), request);
+        return BaseResponse.of(SuccessCode.OK);
     }
 
     @Operation(
