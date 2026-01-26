@@ -1,0 +1,11 @@
+package com.techfork.domain.auth.dto;
+
+import lombok.Builder;
+
+@Builder
+public record KakaoLoginResponse(
+        String accessToken,
+        Long userId,
+        Boolean isRegistered
+) {
+}
