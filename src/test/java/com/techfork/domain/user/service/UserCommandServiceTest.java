@@ -2,18 +2,21 @@ package com.techfork.domain.user.service;
 
 import com.techfork.domain.user.dto.OnboardingRequest;
 import com.techfork.domain.user.dto.SaveInterestRequest;
+import com.techfork.domain.user.dto.UpdateUserProfileRequest;
 import com.techfork.domain.user.dto.UserInterestDto;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.exception.UserErrorCode;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.exception.GeneralException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -179,5 +182,102 @@ class UserCommandServiceTest {
         // Then
         assertThat(mockUser.getNickName()).isEqualTo("풀스택개발자");
         verify(interestCommandService, times(1)).saveUserInterests(eq(mockUser), any(SaveInterestRequest.class));
+    }
+
+    // ===== 프로필 수정 테스트 =====
+
+    private User testUser;
+    private Long userId;
+
+    @BeforeEach
+    void setUp() {
+        userId = 1L;
+        testUser = User.createSocialUser(SocialType.KAKAO, "socialId123", "test@example.com", "profile.jpg");
+        testUser.updateUser("테스트유저", "test@example.com", "백엔드 개발자입니다.");
+        ReflectionTestUtils.setField(testUser, "id", userId);
+    }
+
+    @Test
+    @DisplayName("프로필 수정 성공 - 닉네임만 수정")
+    void updateUserProfile_Success_OnlyNickName() {
+        // Given
+        UpdateUserProfileRequest request = new UpdateUserProfileRequest("새로운닉네임", null);
+        given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+
+        // When
+        userCommandService.updateUserProfile(userId, request);
+
+        // Then
+        assertThat(testUser.getNickName()).isEqualTo("새로운닉네임");
+        assertThat(testUser.getDescription()).isEqualTo("백엔드 개발자입니다."); // 변경되지 않음
+
+        verify(userRepository).findById(userId);
+    }
+
+    @Test
+    @DisplayName("프로필 수정 성공 - 자기소개만 수정")
+    void updateUserProfile_Success_OnlyDescription() {
+        // Given
+        UpdateUserProfileRequest request = new UpdateUserProfileRequest(null, "새로운 자기소개");
+        given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+
+        // When
+        userCommandService.updateUserProfile(userId, request);
+
+        // Then
+        assertThat(testUser.getNickName()).isEqualTo("테스트유저"); // 변경되지 않음
+        assertThat(testUser.getDescription()).isEqualTo("새로운 자기소개");
+
+        verify(userRepository).findById(userId);
+    }
+
+    @Test
+    @DisplayName("프로필 수정 성공 - 닉네임과 자기소개 모두 수정")
+    void updateUserProfile_Success_BothFields() {
+        // Given
+        UpdateUserProfileRequest request = new UpdateUserProfileRequest("새닉네임", "새 자기소개");
+        given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+
+        // When
+        userCommandService.updateUserProfile(userId, request);
+
+        // Then
+        assertThat(testUser.getNickName()).isEqualTo("새닉네임");
+        assertThat(testUser.getDescription()).isEqualTo("새 자기소개");
+
+        verify(userRepository).findById(userId);
+    }
+
+    @Test
+    @DisplayName("프로필 수정 성공 - 아무것도 수정하지 않음")
+    void updateUserProfile_Success_NoChanges() {
+        // Given
+        UpdateUserProfileRequest request = new UpdateUserProfileRequest(null, null);
+        given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+
+        // When
+        userCommandService.updateUserProfile(userId, request);
+
+        // Then
+        assertThat(testUser.getNickName()).isEqualTo("테스트유저"); // 변경되지 않음
+        assertThat(testUser.getDescription()).isEqualTo("백엔드 개발자입니다."); // 변경되지 않음
+
+        verify(userRepository).findById(userId);
+    }
+
+    @Test
+    @DisplayName("프로필 수정 실패 - 사용자를 찾을 수 없음")
+    void updateUserProfile_Fail_UserNotFound() {
+        // Given
+        UpdateUserProfileRequest request = new UpdateUserProfileRequest("새닉네임", "새 자기소개");
+        given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> userCommandService.updateUserProfile(userId, request))
+                .isInstanceOf(GeneralException.class)
+                .extracting(ex -> ((GeneralException) ex).getCode())
+                .isEqualTo(UserErrorCode.USER_NOT_FOUND);
+
+        verify(userRepository).findById(userId);
     }
 }
