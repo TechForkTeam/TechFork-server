@@ -78,6 +78,15 @@ public class User extends BaseTimeEntity {
         this.status = UserStatus.ACTIVE;
     }
 
+    public void updateProfile(String nickName, String description) {
+        if (nickName != null) {
+            this.nickName = nickName;
+        }
+        if (description != null) {
+            this.description = description;
+        }
+    }
+
     public boolean isActive() {
         return status == UserStatus.ACTIVE;
     }
