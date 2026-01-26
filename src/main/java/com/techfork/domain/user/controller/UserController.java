@@ -2,8 +2,10 @@ package com.techfork.domain.user.controller;
 
 import com.techfork.domain.user.dto.SaveInterestRequest;
 import com.techfork.domain.user.dto.UserInterestResponse;
+import com.techfork.domain.user.dto.UserProfileResponse;
 import com.techfork.domain.user.service.InterestCommandService;
 import com.techfork.domain.user.service.InterestQueryService;
+import com.techfork.domain.user.service.UserQueryService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import com.techfork.global.security.oauth.UserPrincipal;
@@ -25,6 +27,7 @@ public class UserController {
 
     private final InterestCommandService interestCommandService;
     private final InterestQueryService interestQueryService;
+    private final UserQueryService userQueryService;
 
     @Operation(
             summary = "내 관심사 수정",
@@ -48,6 +51,18 @@ public class UserController {
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         UserInterestResponse response = interestQueryService.getUserInterests(userPrincipal.getId());
+        return BaseResponse.of(SuccessCode.OK, response);
+    }
+
+    @Operation(
+            summary = "내 프로필 조회",
+            description = "현재 로그인한 사용자의 프로필 정보를 조회합니다. (프로필 이미지, 닉네임, 이메일, 자기소개)"
+    )
+    @GetMapping("/me/profile")
+    public ResponseEntity<BaseResponse<UserProfileResponse>> getMyProfile(
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+    ) {
+        UserProfileResponse response = userQueryService.getUserProfile(userPrincipal.getId());
         return BaseResponse.of(SuccessCode.OK, response);
     }
 }
