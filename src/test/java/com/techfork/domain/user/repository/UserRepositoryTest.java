@@ -209,6 +209,90 @@ class UserRepositoryTest {
     }
 
     @Test
+    @DisplayName("findActiveUsersSince - 탈퇴한 회원은 제외")
+    void findActiveUsersSince_ExcludesWithdrawnUsers() {
+        // Given: 활성 유저와 탈퇴 유저 생성
+        User activeUser = User.createSocialUser(SocialType.KAKAO, "activeSocialId", "active@example.com", null);
+        activeUser = userRepository.save(activeUser);
+
+        User withdrawnUser = User.createSocialUser(SocialType.KAKAO, "withdrawnSocialId", "withdrawn@example.com", null);
+        withdrawnUser.updateUser("탈퇴유저", "withdrawn@example.com", "개발자였습니다.");
+        withdrawnUser.withdraw(); // 탈퇴 처리
+        withdrawnUser = userRepository.save(withdrawnUser);
+
+        LocalDateTime since = LocalDateTime.now().minusDays(7);
+        Post post = createPost();
+
+        // 두 유저 모두 최근 활동이 있음
+        ReadPost activeUserRead = ReadPost.create(activeUser, post, LocalDateTime.now(), 100);
+        ReadPost withdrawnUserRead = ReadPost.create(withdrawnUser, post, LocalDateTime.now(), 100);
+        readPostRepository.saveAll(List.of(activeUserRead, withdrawnUserRead));
+
+        // When: 최근 활동한 유저 조회
+        List<User> activeUsers = userRepository.findActiveUsersSince(since);
+
+        // Then: 탈퇴한 유저는 제외되고 활성 유저만 조회
+        assertThat(activeUsers).hasSize(1);
+        assertThat(activeUsers.get(0).getId()).isEqualTo(activeUser.getId());
+        assertThat(activeUsers).extracting(User::getId).doesNotContain(withdrawnUser.getId());
+    }
+
+    @Test
+    @DisplayName("findActiveUsersSince - 탈퇴 회원만 있으면 빈 리스트 반환")
+    void findActiveUsersSince_OnlyWithdrawnUsers_ReturnsEmpty() {
+        // Given: 탈퇴한 유저만 생성
+        testUser.withdraw();
+        userRepository.save(testUser);
+
+        LocalDateTime since = LocalDateTime.now().minusDays(7);
+        Post post = createPost();
+
+        // 탈퇴한 유저에게 최근 활동 기록 추가
+        ReadPost readPost = ReadPost.create(testUser, post, LocalDateTime.now(), 100);
+        readPostRepository.save(readPost);
+
+        // When
+        List<User> activeUsers = userRepository.findActiveUsersSince(since);
+
+        // Then: 탈퇴 회원은 제외되므로 빈 리스트
+        assertThat(activeUsers).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findActiveUsersSince - 여러 유저 중 일부만 탈퇴한 경우")
+    void findActiveUsersSince_MixedWithdrawnAndActiveUsers() {
+        // Given: 3명의 유저 (1명 탈퇴, 2명 활성)
+        User user1 = User.createSocialUser(SocialType.KAKAO, "user1", "user1@example.com", null);
+        user1 = userRepository.save(user1);
+
+        User user2 = User.createSocialUser(SocialType.KAKAO, "user2", "user2@example.com", null);
+        user2 = userRepository.save(user2);
+
+        User user3Withdrawn = User.createSocialUser(SocialType.KAKAO, "user3", "user3@example.com", null);
+        user3Withdrawn.withdraw(); // 탈퇴
+        user3Withdrawn = userRepository.save(user3Withdrawn);
+
+        LocalDateTime since = LocalDateTime.now().minusDays(7);
+        Post post = createPost();
+
+        // 3명 모두 최근 활동 있음
+        readPostRepository.saveAll(List.of(
+                ReadPost.create(user1, post, LocalDateTime.now(), 100),
+                ReadPost.create(user2, post, LocalDateTime.now(), 100),
+                ReadPost.create(user3Withdrawn, post, LocalDateTime.now(), 100)
+        ));
+
+        // When
+        List<User> activeUsers = userRepository.findActiveUsersSince(since);
+
+        // Then: 활성 회원 2명만 조회
+        assertThat(activeUsers).hasSize(2);
+        assertThat(activeUsers).extracting(User::getId)
+                .containsExactlyInAnyOrder(user1.getId(), user2.getId())
+                .doesNotContain(user3Withdrawn.getId());
+    }
+
+    @Test
     @DisplayName("findAllWithInterestCategoriesByIds - 여러 유저를 관심사와 함께 조회")
     void findAllWithInterestCategoriesByIds_Success() {
         // Given: 두 번째 유저 생성
