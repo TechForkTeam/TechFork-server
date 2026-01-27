@@ -2,11 +2,14 @@ package com.techfork.domain.activity.service;
 
 import com.techfork.domain.activity.dto.BookmarkRequest;
 import com.techfork.domain.activity.dto.ReadPostRequest;
+import com.techfork.domain.activity.dto.SearchHistoryRequest;
 import com.techfork.domain.activity.entity.ReadPost;
 import com.techfork.domain.activity.entity.ScrabPost;
+import com.techfork.domain.activity.entity.SearchHistory;
 import com.techfork.domain.activity.exception.ActivityErrorCode;
 import com.techfork.domain.activity.repository.ReadPostRepository;
 import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.repository.SearchHistoryRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.exception.PostErrorCode;
 import com.techfork.domain.post.repository.PostRepository;
@@ -45,6 +48,9 @@ class ActivityCommandServiceTest {
 
     @Mock
     private ScrabPostRepository scrabPostRepository;
+
+    @Mock
+    private SearchHistoryRepository searchHistoryRepository;
 
     @InjectMocks
     private ActivityCommandService activityCommandService;
@@ -341,4 +347,45 @@ class ActivityCommandServiceTest {
         verify(postRepository, times(1)).findById(postId);
         verify(readPostRepository, never()).save(any());
     }
+
+    // ===== 검색 히스토리 테스트 =====
+
+    @Test
+    @DisplayName("검색 히스토리 저장 성공")
+    void saveSearchHistory_Success() {
+        // Given
+        Long userId = 1L;
+        String searchWord = "Spring Boot";
+        LocalDateTime searchedAt = LocalDateTime.now();
+        SearchHistoryRequest request = new SearchHistoryRequest(searchWord, searchedAt);
+
+        User mockUser = mock(User.class);
+        given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
+        given(searchHistoryRepository.save(any(SearchHistory.class))).willReturn(mock(SearchHistory.class));
+
+        // When
+        activityCommandService.saveSearchHistory(userId, request);
+
+        // Then
+        verify(userRepository, times(1)).findById(userId);
+        verify(searchHistoryRepository, times(1)).save(any(SearchHistory.class));
+    }
+
+    @Test
+    @DisplayName("검색 히스토리 저장 실패 - 존재하지 않는 사용자")
+    void saveSearchHistory_Fail_UserNotFound() {
+        // Given
+        Long userId = 999L;
+        SearchHistoryRequest request = new SearchHistoryRequest("Spring Boot", LocalDateTime.now());
+
+        given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> activityCommandService.saveSearchHistory(userId, request))
+                .isInstanceOf(GeneralException.class)
+                .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
+
+        verify(searchHistoryRepository, never()).save(any());
+    }
+
 }
