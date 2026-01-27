@@ -47,6 +47,14 @@ public class CustomOAuth2UserService extends OidcUserService {
 
     private User getOrCreateUser(SocialType socialType, String socialId, String email, String profileImage) {
         return userRepository.findBySocialTypeAndSocialId(socialType, socialId)
+                .map(user -> {
+                    if (user.isWithdrawn()) {
+                        log.info("Withdrawn user re-registering - userId: {}, email: {}", user.getId(), email);
+                        user.reactivate(email, profileImage);
+                        return user;
+                    }
+                    return user;
+                })
                 .orElseGet(() -> {
                     User newUser = User.createSocialUser(socialType, socialId, email, profileImage);
                     User savedUser = userRepository.save(newUser);

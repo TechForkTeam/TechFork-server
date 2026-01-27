@@ -102,4 +102,10 @@ public class User extends BaseTimeEntity {
         this.profileImage = null;
         this.description = null;
     }
+
+    public void reactivate(String email, String profileImage) {
+        this.email = email;
+        this.profileImage = profileImage;
+        this.status = UserStatus.PENDING;
+    }
 }
