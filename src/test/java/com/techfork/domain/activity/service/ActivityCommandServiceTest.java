@@ -12,6 +12,7 @@ import com.techfork.domain.post.exception.PostErrorCode;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.user.entity.User;
+import com.techfork.domain.user.exception.UserErrorCode;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.exception.GeneralException;
 import org.junit.jupiter.api.DisplayName;
@@ -229,5 +230,74 @@ class ActivityCommandServiceTest {
                 .hasFieldOrPropertyWithValue("code", PostErrorCode.POST_NOT_FOUND);
 
         verify(scrabPostRepository, never()).save(any());
+    }
+
+    // ===== 북마크 삭제 테스트 =====
+
+    @Test
+    @DisplayName("북마크 삭제 성공")
+    void deleteBookmark_Success() {
+        // Given
+        Long userId = 1L;
+        Long postId = 100L;
+        BookmarkRequest request = new BookmarkRequest(postId);
+
+        User mockUser = mock(User.class);
+        Post mockPost = mock(Post.class);
+        ScrabPost mockScrabPost = mock(ScrabPost.class);
+
+        given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
+        given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
+        given(scrabPostRepository.findByUserAndPost(mockUser, mockPost)).willReturn(Optional.of(mockScrabPost));
+
+        // When
+        activityCommandService.deleteBookmark(userId, request);
+
+        // Then
+        verify(userRepository, times(1)).findById(userId);
+        verify(postRepository, times(1)).findById(postId);
+        verify(scrabPostRepository, times(1)).findByUserAndPost(mockUser, mockPost);
+        verify(scrabPostRepository, times(1)).delete(mockScrabPost);
+    }
+
+    @Test
+    @DisplayName("북마크 삭제 실패 - 북마크가 존재하지 않음")
+    void deleteBookmark_Fail_NotFound() {
+        // Given
+        Long userId = 1L;
+        Long postId = 100L;
+        BookmarkRequest request = new BookmarkRequest(postId);
+
+        User mockUser = mock(User.class);
+        Post mockPost = mock(Post.class);
+
+        given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
+        given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
+        given(scrabPostRepository.findByUserAndPost(mockUser, mockPost)).willReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> activityCommandService.deleteBookmark(userId, request))
+                .isInstanceOf(GeneralException.class)
+                .hasFieldOrPropertyWithValue("code", ActivityErrorCode.BOOKMARK_NOT_FOUND);
+
+        verify(scrabPostRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("북마크 삭제 실패 - 존재하지 않는 사용자")
+    void deleteBookmark_Fail_UserNotFound() {
+        // Given
+        Long userId = 999L;
+        Long postId = 100L;
+        BookmarkRequest request = new BookmarkRequest(postId);
+
+        given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> activityCommandService.deleteBookmark(userId, request))
+                .isInstanceOf(GeneralException.class)
+                .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
+
+        verify(scrabPostRepository, never()).delete(any());
     }
 }
