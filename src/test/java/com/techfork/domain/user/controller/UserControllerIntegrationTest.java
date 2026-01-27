@@ -20,8 +20,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -237,5 +236,33 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data.description").value("변경된 자기소개"))
                 .andExpect(jsonPath("$.data.email").value("test@example.com")) // 변경되지 않음
                 .andExpect(jsonPath("$.data.profileImage").value("profile.jpg")); // 변경되지 않음
+    }
+
+    // ===== 회원 탈퇴 테스트 =====
+
+    @Test
+    @DisplayName("회원 탈퇴 성공")
+    void withdrawUser_Success() throws Exception {
+        // When
+        mockMvc.perform(patch("/api/v1/users/me/withdrawal")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isSuccess").value(true));
+
+        // Then - DB에서 탈퇴 상태 및 개인정보 익명화 확인
+        User withdrawnUser = userRepository.findById(testUser.getId()).orElseThrow();
+        assertThat(withdrawnUser.getStatus()).isEqualTo(UserStatus.WITHDRAWN);
+        assertThat(withdrawnUser.isWithdrawn()).isTrue();
+
+        // 개인정보 익명화 확인
+        assertThat(withdrawnUser.getNickName()).isNull();
+        assertThat(withdrawnUser.getEmail()).isNull();
+        assertThat(withdrawnUser.getProfileImage()).isNull();
+        assertThat(withdrawnUser.getDescription()).isNull();
+
+        // socialId는 유지 (재가입 시 사용)
+        assertThat(withdrawnUser.getSocialId()).isEqualTo("testSocialId");
+        assertThat(withdrawnUser.getSocialType()).isEqualTo(SocialType.KAKAO);
     }
 }
