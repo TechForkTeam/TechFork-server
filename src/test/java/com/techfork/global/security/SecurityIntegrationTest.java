@@ -212,6 +212,22 @@ class SecurityIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    @DisplayName("403 - 탈퇴한 회원의 토큰으로 API 접근")
+    void forbidden_WithdrawnUserAccessAPI() throws Exception {
+        // Given - 회원 탈퇴 처리
+        testUser.withdraw();
+        userRepository.save(testUser);
+
+        // When & Then - 탈퇴 회원 토큰으로 접근 시 403 FORBIDDEN
+        mockMvc.perform(get("/api/v1/users/me/profile")
+                        .header("Authorization", "Bearer " + validAccessToken))
+                .andDo(print())
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.isSuccess").value(false))
+                .andExpect(jsonPath("$.code").value("AUTH403_WITHDRAWN"));
+    }
+
+    @Test
     @DisplayName("200 - 관리자가 관리자 전용 엔드포인트 접근 (정상)")
     void success_AdminAccessAdminEndpoint() throws Exception {
         // When & Then - 관리자 토큰으로 접근 시 정상 처리

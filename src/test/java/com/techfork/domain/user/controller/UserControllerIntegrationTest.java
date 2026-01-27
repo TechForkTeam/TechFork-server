@@ -20,8 +20,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -78,25 +77,6 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data.nickName").value("테스트유저"))
                 .andExpect(jsonPath("$.data.email").value("test@example.com"))
                 .andExpect(jsonPath("$.data.description").value("백엔드 개발자입니다."));
-    }
-
-    @Test
-    @DisplayName("내 프로필 조회 실패 - 인증 토큰 없음")
-    void getMyProfile_Fail_NoAuthToken() throws Exception {
-        // When & Then
-        mockMvc.perform(get("/api/v1/users/me/profile"))
-                .andDo(print())
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @DisplayName("내 프로필 조회 실패 - 유효하지 않은 토큰")
-    void getMyProfile_Fail_InvalidToken() throws Exception {
-        // When & Then
-        mockMvc.perform(get("/api/v1/users/me/profile")
-                        .header("Authorization", "Bearer invalid.token.here"))
-                .andDo(print())
-                .andExpect(status().isUnauthorized());
     }
 
     // ===== 프로필 수정 테스트 =====
@@ -186,35 +166,6 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    @DisplayName("내 프로필 수정 실패 - 인증 토큰 없음")
-    void updateMyProfile_Fail_NoAuthToken() throws Exception {
-        // Given
-        UpdateUserProfileRequest request = new UpdateUserProfileRequest("새닉네임", "새 소개");
-
-        // When & Then
-        mockMvc.perform(patch("/api/v1/users/me/profile")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andDo(print())
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @DisplayName("내 프로필 수정 실패 - 유효하지 않은 토큰")
-    void updateMyProfile_Fail_InvalidToken() throws Exception {
-        // Given
-        UpdateUserProfileRequest request = new UpdateUserProfileRequest("새닉네임", "새 소개");
-
-        // When & Then
-        mockMvc.perform(patch("/api/v1/users/me/profile")
-                        .header("Authorization", "Bearer invalid.token.here")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andDo(print())
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
     @DisplayName("프로필 수정 후 조회 - 변경사항 반영 확인")
     void updateAndGetProfile_Success() throws Exception {
         // Given
@@ -237,5 +188,33 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data.description").value("변경된 자기소개"))
                 .andExpect(jsonPath("$.data.email").value("test@example.com")) // 변경되지 않음
                 .andExpect(jsonPath("$.data.profileImage").value("profile.jpg")); // 변경되지 않음
+    }
+
+    // ===== 회원 탈퇴 테스트 =====
+
+    @Test
+    @DisplayName("회원 탈퇴 성공")
+    void withdrawUser_Success() throws Exception {
+        // When
+        mockMvc.perform(patch("/api/v1/users/me/withdrawal")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isSuccess").value(true));
+
+        // Then - DB에서 탈퇴 상태 및 개인정보 익명화 확인
+        User withdrawnUser = userRepository.findById(testUser.getId()).orElseThrow();
+        assertThat(withdrawnUser.getStatus()).isEqualTo(UserStatus.WITHDRAWN);
+        assertThat(withdrawnUser.isWithdrawn()).isTrue();
+
+        // 개인정보 익명화 확인
+        assertThat(withdrawnUser.getNickName()).isNull();
+        assertThat(withdrawnUser.getEmail()).isNull();
+        assertThat(withdrawnUser.getProfileImage()).isNull();
+        assertThat(withdrawnUser.getDescription()).isNull();
+
+        // socialId는 유지 (재가입 시 사용)
+        assertThat(withdrawnUser.getSocialId()).isEqualTo("testSocialId");
+        assertThat(withdrawnUser.getSocialType()).isEqualTo(SocialType.KAKAO);
     }
 }

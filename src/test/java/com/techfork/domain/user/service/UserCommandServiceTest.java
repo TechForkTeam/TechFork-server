@@ -280,4 +280,64 @@ class UserCommandServiceTest {
 
         verify(userRepository).findById(userId);
     }
+
+    // ===== 회원 탈퇴 테스트 =====
+
+    @Test
+    @DisplayName("회원 탈퇴 성공 - 개인정보 익명화 확인")
+    void withdrawUser_Success() {
+        // Given
+        given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+
+        String originalSocialId = testUser.getSocialId();
+
+        // When
+        userCommandService.withdrawUser(userId);
+
+        // Then
+        assertThat(testUser.getStatus()).isEqualTo(com.techfork.domain.user.enums.UserStatus.WITHDRAWN);
+        assertThat(testUser.isWithdrawn()).isTrue();
+
+        // 개인정보 익명화 확인
+        assertThat(testUser.getNickName()).isNull();
+        assertThat(testUser.getEmail()).isNull();
+        assertThat(testUser.getProfileImage()).isNull();
+        assertThat(testUser.getDescription()).isNull();
+
+        // socialId는 유지
+        assertThat(testUser.getSocialId()).isEqualTo(originalSocialId);
+
+        verify(userRepository).findById(userId);
+    }
+
+    @Test
+    @DisplayName("회원 탈퇴 실패 - 사용자를 찾을 수 없음")
+    void withdrawUser_Fail_UserNotFound() {
+        // Given
+        given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> userCommandService.withdrawUser(userId))
+                .isInstanceOf(GeneralException.class)
+                .extracting(ex -> ((GeneralException) ex).getCode())
+                .isEqualTo(UserErrorCode.USER_NOT_FOUND);
+
+        verify(userRepository).findById(userId);
+    }
+
+    @Test
+    @DisplayName("회원 탈퇴 실패 - 이미 탈퇴한 회원")
+    void withdrawUser_Fail_AlreadyWithdrawn() {
+        // Given
+        testUser.withdraw(); // 이미 탈퇴 처리
+        given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+
+        // When & Then
+        assertThatThrownBy(() -> userCommandService.withdrawUser(userId))
+                .isInstanceOf(GeneralException.class)
+                .extracting(ex -> ((GeneralException) ex).getCode())
+                .isEqualTo(UserErrorCode.ALREADY_WITHDRAWN);
+
+        verify(userRepository).findById(userId);
+    }
 }

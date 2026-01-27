@@ -90,4 +90,22 @@ public class User extends BaseTimeEntity {
     public boolean isActive() {
         return status == UserStatus.ACTIVE;
     }
+
+    public boolean isWithdrawn() {
+        return status == UserStatus.WITHDRAWN;
+    }
+
+    public void withdraw() {
+        this.status = UserStatus.WITHDRAWN;
+        this.nickName = null;
+        this.email = null;
+        this.profileImage = null;
+        this.description = null;
+    }
+
+    public void reactivate(String email, String profileImage) {
+        this.email = email;
+        this.profileImage = profileImage;
+        this.status = UserStatus.PENDING;
+    }
 }

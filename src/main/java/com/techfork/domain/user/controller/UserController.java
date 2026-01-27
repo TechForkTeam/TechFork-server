@@ -81,4 +81,16 @@ public class UserController {
         UserProfileResponse response = userQueryService.getUserProfile(userPrincipal.getId());
         return BaseResponse.of(SuccessCode.OK, response);
     }
+
+    @Operation(
+            summary = "회원 탈퇴",
+            description = "현재 로그인한 사용자의 계정을 탈퇴 처리합니다. 개인정보는 즉시 익명화되며, 활동 기록은 통계 목적으로 유지됩니다. 탈퇴 후 동일한 소셜 계정으로 재가입 시 새로운 회원으로 온보딩부터 다시 시작합니다."
+    )
+    @PatchMapping("/me/withdrawal")
+    public ResponseEntity<BaseResponse<Void>> withdrawUser(
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+    ) {
+        userCommandService.withdrawUser(userPrincipal.getId());
+        return BaseResponse.of(SuccessCode.OK);
+    }
 }

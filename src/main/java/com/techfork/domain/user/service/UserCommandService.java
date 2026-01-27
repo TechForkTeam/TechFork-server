@@ -42,4 +42,17 @@ public class UserCommandService {
                 request.nickName() != null ? "updated" : "unchanged",
                 request.description() != null ? "updated" : "unchanged");
     }
+
+    public void withdrawUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
+
+        if (user.isWithdrawn()) {
+            throw new GeneralException(UserErrorCode.ALREADY_WITHDRAWN);
+        }
+
+        user.withdraw();
+
+        log.info("User withdrawn - userId: {}, status changed to WITHDRAWN and personal data anonymized", userId);
+    }
 }

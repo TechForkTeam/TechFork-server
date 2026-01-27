@@ -24,16 +24,18 @@ public interface UserRepository extends JpaRepository<User, Long> {
     /**
      * 최근 특정 시간 이후 활동한 사용자 조회
      * (읽은 포스트, 스크랩, 검색 기록 중 하나라도 있으면 활성 사용자)
+     * 탈퇴한 사용자는 제외
      */
     @Query("""
             SELECT DISTINCT u FROM User u
-            WHERE EXISTS (
+            WHERE u.status != 'WITHDRAWN'
+            AND (EXISTS (
                 SELECT 1 FROM ReadPost rp WHERE rp.user = u AND rp.readAt >= :since
             ) OR EXISTS (
                 SELECT 1 FROM ScrabPost sp WHERE sp.user = u AND sp.scrappedAt >= :since
             ) OR EXISTS (
                 SELECT 1 FROM SearchHistory sh WHERE sh.user = u AND sh.searchedAt >= :since
-            )
+            ))
             """)
     List<User> findActiveUsersSince(@Param("since") LocalDateTime since);
 
