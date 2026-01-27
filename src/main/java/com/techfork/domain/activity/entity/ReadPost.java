@@ -13,12 +13,7 @@ import org.springframework.data.annotation.PersistenceCreator;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(
-        name = "read_posts",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"user_id", "post_id"})
-        }
-)
+@Table(name = "read_posts")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ReadPost extends BaseEntity {

@@ -105,4 +105,23 @@ class ReadPostRepositoryTest {
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getReadDurationSeconds()).isNull();
     }
+
+    @Test
+    @DisplayName("같은 게시글 중복 저장 가능 - unique 제약조건 없음")
+    void saveDuplicateReadPost_Success() {
+        // Given
+        ReadPost readPost1 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(1), 100);
+        ReadPost readPost2 = ReadPost.create(testUser, testPost1, LocalDateTime.now(), 200);
+
+        // When
+        readPostRepository.save(readPost1);
+        readPostRepository.save(readPost2);
+        readPostRepository.flush();
+
+        // Then
+        List<ReadPost> all = readPostRepository.findAll();
+        assertThat(all).hasSize(2);
+        assertThat(all).allMatch(rp -> rp.getPost().getId().equals(testPost1.getId()));
+        assertThat(all).allMatch(rp -> rp.getUser().getId().equals(testUser.getId()));
+    }
 }
