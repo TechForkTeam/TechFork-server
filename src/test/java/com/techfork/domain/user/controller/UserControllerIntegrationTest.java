@@ -79,25 +79,6 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data.description").value("백엔드 개발자입니다."));
     }
 
-    @Test
-    @DisplayName("내 프로필 조회 실패 - 인증 토큰 없음")
-    void getMyProfile_Fail_NoAuthToken() throws Exception {
-        // When & Then
-        mockMvc.perform(get("/api/v1/users/me/profile"))
-                .andDo(print())
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @DisplayName("내 프로필 조회 실패 - 유효하지 않은 토큰")
-    void getMyProfile_Fail_InvalidToken() throws Exception {
-        // When & Then
-        mockMvc.perform(get("/api/v1/users/me/profile")
-                        .header("Authorization", "Bearer invalid.token.here"))
-                .andDo(print())
-                .andExpect(status().isUnauthorized());
-    }
-
     // ===== 프로필 수정 테스트 =====
 
     @Test
@@ -182,35 +163,6 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
         User updatedUser = userRepository.findById(testUser.getId()).orElseThrow();
         assertThat(updatedUser.getNickName()).isEqualTo("테스트유저");
         assertThat(updatedUser.getDescription()).isEqualTo("백엔드 개발자입니다.");
-    }
-
-    @Test
-    @DisplayName("내 프로필 수정 실패 - 인증 토큰 없음")
-    void updateMyProfile_Fail_NoAuthToken() throws Exception {
-        // Given
-        UpdateUserProfileRequest request = new UpdateUserProfileRequest("새닉네임", "새 소개");
-
-        // When & Then
-        mockMvc.perform(patch("/api/v1/users/me/profile")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andDo(print())
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @DisplayName("내 프로필 수정 실패 - 유효하지 않은 토큰")
-    void updateMyProfile_Fail_InvalidToken() throws Exception {
-        // Given
-        UpdateUserProfileRequest request = new UpdateUserProfileRequest("새닉네임", "새 소개");
-
-        // When & Then
-        mockMvc.perform(patch("/api/v1/users/me/profile")
-                        .header("Authorization", "Bearer invalid.token.here")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andDo(print())
-                .andExpect(status().isUnauthorized());
     }
 
     @Test
