@@ -55,6 +55,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 User user = userRepository.findById(userId)
                         .orElseThrow(() -> new GeneralException(AuthErrorCode.USER_NOT_FOUND));
 
+                if (user.isWithdrawn()) {
+                    throw new GeneralException(AuthErrorCode.WITHDRAWN_USER);
+                }
+
                 UserPrincipal userPrincipal = UserPrincipal.buildUserPrincipal(user);
                 UsernamePasswordAuthenticationToken authentication = createAuthentication(userPrincipal, request);
 
