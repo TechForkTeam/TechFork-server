@@ -300,4 +300,45 @@ class ActivityCommandServiceTest {
 
         verify(scrabPostRepository, never()).delete(any());
     }
+
+    @Test
+    @DisplayName("읽은 게시글 저장 실패 - 존재하지 않는 사용자")
+    void saveReadPost_Fail_UserNotFound() {
+        // Given
+        Long userId = 999L;
+        Long postId = 100L;
+        ReadPostRequest request = new ReadPostRequest(postId, LocalDateTime.now(), 300);
+
+        given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> activityCommandService.saveReadPost(userId, request))
+                .isInstanceOf(GeneralException.class)
+                .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
+
+        verify(userRepository, times(1)).findById(userId);
+        verify(postRepository, never()).findById(any());
+        verify(readPostRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("읽은 게시글 저장 실패 - 존재하지 않는 게시글")
+    void saveReadPost_Fail_PostNotFound() {
+        // Given
+        Long userId = 1L;
+        Long postId = 999L;
+        User mockUser = mock(User.class);
+        ReadPostRequest request = new ReadPostRequest(postId, LocalDateTime.now(), 300);
+
+        given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
+        given(postRepository.findById(postId)).willReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> activityCommandService.saveReadPost(userId, request))
+                .isInstanceOf(GeneralException.class)
+                .hasFieldOrPropertyWithValue("code", PostErrorCode.POST_NOT_FOUND);
+
+        verify(postRepository, times(1)).findById(postId);
+        verify(readPostRepository, never()).save(any());
+    }
 }
