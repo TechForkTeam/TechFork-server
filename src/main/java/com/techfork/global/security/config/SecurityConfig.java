@@ -7,6 +7,7 @@ import com.techfork.global.security.handler.exception.JwtAuthenticationEntryPoin
 import com.techfork.global.security.oauth.CustomOidcUserService;
 import com.techfork.global.security.handler.login.OAuth2AuthenticationFailureHandler;
 import com.techfork.global.security.handler.login.OAuth2AuthenticationSuccessHandler;
+import com.techfork.global.security.oauth.HttpCookieOAuth2AuthorizationRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,6 +36,7 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final AppleOAuth2Config appleOAuth2Config;
+    private final HttpCookieOAuth2AuthorizationRequestRepository cookieOAuth2AuthorizationRequestRepository;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -52,6 +54,9 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(authorization -> authorization
+                                .authorizationRequestRepository(cookieOAuth2AuthorizationRequestRepository)
+                        )
                         .tokenEndpoint(token -> token
                                 .accessTokenResponseClient(appleOAuth2Config.accessTokenResponseClient())
                         )
