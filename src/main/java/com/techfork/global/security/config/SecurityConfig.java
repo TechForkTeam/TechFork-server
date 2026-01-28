@@ -4,7 +4,7 @@ import com.techfork.global.constant.Constants;
 import com.techfork.global.security.filter.JwtAuthenticationFilter;
 import com.techfork.global.security.handler.exception.CustomAccessDeniedHandler;
 import com.techfork.global.security.handler.exception.JwtAuthenticationEntryPoint;
-import com.techfork.global.security.oauth.CustomOAuth2UserService;
+import com.techfork.global.security.oauth.CustomOidcUserService;
 import com.techfork.global.security.handler.login.OAuth2AuthenticationFailureHandler;
 import com.techfork.global.security.handler.login.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final CustomOAuth2UserService customOAuth2UserService;
+    private final CustomOidcUserService customOidcUserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -56,7 +56,7 @@ public class SecurityConfig {
                                 .accessTokenResponseClient(appleOAuth2Config.accessTokenResponseClient())
                         )
                         .userInfoEndpoint(userInfo -> userInfo
-                                .oidcUserService(customOAuth2UserService)
+                                .oidcUserService(customOidcUserService)
                         )
                         .successHandler(oAuth2AuthenticationSuccessHandler)
                         .failureHandler(oAuth2AuthenticationFailureHandler)
