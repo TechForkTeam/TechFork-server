@@ -166,39 +166,36 @@ class ActivityControllerIntegrationTest extends IntegrationTestBase {
         assertThat(updatedPost.getViewCount()).isEqualTo(initialViewCount + 1);
     }
 
-    // TODO: unique 제약조건 제거 후 활성화
-    // ReadPost 엔티티의 unique 제약조건(user_id, post_id)으로 인해 중복 저장 불가
-    // 제약조건 제거 이슈: feat/#164
-//    @Test
-//    @DisplayName("읽은 게시글 저장 성공 - 이미 읽은 경우 조회수 증가하지 않음")
-//    void saveReadPost_Success_AlreadyRead() throws Exception {
-//        // Given - 이미 읽은 기록 생성
-//        ReadPost existingReadPost = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(1), 200);
-//        readPostRepository.save(existingReadPost);
-//
-//        Long currentViewCount = testPost1.getViewCount();
-//        ReadPostRequest request = new ReadPostRequest(
-//                testPost1.getId(),
-//                LocalDateTime.now(),
-//                400
-//        );
-//
-//        // When & Then
-//        mockMvc.perform(post("/api/v1/activities/read-posts")
-//                        .header("Authorization", "Bearer " + accessToken)
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(objectMapper.writeValueAsString(request)))
-//                .andDo(print())
-//                .andExpect(status().isCreated())
-//                .andExpect(jsonPath("$.isSuccess").value(true));
-//
-//        // DB 검증 - 읽은 기록은 추가되지만 조회수는 증가하지 않음
-//        List<ReadPost> readPosts = readPostRepository.findAll();
-//        assertThat(readPosts).hasSize(2);
-//
-//        Post updatedPost = postRepository.findById(testPost1.getId()).orElseThrow();
-//        assertThat(updatedPost.getViewCount()).isEqualTo(currentViewCount);
-//    }
+    @Test
+    @DisplayName("읽은 게시글 저장 성공 - 이미 읽은 경우 조회수 증가하지 않음")
+    void saveReadPost_Success_AlreadyRead() throws Exception {
+        // Given - 이미 읽은 기록 생성
+        ReadPost existingReadPost = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(1), 200);
+        readPostRepository.save(existingReadPost);
+
+        Long currentViewCount = testPost1.getViewCount();
+        ReadPostRequest request = new ReadPostRequest(
+                testPost1.getId(),
+                LocalDateTime.now(),
+                400
+        );
+
+        // When & Then
+        mockMvc.perform(post("/api/v1/activities/read-posts")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.isSuccess").value(true));
+
+        // DB 검증 - 읽은 기록은 추가되지만 조회수는 증가하지 않음
+        List<ReadPost> readPosts = readPostRepository.findAll();
+        assertThat(readPosts).hasSize(2);
+
+        Post updatedPost = postRepository.findById(testPost1.getId()).orElseThrow();
+        assertThat(updatedPost.getViewCount()).isEqualTo(currentViewCount);
+    }
 
     @Test
     @DisplayName("읽은 게시글 저장 실패 - 존재하지 않는 게시글")
