@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CustomOAuth2UserService extends OidcUserService {
+public class CustomOidcUserService extends OidcUserService {
 
     private final UserRepository userRepository;
 

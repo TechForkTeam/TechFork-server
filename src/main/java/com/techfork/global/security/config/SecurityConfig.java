@@ -4,9 +4,10 @@ import com.techfork.global.constant.Constants;
 import com.techfork.global.security.filter.JwtAuthenticationFilter;
 import com.techfork.global.security.handler.exception.CustomAccessDeniedHandler;
 import com.techfork.global.security.handler.exception.JwtAuthenticationEntryPoint;
-import com.techfork.global.security.oauth.CustomOAuth2UserService;
+import com.techfork.global.security.oauth.CustomOidcUserService;
 import com.techfork.global.security.handler.login.OAuth2AuthenticationFailureHandler;
 import com.techfork.global.security.handler.login.OAuth2AuthenticationSuccessHandler;
+import com.techfork.global.security.oauth.HttpCookieOAuth2AuthorizationRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,12 +29,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final CustomOAuth2UserService customOAuth2UserService;
+    private final CustomOidcUserService customOidcUserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final AppleOAuth2Config appleOAuth2Config;
+    private final HttpCookieOAuth2AuthorizationRequestRepository cookieOAuth2AuthorizationRequestRepository;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -51,8 +54,14 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(authorization -> authorization
+                                .authorizationRequestRepository(cookieOAuth2AuthorizationRequestRepository)
+                        )
+                        .tokenEndpoint(token -> token
+                                .accessTokenResponseClient(appleOAuth2Config.accessTokenResponseClient())
+                        )
                         .userInfoEndpoint(userInfo -> userInfo
-                                .oidcUserService(customOAuth2UserService)
+                                .oidcUserService(customOidcUserService)
                         )
                         .successHandler(oAuth2AuthenticationSuccessHandler)
                         .failureHandler(oAuth2AuthenticationFailureHandler)
@@ -70,7 +79,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://techfork.shop", "https://api.techfork.shop"));
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "https://techfork.shop",
+                "https://api.techfork.shop",
+                "https://appleid.apple.com"  // Apple Sign In form_post
+        ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization", "Content-Type"));
