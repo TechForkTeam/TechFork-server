@@ -54,3 +54,7 @@ stop-dev-tunnel.sh
 
 ### env ###
 /.env
+
+### Apple Private Keys ###
+src/main/resources/keys/
+*.p8
