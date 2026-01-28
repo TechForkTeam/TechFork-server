@@ -74,7 +74,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://techfork.shop", "https://api.techfork.shop"));
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "https://techfork.shop",
+                "https://api.techfork.shop",
+                "https://appleid.apple.com"  // Apple Sign In form_post
+        ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization", "Content-Type"));
