@@ -7,10 +7,15 @@ import com.techfork.domain.activity.repository.ReadPostRepository;
 import com.techfork.domain.activity.repository.ScrabPostRepository;
 import com.techfork.domain.activity.repository.SearchHistoryRepository;
 import com.techfork.domain.post.entity.PostKeyword;
+import com.techfork.domain.recommendation.service.RecommendationService;
 import com.techfork.domain.user.document.UserProfileDocument;
+import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.entity.UserInterestCategory;
+import com.techfork.domain.user.exception.UserErrorCode;
 import com.techfork.domain.user.repository.UserInterestCategoryRepository;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
+import com.techfork.domain.user.repository.UserRepository;
+import com.techfork.global.exception.GeneralException;
 import com.techfork.global.llm.EmbeddingClient;
 import com.techfork.global.llm.LlmClient;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +38,8 @@ public class UserProfileService {
     private final ScrabPostRepository scrabPostRepository;
     private final SearchHistoryRepository searchHistoryRepository;
     private final UserProfileDocumentRepository userProfileDocumentRepository;
+    private final UserRepository userRepository;
+    private final RecommendationService recommendationService;
     private final LlmClient llmClient;
     private final EmbeddingClient embeddingClient;
 
@@ -63,9 +70,31 @@ public class UserProfileService {
             userProfileDocumentRepository.save(profileDocument);
 
             log.info("User profile generated successfully for userId: {}", userId);
+
+            generateRecommendationsAfterProfile(userId);
+
         } catch (Exception e) {
             log.error("Failed to generate user profile for userId: {}", userId, e);
             throw e;
+        }
+    }
+
+    /**
+     * 프로필 생성 완료 후 추천 생성
+     * 온보딩 또는 관심사 변경 시 새로운 프로필 기반으로 추천을 갱신합니다.
+     */
+    private void generateRecommendationsAfterProfile(Long userId) {
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
+
+            int recommendationCount = recommendationService.generateRecommendationsForUser(user);
+
+            log.info("Recommendations generated after profile creation for userId: {} - {} recommendations created",
+                    userId, recommendationCount);
+
+        } catch (Exception e) {
+            log.error("Failed to generate recommendations after profile creation for userId: {}", userId, e);
         }
     }
 
