@@ -116,6 +116,7 @@ public class PostQueryService {
                         .company(post.company())
                         .url(post.url())
                         .logoUrl(post.logoUrl())
+                        .thumbnailUrl(post.thumbnailUrl())
                         .publishedAt(post.publishedAt())
                         .viewCount(post.viewCount())
                         .keywords(keywordMap.getOrDefault(post.id(), List.of()))
