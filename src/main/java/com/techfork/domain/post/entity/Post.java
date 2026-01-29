@@ -71,11 +71,12 @@ public class Post extends BaseEntity {
 
     @PersistenceCreator
     @Builder
-    Post(String title, String fullContent, String plainContent, String company, String logoUrl, String thumbnailUrl,
+    Post(String title, String fullContent, String plainContent, String summary, String company, String logoUrl, String thumbnailUrl,
                  String url, LocalDateTime publishedAt, LocalDateTime crawledAt, LocalDateTime embeddedAt, TechBlog techBlog) {
         this.title = title;
         this.fullContent = fullContent;
         this.plainContent = plainContent;
+        this.summary = summary;
         this.company = company;
         this.logoUrl = logoUrl;
         this.thumbnailUrl = thumbnailUrl;
