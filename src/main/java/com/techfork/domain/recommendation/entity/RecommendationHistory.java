@@ -56,14 +56,16 @@ public class RecommendationHistory extends BaseEntity {
     @PersistenceCreator
     @Builder
     RecommendationHistory(User user, Post post, Double similarityScore,
-                                   Double mmrScore, Integer rankOrder, LocalDateTime recommendedAt) {
+                                   Double mmrScore, Integer rankOrder, LocalDateTime recommendedAt,
+                                   Boolean isClicked, LocalDateTime clickedAt) {
         this.user = user;
         this.post = post;
         this.similarityScore = similarityScore;
         this.mmrScore = mmrScore;
         this.rankOrder = rankOrder;
         this.recommendedAt = recommendedAt;
-        this.isClicked = false;
+        this.isClicked = isClicked != null ? isClicked : false;
+        this.clickedAt = clickedAt;
     }
 
     /**
