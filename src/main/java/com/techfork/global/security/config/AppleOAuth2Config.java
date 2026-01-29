@@ -29,11 +29,17 @@ public class AppleOAuth2Config {
             // 기본 필수 파라미터 세팅
             parameters.add(OAuth2ParameterNames.GRANT_TYPE, grantRequest.getGrantType().getValue());
             parameters.add(OAuth2ParameterNames.CODE, grantRequest.getAuthorizationExchange().getAuthorizationResponse().getCode());
-            parameters.add(OAuth2ParameterNames.REDIRECT_URI, grantRequest.getClientRegistration().getRedirectUri());
+
+            // Authorization Request에서 실제 사용된 redirect_uri 가져오기 (템플릿이 아닌 실제 값)
+            String redirectUri = grantRequest.getAuthorizationExchange()
+                    .getAuthorizationRequest()
+                    .getRedirectUri();
+            parameters.add(OAuth2ParameterNames.REDIRECT_URI, redirectUri);
             parameters.add(OAuth2ParameterNames.CLIENT_ID, grantRequest.getClientRegistration().getClientId());
 
+            String registrationId = grantRequest.getClientRegistration().getRegistrationId();
             // Apple일 때만 client-secret 동적 생성
-            if ("apple".equals(grantRequest.getClientRegistration().getRegistrationId())) {
+            if ("apple".equals(registrationId)) {
                 String clientSecret = appleClientSecretGenerator.generateClientSecret();
                 parameters.add(OAuth2ParameterNames.CLIENT_SECRET, clientSecret);
                 log.debug("Apple client-secret generated dynamically");
