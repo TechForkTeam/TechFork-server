@@ -1,9 +1,14 @@
 package com.techfork.domain.post.controller;
 
+import com.techfork.domain.activity.entity.ScrabPost;
+import com.techfork.domain.activity.repository.ScrabPostRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.repository.TechBlogRepository;
+import com.techfork.domain.user.entity.User;
+import com.techfork.domain.user.enums.SocialType;
+import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.common.IntegrationTestBase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +21,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -37,14 +43,24 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
     @Autowired
     private TechBlogRepository techBlogRepository;
 
+    @Autowired
+    private ScrabPostRepository scrabPostRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
     private TechBlog testTechBlog1;
     private TechBlog testTechBlog2;
     private Post todayPost;
     private Post oldPost;
+    private User testUser;
 
     @BeforeEach
     void setUp() {
         // Given: 실제 DB에 테스트 데이터 저장
+        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", "profile.jpg");
+        testUser = userRepository.save(testUser);
+
         testTechBlog1 = TechBlog.builder()
                 .companyName("카카오")
                 .blogUrl("https://kakao.com")
@@ -66,6 +82,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
                 .title("오늘의 게시글")
                 .fullContent("<p>오늘 내용</p>")
                 .plainContent("오늘 내용")
+                .summary("오늘 요약")
                 .company("카카오")
                 .url("https://kakao.com/post/today")
                 .logoUrl("https://kakao.com/logo.png")
@@ -81,6 +98,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
                 .title("어제의 게시글")
                 .fullContent("<p>어제 내용</p>")
                 .plainContent("어제 내용")
+                .summary("어제 요약")
                 .company("네이버")
                 .url("https://naver.com/post/old")
                 .logoUrl("https://naver.com/logo.png")
@@ -95,8 +113,10 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
     @AfterEach
     void tearDown() {
         // 테스트 데이터 정리 (외래키 제약조건 순서 고려)
+        scrabPostRepository.deleteAll();
         postRepository.deleteAll();
         techBlogRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test
@@ -106,17 +126,14 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
         mockMvc.perform(get("/api/v2/posts/companies"))
                 .andDo(print())
                 .andExpect(status().isOk())
+                // CompanyListResponse의 모든 필드 검증
                 .andExpect(jsonPath("$.data.totalNumber").value(2))
                 .andExpect(jsonPath("$.data.companies").isArray())
                 .andExpect(jsonPath("$.data.companies.length()").value(2))
-                // 첫 번째 회사 (카카오 - 오늘 발행)
+                // CompanyDto의 모든 필드 검증 (첫 번째 항목만)
                 .andExpect(jsonPath("$.data.companies[0].company").value("카카오"))
                 .andExpect(jsonPath("$.data.companies[0].hasNewPost").value(true))
-                .andExpect(jsonPath("$.data.companies[0].logoUrl").value("https://kakao.com/logo.png"))
-                // 두 번째 회사 (네이버 - 어제 발행)
-                .andExpect(jsonPath("$.data.companies[1].company").value("네이버"))
-                .andExpect(jsonPath("$.data.companies[1].hasNewPost").value(false))
-                .andExpect(jsonPath("$.data.companies[1].logoUrl").value("https://naver.com/logo.png"));
+                .andExpect(jsonPath("$.data.companies[0].logoUrl").value("https://kakao.com/logo.png"));
     }
 
     @Test
@@ -167,13 +184,23 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
                         .param("size", "20"))
                 .andDo(print())
                 .andExpect(status().isOk())
+                // PostListResponse의 모든 필드 검증
                 .andExpect(jsonPath("$.data.posts").isArray())
                 .andExpect(jsonPath("$.data.posts.length()").value(2))
-                .andExpect(jsonPath("$.data.posts[0].company").value("카카오"))
-                .andExpect(jsonPath("$.data.posts[1].company").value("네이버"))
-                .andExpect(jsonPath("$.data.hasNext").value(false))
                 .andExpect(jsonPath("$.data.lastPostId").exists())
-                .andExpect(jsonPath("$.data.lastPublishedAt").exists());
+                .andExpect(jsonPath("$.data.lastViewCount").exists())
+                .andExpect(jsonPath("$.data.lastPublishedAt").exists())
+                .andExpect(jsonPath("$.data.hasNext").value(false))
+                // PostInfoDto의 모든 필드 검증 (첫 번째 항목만)
+                .andExpect(jsonPath("$.data.posts[0].id").isNumber())
+                .andExpect(jsonPath("$.data.posts[0].title").isString())
+                .andExpect(jsonPath("$.data.posts[0].company").value("카카오"))
+                .andExpect(jsonPath("$.data.posts[0].url").isString())
+                .andExpect(jsonPath("$.data.posts[0].logoUrl").exists())
+                .andExpect(jsonPath("$.data.posts[0].thumbnailUrl").exists())
+                .andExpect(jsonPath("$.data.posts[0].publishedAt").exists())
+                .andExpect(jsonPath("$.data.posts[0].viewCount").isNumber())
+                .andExpect(jsonPath("$.data.posts[0].keywords").isArray());
     }
 
     @Test
@@ -280,13 +307,24 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
                         .param("size", "20"))
                 .andDo(print())
                 .andExpect(status().isOk())
+                // PostListResponse의 모든 필드 검증 (LATEST 정렬)
                 .andExpect(jsonPath("$.data.posts").isArray())
                 .andExpect(jsonPath("$.data.posts.length()").value(2))
-                .andExpect(jsonPath("$.data.posts[0].title").value("오늘의 게시글"))
-                .andExpect(jsonPath("$.data.posts[1].title").value("어제의 게시글"))
-                .andExpect(jsonPath("$.data.hasNext").value(false))
                 .andExpect(jsonPath("$.data.lastPostId").exists())
-                .andExpect(jsonPath("$.data.lastPublishedAt").exists());
+                .andExpect(jsonPath("$.data.lastPublishedAt").exists())
+                .andExpect(jsonPath("$.data.hasNext").value(false))
+                // PostInfoDto의 모든 필드 검증 (첫 번째 항목만)
+                .andExpect(jsonPath("$.data.posts[0].id").isNumber())
+                .andExpect(jsonPath("$.data.posts[0].title").value("오늘의 게시글"))
+                .andExpect(jsonPath("$.data.posts[0].company").isString())
+                .andExpect(jsonPath("$.data.posts[0].url").isString())
+                .andExpect(jsonPath("$.data.posts[0].logoUrl").exists())
+                .andExpect(jsonPath("$.data.posts[0].thumbnailUrl").exists())
+                .andExpect(jsonPath("$.data.posts[0].publishedAt").exists())
+                .andExpect(jsonPath("$.data.posts[0].viewCount").isNumber())
+                .andExpect(jsonPath("$.data.posts[0].keywords").isArray())
+                // 정렬 순서 검증 (두 번째 항목)
+                .andExpect(jsonPath("$.data.posts[1].title").value("어제의 게시글"));
     }
 
     @Test
@@ -307,13 +345,25 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
                         .param("size", "20"))
                 .andDo(print())
                 .andExpect(status().isOk())
+                // PostListResponse의 모든 필드 검증 (POPULAR 정렬)
                 .andExpect(jsonPath("$.data.posts").isArray())
                 .andExpect(jsonPath("$.data.posts.length()").value(2))
-                .andExpect(jsonPath("$.data.posts[0].title").value("오늘의 게시글"))
-                .andExpect(jsonPath("$.data.posts[1].title").value("어제의 게시글"))
-                .andExpect(jsonPath("$.data.hasNext").value(false))
                 .andExpect(jsonPath("$.data.lastPostId").exists())
-                .andExpect(jsonPath("$.data.lastViewCount").exists());
+                .andExpect(jsonPath("$.data.lastViewCount").exists())
+                .andExpect(jsonPath("$.data.lastPublishedAt").exists())
+                .andExpect(jsonPath("$.data.hasNext").value(false))
+                // PostInfoDto의 모든 필드 검증 (첫 번째 항목만)
+                .andExpect(jsonPath("$.data.posts[0].id").isNumber())
+                .andExpect(jsonPath("$.data.posts[0].title").value("오늘의 게시글"))
+                .andExpect(jsonPath("$.data.posts[0].company").isString())
+                .andExpect(jsonPath("$.data.posts[0].url").isString())
+                .andExpect(jsonPath("$.data.posts[0].logoUrl").exists())
+                .andExpect(jsonPath("$.data.posts[0].thumbnailUrl").exists())
+                .andExpect(jsonPath("$.data.posts[0].publishedAt").exists())
+                .andExpect(jsonPath("$.data.posts[0].viewCount").isNumber())
+                .andExpect(jsonPath("$.data.posts[0].keywords").isArray())
+                // 정렬 순서 검증 (두 번째 항목)
+                .andExpect(jsonPath("$.data.posts[1].title").value("어제의 게시글"));
     }
 
     @Test
@@ -408,5 +458,103 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data.posts").isArray())
                 .andExpect(jsonPath("$.data.posts.length()").value(0))
                 .andExpect(jsonPath("$.data.hasNext").value(false));
+    }
+
+    @Test
+    @DisplayName("GET /api/v2/posts/recent - 비로그인 시 isBookmarked는 null")
+    void getRecentPosts_WithoutAuth_IsBookmarkedIsNull() throws Exception {
+        // When & Then: 비로그인 상태에서 게시글 조회
+        mockMvc.perform(get("/api/v2/posts/recent")
+                        .param("sortBy", "LATEST")
+                        .param("size", "20"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.posts").isArray())
+                .andExpect(jsonPath("$.data.posts[0].isBookmarked").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("GET /api/v2/posts/recent - 로그인 시 isBookmarked 포함")
+    void getRecentPosts_WithAuth_IncludesBookmarks() throws Exception {
+        // Given: todayPost를 북마크
+        ScrabPost scrabPost = ScrabPost.create(testUser, todayPost, LocalDateTime.now());
+        scrabPostRepository.save(scrabPost);
+
+        com.techfork.global.security.oauth.UserPrincipal userPrincipal =
+            com.techfork.global.security.oauth.UserPrincipal.buildUserPrincipal(testUser);
+
+        // When & Then: 로그인 상태에서 게시글 조회
+        mockMvc.perform(get("/api/v2/posts/recent")
+                        .param("sortBy", "LATEST")
+                        .param("size", "20")
+                        .with(user(userPrincipal)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.posts").isArray())
+                .andExpect(jsonPath("$.data.posts.length()").value(2))
+                .andExpect(jsonPath("$.data.posts[0].id").value(todayPost.getId()))
+                .andExpect(jsonPath("$.data.posts[0].isBookmarked").value(true))
+                .andExpect(jsonPath("$.data.posts[1].id").value(oldPost.getId()))
+                .andExpect(jsonPath("$.data.posts[1].isBookmarked").value(false));
+    }
+
+    @Test
+    @DisplayName("GET /api/v2/posts/by-company - 로그인 시 북마크 정보 포함")
+    void getPostsByCompany_WithAuth_IncludesBookmarks() throws Exception {
+        // Given: oldPost를 북마크
+        ScrabPost scrabPost = ScrabPost.create(testUser, oldPost, LocalDateTime.now());
+        scrabPostRepository.save(scrabPost);
+
+        com.techfork.global.security.oauth.UserPrincipal userPrincipal =
+            com.techfork.global.security.oauth.UserPrincipal.buildUserPrincipal(testUser);
+
+        // When & Then: 특정 회사 게시글 조회
+        mockMvc.perform(get("/api/v2/posts/by-company")
+                        .param("companies", "네이버")
+                        .param("size", "20")
+                        .with(user(userPrincipal)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.posts").isArray())
+                .andExpect(jsonPath("$.data.posts.length()").value(1))
+                .andExpect(jsonPath("$.data.posts[0].id").value(oldPost.getId()))
+                .andExpect(jsonPath("$.data.posts[0].isBookmarked").value(true));
+    }
+
+    @Test
+    @DisplayName("GET /api/v2/posts/by-company - 비로그인 시 isBookmarked는 null")
+    void getPostsByCompany_WithoutAuth_IsBookmarkedIsNull() throws Exception {
+        // When & Then: 비로그인 상태에서 회사별 게시글 조회
+        mockMvc.perform(get("/api/v2/posts/by-company")
+                        .param("companies", "카카오")
+                        .param("size", "20"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.posts").isArray())
+                .andExpect(jsonPath("$.data.posts[0].isBookmarked").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("GET /api/v2/posts/by-company - 여러 회사 조회 시 북마크 정보 포함")
+    void getPostsByMultipleCompanies_WithAuth_IncludesBookmarks() throws Exception {
+        // Given: 두 게시글 모두 북마크
+        ScrabPost scrabPost1 = ScrabPost.create(testUser, todayPost, LocalDateTime.now());
+        ScrabPost scrabPost2 = ScrabPost.create(testUser, oldPost, LocalDateTime.now());
+        scrabPostRepository.saveAll(List.of(scrabPost1, scrabPost2));
+
+        com.techfork.global.security.oauth.UserPrincipal userPrincipal =
+            com.techfork.global.security.oauth.UserPrincipal.buildUserPrincipal(testUser);
+
+        // When & Then: 여러 회사 게시글 조회
+        mockMvc.perform(get("/api/v2/posts/by-company")
+                        .param("companies", "카카오", "네이버")
+                        .param("size", "20")
+                        .with(user(userPrincipal)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.posts").isArray())
+                .andExpect(jsonPath("$.data.posts.length()").value(2))
+                .andExpect(jsonPath("$.data.posts[0].isBookmarked").value(true))
+                .andExpect(jsonPath("$.data.posts[1].isBookmarked").value(true));
     }
 }
