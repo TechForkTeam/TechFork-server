@@ -30,8 +30,7 @@ public class PostSummaryProcessor implements ItemProcessor<Post, Post> {
                 post.getPlainContent()
         );
 
-        // 요약 업데이트
-        post.updateSummary(result.summary());
+        post.updateSummaries(result.summary(), result.shortSummary());
 
         // 기존 키워드 삭제 후 새 키워드 추가
         post.clearKeywords();
