@@ -37,6 +37,9 @@ public class Post extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String summary;
 
+    @Column(columnDefinition = "TEXT")
+    private String shortSummary;
+
     @Column(nullable = false)
     private String company;
 
@@ -71,12 +74,13 @@ public class Post extends BaseEntity {
 
     @PersistenceCreator
     @Builder
-    Post(String title, String fullContent, String plainContent, String summary, String company, String logoUrl, String thumbnailUrl,
+    Post(String title, String fullContent, String plainContent, String summary, String shortSummary, String company, String logoUrl, String thumbnailUrl,
                  String url, LocalDateTime publishedAt, LocalDateTime crawledAt, LocalDateTime embeddedAt, TechBlog techBlog) {
         this.title = title;
         this.fullContent = fullContent;
         this.plainContent = plainContent;
         this.summary = summary;
+        this.shortSummary = shortSummary;
         this.company = company;
         this.logoUrl = logoUrl;
         this.thumbnailUrl = thumbnailUrl;
@@ -104,6 +108,11 @@ public class Post extends BaseEntity {
 
     public void updateSummary(String summary) {
         this.summary = summary;
+    }
+
+    public void updateSummaries(String summary, String shortSummary) {
+        this.summary = summary;
+        this.shortSummary = shortSummary;
     }
 
     public void addKeyword(PostKeyword keyword) {
