@@ -37,6 +37,9 @@ public class RecommendationConverter {
                 .company(post.getCompany())
                 .url(post.getUrl())
                 .logoUrl(post.getTechBlog().getLogoUrl())
+                .thumbnailUrl(post.getThumbnailUrl())
+                .viewCount(post.getViewCount())
+                .isBookmarked(null) // Will be set later in service layer
                 .publishedAt(post.getPublishedAt())
                 .keywords(keywords)
                 .similarityScore(recommendedPost.getSimilarityScore())

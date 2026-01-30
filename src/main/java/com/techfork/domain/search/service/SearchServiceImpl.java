@@ -6,7 +6,10 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
+import com.techfork.domain.activity.repository.ScrabPostRepository;
 import com.techfork.domain.post.document.PostDocument;
+import com.techfork.domain.post.entity.Post;
+import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.search.dto.SearchResult;
 import com.techfork.domain.user.document.UserProfileDocument;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
@@ -39,6 +42,8 @@ public class SearchServiceImpl implements SearchService {
     private final EmbeddingClient embeddingClient;
     private final GeneralSearchProperties generalSearchProperties;
     private final UserProfileDocumentRepository userProfileDocumentRepository;
+    private final PostRepository postRepository;
+    private final ScrabPostRepository scrabPostRepository;
     private final Executor searchAsyncExecutor;
 
     @Override
@@ -61,6 +66,8 @@ public class SearchServiceImpl implements SearchService {
         List<Float> queryVector = queryEmbedding(query);
         List<SearchResult> searchResults = performHybridSearch(query, queryVector);
 
+        searchResults = attachPostMetadata(searchResults, null);
+
         long duration = System.currentTimeMillis() - startTime;
         log.info("Search completed. Query='{}', Results={}, Time={}ms", query, searchResults.size(), duration);
 
@@ -80,21 +87,23 @@ public class SearchServiceImpl implements SearchService {
         Optional<UserProfileDocument> userProfileOpt = userProfileDocumentRepository.findByUserId(userId);
         boolean hasProfile = userProfileOpt.isPresent() && userProfileOpt.get().getProfileVector() != null;
 
+        List<SearchResult> finalResults;
         if (!hasProfile) {
+            finalResults = initialResults;
             long duration = System.currentTimeMillis() - startTime;
             log.info("Personalized Search [FALLBACK]. UserID={}, Query='{}', Results={}, Time={}ms (Reason: No Profile)",
-                    userId, query, initialResults.size(), duration);
-            return stripVectors(initialResults);
+                    userId, query, finalResults.size(), duration);
+        } else {
+            float[] userProfileVector = userProfileOpt.get().getProfileVector();
+            finalResults = personalReranking(initialResults, userProfileVector);
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("Personalized Search [RERANKED]. UserID={}, Query='{}', Results={}, Time={}ms",
+                    userId, query, finalResults.size(), duration);
         }
 
-        float[] userProfileVector = userProfileOpt.get().getProfileVector();
-        List<SearchResult> rerankedResults = personalReranking(initialResults, userProfileVector);
+        finalResults = attachPostMetadata(finalResults, userId);
 
-        long duration = System.currentTimeMillis() - startTime;
-        log.info("Personalized Search [RERANKED]. UserID={}, Query='{}', Results={}, Time={}ms",
-                userId, query, rerankedResults.size(), duration);
-
-        return stripVectors(rerankedResults);
+        return stripVectors(finalResults);
     }
 
     private List<SearchResult> searchOnlyBM25(String query) {
@@ -312,6 +321,8 @@ public class SearchServiceImpl implements SearchService {
                 .companyName(doc.getCompany())
                 .url(doc.getUrl())
                 .logoUrl(doc.getLogoUrl())
+                .thumbnailUrl(doc.getThumbnailUrl())
+                .publishedAt(doc.getPublishedAt())
                 .hybridScore(score)
                 .finalScore(score)
                 .titleVector(titleVector)
@@ -353,6 +364,34 @@ public class SearchServiceImpl implements SearchService {
                 .map(result -> result.toBuilder()
                         .titleVector(null)
                         .summaryVector(null)
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    private List<SearchResult> attachPostMetadata(List<SearchResult> results, Long userId) {
+        if (results.isEmpty()) {
+            return results;
+        }
+
+        // Collect postIds
+        List<Long> postIds = results.stream()
+                .map(SearchResult::getPostId)
+                .collect(Collectors.toList());
+
+        // Fetch viewCount from MySQL (in batch)
+        Map<Long, Long> viewCountMap = postRepository.findAllById(postIds).stream()
+                .collect(Collectors.toMap(Post::getId, Post::getViewCount));
+
+        // Fetch bookmark status if userId is provided
+        List<Long> bookmarkedPostIds = userId != null
+                ? scrabPostRepository.findBookmarkedPostIds(userId, postIds)
+                : List.of();
+
+        // Attach metadata to results
+        return results.stream()
+                .map(result -> result.toBuilder()
+                        .viewCount(viewCountMap.getOrDefault(result.getPostId(), 0L))
+                        .isBookmarked(userId != null && bookmarkedPostIds.contains(result.getPostId()))
                         .build())
                 .collect(Collectors.toList());
     }

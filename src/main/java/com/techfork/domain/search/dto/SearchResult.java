@@ -3,6 +3,8 @@ package com.techfork.domain.search.dto;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Builder(toBuilder = true)
 public class SearchResult {
@@ -12,6 +14,10 @@ public class SearchResult {
     private String companyName;
     private String url;
     private String logoUrl;
+    private String thumbnailUrl;
+    private Long viewCount;
+    private Boolean isBookmarked;
+    private LocalDateTime publishedAt;
 
     private double hybridScore;
     private double personalScore;
