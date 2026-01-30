@@ -42,6 +42,9 @@ public class PostDocument {
     @Field(type = FieldType.Keyword)
     private String logoUrl;
 
+    @Field(type = FieldType.Keyword)
+    private String thumbnailUrl;
+
     @Field(type = FieldType.Keyword, name = "publishedAt")
     @JsonProperty("publishedAt")
     @Getter(AccessLevel.NONE)
@@ -80,6 +83,7 @@ public class PostDocument {
                 .company(post.getCompany())
                 .url(post.getUrl())
                 .logoUrl(post.getLogoUrl())
+                .thumbnailUrl(post.getThumbnailUrl())
                 .publishedAtString(post.getPublishedAt() != null ? post.getPublishedAt().toString() : null)
                 .titleEmbedding(titleEmbedding)
                 .summaryEmbedding(summaryEmbedding)
