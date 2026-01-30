@@ -119,10 +119,11 @@ class PostQueryServiceTest {
     }
 
     @Test
-    @DisplayName("getPostDetail() - 게시글 상세 조회 성공")
-    void getPostDetail_Success() {
+    @DisplayName("getPostDetail() - 비로그인 상태에서 게시글 상세 조회 성공")
+    void getPostDetail_WithoutAuth_Success() {
         // Given
         Long postId = 1L;
+        Long userId = null;
 
         PostDetailDto mockPostDetail = PostDetailDto.builder()
                 .id(postId)
@@ -134,6 +135,7 @@ class PostQueryServiceTest {
                 .publishedAt(LocalDateTime.now())
                 .viewCount(100L)
                 .keywords(null) // 키워드는 나중에 추가됨
+                .isBookmarked(null)
                 .build();
 
         PostKeyword keyword1 = mock(PostKeyword.class);
@@ -154,14 +156,15 @@ class PostQueryServiceTest {
                 .publishedAt(mockPostDetail.publishedAt())
                 .viewCount(100L)
                 .keywords(keywordStrings)
+                .isBookmarked(null)
                 .build();
 
         given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.of(mockPostDetail));
         given(postKeywordRepository.findByPostIdIn(List.of(postId))).willReturn(mockKeywords);
-        given(postConverter.toPostDetailDto(mockPostDetail, keywordStrings)).willReturn(expectedResponse);
+        given(postConverter.toPostDetailDto(mockPostDetail, keywordStrings, null)).willReturn(expectedResponse);
 
         // When
-        PostDetailDto result = postQueryService.getPostDetail(postId);
+        PostDetailDto result = postQueryService.getPostDetail(postId, userId);
 
         // Then
         assertThat(result).isNotNull();
@@ -170,10 +173,126 @@ class PostQueryServiceTest {
         assertThat(result.viewCount()).isEqualTo(100L);
         assertThat(result.keywords()).hasSize(2);
         assertThat(result.keywords()).contains("Java", "Spring");
+        assertThat(result.isBookmarked()).isNull();
 
         verify(postRepository, times(1)).findByIdWithTechBlog(postId);
         verify(postKeywordRepository, times(1)).findByPostIdIn(List.of(postId));
-        verify(postConverter, times(1)).toPostDetailDto(mockPostDetail, keywordStrings);
+        verify(postConverter, times(1)).toPostDetailDto(mockPostDetail, keywordStrings, null);
+        verify(scrabPostRepository, never()).findBookmarkedPostIds(any(), any());
+    }
+
+    @Test
+    @DisplayName("getPostDetail() - 로그인 상태에서 북마크한 게시글 상세 조회 성공")
+    void getPostDetail_WithAuth_BookmarkedPost_Success() {
+        // Given
+        Long postId = 1L;
+        Long userId = 100L;
+
+        PostDetailDto mockPostDetail = PostDetailDto.builder()
+                .id(postId)
+                .title("테스트 제목")
+                .summary("테스트 요약")
+                .company("카카오")
+                .url("https://test.com/1")
+                .logoUrl("https://test.com/logo.png")
+                .publishedAt(LocalDateTime.now())
+                .viewCount(100L)
+                .keywords(null)
+                .isBookmarked(null)
+                .build();
+
+        PostKeyword keyword1 = mock(PostKeyword.class);
+        when(keyword1.getKeyword()).thenReturn("Java");
+        List<PostKeyword> mockKeywords = List.of(keyword1);
+        List<String> keywordStrings = List.of("Java");
+
+        PostDetailDto expectedResponse = PostDetailDto.builder()
+                .id(postId)
+                .title("테스트 제목")
+                .summary("테스트 요약")
+                .company("카카오")
+                .url("https://test.com/1")
+                .logoUrl("https://test.com/logo.png")
+                .publishedAt(mockPostDetail.publishedAt())
+                .viewCount(100L)
+                .keywords(keywordStrings)
+                .isBookmarked(true)
+                .build();
+
+        given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.of(mockPostDetail));
+        given(postKeywordRepository.findByPostIdIn(List.of(postId))).willReturn(mockKeywords);
+        given(scrabPostRepository.findBookmarkedPostIds(userId, List.of(postId))).willReturn(List.of(postId));
+        given(postConverter.toPostDetailDto(mockPostDetail, keywordStrings, true)).willReturn(expectedResponse);
+
+        // When
+        PostDetailDto result = postQueryService.getPostDetail(postId, userId);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.id()).isEqualTo(postId);
+        assertThat(result.isBookmarked()).isTrue();
+
+        verify(postRepository, times(1)).findByIdWithTechBlog(postId);
+        verify(postKeywordRepository, times(1)).findByPostIdIn(List.of(postId));
+        verify(scrabPostRepository, times(1)).findBookmarkedPostIds(userId, List.of(postId));
+        verify(postConverter, times(1)).toPostDetailDto(mockPostDetail, keywordStrings, true);
+    }
+
+    @Test
+    @DisplayName("getPostDetail() - 로그인 상태에서 북마크하지 않은 게시글 상세 조회 성공")
+    void getPostDetail_WithAuth_NotBookmarkedPost_Success() {
+        // Given
+        Long postId = 1L;
+        Long userId = 100L;
+
+        PostDetailDto mockPostDetail = PostDetailDto.builder()
+                .id(postId)
+                .title("테스트 제목")
+                .summary("테스트 요약")
+                .company("카카오")
+                .url("https://test.com/1")
+                .logoUrl("https://test.com/logo.png")
+                .publishedAt(LocalDateTime.now())
+                .viewCount(100L)
+                .keywords(null)
+                .isBookmarked(null)
+                .build();
+
+        PostKeyword keyword1 = mock(PostKeyword.class);
+        when(keyword1.getKeyword()).thenReturn("Java");
+        List<PostKeyword> mockKeywords = List.of(keyword1);
+        List<String> keywordStrings = List.of("Java");
+
+        PostDetailDto expectedResponse = PostDetailDto.builder()
+                .id(postId)
+                .title("테스트 제목")
+                .summary("테스트 요약")
+                .company("카카오")
+                .url("https://test.com/1")
+                .logoUrl("https://test.com/logo.png")
+                .publishedAt(mockPostDetail.publishedAt())
+                .viewCount(100L)
+                .keywords(keywordStrings)
+                .isBookmarked(false)
+                .build();
+
+        given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.of(mockPostDetail));
+        given(postKeywordRepository.findByPostIdIn(List.of(postId))).willReturn(mockKeywords);
+        given(scrabPostRepository.findBookmarkedPostIds(userId, List.of(postId))).willReturn(List.of());
+        given(postConverter.toPostDetailDto(mockPostDetail, keywordStrings, false)).willReturn(expectedResponse);
+
+        // When
+        PostDetailDto result = postQueryService.getPostDetail(postId, userId);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.id()).isEqualTo(postId);
+        assertThat(result.isBookmarked()).isFalse();
+
+        verify(postRepository, times(1)).findByIdWithTechBlog(postId);
+        verify(postKeywordRepository, times(1)).findByPostIdIn(List.of(postId));
+        verify(scrabPostRepository, times(1)).findBookmarkedPostIds(userId, List.of(postId));
+        verify(postConverter, times(1)).toPostDetailDto(mockPostDetail, keywordStrings, false);
     }
 
     @Test
@@ -181,10 +300,11 @@ class PostQueryServiceTest {
     void getPostDetail_NotFound_ThrowsException() {
         // Given
         Long postId = 999L;
+        Long userId = null;
         given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> postQueryService.getPostDetail(postId))
+        assertThatThrownBy(() -> postQueryService.getPostDetail(postId, userId))
                 .isInstanceOf(GeneralException.class);
 
         verify(postRepository, times(1)).findByIdWithTechBlog(postId);
