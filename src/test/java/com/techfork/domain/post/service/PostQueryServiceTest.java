@@ -1,5 +1,6 @@
 package com.techfork.domain.post.service;
 
+import com.techfork.domain.activity.repository.ScrabPostRepository;
 import com.techfork.domain.post.converter.PostConverter;
 import com.techfork.domain.post.dto.*;
 import com.techfork.domain.post.entity.PostKeyword;
@@ -39,6 +40,9 @@ class PostQueryServiceTest {
 
     @Mock
     private PostKeywordRepository postKeywordRepository;
+
+    @Mock
+    private ScrabPostRepository scrabPostRepository;
 
     @Mock
     private PostConverter postConverter;
@@ -230,7 +234,7 @@ class PostQueryServiceTest {
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
         // When
-        PostListResponse result = postQueryService.getRecentPosts(sortBy, lastPostId, size);
+        PostListResponse result = postQueryService.getRecentPosts(sortBy, lastPostId, size, null);
 
         // Then
         assertThat(result).isNotNull();
@@ -284,7 +288,7 @@ class PostQueryServiceTest {
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
         // When
-        PostListResponse result = postQueryService.getRecentPosts(sortBy, lastPostId, size);
+        PostListResponse result = postQueryService.getRecentPosts(sortBy, lastPostId, size, null);
 
         // Then
         assertThat(result).isNotNull();
@@ -328,7 +332,7 @@ class PostQueryServiceTest {
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
         // When
-        PostListResponse result = postQueryService.getPostsByCompany(company, lastPostId, size);
+        PostListResponse result = postQueryService.getPostsByCompany(company, lastPostId, size, null);
 
         // Then
         assertThat(result).isNotNull();
@@ -384,7 +388,7 @@ class PostQueryServiceTest {
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
         // When
-        PostListResponse result = postQueryService.getPostsByCompanyV2(companies, lastPublishedAt, lastPostId, size);
+        PostListResponse result = postQueryService.getPostsByCompanyV2(companies, lastPublishedAt, lastPostId, size, null);
 
         // Then
         assertThat(result).isNotNull();
@@ -444,7 +448,7 @@ class PostQueryServiceTest {
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
         // When
-        PostListResponse result = postQueryService.getPostsByCompanyV2(companies, lastPublishedAt, lastPostId, size);
+        PostListResponse result = postQueryService.getPostsByCompanyV2(companies, lastPublishedAt, lastPostId, size, null);
 
         // Then
         assertThat(result).isNotNull();
@@ -488,7 +492,7 @@ class PostQueryServiceTest {
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
         // When
-        PostListResponse result = postQueryService.getPostsByCompanyV2(companies, lastPublishedAt, lastPostId, size);
+        PostListResponse result = postQueryService.getPostsByCompanyV2(companies, lastPublishedAt, lastPostId, size, null);
 
         // Then
         assertThat(result).isNotNull();
@@ -545,7 +549,7 @@ class PostQueryServiceTest {
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
         // When
-        PostListResponse result = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size);
+        PostListResponse result = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size, null);
 
         // Then
         assertThat(result).isNotNull();
@@ -604,7 +608,7 @@ class PostQueryServiceTest {
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
         // When
-        PostListResponse result = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size);
+        PostListResponse result = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size, null);
 
         // Then
         assertThat(result).isNotNull();
@@ -651,7 +655,7 @@ class PostQueryServiceTest {
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
         // When
-        PostListResponse result = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size);
+        PostListResponse result = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size, null);
 
         // Then
         assertThat(result).isNotNull();
@@ -697,7 +701,7 @@ class PostQueryServiceTest {
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
         // When
-        PostListResponse result = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size);
+        PostListResponse result = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size, null);
 
         // Then
         assertThat(result).isNotNull();
@@ -705,5 +709,319 @@ class PostQueryServiceTest {
         assertThat(result.posts().get(0).publishedAt()).isBefore(lastPublishedAt);
 
         verify(postRepository, times(1)).findRecentPostsWithCursorV2(eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class));
+    }
+
+    @Test
+    @DisplayName("getPostsByCompany() - 로그인 사용자의 북마크 정보 포함 조회")
+    void getPostsByCompany_WithUserId_IncludesBookmarks() {
+        // Given
+        String company = "카카오";
+        Long lastPostId = null;
+        int size = 20;
+        Long userId = 1L;
+
+        List<PostInfoDto> mockPosts = List.of(
+                PostInfoDto.builder()
+                        .id(1L)
+                        .title("카카오 게시글 1")
+                        .company(company)
+                        .url("https://test.com/1")
+                        .logoUrl("https://test.com/logo.png")
+                        .publishedAt(LocalDateTime.now())
+                        .viewCount(50L)
+                        .keywords(List.of("Java"))
+                        .isBookmarked(null)
+                        .build(),
+                PostInfoDto.builder()
+                        .id(2L)
+                        .title("카카오 게시글 2")
+                        .company(company)
+                        .url("https://test.com/2")
+                        .logoUrl("https://test.com/logo.png")
+                        .publishedAt(LocalDateTime.now())
+                        .viewCount(100L)
+                        .keywords(List.of("Spring"))
+                        .isBookmarked(null)
+                        .build()
+        );
+
+        List<Long> bookmarkedPostIds = List.of(1L);
+
+        PostListResponse expectedResponse = PostListResponse.builder()
+                .posts(List.of(
+                        PostInfoDto.builder()
+                                .id(1L)
+                                .title("카카오 게시글 1")
+                                .company(company)
+                                .url("https://test.com/1")
+                                .logoUrl("https://test.com/logo.png")
+                                .publishedAt(mockPosts.get(0).publishedAt())
+                                .viewCount(50L)
+                                .keywords(List.of("Java"))
+                                .isBookmarked(true)
+                                .build(),
+                        PostInfoDto.builder()
+                                .id(2L)
+                                .title("카카오 게시글 2")
+                                .company(company)
+                                .url("https://test.com/2")
+                                .logoUrl("https://test.com/logo.png")
+                                .publishedAt(mockPosts.get(1).publishedAt())
+                                .viewCount(100L)
+                                .keywords(List.of("Spring"))
+                                .isBookmarked(false)
+                                .build()
+                ))
+                .lastPostId(2L)
+                .hasNext(false)
+                .build();
+
+        given(postRepository.findByCompanyWithCursor(eq(company), eq(lastPostId), any(PageRequest.class)))
+                .willReturn(mockPosts);
+        given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
+        given(scrabPostRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
+        given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
+
+        // When
+        PostListResponse result = postQueryService.getPostsByCompany(company, lastPostId, size, userId);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.posts()).hasSize(2);
+        assertThat(result.posts().get(0).isBookmarked()).isTrue();
+        assertThat(result.posts().get(1).isBookmarked()).isFalse();
+
+        verify(postRepository, times(1)).findByCompanyWithCursor(eq(company), eq(lastPostId), any(PageRequest.class));
+        verify(scrabPostRepository, times(1)).findBookmarkedPostIds(eq(userId), any());
+    }
+
+    @Test
+    @DisplayName("getPostsByCompany() - 비로그인 사용자는 북마크 정보 없음")
+    void getPostsByCompany_WithoutUserId_NoBookmarks() {
+        // Given
+        String company = "카카오";
+        Long lastPostId = null;
+        int size = 20;
+        Long userId = null;
+
+        List<PostInfoDto> mockPosts = List.of(
+                PostInfoDto.builder()
+                        .id(1L)
+                        .title("카카오 게시글 1")
+                        .company(company)
+                        .url("https://test.com/1")
+                        .logoUrl("https://test.com/logo.png")
+                        .publishedAt(LocalDateTime.now())
+                        .viewCount(50L)
+                        .keywords(List.of("Java"))
+                        .isBookmarked(null)
+                        .build()
+        );
+
+        PostListResponse expectedResponse = PostListResponse.builder()
+                .posts(mockPosts)
+                .lastPostId(1L)
+                .hasNext(false)
+                .build();
+
+        given(postRepository.findByCompanyWithCursor(eq(company), eq(lastPostId), any(PageRequest.class)))
+                .willReturn(mockPosts);
+        given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
+        given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
+
+        // When
+        PostListResponse result = postQueryService.getPostsByCompany(company, lastPostId, size, userId);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.posts()).hasSize(1);
+        assertThat(result.posts().get(0).isBookmarked()).isNull();
+
+        verify(postRepository, times(1)).findByCompanyWithCursor(eq(company), eq(lastPostId), any(PageRequest.class));
+        verify(scrabPostRepository, never()).findBookmarkedPostIds(any(), any());
+    }
+
+    @Test
+    @DisplayName("getRecentPosts() - 로그인 사용자의 북마크 정보 포함 최근 게시글 조회")
+    void getRecentPosts_WithUserId_IncludesBookmarks() {
+        // Given
+        EPostSortType sortBy = EPostSortType.LATEST;
+        Long lastPostId = null;
+        int size = 20;
+        Long userId = 1L;
+
+        List<PostInfoDto> mockPosts = List.of(
+                PostInfoDto.builder()
+                        .id(1L)
+                        .title("게시글 1")
+                        .company("카카오")
+                        .url("https://test.com/1")
+                        .logoUrl("https://test.com/logo.png")
+                        .publishedAt(LocalDateTime.now())
+                        .viewCount(50L)
+                        .keywords(List.of())
+                        .isBookmarked(null)
+                        .build(),
+                PostInfoDto.builder()
+                        .id(2L)
+                        .title("게시글 2")
+                        .company("네이버")
+                        .url("https://test.com/2")
+                        .logoUrl("https://test.com/logo.png")
+                        .publishedAt(LocalDateTime.now())
+                        .viewCount(100L)
+                        .keywords(List.of())
+                        .isBookmarked(null)
+                        .build()
+        );
+
+        List<Long> bookmarkedPostIds = List.of(2L);
+
+        PostListResponse expectedResponse = PostListResponse.builder()
+                .posts(List.of(
+                        mockPosts.get(0).toBuilder().isBookmarked(false).build(),
+                        mockPosts.get(1).toBuilder().isBookmarked(true).build()
+                ))
+                .lastPostId(2L)
+                .hasNext(false)
+                .build();
+
+        given(postRepository.findRecentPostsWithCursor(eq(lastPostId), any(PageRequest.class)))
+                .willReturn(mockPosts);
+        given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
+        given(scrabPostRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
+        given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
+
+        // When
+        PostListResponse result = postQueryService.getRecentPosts(sortBy, lastPostId, size, userId);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.posts()).hasSize(2);
+        assertThat(result.posts().get(0).isBookmarked()).isFalse();
+        assertThat(result.posts().get(1).isBookmarked()).isTrue();
+
+        verify(postRepository, times(1)).findRecentPostsWithCursor(eq(lastPostId), any(PageRequest.class));
+        verify(scrabPostRepository, times(1)).findBookmarkedPostIds(eq(userId), any());
+    }
+
+    @Test
+    @DisplayName("getPostsByCompanyV2() - V2 API 북마크 정보 포함 조회")
+    void getPostsByCompanyV2_WithUserId_IncludesBookmarks() {
+        // Given
+        List<String> companies = List.of("카카오", "네이버");
+        LocalDateTime lastPublishedAt = null;
+        Long lastPostId = null;
+        int size = 20;
+        Long userId = 1L;
+
+        LocalDateTime now = LocalDateTime.now();
+        List<PostInfoDto> mockPosts = List.of(
+                PostInfoDto.builder()
+                        .id(1L)
+                        .title("카카오 게시글")
+                        .company("카카오")
+                        .url("https://test.com/1")
+                        .logoUrl("https://test.com/logo.png")
+                        .publishedAt(now)
+                        .viewCount(50L)
+                        .keywords(List.of())
+                        .isBookmarked(null)
+                        .build(),
+                PostInfoDto.builder()
+                        .id(2L)
+                        .title("네이버 게시글")
+                        .company("네이버")
+                        .url("https://test.com/2")
+                        .logoUrl("https://test.com/logo.png")
+                        .publishedAt(now.minusHours(1))
+                        .viewCount(100L)
+                        .keywords(List.of())
+                        .isBookmarked(null)
+                        .build()
+        );
+
+        List<Long> bookmarkedPostIds = List.of(1L, 2L);
+
+        PostListResponse expectedResponse = PostListResponse.builder()
+                .posts(List.of(
+                        mockPosts.get(0).toBuilder().isBookmarked(true).build(),
+                        mockPosts.get(1).toBuilder().isBookmarked(true).build()
+                ))
+                .lastPostId(2L)
+                .hasNext(false)
+                .build();
+
+        given(postRepository.findByCompanyNamesWithCursor(eq(companies), eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class)))
+                .willReturn(mockPosts);
+        given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
+        given(scrabPostRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
+        given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
+
+        // When
+        PostListResponse result = postQueryService.getPostsByCompanyV2(companies, lastPublishedAt, lastPostId, size, userId);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.posts()).hasSize(2);
+        assertThat(result.posts().get(0).isBookmarked()).isTrue();
+        assertThat(result.posts().get(1).isBookmarked()).isTrue();
+
+        verify(postRepository, times(1)).findByCompanyNamesWithCursor(eq(companies), eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class));
+        verify(scrabPostRepository, times(1)).findBookmarkedPostIds(eq(userId), any());
+    }
+
+    @Test
+    @DisplayName("getRecentPostsV2() - V2 API POPULAR 정렬 북마크 정보 포함")
+    void getRecentPostsV2_WithUserId_Popular_IncludesBookmarks() {
+        // Given
+        EPostSortType sortBy = EPostSortType.POPULAR;
+        Integer lastViewCount = null;
+        LocalDateTime lastPublishedAt = null;
+        Long lastPostId = null;
+        int size = 20;
+        Long userId = 1L;
+
+        LocalDateTime now = LocalDateTime.now();
+        List<PostInfoDto> mockPosts = List.of(
+                PostInfoDto.builder()
+                        .id(1L)
+                        .title("인기 게시글 1")
+                        .company("카카오")
+                        .url("https://test.com/1")
+                        .logoUrl("https://test.com/logo.png")
+                        .publishedAt(now)
+                        .viewCount(1000L)
+                        .keywords(List.of())
+                        .isBookmarked(null)
+                        .build()
+        );
+
+        List<Long> bookmarkedPostIds = List.of();
+
+        PostListResponse expectedResponse = PostListResponse.builder()
+                .posts(List.of(
+                        mockPosts.get(0).toBuilder().isBookmarked(false).build()
+                ))
+                .lastPostId(1L)
+                .hasNext(false)
+                .build();
+
+        given(postRepository.findPopularPostsWithCursorV2(eq(lastViewCount), eq(lastPostId), any(PageRequest.class)))
+                .willReturn(mockPosts);
+        given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
+        given(scrabPostRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
+        given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
+
+        // When
+        PostListResponse result = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size, userId);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.posts()).hasSize(1);
+        assertThat(result.posts().get(0).isBookmarked()).isFalse();
+
+        verify(postRepository, times(1)).findPopularPostsWithCursorV2(eq(lastViewCount), eq(lastPostId), any(PageRequest.class));
+        verify(scrabPostRepository, times(1)).findBookmarkedPostIds(eq(userId), any());
     }
 }

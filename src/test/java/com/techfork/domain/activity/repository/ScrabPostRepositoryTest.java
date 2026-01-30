@@ -134,4 +134,59 @@ class ScrabPostRepositoryTest {
         assertThat(nextPage.get(0).postId()).isEqualTo(testPost2.getId());
         assertThat(nextPage.get(1).postId()).isEqualTo(testPost1.getId());
     }
+
+    @Test
+    @DisplayName("북마크된 게시글 ID 목록 조회")
+    void findBookmarkedPostIds() {
+        // Given
+        ScrabPost scrab1 = ScrabPost.create(testUser, testPost1, LocalDateTime.now());
+        ScrabPost scrab3 = ScrabPost.create(testUser, testPost3, LocalDateTime.now());
+        scrabPostRepository.save(scrab1);
+        scrabPostRepository.save(scrab3);
+
+        List<Long> postIds = List.of(testPost1.getId(), testPost2.getId(), testPost3.getId());
+
+        // When
+        List<Long> bookmarkedPostIds = scrabPostRepository.findBookmarkedPostIds(testUser.getId(), postIds);
+
+        // Then
+        assertThat(bookmarkedPostIds).hasSize(2);
+        assertThat(bookmarkedPostIds).containsExactlyInAnyOrder(testPost1.getId(), testPost3.getId());
+        assertThat(bookmarkedPostIds).doesNotContain(testPost2.getId());
+    }
+
+    @Test
+    @DisplayName("북마크된 게시글이 없을 때 빈 리스트 반환")
+    void findBookmarkedPostIds_whenNoBookmarks() {
+        // Given
+        List<Long> postIds = List.of(testPost1.getId(), testPost2.getId(), testPost3.getId());
+
+        // When
+        List<Long> bookmarkedPostIds = scrabPostRepository.findBookmarkedPostIds(testUser.getId(), postIds);
+
+        // Then
+        assertThat(bookmarkedPostIds).isEmpty();
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 북마크는 조회되지 않음")
+    void findBookmarkedPostIds_differentUser() {
+        // Given
+        User anotherUser = User.createSocialUser(SocialType.KAKAO, "anotherSocialId", "another@example.com", "another.jpg");
+        anotherUser = userRepository.save(anotherUser);
+
+        ScrabPost scrab1 = ScrabPost.create(testUser, testPost1, LocalDateTime.now());
+        ScrabPost scrab2 = ScrabPost.create(anotherUser, testPost2, LocalDateTime.now());
+        scrabPostRepository.save(scrab1);
+        scrabPostRepository.save(scrab2);
+
+        List<Long> postIds = List.of(testPost1.getId(), testPost2.getId());
+
+        // When
+        List<Long> bookmarkedPostIds = scrabPostRepository.findBookmarkedPostIds(testUser.getId(), postIds);
+
+        // Then
+        assertThat(bookmarkedPostIds).hasSize(1);
+        assertThat(bookmarkedPostIds).containsExactly(testPost1.getId());
+    }
 }
