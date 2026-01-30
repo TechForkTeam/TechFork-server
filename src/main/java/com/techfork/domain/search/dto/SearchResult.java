@@ -12,6 +12,9 @@ public class SearchResult {
     private String companyName;
     private String url;
     private String logoUrl;
+    private String thumbnailUrl;
+    private Long viewCount;
+    private Boolean isBookmarked;
 
     private double hybridScore;
     private double personalScore;
