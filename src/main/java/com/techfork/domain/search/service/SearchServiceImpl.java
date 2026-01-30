@@ -322,6 +322,7 @@ public class SearchServiceImpl implements SearchService {
                 .url(doc.getUrl())
                 .logoUrl(doc.getLogoUrl())
                 .thumbnailUrl(doc.getThumbnailUrl())
+                .publishedAt(doc.getPublishedAt())
                 .hybridScore(score)
                 .finalScore(score)
                 .titleVector(titleVector)
