@@ -1,6 +1,8 @@
 package com.techfork.domain.search;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.search.dto.SearchResult;
 import com.techfork.domain.search.service.GeneralSearchProperties;
 import com.techfork.domain.search.service.SearchServiceImpl;
@@ -40,6 +42,12 @@ class GroundTruthGeneratorTest {
     private UserProfileDocumentRepository userProfileDocumentRepository;
 
     @Autowired
+    private PostRepository postRepository;
+
+    @Autowired
+    private ScrabPostRepository scrabPostRepository;
+
+    @Autowired
     private Executor searchAsyncExecutor;
 
     @Test
@@ -48,7 +56,8 @@ class GroundTruthGeneratorTest {
         List<String> keywords = List.of("스프링", "Java", "Spring Boot", "JPA", "Docker", "MSA", "배치", "클라우드");
 
         SearchServiceImpl searchService = new SearchServiceImpl(
-                elasticsearchClient, embeddingClient, generalSearchProperties, userProfileDocumentRepository, searchAsyncExecutor);
+                elasticsearchClient, embeddingClient, generalSearchProperties, userProfileDocumentRepository,
+                postRepository, scrabPostRepository, searchAsyncExecutor);
 
         System.out.println("========== [Copy Below JSON] ==========");
         System.out.println("[");

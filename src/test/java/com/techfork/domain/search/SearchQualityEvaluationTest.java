@@ -3,6 +3,8 @@ package com.techfork.domain.search;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.search.dto.SearchResult;
 import com.techfork.domain.search.service.GeneralSearchProperties;
 import com.techfork.domain.search.service.SearchService;
@@ -41,6 +43,12 @@ class SearchQualityEvaluationTest {
 
     @Autowired
     private UserProfileDocumentRepository userProfileDocumentRepository;
+
+    @Autowired
+    private PostRepository postRepository;
+
+    @Autowired
+    private ScrabPostRepository scrabPostRepository;
 
     @Autowired
     @Qualifier("searchAsyncExecutor")
@@ -88,6 +96,8 @@ class SearchQualityEvaluationTest {
                     embeddingClient,
                     props,
                     userProfileDocumentRepository,
+                    postRepository,
+                    scrabPostRepository,
                     searchAsyncExecutor
             );
             // 각 쿼리를 한 번씩 실행 (결과는 버림)
@@ -123,6 +133,8 @@ class SearchQualityEvaluationTest {
                         embeddingClient,
                         props,
                         userProfileDocumentRepository,
+                        postRepository,
+                        scrabPostRepository,
                         searchAsyncExecutor
                 );
 
@@ -203,6 +215,8 @@ class SearchQualityEvaluationTest {
                     embeddingClient,
                     props,
                     userProfileDocumentRepository,
+                    postRepository,
+                    scrabPostRepository,
                     searchAsyncExecutor
             );
 
