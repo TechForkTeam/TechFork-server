@@ -1,5 +1,6 @@
 package com.techfork.domain.post.service;
 
+import com.techfork.domain.activity.repository.ScrabPostRepository;
 import com.techfork.domain.post.converter.PostConverter;
 import com.techfork.domain.post.dto.*;
 import com.techfork.domain.post.entity.PostKeyword;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -27,6 +29,7 @@ public class PostQueryService {
 
     private final PostRepository postRepository;
     private final PostKeywordRepository postKeywordRepository;
+    private final ScrabPostRepository scrabPostRepository;
     private final PostConverter postConverter;
 
     public CompanyListResponse getCompanies() {
@@ -39,21 +42,31 @@ public class PostQueryService {
         return postConverter.toCompanyListResponseV2(companies);
     }
 
-    public PostListResponse getPostsByCompany(String company, Long lastPostId, int size) {
+    public PostListResponse getPostsByCompany(String company, Long lastPostId, int size, Long userId) {
         PageRequest pageRequest = PageRequest.of(0, size + 1);
         List<PostInfoDto> posts = postRepository.findByCompanyWithCursor(company, lastPostId, pageRequest);
         List<PostInfoDto> postsWithKeywords = attachKeywordsToPostInfoList(posts);
+
+        if (userId != null) {
+            postsWithKeywords = attachBookmarksToPostInfoList(postsWithKeywords, userId);
+        }
+
         return postConverter.toPostListResponse(postsWithKeywords, size);
     }
 
-    public PostListResponse getPostsByCompanyV2(List<String> companies, LocalDateTime lastPublishedAt, Long lastPostId, int size) {
+    public PostListResponse getPostsByCompanyV2(List<String> companies, LocalDateTime lastPublishedAt, Long lastPostId, int size, Long userId) {
         PageRequest pageRequest = PageRequest.of(0, size + 1);
         List<PostInfoDto> posts = postRepository.findByCompanyNamesWithCursor(companies, lastPublishedAt, lastPostId, pageRequest);
         List<PostInfoDto> postsWithKeywords = attachKeywordsToPostInfoList(posts);
+
+        if (userId != null) {
+            postsWithKeywords = attachBookmarksToPostInfoList(postsWithKeywords, userId);
+        }
+
         return postConverter.toPostListResponse(postsWithKeywords, size);
     }
 
-    public PostListResponse getRecentPosts(EPostSortType sortBy, Long lastPostId, int size) {
+    public PostListResponse getRecentPosts(EPostSortType sortBy, Long lastPostId, int size, Long userId) {
         PageRequest pageRequest = PageRequest.of(0, size + 1);
         List<PostInfoDto> posts;
 
@@ -64,10 +77,15 @@ public class PostQueryService {
         }
 
         List<PostInfoDto> postsWithKeywords = attachKeywordsToPostInfoList(posts);
+
+        if (userId != null) {
+            postsWithKeywords = attachBookmarksToPostInfoList(postsWithKeywords, userId);
+        }
+
         return postConverter.toPostListResponse(postsWithKeywords, size);
     }
 
-    public PostListResponse getRecentPostsV2(EPostSortType sortBy, Integer lastViewCount, LocalDateTime lastPublishedAt, Long lastPostId, int size) {
+    public PostListResponse getRecentPostsV2(EPostSortType sortBy, Integer lastViewCount, LocalDateTime lastPublishedAt, Long lastPostId, int size, Long userId) {
         PageRequest pageRequest = PageRequest.of(0, size + 1);
         List<PostInfoDto> posts;
 
@@ -78,10 +96,15 @@ public class PostQueryService {
         }
 
         List<PostInfoDto> postsWithKeywords = attachKeywordsToPostInfoList(posts);
+
+        if (userId != null) {
+            postsWithKeywords = attachBookmarksToPostInfoList(postsWithKeywords, userId);
+        }
+
         return postConverter.toPostListResponse(postsWithKeywords, size);
     }
 
-    public PostDetailDto getPostDetail(Long postId) {
+    public PostDetailDto getPostDetail(Long postId, Long userId) {
         PostDetailDto postDetail = postRepository.findByIdWithTechBlog(postId)
                 .orElseThrow(() -> new GeneralException(CommonErrorCode.NOT_FOUND));
 
@@ -90,7 +113,12 @@ public class PostQueryService {
                 .map(PostKeyword::getKeyword)
                 .toList();
 
-        return postConverter.toPostDetailDto(postDetail, keywords);
+        Boolean isBookmarked = null;
+        if (userId != null) {
+            isBookmarked = !scrabPostRepository.findBookmarkedPostIds(userId, List.of(postId)).isEmpty();
+        }
+
+        return postConverter.toPostDetailDto(postDetail, keywords, isBookmarked);
     }
 
     private List<PostInfoDto> attachKeywordsToPostInfoList(List<PostInfoDto> posts) {
@@ -120,6 +148,36 @@ public class PostQueryService {
                         .publishedAt(post.publishedAt())
                         .viewCount(post.viewCount())
                         .keywords(keywordMap.getOrDefault(post.id(), List.of()))
+                        .isBookmarked(null)
+                        .build())
+                .toList();
+    }
+
+    private List<PostInfoDto> attachBookmarksToPostInfoList(List<PostInfoDto> posts, Long userId) {
+        if (posts.isEmpty()) {
+            return posts;
+        }
+
+        List<Long> postIds = posts.stream()
+                .map(PostInfoDto::id)
+                .toList();
+
+        Set<Long> bookmarkedPostIds = scrabPostRepository.findBookmarkedPostIds(userId, postIds)
+                .stream()
+                .collect(Collectors.toSet());
+
+        return posts.stream()
+                .map(post -> PostInfoDto.builder()
+                        .id(post.id())
+                        .title(post.title())
+                        .company(post.company())
+                        .url(post.url())
+                        .logoUrl(post.logoUrl())
+                        .thumbnailUrl(post.thumbnailUrl())
+                        .publishedAt(post.publishedAt())
+                        .viewCount(post.viewCount())
+                        .keywords(post.keywords())
+                        .isBookmarked(bookmarkedPostIds.contains(post.id()))
                         .build())
                 .toList();
     }

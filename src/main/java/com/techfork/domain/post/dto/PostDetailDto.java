@@ -17,6 +17,7 @@ public record PostDetailDto(
         String logoUrl,
         LocalDateTime publishedAt,
         Long viewCount,
-        List<String> keywords
+        List<String> keywords,
+        Boolean isBookmarked
 ) {
 }

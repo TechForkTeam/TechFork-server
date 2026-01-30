@@ -6,6 +6,7 @@ import com.techfork.domain.post.enums.EPostSortType;
 import com.techfork.domain.post.service.PostQueryService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
+import com.techfork.global.security.oauth.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -53,6 +55,7 @@ public class PostControllerV2 {
                         초기에는 lastPublishedAt과 lastPostId를 빈 채로 호출하고,
                         페이징을 할 땐 lastPublishedAt과 lastPostId를 둘 다 동시에 보내주셔야 합니다.
                         페이징 관련 값은 응답으로 반환됩니다.
+                        로그인 시 북마크 여부가 포함됩니다.
                         """
     )
     @GetMapping("/by-company")
@@ -68,9 +71,13 @@ public class PostControllerV2 {
             @RequestParam(required = false) Long lastPostId,
 
             @Parameter(description = "페이지 크기 (기본값: 20)")
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+
+            @Parameter(hidden = true)
+            @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        PostListResponse response = postQueryService.getPostsByCompanyV2(companies, lastPublishedAt, lastPostId, size);
+        Long userId = userPrincipal != null ? userPrincipal.getId() : null;
+        PostListResponse response = postQueryService.getPostsByCompanyV2(companies, lastPublishedAt, lastPostId, size, userId);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 
@@ -82,6 +89,7 @@ public class PostControllerV2 {
                     - LATEST: publishedAt 기준 정렬, lastPublishedAt과 lastPostId 필요
                     - POPULAR: viewCount 기준 정렬, lastViewCount와 lastPostId 필요
                     초기 요청 시에는 커서 파라미터를 비워두고, 페이징 시 응답에서 받은 값을 모두 전달해주셔야 합니다.
+                    로그인 시 북마크 여부가 포함됩니다.
                     """
     )
     @GetMapping("/recent")
@@ -100,9 +108,13 @@ public class PostControllerV2 {
             @RequestParam(required = false) Long lastPostId,
 
             @Parameter(description = "페이지 크기 (기본값: 20)")
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+
+            @Parameter(hidden = true)
+            @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        PostListResponse response = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size);
+        Long userId = userPrincipal != null ? userPrincipal.getId() : null;
+        PostListResponse response = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size, userId);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 }
