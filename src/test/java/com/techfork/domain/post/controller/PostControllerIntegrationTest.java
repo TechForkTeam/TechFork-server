@@ -77,6 +77,7 @@ class PostControllerIntegrationTest extends IntegrationTestBase {
                 .fullContent("<p>전체 내용 1</p>")
                 .plainContent("전체 내용 1")
                 .summary("요약 내용 1")
+                .shortSummary("짧은 요약 1")
                 .company("테스트 회사")
                 .url("https://test.com/post/1")
                 .logoUrl("https://test.com/post/1/logo.png")
@@ -97,6 +98,7 @@ class PostControllerIntegrationTest extends IntegrationTestBase {
                 .fullContent("<p>전체 내용 2</p>")
                 .plainContent("전체 내용 2")
                 .summary("요약 내용 2")
+                .shortSummary("짧은 요약 2")
                 .company("테스트 회사")
                 .url("https://test.com/post/2")
                 .logoUrl("https://test.com/post/2/logo.png")
@@ -223,6 +225,7 @@ class PostControllerIntegrationTest extends IntegrationTestBase {
                 // PostInfoDto의 모든 필드 검증 (첫 번째 항목만)
                 .andExpect(jsonPath("$.data.posts[0].id").isNumber())
                 .andExpect(jsonPath("$.data.posts[0].title").isString())
+                .andExpect(jsonPath("$.data.posts[0].shortSummary").isString())
                 .andExpect(jsonPath("$.data.posts[0].company").isString())
                 .andExpect(jsonPath("$.data.posts[0].url").isString())
                 .andExpect(jsonPath("$.data.posts[0].logoUrl").exists())
@@ -249,9 +252,11 @@ class PostControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data.posts.length()").value(2))
                 // testPost2가 최신이므로 먼저 오고 false여야 함
                 .andExpect(jsonPath("$.data.posts[0].id").value(testPost2.getId()))
+                .andExpect(jsonPath("$.data.posts[0].shortSummary").value("짧은 요약 2"))
                 .andExpect(jsonPath("$.data.posts[0].isBookmarked").value(false))
                 // testPost1은 북마크되어 있으므로 true여야 함
                 .andExpect(jsonPath("$.data.posts[1].id").value(testPost1.getId()))
+                .andExpect(jsonPath("$.data.posts[1].shortSummary").value("짧은 요약 1"))
                 .andExpect(jsonPath("$.data.posts[1].isBookmarked").value(true));
     }
 
@@ -283,8 +288,10 @@ class PostControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data.posts").isArray())
                 .andExpect(jsonPath("$.data.posts.length()").value(2))
                 .andExpect(jsonPath("$.data.posts[0].id").value(testPost2.getId()))
+                .andExpect(jsonPath("$.data.posts[0].shortSummary").value("짧은 요약 2"))
                 .andExpect(jsonPath("$.data.posts[0].isBookmarked").value(false))
                 .andExpect(jsonPath("$.data.posts[1].id").value(testPost1.getId()))
+                .andExpect(jsonPath("$.data.posts[1].shortSummary").value("짧은 요약 1"))
                 .andExpect(jsonPath("$.data.posts[1].isBookmarked").value(true));
     }
 }

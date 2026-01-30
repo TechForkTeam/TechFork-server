@@ -51,7 +51,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("""
             SELECT new com.techfork.domain.post.dto.PostInfoDto(
-            p.id, p.title, p.company, p.url, p.logoUrl, p.thumbnailUrl, p.publishedAt, p.viewCount, null, null)
+            p.id, p.title, p.shortSummary, p.company, p.url, p.logoUrl, p.thumbnailUrl, p.publishedAt, p.viewCount, null, null)
             FROM Post p
             WHERE (:company IS NULL OR p.company = :company)
             AND (:lastPostId IS NULL OR p.id < :lastPostId)
@@ -65,7 +65,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("""
             SELECT new com.techfork.domain.post.dto.PostInfoDto(
-            p.id, p.title, p.company, p.url, p.logoUrl, p.thumbnailUrl, p.publishedAt, p.viewCount, null, null)
+            p.id, p.title, p.shortSummary, p.company, p.url, p.logoUrl, p.thumbnailUrl, p.publishedAt, p.viewCount, null, null)
             FROM Post p
             WHERE (:companies IS NULL OR p.company IN :companies)
             AND (
@@ -79,7 +79,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("""
             SELECT new com.techfork.domain.post.dto.PostInfoDto(
-            p.id, p.title, p.company, p.url, p.logoUrl, p.thumbnailUrl, p.publishedAt, p.viewCount, null, null)
+            p.id, p.title, p.shortSummary, p.company, p.url, p.logoUrl, p.thumbnailUrl, p.publishedAt, p.viewCount, null, null)
             FROM Post p
             WHERE :lastPostId IS NULL OR p.id < :lastPostId
             ORDER BY p.publishedAt DESC
@@ -91,7 +91,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("""
             SELECT new com.techfork.domain.post.dto.PostInfoDto(
-            p.id, p.title, p.company, p.url, p.logoUrl, p.thumbnailUrl, p.publishedAt, p.viewCount, null, null)
+            p.id, p.title, p.shortSummary, p.company, p.url, p.logoUrl, p.thumbnailUrl, p.publishedAt, p.viewCount, null, null)
             FROM Post p
             WHERE (
                 :lastPublishedAt IS NULL OR
@@ -108,7 +108,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("""
             SELECT new com.techfork.domain.post.dto.PostInfoDto(
-            p.id, p.title, p.company, p.url, p.logoUrl, p.thumbnailUrl, p.publishedAt, p.viewCount, null, null)
+            p.id, p.title, p.shortSummary, p.company, p.url, p.logoUrl, p.thumbnailUrl, p.publishedAt, p.viewCount, null, null)
             FROM Post p
             WHERE :lastPostId IS NULL OR p.id < :lastPostId
             ORDER BY p.viewCount DESC, p.publishedAt DESC
@@ -120,7 +120,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("""
             SELECT new com.techfork.domain.post.dto.PostInfoDto(
-            p.id, p.title, p.company, p.url, p.logoUrl, p.thumbnailUrl, p.publishedAt, p.viewCount, null, null)
+            p.id, p.title, p.shortSummary, p.company, p.url, p.logoUrl, p.thumbnailUrl, p.publishedAt, p.viewCount, null, null)
             FROM Post p
             WHERE (
                 :lastViewCount IS NULL OR
