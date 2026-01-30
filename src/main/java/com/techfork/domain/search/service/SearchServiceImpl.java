@@ -318,6 +318,7 @@ public class SearchServiceImpl implements SearchService {
                 .postId(doc.getPostId())
                 .title(doc.getTitle())
                 .summary(doc.getSummary())
+                .shortSummary(doc.getShortSummary())
                 .companyName(doc.getCompany())
                 .url(doc.getUrl())
                 .logoUrl(doc.getLogoUrl())
