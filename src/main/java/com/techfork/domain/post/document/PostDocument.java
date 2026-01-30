@@ -33,6 +33,9 @@ public class PostDocument {
     @Field(type = FieldType.Text)
     private String summary;
 
+    @Field(type = FieldType.Text)
+    private String shortSummary;
+
     @Field(type = FieldType.Keyword)
     private String company;
 
@@ -80,6 +83,7 @@ public class PostDocument {
                 .postId(post.getId())
                 .title(post.getTitle())
                 .summary(post.getSummary())
+                .shortSummary(post.getShortSummary())
                 .company(post.getCompany())
                 .url(post.getUrl())
                 .logoUrl(post.getLogoUrl())

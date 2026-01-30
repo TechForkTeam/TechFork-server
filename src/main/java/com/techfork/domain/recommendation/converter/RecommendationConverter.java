@@ -34,6 +34,7 @@ public class RecommendationConverter {
                 .id(recommendedPost.getId())
                 .postId(post.getId())
                 .title(post.getTitle())
+                .shortSummary(post.getShortSummary())
                 .company(post.getCompany())
                 .url(post.getUrl())
                 .logoUrl(post.getTechBlog().getLogoUrl())

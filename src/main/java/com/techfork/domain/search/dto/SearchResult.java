@@ -11,6 +11,7 @@ public class SearchResult {
     private Long postId;
     private String title;
     private String summary;
+    private String shortSummary;
     private String companyName;
     private String url;
     private String logoUrl;

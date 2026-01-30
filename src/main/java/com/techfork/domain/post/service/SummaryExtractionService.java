@@ -30,7 +30,8 @@ public class SummaryExtractionService {
 
             응답은 반드시 아래 JSON 형식으로만 작성해:
             {
-              "summary": "요약 내용",
+              "summary": "상세 요약 내용",
+              "shortSummary": "짧은 요약 내용",
               "keywords": ["키워드1", "키워드2", ...]
             }
             """;
@@ -56,6 +57,7 @@ public class SummaryExtractionService {
         try {
             JsonNode jsonNode = objectMapper.readTree(response);
             String summary = jsonNode.get("summary").asText();
+            String shortSummary = jsonNode.has("shortSummary") ? jsonNode.get("shortSummary").asText() : "";
             List<String> keywords = new ArrayList<>();
 
             JsonNode keywordsNode = jsonNode.get("keywords");
@@ -63,10 +65,10 @@ public class SummaryExtractionService {
                 keywordsNode.forEach(node -> keywords.add(node.asText()));
             }
 
-            return new SummaryWithKeywordsDto(summary, keywords);
+            return new SummaryWithKeywordsDto(summary, shortSummary, keywords);
         } catch (Exception e) {
             log.error("JSON 응답 파싱 실패: {}", response, e);
-            return new SummaryWithKeywordsDto("", List.of());
+            return new SummaryWithKeywordsDto("", "", List.of());
         }
     }
 
@@ -77,12 +79,18 @@ public class SummaryExtractionService {
                 제목: %s
                 내용: %s
 
-                요약 작성 가이드:
+                상세 요약(summary) 작성 가이드:
                 - 글의 전체 맥락과 흐름을 포함 (300-500자)
                 - 글에서 다루는 핵심 문제와 해결 방법을 구체적으로 기술
                 - 사용된 기술 스택, 도구, 프레임워크를 정확한 명칭으로 명시
                 - 자연스러운 한국어 문장으로 작성
                 - 마크다운이나 특수 기호 없이 순수 텍스트로만 작성
+
+                짧은 요약(shortSummary) 작성 가이드:
+                - 웹 UI에 표시될 짧은 요약 (150-200자)
+                - 글의 핵심 주제와 내용을 한두 문장으로 간결하게 표현
+                - 사용자가 빠르게 글의 내용을 파악할 수 있도록 작성
+                - 자연스러운 한국어 문장으로 작성
 
                 키워드 추출 가이드:
                 - 10-15개의 핵심 키워드 추출

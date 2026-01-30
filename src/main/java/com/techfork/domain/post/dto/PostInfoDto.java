@@ -11,6 +11,7 @@ import java.util.List;
 public record PostInfoDto(
         Long id,
         String title,
+        String shortSummary,
         String company,
         String url,
         String logoUrl,

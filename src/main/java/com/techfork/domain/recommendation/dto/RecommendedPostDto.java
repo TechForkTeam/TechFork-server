@@ -10,6 +10,7 @@ public record RecommendedPostDto(
         Long id,
         Long postId,
         String title,
+        String shortSummary,
         String company,
         String url,
         String logoUrl,
