@@ -46,7 +46,7 @@ public class PostConverter {
                 .build();
     }
 
-    public PostDetailDto toPostDetailDto(PostDetailDto baseDto, List<String> keywords) {
+    public PostDetailDto toPostDetailDto(PostDetailDto baseDto, List<String> keywords, Boolean isBookmarked) {
         return PostDetailDto.builder()
                 .id(baseDto.id())
                 .title(baseDto.title())
@@ -57,6 +57,7 @@ public class PostConverter {
                 .publishedAt(baseDto.publishedAt())
                 .viewCount(baseDto.viewCount())
                 .keywords(keywords)
+                .isBookmarked(isBookmarked)
                 .build();
     }
 }

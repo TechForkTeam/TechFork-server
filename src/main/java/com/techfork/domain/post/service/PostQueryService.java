@@ -104,7 +104,7 @@ public class PostQueryService {
         return postConverter.toPostListResponse(postsWithKeywords, size);
     }
 
-    public PostDetailDto getPostDetail(Long postId) {
+    public PostDetailDto getPostDetail(Long postId, Long userId) {
         PostDetailDto postDetail = postRepository.findByIdWithTechBlog(postId)
                 .orElseThrow(() -> new GeneralException(CommonErrorCode.NOT_FOUND));
 
@@ -113,7 +113,12 @@ public class PostQueryService {
                 .map(PostKeyword::getKeyword)
                 .toList();
 
-        return postConverter.toPostDetailDto(postDetail, keywords);
+        Boolean isBookmarked = null;
+        if (userId != null) {
+            isBookmarked = !scrabPostRepository.findBookmarkedPostIds(userId, List.of(postId)).isEmpty();
+        }
+
+        return postConverter.toPostDetailDto(postDetail, keywords, isBookmarked);
     }
 
     private List<PostInfoDto> attachKeywordsToPostInfoList(List<PostInfoDto> posts) {

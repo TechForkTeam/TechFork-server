@@ -137,7 +137,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("""
             SELECT new com.techfork.domain.post.dto.PostDetailDto(
-            p.id, p.title, p.summary, p.company, p.url, p.logoUrl, p.publishedAt, p.viewCount, null)
+            p.id, p.title, p.summary, p.company, p.url, p.logoUrl, p.publishedAt, p.viewCount, null, null)
             FROM Post p
             WHERE p.id = :id
             """)
