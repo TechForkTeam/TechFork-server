@@ -7,9 +7,11 @@ import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.domain.user.entity.User;
+import com.techfork.domain.user.enums.Role;
 import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.common.IntegrationTestBase;
+import com.techfork.global.security.jwt.JwtUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,7 +23,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -49,17 +50,24 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
     private TechBlog testTechBlog1;
     private TechBlog testTechBlog2;
     private Post todayPost;
     private Post oldPost;
     private User testUser;
+    private String accessToken;
 
     @BeforeEach
     void setUp() {
         // Given: 실제 DB에 테스트 데이터 저장
         testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", "profile.jpg");
         testUser = userRepository.save(testUser);
+
+        // JWT 토큰 생성
+        accessToken = jwtUtil.generateTokens(testUser.getId(), Role.USER).accessToken();
 
         testTechBlog1 = TechBlog.builder()
                 .companyName("카카오")
@@ -108,6 +116,10 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
                 .techBlog(testTechBlog2)
                 .build();
         postRepository.save(oldPost);
+
+        // testUser가 todayPost를 북마크
+        ScrabPost scrabPost = ScrabPost.create(testUser, todayPost, LocalDateTime.now());
+        scrabPostRepository.save(scrabPost);
     }
 
     @AfterEach
@@ -140,6 +152,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
     @DisplayName("GET /api/v2/posts/companies - 게시글이 없는 경우 빈 배열 반환")
     void getCompanies_EmptyWhenNoPosts() throws Exception {
         // Given: 모든 게시글 삭제
+        scrabPostRepository.deleteAll();
         postRepository.deleteAll();
 
         // When & Then: 빈 배열 반환 확인
@@ -299,6 +312,40 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data.posts[1].title").value("오늘의 게시글"));
     }
 
+
+    @Test
+    @DisplayName("GET /api/v2/posts/by-company - 비로그인 시 isBookmarked 미포함")
+    void getPostsByCompany_WithoutAuth() throws Exception {
+        // When & Then: 비로그인 상태에서 회사별 게시글 조회
+        mockMvc.perform(get("/api/v2/posts/by-company")
+                        .param("companies", "카카오", "네이버")
+                        .param("size", "20"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.posts").isArray())
+                .andExpect(jsonPath("$.data.posts.length()").value(2))
+                .andExpect(jsonPath("$.data.posts[0].isBookmarked").doesNotExist())
+                .andExpect(jsonPath("$.data.posts[1].isBookmarked").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("GET /api/v2/posts/by-company - 로그인 시 북마크 여부 포함 (todayPost=true, oldPost=false)")
+    void getPostsByCompany_WithAuth() throws Exception {
+        // When & Then: 여러 회사 게시글 조회
+        mockMvc.perform(get("/api/v2/posts/by-company")
+                        .param("companies", "카카오", "네이버")
+                        .param("size", "20")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.posts").isArray())
+                .andExpect(jsonPath("$.data.posts.length()").value(2))
+                .andExpect(jsonPath("$.data.posts[0].id").value(todayPost.getId()))
+                .andExpect(jsonPath("$.data.posts[0].isBookmarked").value(true))
+                .andExpect(jsonPath("$.data.posts[1].id").value(oldPost.getId()))
+                .andExpect(jsonPath("$.data.posts[1].isBookmarked").value(false));
+    }
+
     @Test
     @DisplayName("GET /api/v2/posts/recent - LATEST 정렬로 최근 게시글 조회")
     void getRecentPosts_Latest_Success() throws Exception {
@@ -447,6 +494,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
     @DisplayName("GET /api/v2/posts/recent - 게시글이 없으면 빈 배열 반환")
     void getRecentPosts_EmptyWhenNoPosts() throws Exception {
         // Given: 모든 게시글 삭제
+        scrabPostRepository.deleteAll();
         postRepository.deleteAll();
 
         // When & Then: 빈 배열 반환
@@ -461,8 +509,8 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    @DisplayName("GET /api/v2/posts/recent - 비로그인 시 isBookmarked는 null")
-    void getRecentPosts_WithoutAuth_IsBookmarkedIsNull() throws Exception {
+    @DisplayName("GET /api/v2/posts/recent - 비로그인 시 isBookmarked 미포함")
+    void getRecentPosts_WithoutAuth() throws Exception {
         // When & Then: 비로그인 상태에서 게시글 조회
         mockMvc.perform(get("/api/v2/posts/recent")
                         .param("sortBy", "LATEST")
@@ -470,24 +518,20 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.posts").isArray())
-                .andExpect(jsonPath("$.data.posts[0].isBookmarked").doesNotExist());
+                .andExpect(jsonPath("$.data.posts[0].isBookmarked").doesNotExist())
+                .andExpect(jsonPath("$.data.posts[1].isBookmarked").doesNotExist());
     }
 
     @Test
-    @DisplayName("GET /api/v2/posts/recent - 로그인 시 isBookmarked 포함")
-    void getRecentPosts_WithAuth_IncludesBookmarks() throws Exception {
-        // Given: todayPost를 북마크
-        ScrabPost scrabPost = ScrabPost.create(testUser, todayPost, LocalDateTime.now());
-        scrabPostRepository.save(scrabPost);
-
-        com.techfork.global.security.oauth.UserPrincipal userPrincipal =
-            com.techfork.global.security.oauth.UserPrincipal.buildUserPrincipal(testUser);
+    @DisplayName("GET /api/v2/posts/recent - 로그인 시 북마크 여부 포함 (todayPost=true, oldPost=false)")
+    void getRecentPosts_WithAuth() throws Exception {
+        // Given: setUp()에서 todayPost가 이미 북마크됨
 
         // When & Then: 로그인 상태에서 게시글 조회
         mockMvc.perform(get("/api/v2/posts/recent")
                         .param("sortBy", "LATEST")
                         .param("size", "20")
-                        .with(user(userPrincipal)))
+                        .header("Authorization", "Bearer " + accessToken))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.posts").isArray())
@@ -496,65 +540,5 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data.posts[0].isBookmarked").value(true))
                 .andExpect(jsonPath("$.data.posts[1].id").value(oldPost.getId()))
                 .andExpect(jsonPath("$.data.posts[1].isBookmarked").value(false));
-    }
-
-    @Test
-    @DisplayName("GET /api/v2/posts/by-company - 로그인 시 북마크 정보 포함")
-    void getPostsByCompany_WithAuth_IncludesBookmarks() throws Exception {
-        // Given: oldPost를 북마크
-        ScrabPost scrabPost = ScrabPost.create(testUser, oldPost, LocalDateTime.now());
-        scrabPostRepository.save(scrabPost);
-
-        com.techfork.global.security.oauth.UserPrincipal userPrincipal =
-            com.techfork.global.security.oauth.UserPrincipal.buildUserPrincipal(testUser);
-
-        // When & Then: 특정 회사 게시글 조회
-        mockMvc.perform(get("/api/v2/posts/by-company")
-                        .param("companies", "네이버")
-                        .param("size", "20")
-                        .with(user(userPrincipal)))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.posts").isArray())
-                .andExpect(jsonPath("$.data.posts.length()").value(1))
-                .andExpect(jsonPath("$.data.posts[0].id").value(oldPost.getId()))
-                .andExpect(jsonPath("$.data.posts[0].isBookmarked").value(true));
-    }
-
-    @Test
-    @DisplayName("GET /api/v2/posts/by-company - 비로그인 시 isBookmarked는 null")
-    void getPostsByCompany_WithoutAuth_IsBookmarkedIsNull() throws Exception {
-        // When & Then: 비로그인 상태에서 회사별 게시글 조회
-        mockMvc.perform(get("/api/v2/posts/by-company")
-                        .param("companies", "카카오")
-                        .param("size", "20"))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.posts").isArray())
-                .andExpect(jsonPath("$.data.posts[0].isBookmarked").doesNotExist());
-    }
-
-    @Test
-    @DisplayName("GET /api/v2/posts/by-company - 여러 회사 조회 시 북마크 정보 포함")
-    void getPostsByMultipleCompanies_WithAuth_IncludesBookmarks() throws Exception {
-        // Given: 두 게시글 모두 북마크
-        ScrabPost scrabPost1 = ScrabPost.create(testUser, todayPost, LocalDateTime.now());
-        ScrabPost scrabPost2 = ScrabPost.create(testUser, oldPost, LocalDateTime.now());
-        scrabPostRepository.saveAll(List.of(scrabPost1, scrabPost2));
-
-        com.techfork.global.security.oauth.UserPrincipal userPrincipal =
-            com.techfork.global.security.oauth.UserPrincipal.buildUserPrincipal(testUser);
-
-        // When & Then: 여러 회사 게시글 조회
-        mockMvc.perform(get("/api/v2/posts/by-company")
-                        .param("companies", "카카오", "네이버")
-                        .param("size", "20")
-                        .with(user(userPrincipal)))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.posts").isArray())
-                .andExpect(jsonPath("$.data.posts.length()").value(2))
-                .andExpect(jsonPath("$.data.posts[0].isBookmarked").value(true))
-                .andExpect(jsonPath("$.data.posts[1].isBookmarked").value(true));
     }
 }
