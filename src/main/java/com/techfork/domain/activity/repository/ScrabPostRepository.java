@@ -37,4 +37,12 @@ public interface ScrabPostRepository extends JpaRepository<ScrabPost, Long> {
 
     @Query("SELECT sp FROM ScrabPost sp JOIN FETCH sp.post WHERE sp.user.id = :userId ORDER BY sp.scrappedAt DESC")
     List<ScrabPost> findRecentScrapPostsByUserId(@Param("userId") Long userId, Pageable pageable);
+
+    @Query("""
+            SELECT sp.post.id
+            FROM ScrabPost sp
+            WHERE sp.user.id = :userId
+            AND sp.post.id IN :postIds
+            """)
+    List<Long> findBookmarkedPostIds(@Param("userId") Long userId, @Param("postIds") List<Long> postIds);
 }

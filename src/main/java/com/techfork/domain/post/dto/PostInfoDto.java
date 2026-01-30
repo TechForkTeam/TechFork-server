@@ -6,7 +6,7 @@ import lombok.Builder;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Builder
+@Builder(toBuilder = true)
 @Schema(name = "PostInfoDto")
 public record PostInfoDto(
         Long id,
@@ -17,6 +17,7 @@ public record PostInfoDto(
         String thumbnailUrl,
         LocalDateTime publishedAt,
         Long viewCount,
-        List<String> keywords
+        List<String> keywords,
+        Boolean isBookmarked
 ) {
 }
