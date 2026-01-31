@@ -24,7 +24,7 @@ public interface ScrabPostRepository extends JpaRepository<ScrabPost, Long> {
             JOIN p.techBlog t
             WHERE s.user = :user
             AND (:lastBookmarkId IS NULL OR s.id < :lastBookmarkId)
-            ORDER BY s.scrappedAt DESC, s.id DESC
+            ORDER BY s.id DESC
             """)
     List<BookmarkDto> findBookmarksWithCursor(
             @Param("user") User user,
