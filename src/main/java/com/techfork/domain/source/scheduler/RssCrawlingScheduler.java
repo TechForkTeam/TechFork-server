@@ -6,12 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-/**
- * RSS 크롤링 스케줄러
- * - 매일 오전 5시마다 RSS 피드 크롤링 실행
- *
- * Note: Job 실행 이력은 Spring Batch의 BATCH_JOB_EXECUTION 테이블에서 관리
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -20,10 +14,11 @@ public class RssCrawlingScheduler {
     private final CrawlingService crawlingService;
 
     /**
-     * 매일 오전 5시마다 RSS 크롤링 실행
+     * 매일 오전 5시(KST)마다 RSS 크롤링 실행
+     * - 새 글 수집 후 프로필/추천 생성 파이프라인 시작
      * cron: 0 0 5 * * * -> 매일 오전 5시
      */
-    @Scheduled(cron = "0 0 5 * * *")
+    @Scheduled(cron = "0 0 5 * * *", zone = "Asia/Seoul")
     public void scheduleCrawling() {
         log.info("RSS crawling scheduler triggered");
         crawlingService.executeCrawling();
