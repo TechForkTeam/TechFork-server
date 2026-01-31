@@ -73,6 +73,9 @@ services:
       --maxmemory-policy allkeys-lru
       --save ""
       --appendonly no
+      --rename-command KEYS ""
+      --rename-command FLUSHALL ""
+      --rename-command FLUSHDB ""
     networks:
       - app-network
     volumes:
