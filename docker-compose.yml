@@ -71,6 +71,11 @@ services:
       --requirepass ${REDIS_PASSWORD}
       --maxmemory 1gb
       --maxmemory-policy allkeys-lru
+      --save ""
+      --appendonly no
+      --rename-command KEYS ""
+      --rename-command FLUSHALL ""
+      --rename-command FLUSHDB ""
     networks:
       - app-network
     volumes:
