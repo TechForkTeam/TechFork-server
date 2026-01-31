@@ -47,14 +47,15 @@ public class PostSummaryWriter implements ItemWriter<Post> {
     }
 
     private void updatePostSummaries(List<? extends Post> posts) {
-        String sql = "UPDATE posts SET summary = ? WHERE id = ?";
+        String sql = "UPDATE posts SET summary = ?, short_summary = ? WHERE id = ?";
 
         @SuppressWarnings("unchecked")
         List<Post> postList = (List<Post>) posts;
 
         int totalUpdated = jdbcBatchExecutor.batchExecute(sql, postList, (ps, post, i) -> {
             ps.setString(1, post.getSummary());
-            ps.setLong(2, post.getId());
+            ps.setString(2, post.getShortSummary());
+            ps.setLong(3, post.getId());
         });
 
         log.debug("UPDATE posts: {}개 업데이트", totalUpdated);
