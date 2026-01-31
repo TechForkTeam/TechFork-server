@@ -16,7 +16,8 @@ public interface ScrabPostRepository extends JpaRepository<ScrabPost, Long> {
 
     @Query("""
             SELECT new com.techfork.domain.activity.dto.BookmarkDto(
-                s.id, p.id, p.title, p.url, t.companyName, t.logoUrl, p.publishedAt
+                s.id, p.id, p.title, p.shortSummary, p.url, t.companyName, t.logoUrl,
+                            p.publishedAt, p.thumbnailUrl, p.viewCount, null, true
             )
             FROM ScrabPost s
             JOIN s.post p
