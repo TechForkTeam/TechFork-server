@@ -20,9 +20,10 @@ public class UserProfileScheduler {
     private final UserProfileService userProfileService;
 
     /**
-     * 매일 새벽 3시에 최근 24시간 내 활성 사용자의 프로필을 재생성
+     * 매일 오전 6시(KST)에 최근 24시간 내 활성 사용자의 프로필을 재생성
+     * - 크롤링(5시) 후 1시간 뒤 실행
      */
-    @Scheduled(cron = "0 0 3 * * *")
+    @Scheduled(cron = "0 0 6 * * *", zone = "Asia/Seoul")
     public void regenerateActiveUserProfiles() {
         log.info("Starting daily user profile regeneration for active users");
 

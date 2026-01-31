@@ -22,11 +22,12 @@ public class RecommendationScheduler {
     private final RecommendationProperties properties;
 
     /**
-     * 매일 새벽 4시에 활성 사용자 대상 추천 생성
-     * - 프로필 생성(3시) 후 1시간 뒤 실행
+     * 매일 오전 7시(KST)에 활성 사용자 대상 추천 생성
+     * - 크롤링(5시) → 프로필 생성(6시) → 추천 생성(7시) 순서
      * - 최근 N시간 이내 활성 사용자만 대상
+     * - 향후 추천 알림 기능 추가 예정
      */
-    @Scheduled(cron = "0 0 4 * * *")
+    @Scheduled(cron = "0 0 7 * * *", zone = "Asia/Seoul")
     public void generateDailyRecommendations() {
         log.info("활성 사용자 대상으로 게시글 추천 시작");
 
