@@ -105,7 +105,7 @@ class AuthServiceTest {
         verify(jwtUtil).isValidToken(validRefreshToken);
         verify(jwtUtil).validateTokenType(validRefreshToken, TOKEN_TYPE_REFRESH);
         verify(refreshTokenService).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
-        verify(response).addCookie(any(Cookie.class));
+        verify(response).addHeader(eq("Set-Cookie"), anyString());
     }
 
     @Test
@@ -191,7 +191,7 @@ class AuthServiceTest {
         verify(jwtUtil).isValidToken(validRefreshToken);
         verify(jwtUtil).validateTokenType(validRefreshToken, TOKEN_TYPE_REFRESH);
         verify(refreshTokenService).deleteRefreshToken(userId);
-        verify(response).addCookie(any(Cookie.class));
+        verify(response).addHeader(eq("Set-Cookie"), anyString());
     }
 
     @Test
@@ -340,7 +340,7 @@ class AuthServiceTest {
         verify(userRepository).save(any(User.class));
         verify(jwtUtil).generateTokens(userId, Role.USER);
         verify(refreshTokenService).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
-        verify(response).addCookie(any(Cookie.class));
+        verify(response).addHeader(eq("Set-Cookie"), anyString());
         verify(authConverter).toKakaoLoginResponse(newAccessToken, newUser);
     }
 
@@ -387,7 +387,7 @@ class AuthServiceTest {
         verify(userRepository, never()).save(any(User.class)); // 기존 회원이므로 save 호출 안됨
         verify(jwtUtil).generateTokens(userId, Role.USER);
         verify(refreshTokenService).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
-        verify(response).addCookie(any(Cookie.class));
+        verify(response).addHeader(eq("Set-Cookie"), anyString());
         verify(authConverter).toKakaoLoginResponse(newAccessToken, existingUser);
     }
 }
