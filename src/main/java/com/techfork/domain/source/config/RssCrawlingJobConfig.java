@@ -78,6 +78,14 @@ public class RssCrawlingJobConfig {
     }
 
     @Bean
+    public Job summaryAndEmbeddingJob() {
+        return new JobBuilder("summaryAndEmbeddingJob", jobRepository)
+                .start(extractSummaryStep())
+                .next(embedAndIndexStep())
+                .build();
+    }
+
+    @Bean
     public Step fetchAndSaveRssStep() {
         return new StepBuilder("fetchAndSaveRssStep", jobRepository)
                 .<RssFeedItem, Post>chunk(10, transactionManager)
