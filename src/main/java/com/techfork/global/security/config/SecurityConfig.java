@@ -81,6 +81,7 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
+                "https://techfork-fe.vercel.app",
                 "https://techfork.shop",
                 "https://api.techfork.shop",
                 "https://appleid.apple.com"  // Apple Sign In form_post
