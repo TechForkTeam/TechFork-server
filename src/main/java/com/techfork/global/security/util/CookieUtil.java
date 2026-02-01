@@ -1,7 +1,6 @@
-package com.techfork.global.util;
+package com.techfork.global.security.util;
 
 import com.techfork.global.constant.Constants;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseCookie;
 
