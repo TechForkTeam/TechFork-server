@@ -203,7 +203,7 @@ class SecurityIntegrationTest extends IntegrationTestBase {
     @DisplayName("403 - 일반 사용자가 관리자 전용 엔드포인트 접근")
     void forbidden_UserAccessAdminEndpoint() throws Exception {
         // When & Then - 일반 사용자 토큰으로 관리자 엔드포인트 접근
-        mockMvc.perform(get("/api/v1/batch/run")
+        mockMvc.perform(get("/api/v1/admin/developer-token")
                         .header("Authorization", "Bearer " + validAccessToken))
                 .andDo(print())
                 .andExpect(status().isForbidden())
@@ -231,8 +231,7 @@ class SecurityIntegrationTest extends IntegrationTestBase {
     @DisplayName("200 - 관리자가 관리자 전용 엔드포인트 접근 (정상)")
     void success_AdminAccessAdminEndpoint() throws Exception {
         // When & Then - 관리자 토큰으로 접근 시 정상 처리
-        // 실제 배치 실행은 안 되고 404나 다른 에러가 날 수 있지만, 403이 아니어야 함
-        mockMvc.perform(get("/api/v1/batch/run")
+        mockMvc.perform(get("/api/v1/admin/batch/crawl-rss")
                         .header("Authorization", "Bearer " + adminAccessToken))
                 .andDo(print())
                 .andExpect(result -> {
