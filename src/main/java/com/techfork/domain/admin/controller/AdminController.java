@@ -2,6 +2,7 @@ package com.techfork.domain.admin.controller;
 
 import com.techfork.domain.auth.dto.DeveloperTokenResponse;
 import com.techfork.domain.auth.service.AuthService;
+import com.techfork.domain.source.service.CrawlingService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import com.techfork.global.security.oauth.UserPrincipal;
@@ -33,6 +34,7 @@ public class AdminController {
     private final AuthService authService;
     private final JobLauncher jobLauncher;
     private final Job summaryAndEmbeddingJob;
+    private final CrawlingService crawlingService;
 
     @Operation(
             summary = "개발자 토큰 발급 (ADMIN 전용)",
@@ -66,5 +68,12 @@ public class AdminController {
             log.error("배치 실행 실패", e);
             throw new RuntimeException("배치 실행 중 오류 발생: " + e.getMessage(), e);
         }
+    }
+
+    @Operation(summary = "RSS 크롤링 실행", description = "모든 테크 블로그의 RSS를 크롤링하여 DB에 저장합니다.")
+    @PostMapping("/crawl-rss")
+    public ResponseEntity<BaseResponse<String>> crawlRss() {
+        crawlingService.executeCrawling();
+        return BaseResponse.of(SuccessCode.OK, "RSS 크롤링이 성공적으로 시작되었습니다.");
     }
 }
