@@ -71,7 +71,7 @@ public class AdminController {
     }
 
     @Operation(summary = "RSS 크롤링 실행", description = "모든 테크 블로그의 RSS를 크롤링하여 DB에 저장합니다.")
-    @PostMapping("/crawl-rss")
+    @PostMapping("/batch/crawl-rss")
     public ResponseEntity<BaseResponse<String>> crawlRss() {
         crawlingService.executeCrawling();
         return BaseResponse.of(SuccessCode.OK, "RSS 크롤링이 성공적으로 시작되었습니다.");
