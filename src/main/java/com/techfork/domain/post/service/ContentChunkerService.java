@@ -1,7 +1,6 @@
 package com.techfork.domain.post.service;
 
 import com.techfork.global.util.ContentCleaner;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -22,14 +21,10 @@ import java.util.regex.Pattern;
 @Service
 public class ContentChunkerService {
 
-    // 최대 청크 크기 (약 500 토큰)
-    private static final int MAX_CHUNK_SIZE = 2000;
+    private static final int MAX_CHUNK_SIZE = 4000;
+    private static final int MIN_CHUNK_SIZE = 500;
+    private static final int OVERLAP_SIZE = 400;
 
-    // 최소 청크 크기 (너무 작은 청크 방지)
-    private static final int MIN_CHUNK_SIZE = 100;
-
-    // 청크 간 오버랩 크기
-    private static final int OVERLAP_SIZE = 200;
 
     // HTML 헤더 패턴 (h1~h6 태그로 섹션 시작 위치 찾기)
     private static final Pattern HTML_HEADER = Pattern.compile("<h[1-6][^>]*>", Pattern.CASE_INSENSITIVE);
@@ -59,7 +54,7 @@ public class ContentChunkerService {
      */
     private List<String> chunkByStructure(String content) {
         List<String> chunks = new ArrayList<>();
-        
+
         Set<Integer> startSet = new TreeSet<>();
         startSet.add(0);
 
