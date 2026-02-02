@@ -1,16 +1,14 @@
 package com.techfork.domain.post.batch;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.core.BulkResponse;
+import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
 import com.techfork.domain.post.document.PostDocument;
 import com.techfork.domain.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
-import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
-import org.springframework.data.elasticsearch.core.IndexedObjectInformation;
-import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
-import org.springframework.data.elasticsearch.core.query.IndexQuery;
-import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -20,7 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PostEmbeddingWriter implements ItemWriter<PostDocument> {
 
-    private final ElasticsearchOperations elasticsearchOperations;
+    private final ElasticsearchClient elasticsearchClient;
     private final PostRepository postRepository;
 
     @Override
@@ -31,26 +29,43 @@ public class PostEmbeddingWriter implements ItemWriter<PostDocument> {
             return;
         }
 
-        List<IndexQuery> queries = documents.stream()
-                .map(doc -> new IndexQueryBuilder()
-                        .withId(doc.getId())
-                        .withObject(doc)
-                        .build())
-                .toList();
+        BulkResponse bulkResponse = elasticsearchClient.bulk(b -> b
+                .index("posts")
+                .operations(documents.stream()
+                        .map(doc -> BulkOperation.of(op -> op
+                                .index(i -> i
+                                        .id(doc.getId())
+                                        .document(doc)
+                                )
+                        ))
+                        .toList()
+                )
+        );
 
-        IndexCoordinates index = IndexCoordinates.of("posts");
-        List<IndexedObjectInformation> result = elasticsearchOperations.bulkIndex(queries, index);
-
-        log.info("Elasticsearch Bulk Insert 완료: {} 개 성공", result.size());
-
-        if (result.size() != documents.size()) {
-            log.warn("일부 문서 저장 실패: 요청={}, 성공={}", documents.size(), result.size());
+        if (bulkResponse == null) {
+            log.error("Bulk 응답이 null입니다.");
+            return;
         }
 
-        List<Long> successPostIds = result.stream()
-                .map(IndexedObjectInformation::id)
-                .map(Long::parseLong)
+        if (bulkResponse.errors()) {
+            log.warn("Bulk 인덱싱 중 일부 실패 발생");
+        }
+
+        List<Long> successPostIds = bulkResponse.items().stream()
+                .filter(item -> item.error() == null)  // 에러 없는 것만
+                .map(item -> Long.parseLong(item.id()))
                 .toList();
+
+        int failureCount = documents.size() - successPostIds.size();
+
+        log.info("Elasticsearch Bulk Insert 완료: 성공={}, 실패={}", successPostIds.size(), failureCount);
+
+        if (failureCount > 0) {
+            log.warn("실패한 문서 ID 목록:");
+            bulkResponse.items().stream()
+                    .filter(item -> item.error() != null)
+                    .forEach(item -> log.warn("ID={}, Error={}", item.id(), item.error().reason()));
+        }
 
         if (!successPostIds.isEmpty()) {
             postRepository.bulkUpdateEmbeddedAt(successPostIds, java.time.LocalDateTime.now());
