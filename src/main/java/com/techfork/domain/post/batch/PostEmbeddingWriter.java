@@ -1,7 +1,6 @@
 package com.techfork.domain.post.batch;
 
 import com.techfork.domain.post.document.PostDocument;
-import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,9 +15,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-/**
- * PostDocument를 Elasticsearch에 Bulk Insert하는 Writer
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -51,13 +47,16 @@ public class PostEmbeddingWriter implements ItemWriter<PostDocument> {
             log.warn("일부 문서 저장 실패: 요청={}, 성공={}", documents.size(), result.size());
         }
 
-        // ES 저장 성공 후 embeddedAt Bulk 업데이트
-        List<Long> successPostIds = documents.stream()
-                .map(PostDocument::getPostId)
+        List<Long> successPostIds = result.stream()
+                .map(IndexedObjectInformation::id)
+                .map(Long::parseLong)
                 .toList();
 
-        postRepository.bulkUpdateEmbeddedAt(successPostIds, java.time.LocalDateTime.now());
-
-        log.info("Post embeddedAt Bulk 업데이트 완료: {} 개", successPostIds.size());
+        if (!successPostIds.isEmpty()) {
+            postRepository.bulkUpdateEmbeddedAt(successPostIds, java.time.LocalDateTime.now());
+            log.info("Post embeddedAt Bulk 업데이트 완료: {} 개", successPostIds.size());
+        } else {
+            log.warn("ES 저장에 성공한 문서가 없어 embeddedAt 업데이트를 건너뜁니다.");
+        }
     }
 }
