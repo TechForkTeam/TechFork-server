@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * 요약이 완료되고 임베딩이 필요한 Post를 읽어오는 Reader
@@ -27,9 +28,8 @@ public class PostEmbeddingReader implements ItemReader<Post> {
     @Override
     public Post read() {
         if(postIterator == null) {
-            Pageable pageable = PageRequest.of(0, 1000, Sort.by(Sort.Direction.DESC, "id"));
-            Page<Post> posts = postRepository.findBySummaryIsNotNullAndEmbeddedAtIsNull(pageable);
-            log.info("임베딩 대상 Post 개수: {}", posts.getContent().size());
+            List<Post> posts = postRepository.findBySummaryIsNotNullAndEmbeddedAtIsNull();
+            log.info("임베딩 대상 Post 개수: {}", posts.size());
             postIterator = posts.iterator();
         }
 
