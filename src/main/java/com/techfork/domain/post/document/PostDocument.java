@@ -1,5 +1,6 @@
 package com.techfork.domain.post.document;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.techfork.domain.post.entity.Post;
@@ -62,6 +63,7 @@ public class PostDocument {
     @Field(type = FieldType.Nested)
     private List<ContentChunk> contentChunks;
 
+    @JsonIgnore
     public LocalDateTime getPublishedAt() {
         if (publishedAtString == null) {
             return null;
