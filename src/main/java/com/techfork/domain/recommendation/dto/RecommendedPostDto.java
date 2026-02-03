@@ -24,4 +24,24 @@ public record RecommendedPostDto(
         Integer rank,
         LocalDateTime recommendedAt
 ) {
+    public RecommendedPostDto withBookmarkStatus(boolean isBookmarked) {
+        return new RecommendedPostDto(
+                id,
+                postId,
+                title,
+                shortSummary,
+                company,
+                url,
+                logoUrl,
+                thumbnailUrl,
+                viewCount,
+                isBookmarked,
+                publishedAt,
+                keywords,
+                similarityScore,
+                mmrScore,
+                rank,
+                recommendedAt
+        );
+    }
 }
