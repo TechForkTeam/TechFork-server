@@ -1,0 +1,432 @@
+package com.techfork.domain.recommendation.util;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.techfork.domain.activity.entity.ReadPost;
+import com.techfork.domain.activity.repository.ReadPostRepository;
+import com.techfork.domain.post.document.ContentChunk;
+import com.techfork.domain.post.document.PostDocument;
+import com.techfork.domain.post.entity.Post;
+import com.techfork.domain.post.repository.PostDocumentRepository;
+import com.techfork.domain.post.repository.PostRepository;
+import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.repository.TechBlogRepository;
+import com.techfork.domain.user.document.UserProfileDocument;
+import com.techfork.domain.user.entity.User;
+import com.techfork.domain.user.entity.UserInterestCategory;
+import com.techfork.domain.user.entity.UserInterestKeyword;
+import com.techfork.domain.user.enums.EInterestCategory;
+import com.techfork.domain.user.enums.EInterestKeyword;
+import com.techfork.domain.user.enums.Role;
+import com.techfork.domain.user.enums.SocialType;
+import com.techfork.domain.user.repository.UserProfileDocumentRepository;
+import com.techfork.domain.user.repository.UserRepository;
+import jakarta.persistence.EntityManager;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * JSON fixture를 읽어서 Testcontainer에 로드하는 클래스
+ */
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class EvaluationFixtureLoader {
+
+    private final UserRepository userRepository;
+    private final PostRepository postRepository;
+    private final PostDocumentRepository postDocumentRepository;
+    private final UserProfileDocumentRepository userProfileDocumentRepository;
+    private final TechBlogRepository techBlogRepository;
+    private final EntityManager entityManager;
+
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule());
+
+    private static final String FIXTURE_PATH = "fixtures/evaluation/";
+
+    /**
+     * 모든 fixture를 로드
+     */
+
+    /*@Transactional
+    public void loadAll() {
+        log.info("===== Fixture 로드 시작 =====");
+
+        try {
+            // 1. 사용자 데이터 로드
+            Map<Long, User> userMap = loadUsers();
+            log.info("✓ 사용자 {} 명 로드 완료", userMap.size());
+
+            // 2. 게시글 데이터 로드 (TechBlog 포함)
+            Map<Long, Post> postMap = loadPosts();
+            log.info("✓ 게시글 {} 개 로드 완료", postMap.size());
+
+            // 3. 읽은 글 이력 로드
+            int readPostCount = loadReadPosts(userMap, postMap);
+            log.info("✓ 읽은 글 이력 {} 개 로드 완료", readPostCount);
+
+            // 4. PostDocument (임베딩 포함) 로드
+            int postDocCount = loadPostDocuments();
+            log.info("✓ PostDocument {} 개 로드 완료 (임베딩 포함)", postDocCount);
+
+            // 5. UserProfileDocument (임베딩 포함) 로드
+            int userProfileCount = loadUserProfiles();
+            log.info("✓ UserProfileDocument {} 개 로드 완료 (임베딩 포함)", userProfileCount);
+
+            log.info("===== Fixture 로드 완료 =====\n");
+
+        } catch (IOException e) {
+            log.error("Fixture 로드 실패", e);
+            throw new RuntimeException("Fixture 로드 중 오류 발생", e);
+        }
+    }
+     */
+
+    /**
+     * 게시글 데이터만 로드 (UserDataSetupAndExporter에서 사용)
+     */
+    @Transactional
+    public void loadPostsOnly() {
+        log.info("===== 게시글 Fixture 로드 시작 =====");
+
+        try {
+            // 1. 게시글 데이터 로드 (TechBlog 포함)
+            Map<Long, Post> postMap = loadPosts();
+            log.info("✓ 게시글 {} 개 로드 완료", postMap.size());
+
+            // 2. PostDocument (임베딩 포함) 로드
+            int postDocCount = loadPostDocuments(postMap);
+            log.info("✓ PostDocument {} 개 로드 완료 (임베딩 포함)", postDocCount);
+
+            log.info("===== 게시글 Fixture 로드 완료 =====\n");
+
+        } catch (IOException e) {
+            log.error("게시글 Fixture 로드 실패", e);
+            throw new RuntimeException("게시글 Fixture 로드 중 오류 발생", e);
+        }
+    }
+
+    private Map<Long, User> loadUsers() throws IOException {
+        List<Map<String, Object>> userDtos = readJsonFile("users.json",
+                new TypeReference<List<Map<String, Object>>>() {});
+
+        Map<Long, User> userMap = new HashMap<>();
+
+        for (Map<String, Object> dto : userDtos) {
+            String email = (String) dto.get("email");
+            String nickname = (String) dto.get("nickname");
+            String profileImageUrl = (String) dto.get("profileImageUrl");
+            String socialType = (String) dto.get("socialType");
+            String socialId = (String) dto.get("socialId");
+            String roleStr = (String) dto.get("role");
+
+            User user = User.builder()
+                    .email(email)
+                    .nickName(nickname)
+                    .profileImage(profileImageUrl)
+                    .socialType(SocialType.valueOf(socialType))
+                    .socialId(socialId)
+                    .role(Role.valueOf(roleStr))
+                    .build();
+
+            user = userRepository.save(user);
+
+            // 관심사 추가
+            List<Map<String, Object>> interests =
+                    (List<Map<String, Object>>) dto.get("interests");
+
+            if (interests != null) {
+                for (Map<String, Object> interestDto : interests) {
+                    String categoryStr = (String) interestDto.get("category");
+                    EInterestCategory category = EInterestCategory.valueOf(categoryStr);
+
+                    UserInterestCategory interestCategory =
+                            UserInterestCategory.create(user, category);
+
+                    // 키워드 추가
+                    List<String> keywords = (List<String>) interestDto.get("keywords");
+                    if (keywords != null) {
+                        for (String keywordStr : keywords) {
+                            EInterestKeyword keyword = EInterestKeyword.valueOf(keywordStr);
+                            UserInterestKeyword interestKeyword =
+                                    UserInterestKeyword.create(interestCategory, keyword);
+                            interestCategory.addKeyword(interestKeyword);
+                        }
+                    }
+
+                    user.getInterestCategories().add(interestCategory);
+                }
+
+                user = userRepository.save(user);
+            }
+
+            userMap.put(user.getId(), user);
+        }
+
+        return userMap;
+    }
+
+    private Map<Long, Post> loadPosts() throws IOException {
+        List<Map<String, Object>> postDtos = readJsonFile("posts.json",
+                new TypeReference<List<Map<String, Object>>>() {});
+
+        Map<Long, Post> postMap = new HashMap<>();
+
+        // TechBlog ID -> TechBlog 매핑
+        Map<Long, TechBlog> techBlogMap = new HashMap<>();
+
+        for (Map<String, Object> dto : postDtos) {
+            Long originalPostId = ((Number) dto.get("id")).longValue(); // JSON의 원래 ID
+            Long techBlogId = ((Number) dto.get("techBlogId")).longValue();
+
+            // TechBlog 생성 또는 조회
+            TechBlog techBlog = techBlogMap.get(techBlogId);
+            if (techBlog == null) {
+                String companyName = (String) dto.get("techBlogCompanyName");
+                String blogUrl = (String) dto.get("techBlogUrl");
+                String rssUrl = (String) dto.get("techBlogRssUrl");
+
+                techBlog = TechBlog.create(companyName, blogUrl, rssUrl, null);
+                techBlog = techBlogRepository.save(techBlog);
+                techBlogMap.put(techBlogId, techBlog);
+            }
+
+            // Post 생성
+            String title = (String) dto.get("title");
+            String url = (String) dto.get("url");
+            String summary = (String) dto.get("summary");
+            String shortSummary = (String) dto.get("shortSummary");
+            String company = (String) dto.get("company");
+            String logoUrl = (String) dto.get("logoUrl");
+            String thumbnailUrl = (String) dto.get("thumbnailUrl");
+            String publishedAtStr = (String) dto.get("publishedAt");
+            LocalDateTime publishedAt = publishedAtStr != null ?
+                    LocalDateTime.parse(publishedAtStr) : null;
+
+            Post post = Post.builder()
+                    .title(title)
+                    .url(url)
+                    .summary(summary)
+                    .shortSummary(shortSummary)
+                    .company(company)
+                    .logoUrl(logoUrl)
+                    .thumbnailUrl(thumbnailUrl)
+                    .publishedAt(publishedAt)
+                    .crawledAt(LocalDateTime.now())
+                    .techBlog(techBlog)
+                    .build();
+
+            post = postRepository.save(post);
+            // JSON의 원래 ID를 키로 사용 (PostDocument 매핑을 위해)
+            postMap.put(originalPostId, post);
+        }
+
+        entityManager.flush();
+        entityManager.clear();
+
+        return postMap;
+    }
+
+    private int loadReadPosts(Map<Long, User> userMap, Map<Long, Post> postMap)
+            throws IOException {
+        List<Map<String, Object>> readPostDtos = readJsonFile("read-posts.json",
+                new TypeReference<List<Map<String, Object>>>() {});
+
+        int count = 0;
+        int batchSize = 20;
+
+        for (Map<String, Object> dto : readPostDtos) {
+            Long userId = ((Number) dto.get("userId")).longValue();
+            Long postId = ((Number) dto.get("postId")).longValue();
+            String readAtStr = (String) dto.get("readAt");
+            Integer readDurationSeconds = ((Number) dto.get("readDurationSeconds")).intValue();
+
+            User user = userMap.get(userId);
+            Post post = postMap.get(postId);
+
+            if (user == null || post == null) {
+                log.warn("ReadPost 로드 실패: userId={}, postId={}", userId, postId);
+                continue;
+            }
+
+            LocalDateTime readAt = LocalDateTime.parse(readAtStr);
+
+            ReadPost readPost = ReadPost.create(user, post, readAt, readDurationSeconds);
+            entityManager.persist(readPost);
+
+            count++;
+
+            // Batch insert
+            if (count % batchSize == 0) {
+                entityManager.flush();
+                entityManager.clear();
+            }
+        }
+
+        entityManager.flush();
+        entityManager.clear();
+
+        return count;
+    }
+
+    private int loadPostDocuments(Map<Long, Post> postMap) throws IOException {
+        List<Map<String, Object>> docDtos = readJsonFile("post-documents.json",
+                new TypeReference<List<Map<String, Object>>>() {});
+
+        int count = 0;
+
+        for (Map<String, Object> dto : docDtos) {
+            String id = String.valueOf(dto.get("id"));
+            Long originalPostId = ((Number) dto.get("postId")).longValue();
+
+            // JSON의 원래 Post ID를 실제 저장된 Post ID로 매핑
+            Post post = postMap.get(originalPostId);
+            if (post == null) {
+                log.warn("PostDocument 로드 중 Post를 찾을 수 없음: originalPostId={}", originalPostId);
+                continue;
+            }
+            Long actualPostId = post.getId();
+
+            String title = (String) dto.get("title");
+            String summary = (String) dto.get("summary");
+            String shortSummary = (String) dto.get("shortSummary");
+            String company = (String) dto.get("company");
+            String url = (String) dto.get("url");
+            String logoUrl = (String) dto.get("logoUrl");
+            String thumbnailUrl = (String) dto.get("thumbnailUrl");
+            String publishedAt = (String) dto.get("publishedAt");
+
+            // 임베딩 벡터 (List<Number> -> List<Float>)
+            List<Float> titleEmbedding = convertToFloatList(
+                    (List<Number>) dto.get("titleEmbedding"));
+            List<Float> summaryEmbedding = convertToFloatList(
+                    (List<Number>) dto.get("summaryEmbedding"));
+
+            // ContentChunk (nested)
+            List<ContentChunk> contentChunks = null;
+            if (dto.get("contentChunks") != null) {
+                List<Map<String, Object>> chunkDtos =
+                        (List<Map<String, Object>>) dto.get("contentChunks");
+                contentChunks = chunkDtos.stream()
+                        .map(this::convertToContentChunk)
+                        .collect(Collectors.toList());
+            }
+
+            PostDocument postDoc = PostDocument.builder()
+                    .id(id)
+                    .postId(actualPostId)  // 실제 저장된 Post ID 사용
+                    .title(title)
+                    .summary(summary)
+                    .shortSummary(shortSummary)
+                    .company(company)
+                    .url(url)
+                    .logoUrl(logoUrl)
+                    .thumbnailUrl(thumbnailUrl)
+                    .publishedAtString(publishedAt)
+                    .titleEmbedding(titleEmbedding)
+                    .summaryEmbedding(summaryEmbedding)
+                    .contentChunks(contentChunks)
+                    .build();
+
+            postDocumentRepository.save(postDoc);
+            count++;
+        }
+
+        return count;
+    }
+
+    private int loadUserProfiles() throws IOException {
+        List<Map<String, Object>> profileDtos = readJsonFile("user-profiles.json",
+                new TypeReference<List<Map<String, Object>>>() {});
+
+        int count = 0;
+
+        for (Map<String, Object> dto : profileDtos) {
+            String id = String.valueOf(dto.get("id"));
+            Long userId = ((Number) dto.get("userId")).longValue();
+            String profileText = (String) dto.get("profileText");
+            List<String> interests = (List<String>) dto.get("interests");
+
+            // 임베딩 벡터 (List<Number> -> float[])
+            List<Number> vectorList = (List<Number>) dto.get("profileVector");
+            float[] profileVector = null;
+            if (vectorList != null) {
+                profileVector = new float[vectorList.size()];
+                for (int i = 0; i < vectorList.size(); i++) {
+                    profileVector[i] = vectorList.get(i).floatValue();
+                }
+            }
+
+            UserProfileDocument profile = UserProfileDocument.builder()
+                    .userId(userId)
+                    .profileText(profileText)
+                    .profileVector(profileVector)
+                    .interests(interests)
+                    .build();
+
+            userProfileDocumentRepository.save(profile);
+            count++;
+        }
+
+        return count;
+    }
+
+    private ContentChunk convertToContentChunk(Map<String, Object> dto) {
+        Integer chunkOrder = dto.get("chunkOrder") != null ?
+                ((Number) dto.get("chunkOrder")).intValue() : null;
+        String chunkText = (String) dto.get("chunkText");
+        List<Float> embedding = convertToFloatList((List<Number>) dto.get("embedding"));
+
+        return ContentChunk.builder()
+                .chunkOrder(chunkOrder)
+                .chunkText(chunkText)
+                .embedding(embedding)
+                .build();
+    }
+
+    private List<Float> convertToFloatList(List<Number> numbers) {
+        if (numbers == null) return null;
+        return numbers.stream()
+                .map(Number::floatValue)
+                .collect(Collectors.toList());
+    }
+
+    private <T> T readJsonFile(String filename, TypeReference<T> typeRef) throws IOException {
+        ClassPathResource resource = new ClassPathResource(FIXTURE_PATH + filename);
+        return objectMapper.readValue(resource.getInputStream(), typeRef);
+    }
+
+    /**
+     * Entity의 ID를 강제로 설정 (Fixture 로드용)
+     */
+    private void setEntityId(Object entity, Long id) {
+        try {
+            // 상속 계층을 따라가면서 id 필드를 찾음
+            Class<?> clazz = entity.getClass();
+            while (clazz != null) {
+                try {
+                    var idField = clazz.getDeclaredField("id");
+                    idField.setAccessible(true);
+                    idField.set(entity, id);
+                    return;
+                } catch (NoSuchFieldException e) {
+                    // 현재 클래스에 없으면 상위 클래스에서 찾기
+                    clazz = clazz.getSuperclass();
+                }
+            }
+            log.warn("ID 필드를 찾을 수 없음: {}", entity.getClass().getSimpleName());
+        } catch (Exception e) {
+            log.warn("ID 설정 실패: {}", entity.getClass().getSimpleName(), e);
+        }
+    }
+}
