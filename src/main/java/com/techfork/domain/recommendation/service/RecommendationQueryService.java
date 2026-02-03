@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -33,8 +32,6 @@ public class RecommendationQueryService {
         log.info("사용자 {} 추천 목록 조회: {} 개", userId, recommendedPosts.size());
 
         RecommendationListResponse response = recommendationConverter.toRecommendationListResponse(recommendedPosts);
-
-        // Attach bookmark status
         response = attachBookmarkStatus(response, userId);
 
         return response;
@@ -45,34 +42,14 @@ public class RecommendationQueryService {
             return response;
         }
 
-        // Collect postIds
         List<Long> postIds = response.recommendations().stream()
                 .map(RecommendedPostDto::postId)
-                .collect(Collectors.toList());
-
-        // Fetch bookmark status
+                .toList();
         List<Long> bookmarkedPostIds = scrabPostRepository.findBookmarkedPostIds(userId, postIds);
 
-        // Attach bookmark status to recommendations
         List<RecommendedPostDto> updatedRecommendations = response.recommendations().stream()
-                .map(dto -> RecommendedPostDto.builder()
-                        .id(dto.id())
-                        .postId(dto.postId())
-                        .title(dto.title())
-                        .company(dto.company())
-                        .url(dto.url())
-                        .logoUrl(dto.logoUrl())
-                        .thumbnailUrl(dto.thumbnailUrl())
-                        .viewCount(dto.viewCount())
-                        .isBookmarked(bookmarkedPostIds.contains(dto.postId()))
-                        .publishedAt(dto.publishedAt())
-                        .keywords(dto.keywords())
-                        .similarityScore(dto.similarityScore())
-                        .mmrScore(dto.mmrScore())
-                        .rank(dto.rank())
-                        .recommendedAt(dto.recommendedAt())
-                        .build())
-                .collect(Collectors.toList());
+                .map(dto -> dto.withBookmarkStatus(bookmarkedPostIds.contains(dto.postId())))
+                .toList();
 
         return RecommendationListResponse.builder()
                 .recommendations(updatedRecommendations)
