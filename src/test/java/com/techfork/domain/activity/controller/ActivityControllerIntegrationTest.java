@@ -458,6 +458,105 @@ class ActivityControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data.lastBookmarkId").exists());
     }
 
+    // ===== 읽은 게시글 조회 테스트 =====
+
+    @Test
+    @DisplayName("읽은 게시글 목록 조회 성공 - 빈 목록")
+    void getReadPosts_Success_Empty() throws Exception {
+        // When & Then
+        mockMvc.perform(get("/api/v1/activities/read-posts")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("size", "20"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isSuccess").value(true))
+                .andExpect(jsonPath("$.data.readPosts").isArray())
+                .andExpect(jsonPath("$.data.readPosts").isEmpty())
+                .andExpect(jsonPath("$.data.hasNext").value(false));
+    }
+
+    @Test
+    @DisplayName("읽은 게시글 목록 조회 성공 - 여러 개")
+    void getReadPosts_Success_Multiple() throws Exception {
+        // Given - 읽은 게시글 기록 생성 (순서대로 저장)
+        ReadPost readPost1 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(2), 300);
+        ReadPost readPost2 = ReadPost.create(testUser, testPost2, LocalDateTime.now().minusHours(1), 150);
+        readPostRepository.save(readPost1);
+        readPostRepository.save(readPost2);
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/activities/read-posts")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("size", "20"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isSuccess").value(true))
+                .andExpect(jsonPath("$.data.readPosts").isArray())
+                .andExpect(jsonPath("$.data.readPosts.length()").value(2))
+                .andExpect(jsonPath("$.data.hasNext").value(false))
+                // 첫 번째 읽은 게시글 DTO 전체 필드 검증 (ID 역순이므로 readPost2)
+                .andExpect(jsonPath("$.data.readPosts[0].readPostId").value(readPost2.getId()))
+                .andExpect(jsonPath("$.data.readPosts[0].postId").value(testPost2.getId()))
+                .andExpect(jsonPath("$.data.readPosts[0].title").value("테스트 게시글 2"))
+                .andExpect(jsonPath("$.data.readPosts[0].shortSummary").value("게시글 2의 짧은 요약"))
+                .andExpect(jsonPath("$.data.readPosts[0].url").value("https://test.com/post/2"))
+                .andExpect(jsonPath("$.data.readPosts[0].companyName").value("테스트회사"))
+                .andExpect(jsonPath("$.data.readPosts[0].logoUrl").value("https://test.com/logo.png"))
+                .andExpect(jsonPath("$.data.readPosts[0].publishedAt").exists())
+                .andExpect(jsonPath("$.data.readPosts[0].thumbnailUrl").value("https://test.com/thumb2.png"))
+                .andExpect(jsonPath("$.data.readPosts[0].viewCount").value(0))
+                .andExpect(jsonPath("$.data.readPosts[0].keywords").isArray())
+                .andExpect(jsonPath("$.data.readPosts[0].isBookmarked").value(false))
+                .andExpect(jsonPath("$.data.readPosts[0].readAt").exists());
+    }
+
+    @Test
+    @DisplayName("읽은 게시글 목록 조회 성공 - 북마크 상태 포함")
+    void getReadPosts_Success_WithBookmarks() throws Exception {
+        // Given - 읽은 게시글 기록 생성 (순서대로 저장)
+        ReadPost readPost1 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(2), 300);
+        ReadPost readPost2 = ReadPost.create(testUser, testPost2, LocalDateTime.now().minusHours(1), 150);
+        readPostRepository.save(readPost1);
+        readPostRepository.save(readPost2);
+
+        // Given - testPost2만 북마크 (readPost2가 먼저 조회됨)
+        ScrabPost bookmark = ScrabPost.create(testUser, testPost2, LocalDateTime.now());
+        scrabPostRepository.save(bookmark);
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/activities/read-posts")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("size", "20"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.readPosts.length()").value(2))
+                .andExpect(jsonPath("$.data.readPosts[0].postId").value(testPost2.getId()))
+                .andExpect(jsonPath("$.data.readPosts[0].isBookmarked").value(true))  // testPost2
+                .andExpect(jsonPath("$.data.readPosts[1].postId").value(testPost1.getId()))
+                .andExpect(jsonPath("$.data.readPosts[1].isBookmarked").value(false)); // testPost1
+    }
+
+    @Test
+    @DisplayName("읽은 게시글 목록 조회 성공 - 커서 기반 페이징")
+    void getReadPosts_Success_WithCursor() throws Exception {
+        // Given - 여러 개의 읽은 게시글 생성
+        ReadPost readPost1 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(1), 300);
+        ReadPost readPost2 = ReadPost.create(testUser, testPost2, LocalDateTime.now().minusHours(2), 150);
+        readPostRepository.save(readPost1);
+        readPostRepository.save(readPost2);
+
+        // When & Then - 첫 페이지 조회
+        mockMvc.perform(get("/api/v1/activities/read-posts")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("size", "1"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isSuccess").value(true))
+                .andExpect(jsonPath("$.data.readPosts.length()").value(1))
+                .andExpect(jsonPath("$.data.hasNext").value(true))
+                .andExpect(jsonPath("$.data.lastReadPostId").exists());
+    }
+
     // ===== 통합 시나리오 테스트 =====
 
     @Test
@@ -493,5 +592,29 @@ class ActivityControllerIntegrationTest extends IntegrationTestBase {
                         .param("size", "20"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.bookmarks").isEmpty());
+    }
+
+    @Test
+    @DisplayName("통합 시나리오 - 게시글 읽기 후 읽은 목록 조회")
+    void integrationScenario_ReadPost_GetReadPosts() throws Exception {
+        // 1. 게시글 읽기 기록 저장
+        ReadPostRequest readRequest = new ReadPostRequest(
+                testPost1.getId(),
+                LocalDateTime.now(),
+                300
+        );
+        mockMvc.perform(post("/api/v1/activities/read-posts")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(readRequest)))
+                .andExpect(status().isCreated());
+
+        // 2. 읽은 게시글 목록 조회
+        mockMvc.perform(get("/api/v1/activities/read-posts")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("size", "20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.readPosts.length()").value(1))
+                .andExpect(jsonPath("$.data.readPosts[0].postId").value(testPost1.getId()));
     }
 }
