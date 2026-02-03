@@ -3,6 +3,8 @@ spring:
     name: TechFork
   profiles:
     default: local-tunnel
+  config:
+    import: optional:file:.env
   ai:
     anthropic:
       api-key: ${ANTHROPIC_API_KEY}
