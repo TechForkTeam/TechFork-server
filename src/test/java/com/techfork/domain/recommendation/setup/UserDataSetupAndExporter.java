@@ -7,7 +7,7 @@ import com.techfork.domain.activity.entity.ReadPost;
 import com.techfork.domain.activity.repository.ReadPostRepository;
 import com.techfork.domain.recommendation.setup.components.TestDataGenerator;
 import com.techfork.domain.recommendation.util.EvaluationFixtureLoader;
-import com.techfork.domain.recommendation_quality.UserCreationResult;
+import com.techfork.domain.recommendation.dto.UserCreationResult;
 import com.techfork.domain.user.document.UserProfileDocument;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.enums.EInterestCategory;

@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation_quality;
+package com.techfork.domain.recommendation.dto;
 
 import com.techfork.domain.user.entity.User;
 import lombok.Builder;

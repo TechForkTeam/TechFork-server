@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation;
+package com.techfork.domain.recommendation.evaluation;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.techfork.domain.activity.repository.ReadPostRepository;
@@ -9,9 +9,8 @@ import com.techfork.domain.recommendation.repository.RecommendationHistoryReposi
 import com.techfork.domain.recommendation.repository.RecommendedPostRepository;
 import com.techfork.domain.recommendation.service.LlmRecommendationService;
 import com.techfork.domain.recommendation.service.MmrService;
-import com.techfork.domain.recommendation_quality.ImprovedRecommendationTestCase;
-import com.techfork.domain.recommendation_quality.RecommendationQualityService;
-import com.techfork.domain.recommendation_quality.RecommendationTestCase;
+import com.techfork.domain.recommendation.setup.components.TestDataGenerator;
+import com.techfork.domain.recommendation.dto.ImprovedRecommendationTestCase;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.enums.EInterestCategory;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
