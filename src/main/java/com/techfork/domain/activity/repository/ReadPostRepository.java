@@ -1,5 +1,6 @@
 package com.techfork.domain.activity.repository;
 
+import com.techfork.domain.activity.dto.ReadPostDto;
 import com.techfork.domain.activity.entity.ReadPost;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.user.entity.User;
@@ -22,4 +23,22 @@ public interface ReadPostRepository extends JpaRepository<ReadPost, Long> {
             ORDER BY rp.readAt DESC
             """)
     List<ReadPost> findRecentReadPostsByUserIdWithMinDuration(@Param("userId") Long userId, Pageable pageable);
+
+    @Query("""
+            SELECT new com.techfork.domain.activity.dto.ReadPostDto(
+                rp.id, p.id, p.title, p.shortSummary, p.url, t.companyName, t.logoUrl,
+                p.publishedAt, p.thumbnailUrl, p.viewCount, null, null, rp.readAt
+            )
+            FROM ReadPost rp
+            JOIN rp.post p
+            JOIN p.techBlog t
+            WHERE rp.user.id = :userId
+            AND (:lastReadPostId IS NULL OR rp.id < :lastReadPostId)
+            ORDER BY rp.id DESC
+            """)
+    List<ReadPostDto> findReadPostsWithCursor(
+            @Param("userId") Long userId,
+            @Param("lastReadPostId") Long lastReadPostId,
+            Pageable pageable
+    );
 }
