@@ -22,7 +22,6 @@ import com.techfork.domain.user.enums.Role;
 import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
 import com.techfork.domain.user.repository.UserRepository;
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
@@ -31,7 +30,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -44,42 +45,33 @@ public class EvaluationFixtureLoader {
 
     private final UserRepository userRepository;
     private final PostRepository postRepository;
+    private final ReadPostRepository readPostRepository;
     private final PostDocumentRepository postDocumentRepository;
     private final UserProfileDocumentRepository userProfileDocumentRepository;
     private final TechBlogRepository techBlogRepository;
-    private final EntityManager entityManager;
 
     private final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new JavaTimeModule());
 
     private static final String FIXTURE_PATH = "fixtures/evaluation/";
 
-    /**
-     * 모든 fixture를 로드
-     */
-
-    /*@Transactional
+    @Transactional
     public void loadAll() {
         log.info("===== Fixture 로드 시작 =====");
 
         try {
-            // 1. 사용자 데이터 로드
             Map<Long, User> userMap = loadUsers();
             log.info("✓ 사용자 {} 명 로드 완료", userMap.size());
 
-            // 2. 게시글 데이터 로드 (TechBlog 포함)
             Map<Long, Post> postMap = loadPosts();
             log.info("✓ 게시글 {} 개 로드 완료", postMap.size());
 
-            // 3. 읽은 글 이력 로드
             int readPostCount = loadReadPosts(userMap, postMap);
             log.info("✓ 읽은 글 이력 {} 개 로드 완료", readPostCount);
 
-            // 4. PostDocument (임베딩 포함) 로드
-            int postDocCount = loadPostDocuments();
+            int postDocCount = loadPostDocuments(postMap);
             log.info("✓ PostDocument {} 개 로드 완료 (임베딩 포함)", postDocCount);
 
-            // 5. UserProfileDocument (임베딩 포함) 로드
             int userProfileCount = loadUserProfiles();
             log.info("✓ UserProfileDocument {} 개 로드 완료 (임베딩 포함)", userProfileCount);
 
@@ -90,21 +82,15 @@ public class EvaluationFixtureLoader {
             throw new RuntimeException("Fixture 로드 중 오류 발생", e);
         }
     }
-     */
 
-    /**
-     * 게시글 데이터만 로드 (UserDataSetupAndExporter에서 사용)
-     */
     @Transactional
     public void loadPostsOnly() {
         log.info("===== 게시글 Fixture 로드 시작 =====");
 
         try {
-            // 1. 게시글 데이터 로드 (TechBlog 포함)
             Map<Long, Post> postMap = loadPosts();
             log.info("✓ 게시글 {} 개 로드 완료", postMap.size());
 
-            // 2. PostDocument (임베딩 포함) 로드
             int postDocCount = loadPostDocuments(postMap);
             log.info("✓ PostDocument {} 개 로드 완료 (임베딩 포함)", postDocCount);
 
@@ -117,8 +103,8 @@ public class EvaluationFixtureLoader {
     }
 
     private Map<Long, User> loadUsers() throws IOException {
-        List<Map<String, Object>> userDtos = readJsonFile("users.json",
-                new TypeReference<List<Map<String, Object>>>() {});
+        List<Map<String, Object>> userDtos = readJsonFile("users.json", new TypeReference<>() {
+        });
 
         Map<Long, User> userMap = new HashMap<>();
 
@@ -177,8 +163,8 @@ public class EvaluationFixtureLoader {
     }
 
     private Map<Long, Post> loadPosts() throws IOException {
-        List<Map<String, Object>> postDtos = readJsonFile("posts.json",
-                new TypeReference<List<Map<String, Object>>>() {});
+        List<Map<String, Object>> postDtos = readJsonFile("posts.json", new TypeReference<>() {
+        });
 
         Map<Long, Post> postMap = new HashMap<>();
 
@@ -231,19 +217,15 @@ public class EvaluationFixtureLoader {
             postMap.put(originalPostId, post);
         }
 
-        entityManager.flush();
-        entityManager.clear();
-
         return postMap;
     }
 
     private int loadReadPosts(Map<Long, User> userMap, Map<Long, Post> postMap)
             throws IOException {
-        List<Map<String, Object>> readPostDtos = readJsonFile("read-posts.json",
-                new TypeReference<List<Map<String, Object>>>() {});
+        List<Map<String, Object>> readPostDtos = readJsonFile("read-posts.json", new TypeReference<>() {
+        });
 
         int count = 0;
-        int batchSize = 20;
 
         for (Map<String, Object> dto : readPostDtos) {
             Long userId = ((Number) dto.get("userId")).longValue();
@@ -262,26 +244,16 @@ public class EvaluationFixtureLoader {
             LocalDateTime readAt = LocalDateTime.parse(readAtStr);
 
             ReadPost readPost = ReadPost.create(user, post, readAt, readDurationSeconds);
-            entityManager.persist(readPost);
-
+            readPostRepository.save(readPost);
             count++;
-
-            // Batch insert
-            if (count % batchSize == 0) {
-                entityManager.flush();
-                entityManager.clear();
-            }
         }
-
-        entityManager.flush();
-        entityManager.clear();
 
         return count;
     }
 
     private int loadPostDocuments(Map<Long, Post> postMap) throws IOException {
-        List<Map<String, Object>> docDtos = readJsonFile("post-documents.json",
-                new TypeReference<List<Map<String, Object>>>() {});
+        List<Map<String, Object>> docDtos = readJsonFile("post-documents.json", new TypeReference<>() {
+        });
 
         int count = 0;
 
@@ -346,13 +318,12 @@ public class EvaluationFixtureLoader {
     }
 
     private int loadUserProfiles() throws IOException {
-        List<Map<String, Object>> profileDtos = readJsonFile("user-profiles.json",
-                new TypeReference<List<Map<String, Object>>>() {});
+        List<Map<String, Object>> profileDtos = readJsonFile("user-profiles.json", new TypeReference<>() {
+        });
 
         int count = 0;
 
         for (Map<String, Object> dto : profileDtos) {
-            String id = String.valueOf(dto.get("id"));
             Long userId = ((Number) dto.get("userId")).longValue();
             String profileText = (String) dto.get("profileText");
             List<String> interests = (List<String>) dto.get("interests");
@@ -404,29 +375,5 @@ public class EvaluationFixtureLoader {
     private <T> T readJsonFile(String filename, TypeReference<T> typeRef) throws IOException {
         ClassPathResource resource = new ClassPathResource(FIXTURE_PATH + filename);
         return objectMapper.readValue(resource.getInputStream(), typeRef);
-    }
-
-    /**
-     * Entity의 ID를 강제로 설정 (Fixture 로드용)
-     */
-    private void setEntityId(Object entity, Long id) {
-        try {
-            // 상속 계층을 따라가면서 id 필드를 찾음
-            Class<?> clazz = entity.getClass();
-            while (clazz != null) {
-                try {
-                    var idField = clazz.getDeclaredField("id");
-                    idField.setAccessible(true);
-                    idField.set(entity, id);
-                    return;
-                } catch (NoSuchFieldException e) {
-                    // 현재 클래스에 없으면 상위 클래스에서 찾기
-                    clazz = clazz.getSuperclass();
-                }
-            }
-            log.warn("ID 필드를 찾을 수 없음: {}", entity.getClass().getSimpleName());
-        } catch (Exception e) {
-            log.warn("ID 설정 실패: {}", entity.getClass().getSimpleName(), e);
-        }
     }
 }
