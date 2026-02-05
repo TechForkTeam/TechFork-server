@@ -1,6 +1,8 @@
 package com.techfork.domain.recommendation.service;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.FieldValue;
+import co.elastic.clients.elasticsearch._types.KnnSearch;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
@@ -28,7 +30,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,7 +37,7 @@ import java.util.stream.Collectors;
  * MMR 알고리즘 기반 추천 전략 구현
  * - Elasticsearch k-NN 검색으로 초기 후보군 수집
  * - MMR 알고리즘으로 다양성 보장
- * - 읽은 글 제외 필터링
+ * - 읽은 글 제외 필터링 (Pre-filtering)
  * - 시간 감쇠 가중치 적용 (최신 게시글 우선)
  */
 @Slf4j
@@ -59,8 +60,7 @@ public class LlmRecommendationService implements RecommendationService {
     private static final String POSTS_INDEX = "posts";
     private static final String TITLE_EMBEDDING_FIELD = "titleEmbedding";
     private static final String SUMMARY_EMBEDDING_FIELD = "summaryEmbedding";
-    private static final String CONTENT_CHUNKS_FIELD = "contentChunks";
-    private static final String CHUNK_EMBEDDING_FIELD = "embedding";
+    private static final String CONTENT_CHUNKS_EMBEDDING_FIELD = "contentChunks.embedding";
 
     @Override
     public int generateRecommendationsForUser(User user) {
@@ -128,43 +128,6 @@ public class LlmRecommendationService implements RecommendationService {
     }
 
     /**
-     * 추천 생성 (평가 전용 - DB 저장 안함)
-     * @return 추천된 게시글 ID 리스트
-     */
-    public List<Long> generateRecommendationsForEvaluation(User user) {
-        // 1. 사용자 프로필 벡터 조회
-        Optional<UserProfileDocument> profileOpt = userProfileDocumentRepository.findByUserId(user.getId());
-        if (profileOpt.isEmpty() || profileOpt.get().getProfileVector() == null) {
-            log.warn("사용자 {}의 프로필 또는 벡터를 찾을 수 없음. 추천 생성 스킵.", user.getId());
-            return Collections.emptyList();
-        }
-
-        float[] userProfileVector = profileOpt.get().getProfileVector();
-
-        try {
-            // 2. k-NN 검색으로 초기 후보군 가져오기
-            List<MmrCandidate> candidates = searchCandidates(userProfileVector, user);
-
-            if (candidates.isEmpty()) {
-                log.debug("사용자 {}의 추천 후보군을 찾을 수 없음", user.getId());
-                return Collections.emptyList();
-            }
-
-            // 3. MMR 적용하여 최종 추천 선택
-            List<MmrResult> mmrResults = mmrService.applyMmr(candidates);
-
-            // 4. 추천된 게시글 ID 리스트 반환 (DB에 저장하지 않음)
-            return mmrResults.stream()
-                    .map(MmrResult::getPostId)
-                    .toList();
-
-        } catch (Exception e) {
-            log.error("사용자 {} 추천 생성 실패 (평가용)", user.getId(), e);
-            return Collections.emptyList();
-        }
-    }
-
-    /**
      * 추천 생성 (평가 전용 - Train/Test Split 지원)
      * 특정 읽은 글 목록(Train Set)만 제외하고 추천 생성
      *
@@ -206,7 +169,7 @@ public class LlmRecommendationService implements RecommendationService {
     }
 
     /**
-     * Elasticsearch k-NN 검색으로 초기 후보군 조회 (커스텀 읽은 글 목록)
+     * Elasticsearch 네이티브 k-NN 검색으로 초기 후보군 조회 (커스텀 읽은 글 목록)
      * Train/Test Split 평가를 위해 Train Set만 제외
      */
     private List<MmrCandidate> searchCandidatesWithCustomReadHistory(
@@ -221,44 +184,53 @@ public class LlmRecommendationService implements RecommendationService {
 
         // 랜덤 시드 생성 (현재 시간 기반)
         long randomSeed = System.currentTimeMillis();
-        double randomWeight = 0.2; // 랜덤 가중치 20%
+        double randomWeight = 0.0; 
 
-        // k-NN 쿼리 (가중 평균: title + summary + content chunks + 랜덤 요소)
-        Query knnQuery = vectorQueryBuilder.createWeightedVectorQueryWithRandomness(
+        // 1. 읽은 글 제외 필터 쿼리 생성 (Pre-filtering)
+        Query filterQuery = createExcludeFilter(readPostIds);
+
+        // 2. 네이티브 k-NN 검색 객체 리스트 생성 (Title + Summary + Content)
+        List<KnnSearch> knnSearches = vectorQueryBuilder.createKnnSearches(
                 TITLE_EMBEDDING_FIELD,
                 SUMMARY_EMBEDDING_FIELD,
-                CONTENT_CHUNKS_FIELD,
-                CHUNK_EMBEDDING_FIELD,
+                CONTENT_CHUNKS_EMBEDDING_FIELD,
                 userProfileVector,
                 weights.getTitle(),
                 weights.getSummary(),
                 weights.getContent(),
-                randomSeed,
-                randomWeight
+                properties.getKnnSearchSize(),
+                properties.getNumCandidates(),
+                filterQuery
         );
 
-        log.debug("ES 쿼리 실행 (Train/Test Split) - 벡터 차원: {}, 가중치 [title:{}, summary:{}, content:{}]",
-                userProfileVector.length, weights.getTitle(), weights.getSummary(), weights.getContent());
+        // 3. 랜덤 요소 추가 (function_score)
+        Query randomQuery = vectorQueryBuilder.createRandomScoreQuery(randomSeed, randomWeight);
 
+        log.debug("ES k-NN 검색 실행 (Train/Test Split) - 가중치 [title:{}, summary:{}], 랜덤가중치: {}",
+                weights.getTitle(), weights.getSummary(), randomWeight);
+
+        long startTime = System.currentTimeMillis();
         SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
                         .index(POSTS_INDEX)
-                        .query(knnQuery)
+                        .knn(knnSearches)       // k-NN 검색 (관련성 + 필터링)
+                        .query(randomQuery)     // 랜덤 점수 추가
                         .size(properties.getKnnSearchSize())
                 ,
                 PostDocument.class
         );
+        long duration = System.currentTimeMillis() - startTime;
+        log.info("추천 후보군 검색 완료 (Evaluation): {} 개, 소요 시간: {}ms", response.hits().hits().size(), duration);
 
-        // 결과를 MmrCandidate로 변환 (Train Set만 필터링)
+        // 결과를 MmrCandidate로 변환
         return response.hits().hits().stream()
                 .filter(hit -> hit.source() != null)
-                .filter(hit -> !readPostIds.contains(hit.source().getPostId()))
                 .map(this::mapToMmrCandidate)
                 .filter(candidate -> candidate.getSummaryVector() != null)
                 .toList();
     }
 
     /**
-     * Elasticsearch k-NN 검색으로 초기 후보군 조회
+     * Elasticsearch 네이티브 k-NN 검색으로 초기 후보군 조회
      * - 이미 읽은 글 제외
      * - 랜덤 시드를 사용하여 매번 다른 후보군 생성
      */
@@ -276,41 +248,73 @@ public class LlmRecommendationService implements RecommendationService {
 
         // 랜덤 시드 생성 (현재 시간 기반)
         long randomSeed = System.currentTimeMillis();
-        double randomWeight = 0.2; // 랜덤 가중치 20%
+        double randomWeight = 0.0; // 랜덤 가중치 20%
 
-        // k-NN 쿼리 (가중 평균: title + summary + content chunks + 랜덤 요소)
-        Query knnQuery = vectorQueryBuilder.createWeightedVectorQueryWithRandomness(
+        // 1. 읽은 글 제외 필터 쿼리 생성 (Pre-filtering)
+        Query filterQuery = createExcludeFilter(readPostIds);
+
+        // 2. 네이티브 k-NN 검색 객체 리스트 생성 (Title + Summary + Content)
+        List<KnnSearch> knnSearches = vectorQueryBuilder.createKnnSearches(
                 TITLE_EMBEDDING_FIELD,
                 SUMMARY_EMBEDDING_FIELD,
-                CONTENT_CHUNKS_FIELD,
-                CHUNK_EMBEDDING_FIELD,
+                CONTENT_CHUNKS_EMBEDDING_FIELD,
                 userProfileVector,
                 weights.getTitle(),
                 weights.getSummary(),
                 weights.getContent(),
-                randomSeed,
-                randomWeight
+                properties.getKnnSearchSize(),
+                properties.getNumCandidates(),
+                filterQuery
         );
 
-        log.debug("ES 쿼리 실행 - 벡터 차원: {}, 가중치 [title:{}, summary:{}, content:{}], 랜덤시드: {}, 랜덤가중치: {}",
-                userProfileVector.length, weights.getTitle(), weights.getSummary(), weights.getContent(),
-                randomSeed, randomWeight);
+        // 3. 랜덤 요소 추가 (function_score)
+        Query randomQuery = vectorQueryBuilder.createRandomScoreQuery(randomSeed, randomWeight);
 
+        log.debug("ES k-NN 검색 실행 - 가중치 [title:{}, summary:{}], 랜덤시드: {}, 랜덤가중치: {}",
+                weights.getTitle(), weights.getSummary(), randomSeed, randomWeight);
+
+        long startTime = System.currentTimeMillis();
         SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
                         .index(POSTS_INDEX)
-                        .query(knnQuery)
+                        .knn(knnSearches)       // k-NN 검색 (관련성 + 필터링)
+                        .query(randomQuery)     // 랜덤 점수 추가
                         .size(properties.getKnnSearchSize())
                 ,
                 PostDocument.class
         );
+        long duration = System.currentTimeMillis() - startTime;
+        log.info("추천 후보군 검색 완료: {} 개, 소요 시간: {}ms", response.hits().hits().size(), duration);
 
-        // 결과를 MmrCandidate로 변환 (읽은 글만 필터링)
+        // 결과를 MmrCandidate로 변환
         return response.hits().hits().stream()
                 .filter(hit -> hit.source() != null)
-                .filter(hit -> !readPostIds.contains(hit.source().getPostId()))
                 .map(this::mapToMmrCandidate)
                 .filter(candidate -> candidate.getSummaryVector() != null)
                 .toList();
+    }
+
+    /**
+     * 읽은 글 제외를 위한 필터 쿼리 생성
+     */
+    private Query createExcludeFilter(Set<Long> readPostIds) {
+        if (readPostIds == null || readPostIds.isEmpty()) {
+            return null;
+        }
+
+        List<FieldValue> excludeValues = readPostIds.stream()
+                .map(FieldValue::of)
+                .toList();
+
+        return Query.of(q -> q
+                .bool(b -> b
+                        .mustNot(mn -> mn
+                                .terms(t -> t
+                                        .field("postId")
+                                        .terms(v -> v.value(excludeValues))
+                                )
+                        )
+                )
+        );
     }
 
     /**
