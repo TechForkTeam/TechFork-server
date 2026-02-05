@@ -10,83 +10,77 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * MMR Lambda 파라미터 최적화 테스트
+ */
 @Tag("evaluation")
 @Slf4j
 public class LambdaOptimizationTest extends RecommendationTestBase {
 
     @Test
-    @DisplayName("Lambda 최적화 - 3가지 가중치 조합 (Train/Test Split 방식)")
-    void optimizeLambdaWithTrainTestSplit() {
-        log.info("===== Lambda 최적화 테스트 (Train/Test Split) =====");
-        log.info("읽은 글 100개 → Train 80개 (프로필 생성용) + Test 20개 (평가용)");
-        log.info("가중치 조합: 컨텐츠중심, 요약중심, 기본값");
+    @DisplayName("Lambda 최적화 - Ground-Truth 기반 평가")
+    void optimizeLambdaWithGroundTruth() {
+        log.info("===== Lambda 최적화 테스트 (Ground-Truth 기반) =====");
+        
+        if (cachedGroundTruth == null || cachedGroundTruth.isEmpty()) {
+            log.warn("Ground-Truth 데이터가 없습니다. Fixture 로드를 확인하세요.");
+            return;
+        }
+
+        log.info("가중치 고정: 제목(0.5) + 요약(0.5)");
         log.info("Lambda 범위: 0.0 ~ 1.0 (0.1 단위)");
 
         List<ConfigCombo> configs = createLambdaTestConfigs();
         List<User> testUsers = getTestUsers();
-        log.info("테스트 사용자: {} 명 (IDs: {})", testUsers.size(), TEST_USER_IDS);
+        log.info("테스트 사용자: {} 명", testUsers.size());
 
-        printImprovedConfigComparisonHeader();
-        List<ImprovedEvaluationResult> results = evaluateAllConfigsWithTrainTestSplit(configs, testUsers);
-        printBestImprovedResultByWeightType(results);
-    }
-
-    /**
-     * Lambda 0.0 ~ 1.0 (0.1 단위) 테스트 설정 생성
-     * 컨텐츠 중심
-     */
-    private List<ConfigCombo> createLambdaTestConfigs() {
-        List<ConfigCombo> configs = new ArrayList<>();
-
-        // Lambda 0.0 ~ 1.0 (0.1 단위)
-        for (int i = 0; i <= 10; i++) {
-            double lambda = i / 10.0;
-
-            configs.add(ConfigCombo.builder()
-                    .name(String.format("컨텐츠중심 λ=%.1f", lambda))
-                    .titleWeight(0.2f)
-                    .summaryWeight(0.2f)
-                    .contentWeight(0.6f)
-                    .mmrLambda(lambda)
-                    .build());
-        }
-
-        log.info("총 {} 개 설정 생성", configs.size());
-        return configs;
-    }
-
-    /**
-     * 모든 설정 평가 (Train/Test Split)
-     */
-    private List<ImprovedEvaluationResult> evaluateAllConfigsWithTrainTestSplit(
-            List<ConfigCombo> configs,
-            List<User> testUsers) {
-        return configs.stream()
+        printLambdaOptimizationHeader();
+        List<EvaluationResult> results = configs.stream()
                 .map(config -> {
-                    log.debug("설정 평가 시작 (Train/Test Split): {}", config.getName());
-                    ImprovedEvaluationResult result = evaluateConfigWithTrainTestSplit(config, testUsers);
-                    log.debug("설정 평가 완료 (Train/Test Split): {} - Recall={}, nDCG={}, ILD={}",
-                            config.getName(), result.getAvgRecall(), result.getAvgNdcg(), result.getAvgIld());
-                    log.info(result.toString());
+                    EvaluationResult result = evaluateConfigWithGroundTruthAndILD(config, testUsers);
+                    printLambdaOptimizationResult(result);
                     return result;
                 })
                 .toList();
+        
+        printBestLambdaResults(results);
     }
 
-    /**
-     * 가중치 타입별 최고 성능 설정 출력 (Train/Test Split)
-     */
-    private void printBestImprovedResultByWeightType(List<ImprovedEvaluationResult> results) {
-        log.info("\n===== 가중치 타입별 최고 성능 설정 (Train/Test Split) =====");
-
-        // 컨텐츠 중심
-        ImprovedEvaluationResult bestContent = results.stream()
-                .filter(r -> r.getConfigName().startsWith("컨텐츠중심"))
-                .max(Comparator.comparingDouble(ImprovedEvaluationResult::getCompositeScore))
-                .orElse(null);
-        if (bestContent != null) {
-            log.info("\n[컨텐츠 중심 최고]");
-            log.info(bestContent.toString());
+    private List<ConfigCombo> createLambdaTestConfigs() {
+        List<ConfigCombo> configs = new ArrayList<>();
+        // Lambda 0.0 ~ 1.0 (0.1 단위)
+        for (int i = 0; i <= 10; i++) {
+            double lambda = i / 10.0;
+            configs.add(ConfigCombo.builder()
+                    .name(String.format("T0.5/S0.5 λ=%.1f", lambda))
+                    .titleWeight(0.5f)
+                    .summaryWeight(0.5f)
+                    .contentWeight(0.0f)
+                    .mmrLambda(lambda)
+                    .build());
         }
+        return configs;
+    }
+
+    private void printBestLambdaResults(List<EvaluationResult> results) {
+        log.info("\n===== Lambda 최적화 결과 요약 (K=8 기준) =====");
+
+        // 복합 점수 최고
+        results.stream()
+                .max(Comparator.comparingDouble(EvaluationResult::getCompositeScore))
+                .ifPresent(best -> log.info(String.format("[복합 점수 최고] %s | R@8: %.4f | nDCG@8: %.4f | ILD: %.4f | Score: %.4f",
+                        best.getConfigName(), best.getAvgRecall8(), best.getAvgNdcg8(), best.getAvgIld(), best.getCompositeScore())));
+
+        // 다양성(ILD) 최고
+        results.stream()
+                .max(Comparator.comparingDouble(EvaluationResult::getAvgIld))
+                .ifPresent(best -> log.info(String.format("[다양성(ILD) 최고] %s | ILD: %.4f",
+                        best.getConfigName(), best.getAvgIld())));
+
+        // Recall@8 최고
+        results.stream()
+                .max(Comparator.comparingDouble(EvaluationResult::getAvgRecall8))
+                .ifPresent(best -> log.info(String.format("[Recall@8 최고] %s | R@8: %.4f",
+                        best.getConfigName(), best.getAvgRecall8())));
     }
 }
