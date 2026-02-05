@@ -2,6 +2,7 @@ package com.techfork.domain.recommendation.setup;
 
 import com.techfork.domain.activity.entity.ReadPost;
 import com.techfork.domain.activity.repository.ReadPostRepository;
+import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.recommendation.setup.components.FileExporter;
 import com.techfork.domain.recommendation.setup.components.TestDataGenerator;
 import com.techfork.domain.recommendation.setup.components.TestDataGenerator.UserCreationResult;
@@ -58,6 +59,9 @@ public class UserDataSetupAndExporter extends IntegrationTestBase {
     private static final int READ_POST_COUNT = 80;   // 프로필 구성용 (읽은 글) - 1100개 데이터셋 기준 (약 7%)
     private static final int HOLDOUT_COUNT = 30;     // Ground Truth (평가용, 숨김) - 평가 샘플 (약 2.7%)
 
+    // 실제 DB ID (Local) -> 원격 DB ID (Remote) 매핑용
+    private static Map<Long, Long> actualToRemotePostIdMap = new HashMap<>();
+
     @Test
     @Order(1)
     @DisplayName("STEP 1: 게시글 픽스처 로드 (posts.json, post-documents.json)")
@@ -66,8 +70,14 @@ public class UserDataSetupAndExporter extends IntegrationTestBase {
         log.info("주의: PostDataExporter를 먼저 실행하여 게시글 데이터를 export해야 합니다.");
 
         try {
-            fixtureLoader.loadPostsOnly();
-            log.info("✓ 게시글 픽스처 로드 완료");
+            Map<Long, Post> remoteToActualMap = fixtureLoader.loadPostsOnly();
+            
+            // 역매핑 맵 생성 (실제 DB ID -> 원래 원격 ID)
+            actualToRemotePostIdMap.clear();
+            remoteToActualMap.forEach((remoteId, post) -> 
+                actualToRemotePostIdMap.put(post.getId(), remoteId));
+            
+            log.info("✓ 게시글 픽스처 로드 및 ID 매핑 완료 ({} 개)", actualToRemotePostIdMap.size());
         } catch (Exception e) {
             log.error("게시글 픽스처 로드 실패. PostDataExporter를 먼저 실행하세요.", e);
             throw e;
@@ -116,8 +126,23 @@ public class UserDataSetupAndExporter extends IntegrationTestBase {
                 .count();
         log.info("UserProfile(임베딩) 생성된 사용자: {} 명", profileCount);
 
-        fileExporter.writeJsonFile("ground-truth.json", userGroundTruthMap);
-        log.info("✓ Ground Truth {} 명 export 완료", userGroundTruthMap.size());
+        // ID 변환: 실제 DB ID -> 원격 DB ID
+        Map<Long, Map<Long, Integer>> convertedGroundTruthMap = new HashMap<>();
+        userGroundTruthMap.forEach((userId, scores) -> {
+            Map<Long, Integer> convertedScores = new HashMap<>();
+            scores.forEach((actualPostId, score) -> {
+                Long remoteId = actualToRemotePostIdMap.get(actualPostId);
+                if (remoteId != null) {
+                    convertedScores.put(remoteId, score);
+                } else {
+                    log.warn("Ground Truth Post ID 매핑 실패: actualPostId={}", actualPostId);
+                }
+            });
+            convertedGroundTruthMap.put(userId, convertedScores);
+        });
+
+        fileExporter.writeJsonFile("ground-truth.json", convertedGroundTruthMap);
+        log.info("✓ Ground Truth {} 명 export 완료 (원격 ID 변환 적용)", convertedGroundTruthMap.size());
     }
 
     @Test
@@ -256,7 +281,12 @@ public class UserDataSetupAndExporter extends IntegrationTestBase {
     private Map<String, Object> convertReadPostToDto(ReadPost readPost) {
         Map<String, Object> dto = new HashMap<>();
         dto.put("userId", readPost.getUser().getId());
-        dto.put("postId", readPost.getPost().getId());
+        
+        // 실제 DB ID -> 원격 DB ID로 변환
+        Long actualPostId = readPost.getPost().getId();
+        Long remotePostId = actualToRemotePostIdMap.get(actualPostId);
+        dto.put("postId", remotePostId != null ? remotePostId : actualPostId);
+        
         dto.put("readAt", readPost.getReadAt().toString());
         dto.put("readDurationSeconds", readPost.getReadDurationSeconds());
         return dto;

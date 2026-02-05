@@ -56,7 +56,7 @@ public class EvaluationFixtureLoader {
     private static final String FIXTURE_PATH = "fixtures/evaluation/";
 
     @Transactional
-    public void loadAll() {
+    public Map<Long, Map<Long, Integer>> loadAll() {
         log.info("===== Fixture 로드 시작 =====");
 
         try {
@@ -72,10 +72,15 @@ public class EvaluationFixtureLoader {
             int postDocCount = loadPostDocuments(postMap);
             log.info("✓ PostDocument {} 개 로드 완료 (임베딩 포함)", postDocCount);
 
-            int userProfileCount = loadUserProfiles();
+            int userProfileCount = loadUserProfiles(userMap);
             log.info("✓ UserProfileDocument {} 개 로드 완료 (임베딩 포함)", userProfileCount);
 
+            Map<Long, Map<Long, Integer>> groundTruth = loadGroundTruth(userMap, postMap);
+            log.info("✓ Ground Truth {} 명 사용자 로드 완료", groundTruth.size());
+
             log.info("===== Fixture 로드 완료 =====\n");
+
+            return groundTruth;
 
         } catch (IOException e) {
             log.error("Fixture 로드 실패", e);
@@ -84,7 +89,7 @@ public class EvaluationFixtureLoader {
     }
 
     @Transactional
-    public void loadPostsOnly() {
+    public Map<Long, Post> loadPostsOnly() {
         log.info("===== 게시글 Fixture 로드 시작 =====");
 
         try {
@@ -95,6 +100,7 @@ public class EvaluationFixtureLoader {
             log.info("✓ PostDocument {} 개 로드 완료 (임베딩 포함)", postDocCount);
 
             log.info("===== 게시글 Fixture 로드 완료 =====\n");
+            return postMap;
 
         } catch (IOException e) {
             log.error("게시글 Fixture 로드 실패", e);
@@ -109,6 +115,7 @@ public class EvaluationFixtureLoader {
         Map<Long, User> userMap = new HashMap<>();
 
         for (Map<String, Object> dto : userDtos) {
+            Long originalUserId = ((Number) dto.get("id")).longValue(); // JSON의 원래 ID
             String email = (String) dto.get("email");
             String nickname = (String) dto.get("nickname");
             String profileImageUrl = (String) dto.get("profileImageUrl");
@@ -156,7 +163,8 @@ public class EvaluationFixtureLoader {
                 user = userRepository.save(user);
             }
 
-            userMap.put(user.getId(), user);
+            // JSON의 원래 ID를 키로 사용 (Ground-Truth, ReadPost 매핑을 위해)
+            userMap.put(originalUserId, user);
         }
 
         return userMap;
@@ -317,16 +325,24 @@ public class EvaluationFixtureLoader {
         return count;
     }
 
-    private int loadUserProfiles() throws IOException {
+    private int loadUserProfiles(Map<Long, User> userMap) throws IOException {
         List<Map<String, Object>> profileDtos = readJsonFile("user-profiles.json", new TypeReference<>() {
         });
 
         int count = 0;
 
         for (Map<String, Object> dto : profileDtos) {
-            Long userId = ((Number) dto.get("userId")).longValue();
+            Long originalUserId = ((Number) dto.get("userId")).longValue();
             String profileText = (String) dto.get("profileText");
             List<String> interests = (List<String>) dto.get("interests");
+
+            // JSON의 원래 User ID를 실제 DB User ID로 매핑
+            User user = userMap.get(originalUserId);
+            if (user == null) {
+                log.warn("UserProfile 로드 실패: 사용자를 찾을 수 없음 (원본 User ID={})", originalUserId);
+                continue;
+            }
+            Long actualUserId = user.getId();
 
             // 임베딩 벡터 (List<Number> -> float[])
             List<Number> vectorList = (List<Number>) dto.get("profileVector");
@@ -339,7 +355,7 @@ public class EvaluationFixtureLoader {
             }
 
             UserProfileDocument profile = UserProfileDocument.builder()
-                    .userId(userId)
+                    .userId(actualUserId)
                     .profileText(profileText)
                     .profileVector(profileVector)
                     .interests(interests)
@@ -370,6 +386,65 @@ public class EvaluationFixtureLoader {
         return numbers.stream()
                 .map(Number::floatValue)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Ground Truth 데이터 로드 (Post ID를 실제 DB ID로 매핑)
+     * JSON 구조: { "userId": { "postId": relevanceScore, ... }, ... }
+     *
+     * @param userMap JSON의 원래 User ID -> 실제 저장된 User 매핑
+     * @param postMap JSON의 원래 Post ID -> 실제 저장된 Post 매핑
+     * @return Map<실제 사용자 DB ID, Map<실제 게시글 DB ID, 관련도점수>>
+     */
+    private Map<Long, Map<Long, Integer>> loadGroundTruth(
+            Map<Long, User> userMap,
+            Map<Long, Post> postMap) throws IOException {
+        // JSON에서 String 키로 읽어서 Long으로 변환
+        Map<String, Map<String, Integer>> rawData = readJsonFile("ground-truth.json", new TypeReference<>() {
+        });
+
+        Map<Long, Map<Long, Integer>> groundTruth = new HashMap<>();
+        int mappedCount = 0;
+        int skippedCount = 0;
+
+        for (Map.Entry<String, Map<String, Integer>> userEntry : rawData.entrySet()) {
+            Long originalUserId = Long.parseLong(userEntry.getKey());
+
+            // JSON의 User ID -> 실제 DB User ID 매핑
+            User user = userMap.get(originalUserId);
+            if (user == null) {
+                log.warn("Ground Truth 로드 실패: 사용자를 찾을 수 없음 (원본 User ID={})", originalUserId);
+                skippedCount++;
+                continue;
+            }
+            Long actualUserId = user.getId();
+
+            Map<Long, Integer> postScores = new HashMap<>();
+
+            for (Map.Entry<String, Integer> postEntry : userEntry.getValue().entrySet()) {
+                Long originalPostId = Long.parseLong(postEntry.getKey());
+                Integer relevanceScore = postEntry.getValue();
+
+                // JSON의 Post ID -> 실제 DB Post ID 매핑
+                Post post = postMap.get(originalPostId);
+                if (post == null) {
+                    log.debug("Ground Truth 매핑 실패: Post를 찾을 수 없음 (원본 Post ID={})", originalPostId);
+                    skippedCount++;
+                    continue;
+                }
+                Long actualPostId = post.getId();
+
+                postScores.put(actualPostId, relevanceScore);
+                mappedCount++;
+            }
+
+            if (!postScores.isEmpty()) {
+                groundTruth.put(actualUserId, postScores);
+            }
+        }
+
+        log.info("✓ Ground Truth 매핑 완료: {} 개 (스킵: {} 개)", mappedCount, skippedCount);
+        return groundTruth;
     }
 
     private <T> T readJsonFile(String filename, TypeReference<T> typeRef) throws IOException {
