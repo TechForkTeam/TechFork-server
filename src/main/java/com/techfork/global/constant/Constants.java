@@ -18,7 +18,6 @@ public final class Constants {
             "/v3/api-docs/**",
             "/actuator/**",
             "/error",
-            "/api/v1/recommendations",
             "/api/v2/posts/**",
             "/api/v1/posts/**",
             "/api/v1/search/**",
