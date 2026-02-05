@@ -35,6 +35,7 @@ public class TestDataGenerator {
     private final PostRepository postRepository;
     private final UserProfileService userProfileService;
     private final UserProfileDocumentRepository userProfileDocumentRepository;
+    private final org.springframework.data.elasticsearch.core.ElasticsearchOperations elasticsearchOperations;
 
     // 분리된 컴포넌트
     private final PostMatcher postMatcher;
@@ -122,32 +123,36 @@ public class TestDataGenerator {
 
         // UserProfile 생성 (임베딩 포함) - 동기 버전 사용
         // Ground Truth 점수 계산 전에 프로필 벡터가 필요함
+        UserProfileDocument userProfile = null;
         try {
             userProfileService.generateUserProfileSync(user.getId());
-            log.info("사용자 프로필 및 임베딩 생성 완료: userId={}", user.getId());
+            
+            // Elasticsearch Refresh: 저장이 검색 가능해지도록 강제 갱신
+            elasticsearchOperations.indexOps(UserProfileDocument.class).refresh();
+            
+            Optional<UserProfileDocument> userProfileOpt = userProfileDocumentRepository.findByUserId(user.getId());
+            if (userProfileOpt.isPresent()) {
+                userProfile = userProfileOpt.get();
+                log.info("사용자 프로필 및 임베딩 생성 완료: userId={}", user.getId());
+            } else {
+                log.error("사용자 프로필을 찾을 수 없습니다 (Refresh 후에도 없음): userId={}", user.getId());
+            }
         } catch (Exception e) {
             log.error("사용자 프로필 생성 실패: userId={}", user.getId(), e);
             throw e;
         }
 
-        // 사용자 프로필 벡터 가져오기 (임베딩 기반 점수 계산용)
-        float[] userProfileVector = null;
-        Optional<UserProfileDocument> userProfileOpt = userProfileDocumentRepository.findByUserId(user.getId());
-        if (userProfileOpt.isPresent()) {
-            userProfileVector = userProfileOpt.get().getProfileVector();
-            log.debug("사용자 프로필 벡터 로드: {} 차원", userProfileVector != null ? userProfileVector.length : "null");
-        } else {
-            log.warn("사용자 프로필 벡터를 찾을 수 없습니다. 키워드 기반으로 fallback. userId={}", user.getId());
+        if (userProfile == null) {
+            throw new RuntimeException("UserProfile 생성 실패. Ground Truth를 계산할 수 없습니다.");
         }
 
-        // 6. Ground Truth 관련도 점수 계산 (nDCG용) - 임베딩 유사도 기반
+        // 6. Ground Truth 관련도 점수 계산 (LLM 기반)
         int actualHoldoutCount = Math.min(relatedPosts.size() - actualPersonalCount, holdoutCount);
         List<Post> holdoutPosts = relatedPosts.subList(actualPersonalCount, actualPersonalCount + actualHoldoutCount);
 
         Map<Long, Integer> groundTruthScores = groundTruthGenerator.calculateGroundTruth(
                 holdoutPosts,
-                interestCategories,
-                userProfileVector
+                userProfile
         );
 
         log.info("Ground Truth 설정: {} 개 (평가용, 숨김)", actualHoldoutCount);
