@@ -33,6 +33,12 @@ public interface ReadPostRepository extends JpaRepository<ReadPost, Long> {
             JOIN rp.post p
             JOIN p.techBlog t
             WHERE rp.user.id = :userId
+            AND rp.id IN (
+                SELECT MAX(rp2.id)
+                FROM ReadPost rp2
+                WHERE rp2.user.id = :userId
+                GROUP BY rp2.post.id
+            )
             AND (:lastReadPostId IS NULL OR rp.id < :lastReadPostId)
             ORDER BY rp.id DESC
             """)
