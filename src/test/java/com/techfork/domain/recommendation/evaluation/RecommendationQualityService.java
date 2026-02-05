@@ -1,6 +1,7 @@
 package com.techfork.domain.recommendation.evaluation;
 
 import com.techfork.global.util.VectorUtil;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 
@@ -10,6 +11,7 @@ import java.util.*;
  * - nDCG@K: 순위 기반 정확도
  * - ILD (Intra-List Diversity): 추천 목록 내 다양성
  */
+@Component
 public class RecommendationQualityService {
 
     /**
