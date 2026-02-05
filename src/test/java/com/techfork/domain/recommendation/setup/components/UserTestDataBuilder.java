@@ -3,6 +3,9 @@ package com.techfork.domain.recommendation.setup.components;
 import com.techfork.domain.activity.entity.ReadPost;
 import com.techfork.domain.activity.entity.ScrabPost;
 import com.techfork.domain.activity.entity.SearchHistory;
+import com.techfork.domain.activity.repository.ReadPostRepository;
+import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.repository.SearchHistoryRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.entity.UserInterestCategory;
@@ -12,17 +15,16 @@ import com.techfork.domain.user.enums.EInterestKeyword;
 import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.repository.UserInterestCategoryRepository;
 import com.techfork.domain.user.repository.UserRepository;
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
-/**
- * 테스트용 사용자 및 활동 데이터 생성
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -30,15 +32,14 @@ public class UserTestDataBuilder {
 
     private final UserRepository userRepository;
     private final UserInterestCategoryRepository userInterestCategoryRepository;
-    private final EntityManager entityManager;
+    private final ReadPostRepository readPostRepository;
+    private final ScrabPostRepository scrabPostRepository;
+    private final SearchHistoryRepository searchHistoryRepository;
 
-    /**
-     * 사용자 생성 (관심사 포함)
-     */
     public User createUserWithInterests(List<EInterestCategory> interestCategories) {
         User user = User.createSocialUser(
                 SocialType.KAKAO,
-                "testSocialId_" + UUID.randomUUID().toString(),
+                "testSocialId_" + UUID.randomUUID(),
                 "test_" + System.currentTimeMillis() + "@example.com",
                 null
         );
@@ -74,12 +75,9 @@ public class UserTestDataBuilder {
         return user;
     }
 
-    /**
-     * 읽은 글 생성
-     */
     public void createReadPosts(User user, List<Post> posts) {
         LocalDateTime now = LocalDateTime.now();
-        int batchSize = 20;
+        List<ReadPost> readPosts = new ArrayList<>();
 
         for (int i = 0; i < posts.size(); i++) {
             Post post = posts.get(i);
@@ -89,25 +87,17 @@ public class UserTestDataBuilder {
                     now.minusDays(posts.size() - i),
                     180 // 3분 읽음
             );
-            entityManager.persist(readPost);
-
-            if ((i + 1) % batchSize == 0) {
-                entityManager.flush();
-                entityManager.clear();
-            }
+            readPosts.add(readPost);
         }
-        entityManager.flush();
-        entityManager.clear();
 
+        readPostRepository.saveAll(readPosts);
         log.debug("읽은 글 {} 개 생성 완료", posts.size());
     }
 
-    /**
-     * 스크랩한 글 생성 (읽은 글 중 일부를 스크랩)
-     */
+
     public void createScrapPosts(User user, List<Post> readPosts, int scrapCount) {
         LocalDateTime now = LocalDateTime.now();
-        int batchSize = 20;
+        List<ScrabPost> scrabPosts = new ArrayList<>();
 
         List<Post> postsToScrap = new ArrayList<>(readPosts);
         Collections.shuffle(postsToScrap);
@@ -121,25 +111,16 @@ public class UserTestDataBuilder {
                     post,
                     now.minusDays(readPosts.size() - i - 5) // 읽은 시점보다 약간 후에 스크랩
             );
-            entityManager.persist(scrabPost);
-
-            if ((i + 1) % batchSize == 0) {
-                entityManager.flush();
-                entityManager.clear();
-            }
+            scrabPosts.add(scrabPost);
         }
-        entityManager.flush();
-        entityManager.clear();
 
+        scrabPostRepository.saveAll(scrabPosts);
         log.debug("스크랩한 글 {} 개 생성 완료", actualScrapCount);
     }
 
-    /**
-     * 검색 기록 생성 (관심사 기반 검색어)
-     */
     public void createSearchHistories(User user, List<String> searchKeywords, int searchHistoryCount) {
         LocalDateTime now = LocalDateTime.now();
-        int batchSize = 20;
+        List<SearchHistory> searchHistories = new ArrayList<>();
 
         for (int i = 0; i < searchHistoryCount; i++) {
             String searchWord = searchKeywords.get(i % searchKeywords.size());
@@ -148,16 +129,10 @@ public class UserTestDataBuilder {
                     searchWord,
                     now.minusDays(searchHistoryCount - i * 2) // 읽기 활동 사이사이에 검색
             );
-            entityManager.persist(searchHistory);
-
-            if ((i + 1) % batchSize == 0) {
-                entityManager.flush();
-                entityManager.clear();
-            }
+            searchHistories.add(searchHistory);
         }
-        entityManager.flush();
-        entityManager.clear();
 
+        searchHistoryRepository.saveAll(searchHistories);
         log.debug("검색 기록 {} 개 생성 완료", searchHistoryCount);
     }
 }

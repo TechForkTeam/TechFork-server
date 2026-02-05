@@ -1,23 +1,16 @@
 package com.techfork.domain.recommendation.setup.components;
 
-import com.techfork.domain.activity.repository.ReadPostRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
-import com.techfork.domain.recommendation.dto.ImprovedRecommendationTestCase;
-import com.techfork.domain.recommendation.dto.TrainTestSplit;
-import com.techfork.domain.recommendation.dto.UserCreationResult;
 import com.techfork.domain.user.document.UserProfileDocument;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.enums.EInterestCategory;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
-import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.domain.user.service.UserProfileService;
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,29 +27,23 @@ import java.util.*;
 @RequiredArgsConstructor
 public class TestDataGenerator {
 
+    public record UserCreationResult(
+            User user,
+            Map<Long, Integer> groundTruthScores
+    ) {}
+
     private final PostRepository postRepository;
-    private final UserRepository userRepository;
-    private final ReadPostRepository readPostRepository;
     private final UserProfileService userProfileService;
     private final UserProfileDocumentRepository userProfileDocumentRepository;
-    private final EntityManager entityManager;
 
     // 분리된 컴포넌트
     private final PostMatcher postMatcher;
     private final UserTestDataBuilder userTestDataBuilder;
     private final GroundTruthGenerator groundTruthGenerator;
+    private final GroundTruthValidator groundTruthValidator;
 
     // 공통 읽은 글 풀 (모든 사용자가 공통으로 읽는 글)
     private static List<Post> sharedReadPosts = null;
-
-    /**
-     * 공통 읽은 글 풀 초기화 (테스트 시작 전 호출)
-     * 여러 사용자 생성 전에 한 번만 호출하면 모든 사용자가 같은 공통 글 풀 사용
-     */
-    public void resetSharedReadPosts() {
-        sharedReadPosts = null;
-        log.info("공통 읽은 글 풀 초기화됨");
-    }
 
     /**
      * 테스트용 사용자 생성 - Leave-K-Out 방식
@@ -66,7 +53,6 @@ public class TestDataGenerator {
      * @param holdoutCount       숨길 정답 개수 (Ground Truth)
      * @return 사용자 생성 결과 (User + Ground Truth 게시글 ID)
      */
-    @Transactional
     public UserCreationResult createTestUserWithGroundTruth(List<EInterestCategory> interestCategories, int readPostCount, int holdoutCount) {
         return createTestUserWithGroundTruth(interestCategories, readPostCount, holdoutCount, 30); // 기본 30% 공통
     }
@@ -74,13 +60,12 @@ public class TestDataGenerator {
     /**
      * 테스트용 사용자 생성 - Leave-K-Out 방식 (공통 읽은 글 비율 지정 가능)
      *
-     * @param interestCategories    관심사 카테고리 목록
-     * @param readPostCount         읽은 글 개수 (프로필 구성용)
-     * @param holdoutCount          숨길 정답 개수 (Ground Truth)
-     * @param sharedPostPercentage  공통 읽은 글 비율 (0~100, 기본 30)
+     * @param interestCategories   관심사 카테고리 목록
+     * @param readPostCount        읽은 글 개수 (프로필 구성용)
+     * @param holdoutCount         숨길 정답 개수 (Ground Truth)
+     * @param sharedPostPercentage 공통 읽은 글 비율 (0~100, 기본 30)
      * @return 사용자 생성 결과 (User + Ground Truth 게시글 ID)
      */
-    @Transactional
     public UserCreationResult createTestUserWithGroundTruth(
             List<EInterestCategory> interestCategories,
             int readPostCount,
@@ -106,15 +91,11 @@ public class TestDataGenerator {
         // 2. Leave-K-Out: 관심 있는 글 중 일부를 숨겨서 Ground Truth로 사용
         int totalRelatedPosts = personalPostCount + holdoutCount;
         List<Post> relatedPosts = postMatcher.findPostsRelatedToInterests(interestCategories, totalRelatedPosts);
+        Collections.shuffle(relatedPosts);
 
         if (relatedPosts.size() < totalRelatedPosts) {
             log.warn("관심 있는 글이 부족합니다. 요청: {}, 실제: {}", totalRelatedPosts, relatedPosts.size());
         }
-
-        // 순서 편향 제거: 랜덤 셔플
-        // (관련도 높은 글이 앞쪽에 몰리는 것 방지)
-        Collections.shuffle(relatedPosts);
-        log.debug("관련 게시글 {} 개 셔플 완료", relatedPosts.size());
 
         // 읽은 글 = 공통 글 + 개인화 글
         List<Post> readPosts = new ArrayList<>();
@@ -171,108 +152,15 @@ public class TestDataGenerator {
 
         log.info("Ground Truth 설정: {} 개 (평가용, 숨김)", actualHoldoutCount);
 
-        // 점수 분포 로깅 및 검증
         Map<Integer, Long> scoreDistribution = groundTruthScores.values().stream()
                 .collect(java.util.stream.Collectors.groupingBy(score -> score, java.util.stream.Collectors.counting()));
         log.info("Ground Truth 점수 분포: {}", scoreDistribution);
 
-        // Ground Truth 품질 검증
-        groundTruthGenerator.validateGroundTruthQuality(groundTruthScores, interestCategories);
+        groundTruthValidator.validateGroundTruthQuality(groundTruthScores, interestCategories);
 
-        return UserCreationResult.builder()
-                .user(user)
-                .groundTruthScores(groundTruthScores)
-                .build();
+        return new UserCreationResult(user, groundTruthScores);
     }
 
-
-    /**
-     * 읽은 글 이력을 Train/Test로 분할 (8:2 비율)
-     *
-     * @param readPostIds 전체 읽은 글 ID 목록
-     * @param trainRatio  Train 세트 비율 (기본 0.8)
-     * @return Train/Test 분할 결과
-     */
-    public TrainTestSplit splitReadHistory(List<Long> readPostIds, double trainRatio) {
-        if (readPostIds == null || readPostIds.isEmpty()) {
-            return TrainTestSplit.builder()
-                    .trainPostIds(Collections.emptyList())
-                    .testPostIds(Collections.emptyList())
-                    .build();
-        }
-
-        // 시간순으로 정렬된 리스트를 Train/Test로 분할
-        int totalSize = readPostIds.size();
-        int trainSize = (int) (totalSize * trainRatio);
-
-        List<Long> trainIds = readPostIds.subList(0, trainSize);
-        List<Long> testIds = readPostIds.subList(trainSize, totalSize);
-
-        log.info("Train/Test Split 완료: Train={}, Test={}, 비율={}",
-                trainIds.size(), testIds.size(), String.format("%.2f", trainRatio));
-
-        return TrainTestSplit.builder()
-                .trainPostIds(new ArrayList<>(trainIds))
-                .testPostIds(new ArrayList<>(testIds))
-                .build();
-    }
-
-    /**
-     * Train/Test Split 기반 개선된 테스트 케이스 생성
-     *
-     * @param user       평가 대상 사용자
-     * @param interests  사용자 관심사
-     * @param trainRatio Train 세트 비율 (기본 0.8)
-     * @return Train/Test Split 기반 테스트 케이스
-     */
-    @Transactional(readOnly = true)
-    public ImprovedRecommendationTestCase generateImprovedTestCase(
-            User user,
-            List<EInterestCategory> interests,
-            double trainRatio) {
-
-        // 읽은 글 이력 조회 (시간순)
-        List<Long> readPostIds = readPostRepository
-                .findRecentReadPostsByUserIdWithMinDuration(user.getId(), PageRequest.of(0, 10000))
-                .stream()
-                .map(rp -> rp.getPost().getId())
-                .toList();
-
-        // Train/Test Split
-        TrainTestSplit split = splitReadHistory(readPostIds, trainRatio);
-
-        List<String> interestNames = interests.stream()
-                .map(EInterestCategory::getDisplayName)
-                .toList();
-
-        log.info("===== 개선된 테스트 케이스 생성 =====");
-        log.info("사용자 ID: {}", user.getId());
-        log.info("관심사: {}", interestNames);
-        log.info("전체 읽은 글: {} 개", readPostIds.size());
-        log.info("Train Set: {} 개", split.getTrainSize());
-        log.info("Test Set: {} 개", split.getTestSize());
-        log.info("Test Set ID 샘플: {}", split.getTestPostIds().stream().limit(5).toList());
-
-        return ImprovedRecommendationTestCase.builder()
-                .userId(user.getId())
-                .interests(interestNames)
-                .trainTestSplit(split)
-                .build();
-    }
-
-    /**
-     * Train/Test Split 기반 개선된 테스트 케이스 생성 (기본 비율 0.8)
-     */
-    @Transactional(readOnly = true)
-    public ImprovedRecommendationTestCase generateImprovedTestCase(
-            User user,
-            List<EInterestCategory> interests) {
-        return generateImprovedTestCase(user, interests, 0.8);
-    }
-
-    /**
-     * 관심사 기반 검색 키워드 생성
-     */
     private List<String> generateSearchKeywords(List<EInterestCategory> interests) {
         Map<EInterestCategory, List<String>> keywordMap = new HashMap<>();
 
