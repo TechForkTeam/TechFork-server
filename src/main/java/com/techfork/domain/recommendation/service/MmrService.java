@@ -165,11 +165,17 @@ public class MmrService {
             summarySim = VectorUtil.cosineSimilarity(candidate1.getSummaryVector(), candidate2.getSummaryVector());
         }
 
+        // 코사인 유사도(-1.0 ~ 1.0)를 0.0 ~ 1.0 범위로 정규화하여 ES 점수와 스케일을 맞춤
+        double normalizedTitleSim = (titleSim + 1) / 2.0;
+        double normalizedSummarySim = (summarySim + 1) / 2.0;
+
         // 가중 평균 (제목 + 요약만, 콘텐츠는 제외)
         double titleWeight = weights.getTitle();
         double summaryWeight = weights.getSummary();
         double totalWeight = titleWeight + summaryWeight;
 
-        return (titleWeight * titleSim + summaryWeight * summarySim) / totalWeight;
+        if (totalWeight == 0) return 0.0;
+
+        return (titleWeight * normalizedTitleSim + summaryWeight * normalizedSummarySim) / totalWeight;
     }
 }

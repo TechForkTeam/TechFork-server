@@ -1,0 +1,138 @@
+package com.techfork.domain.recommendation.setup.components;
+
+import com.techfork.domain.activity.entity.ReadPost;
+import com.techfork.domain.activity.entity.ScrabPost;
+import com.techfork.domain.activity.entity.SearchHistory;
+import com.techfork.domain.activity.repository.ReadPostRepository;
+import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.repository.SearchHistoryRepository;
+import com.techfork.domain.post.entity.Post;
+import com.techfork.domain.user.entity.User;
+import com.techfork.domain.user.entity.UserInterestCategory;
+import com.techfork.domain.user.entity.UserInterestKeyword;
+import com.techfork.domain.user.enums.EInterestCategory;
+import com.techfork.domain.user.enums.EInterestKeyword;
+import com.techfork.domain.user.enums.SocialType;
+import com.techfork.domain.user.repository.UserInterestCategoryRepository;
+import com.techfork.domain.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class UserTestDataBuilder {
+
+    private final UserRepository userRepository;
+    private final UserInterestCategoryRepository userInterestCategoryRepository;
+    private final ReadPostRepository readPostRepository;
+    private final ScrabPostRepository scrabPostRepository;
+    private final SearchHistoryRepository searchHistoryRepository;
+
+    public User createUserWithInterests(List<EInterestCategory> interestCategories) {
+        User user = User.createSocialUser(
+                SocialType.KAKAO,
+                "testSocialId_" + UUID.randomUUID(),
+                "test_" + System.currentTimeMillis() + "@example.com",
+                null
+        );
+        user = userRepository.save(user);
+
+        log.info("테스트 사용자 생성: ID: {}", user.getId());
+
+        // 관심사 카테고리 및 키워드 추가
+        for (EInterestCategory category : interestCategories) {
+            UserInterestCategory interestCategory = UserInterestCategory.create(user, category);
+            userInterestCategoryRepository.save(interestCategory);
+
+            // 해당 카테고리의 키워드 중 랜덤하게 2~4개 선택
+            List<EInterestKeyword> availableKeywords = new ArrayList<>(
+                    EInterestKeyword.getKeywordsByCategory(category)
+            );
+            Collections.shuffle(availableKeywords);
+            int keywordCount = 2 + (int) (Math.random() * 3); // 2~4개
+
+            for (int i = 0; i < Math.min(keywordCount, availableKeywords.size()); i++) {
+                UserInterestKeyword keyword = UserInterestKeyword.create(
+                        interestCategory,
+                        availableKeywords.get(i)
+                );
+                interestCategory.addKeyword(keyword);
+            }
+
+            userInterestCategoryRepository.save(interestCategory);
+        }
+
+        log.info("관심사 추가: {} (각 카테고리별 키워드 포함)", interestCategories);
+
+        return user;
+    }
+
+    public void createReadPosts(User user, List<Post> posts) {
+        LocalDateTime now = LocalDateTime.now();
+        List<ReadPost> readPosts = new ArrayList<>();
+
+        for (int i = 0; i < posts.size(); i++) {
+            Post post = posts.get(i);
+            ReadPost readPost = ReadPost.create(
+                    user,
+                    post,
+                    now.minusDays(posts.size() - i),
+                    180 // 3분 읽음
+            );
+            readPosts.add(readPost);
+        }
+
+        readPostRepository.saveAll(readPosts);
+        log.debug("읽은 글 {} 개 생성 완료", posts.size());
+    }
+
+
+    public void createScrapPosts(User user, List<Post> readPosts, int scrapCount) {
+        LocalDateTime now = LocalDateTime.now();
+        List<ScrabPost> scrabPosts = new ArrayList<>();
+
+        List<Post> postsToScrap = new ArrayList<>(readPosts);
+        Collections.shuffle(postsToScrap);
+
+        int actualScrapCount = Math.min(scrapCount, postsToScrap.size());
+
+        for (int i = 0; i < actualScrapCount; i++) {
+            Post post = postsToScrap.get(i);
+            ScrabPost scrabPost = ScrabPost.create(
+                    user,
+                    post,
+                    now.minusDays(readPosts.size() - i - 5) // 읽은 시점보다 약간 후에 스크랩
+            );
+            scrabPosts.add(scrabPost);
+        }
+
+        scrabPostRepository.saveAll(scrabPosts);
+        log.debug("스크랩한 글 {} 개 생성 완료", actualScrapCount);
+    }
+
+    public void createSearchHistories(User user, List<String> searchKeywords, int searchHistoryCount) {
+        LocalDateTime now = LocalDateTime.now();
+        List<SearchHistory> searchHistories = new ArrayList<>();
+
+        for (int i = 0; i < searchHistoryCount; i++) {
+            String searchWord = searchKeywords.get(i % searchKeywords.size());
+            SearchHistory searchHistory = SearchHistory.create(
+                    user,
+                    searchWord,
+                    now.minusDays(searchHistoryCount - i * 2) // 읽기 활동 사이사이에 검색
+            );
+            searchHistories.add(searchHistory);
+        }
+
+        searchHistoryRepository.saveAll(searchHistories);
+        log.debug("검색 기록 {} 개 생성 완료", searchHistoryCount);
+    }
+}
