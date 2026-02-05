@@ -511,6 +511,29 @@ class ActivityControllerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    @DisplayName("읽은 게시글 목록 조회 성공 - 동일 포스트 중복 제거 확인")
+    void getReadPosts_Success_Deduplicated() throws Exception {
+        // Given - 동일한 포스트(testPost1)를 두 번 읽음
+        ReadPost readPost1 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(2), 300);
+        ReadPost readPost2 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(1), 400);
+        // 다른 포스트(testPost2)를 읽음
+        ReadPost readPost3 = ReadPost.create(testUser, testPost2, LocalDateTime.now(), 150);
+
+        readPostRepository.saveAll(List.of(readPost1, readPost2, readPost3));
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/activities/read-posts")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("size", "20"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.readPosts.length()").value(2)) // 3개가 아닌 2개여야 함
+                .andExpect(jsonPath("$.data.readPosts[0].postId").value(testPost2.getId()))
+                .andExpect(jsonPath("$.data.readPosts[1].postId").value(testPost1.getId()))
+                .andExpect(jsonPath("$.data.readPosts[1].readPostId").value(readPost2.getId())); // 더 최신 ID
+    }
+
+    @Test
     @DisplayName("읽은 게시글 목록 조회 성공 - 북마크 상태 포함")
     void getReadPosts_Success_WithBookmarks() throws Exception {
         // Given - 읽은 게시글 기록 생성 (순서대로 저장)
