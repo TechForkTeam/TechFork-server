@@ -25,6 +25,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -57,14 +58,17 @@ public class UserProfileService {
     public void generateUserProfileSync(Long userId) {
         try {
             UserActivityData activityData = collectUserActivityData(userId);
-            String profileText = generateProfileTextWithLLM(activityData);
-            float[] profileVector = generateEmbeddingVector(profileText);
+            String llmResponse = generateProfileTextWithLLM(activityData);
+
+            ProfileAndKeywords parsed = parseProfileAndKeywords(llmResponse);
+            float[] profileVector = generateEmbeddingVector(parsed.profileText);
 
             UserProfileDocument profileDocument = UserProfileDocument.create(
                     userId,
-                    profileText,
+                    parsed.profileText,
                     profileVector,
-                    activityData.interests
+                    activityData.interests,
+                    parsed.keyKeywords
             );
 
             userProfileDocumentRepository.save(profileDocument);
@@ -143,7 +147,7 @@ public class UserProfileService {
 
     private String buildProfileGenerationPrompt(UserActivityData data) {
         return String.format("""
-                아래 사용자의 활동 데이터를 분석하여 검색 고도화와 포스트 추천에 최적화된 프로필을 생성해주세요.
+                아래 사용자의 활동 데이터를 분석하여 검색 리랭킹과 포스트 추천에 최적화된 프로필을 생성해주세요.
 
                 ## 사용자 데이터
 
@@ -161,28 +165,29 @@ public class UserProfileService {
 
                 ## 요구사항
 
-                다음 형식으로 구조화된 프로필을 생성해주세요:
+                반드시 아래 형식으로 응답해주세요:
 
-                1. **기술적 관심사 요약** (2-3문장)
-                   - 사용자가 주로 관심을 갖는 기술 스택, 프레임워크, 도구
-                   - 선호하는 개발 분야 (백엔드, 프론트엔드, AI, 인프라 등)
+                ### PROFILE
+                사용자의 기술적 관심사, 학습 패턴, 선호도를 의미 밀도 높고 풍부하게 표현한 텍스트를 작성하세요 (200-300자 정도).
 
-                2. **콘텐츠 선호 패턴** (2-3문장)
-                   - 읽은 포스트와 스크랩한 포스트를 분석하여 선호하는 주제와 기술 파악
-                   - 선호하는 회사/팀이나 콘텐츠 유형 (튜토리얼, 아키텍처, 트러블슈팅 등)
+                다음 내용을 모두 포함하되 자연스러운 문장으로 작성:
+                1. 주요 관심 기술 스택과 개발 분야 (백엔드/프론트엔드/인프라/AI 등)
+                2. 선호하는 주제와 학습 방향 (아키텍처 설계, 성능 최적화, 트러블슈팅, 신기술 탐구 등)
+                3. 읽은 포스트와 검색 기록에서 드러나는 구체적인 관심사
+                4. 현재 해결하려는 문제나 학습 중인 영역
+                5. 콘텐츠 선호 패턴 (심화 기술, 실전 경험, 튜토리얼 등)
 
-                3. **검색 의도 분석** (2-3문장)
-                   - 검색 기록에서 드러나는 학습 목적이나 해결하려는 문제
-                   - 반복되는 검색 주제나 패턴
+                주의사항:
+                - 마크다운 없이 순수 텍스트로만 작성 (볼드, 이탤릭, 리스트, 번호 금지)
+                - 구체적인 기술 용어를 많이 사용하여 임베딩 품질 향상
+                - "관심이 있습니다", "선호합니다" 같은 메타 표현 대신 직접적인 기술 용어 나열
 
-                4. **추천 키워드** (쉼표로 구분된 15-20개의 키워드)
-                   - 검색 쿼리 확장에 사용할 관련 기술 용어
-                   - 유사한 관심사를 가진 사용자가 찾을 만한 키워드
-                   - 영문과 한글 키워드 모두 포함
-
-                5. **프로필 요약** (1-2문장, 벡터 임베딩 최적화용)
-                   - 사용자의 기술적 페르소나를 한 줄로 압축
-                   - 추천 시스템이 유사 사용자를 찾는데 활용할 핵심 설명
+                ### KEYWORDS
+                사용자의 현재 관심사를 가장 잘 대표하는 핵심 키워드 3-5개를 쉼표로 구분하여 나열하세요.
+                - 구체적이고 검색 의도가 명확한 키워드만 선택
+                - BM25 검색에 사용되므로 검색어로 자주 쓰일 만한 용어 선택
+                - 예: Kubernetes, React hooks, 분산 트랜잭션, 성능 최적화, MSA
+                - 영문과 한글 혼용 가능
 
                 데이터가 부족한 경우 관심 기술 스택을 기반으로 일반적인 프로필을 생성해주세요.
                 """,
@@ -246,6 +251,43 @@ public class UserProfileService {
             return "깊게 읽음";
         }
     }
+
+    private ProfileAndKeywords parseProfileAndKeywords(String llmResponse) {
+        String profileText = "";
+        List<String> keyKeywords = List.of();
+
+        try {
+            // PROFILE 섹션 추출
+            int profileStart = llmResponse.indexOf("### PROFILE");
+            int keywordsStart = llmResponse.indexOf("### KEYWORDS");
+
+            if (profileStart != -1 && keywordsStart != -1) {
+                profileText = llmResponse.substring(profileStart + "### PROFILE".length(), keywordsStart)
+                        .trim();
+
+                String keywordsSection = llmResponse.substring(keywordsStart + "### KEYWORDS".length())
+                        .trim();
+
+                // 쉼표로 구분된 키워드 파싱
+                keyKeywords = Arrays.stream(keywordsSection.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .limit(5)  // 최대 5개
+                        .toList();
+            } else {
+                // 파싱 실패 시 전체 텍스트를 프로필로 사용
+                log.warn("Failed to parse LLM response sections, using full text as profile");
+                profileText = llmResponse;
+            }
+        } catch (Exception e) {
+            log.error("Error parsing LLM response", e);
+            profileText = llmResponse;
+        }
+
+        return new ProfileAndKeywords(profileText, keyKeywords);
+    }
+
+    private record ProfileAndKeywords(String profileText, List<String> keyKeywords) {}
 
     private record UserActivityData(
             List<String> interests,
