@@ -70,6 +70,8 @@ public class RecommendationEvaluationService extends LlmRecommendationService {
      * 추천 생성 (평가 전용 - Train/Test Split 지원)
      */
     public List<Long> generateRecommendationsForEvaluation(User user, Set<Long> trainPostIds, RecommendationProperties properties) {
+        long totalStartTime = System.currentTimeMillis();
+
         Optional<UserProfileDocument> profileOpt = userProfileDocumentRepository.findByUserId(user.getId());
         if (profileOpt.isEmpty() || profileOpt.get().getProfileVector() == null) {
             return Collections.emptyList();
@@ -87,12 +89,20 @@ public class RecommendationEvaluationService extends LlmRecommendationService {
             }
 
             // MMR 적용 (테스트용 properties 사용)
+            long mmrStartTime = System.currentTimeMillis();
             MmrService mmrService = new MmrService(properties);
             List<MmrResult> mmrResults = mmrService.applyMmr(candidates);
+            long mmrElapsedTime = System.currentTimeMillis() - mmrStartTime;
+            log.info("[EVAL] MMR 실행 시간: {}ms (후보 {}개 → 결과 {}개)", mmrElapsedTime, candidates.size(), mmrResults.size());
 
-            return mmrResults.stream()
+            List<Long> result = mmrResults.stream()
                     .map(MmrResult::getPostId)
                     .toList();
+
+            long totalElapsedTime = System.currentTimeMillis() - totalStartTime;
+            log.info("[EVAL] 전체 추천 로직 실행 시간: {}ms (사용자 ID: {})", totalElapsedTime, user.getId());
+
+            return result;
 
         } catch (Exception e) {
             log.error("사용자 {} 평가용 추천 생성 실패", user.getId(), e);
@@ -122,14 +132,19 @@ public class RecommendationEvaluationService extends LlmRecommendationService {
         );
 
         // 3. kNN과 BM25 검색 병렬 실행
+        long searchStartTime = System.currentTimeMillis();
+
         CompletableFuture<List<Hit<PostDocument>>> vectorSearchFuture = CompletableFuture.supplyAsync(() -> {
             try {
+                long knnStartTime = System.currentTimeMillis();
                 SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
                                 .index(POSTS_INDEX)
                                 .knn(knnSearches)
                                 .size(properties.getKnnSearchSize()),
                         PostDocument.class
                 );
+                long knnElapsedTime = System.currentTimeMillis() - knnStartTime;
+                log.info("[EVAL] kNN 검색 실행 시간: {}ms", knnElapsedTime);
                 return response.hits().hits();
             } catch (IOException e) {
                 log.error("kNN 검색 실패", e);
@@ -138,7 +153,13 @@ public class RecommendationEvaluationService extends LlmRecommendationService {
         });
 
         CompletableFuture<List<Hit<PostDocument>>> keywordSearchFuture = CompletableFuture.supplyAsync(() -> {
+            // 키워드가 없으면 BM25 검색 생략
+            if (bm25Query == null) {
+                log.debug("[EVAL] 키워드가 없어 BM25 검색 생략");
+                return Collections.emptyList();
+            }
             try {
+                long bm25StartTime = System.currentTimeMillis();
                 SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
                                 .index(POSTS_INDEX)
                                 .query(q -> q.bool(b -> {
@@ -149,6 +170,8 @@ public class RecommendationEvaluationService extends LlmRecommendationService {
                                 .size(properties.getKnnSearchSize()),
                         PostDocument.class
                 );
+                long bm25ElapsedTime = System.currentTimeMillis() - bm25StartTime;
+                log.info("[EVAL] BM25 검색 실행 시간: {}ms", bm25ElapsedTime);
                 return response.hits().hits();
             } catch (IOException e) {
                 log.error("BM25 검색 실패", e);
@@ -163,7 +186,15 @@ public class RecommendationEvaluationService extends LlmRecommendationService {
         List<Hit<PostDocument>> vectorHits = vectorSearchFuture.join();
         List<Hit<PostDocument>> keywordHits = keywordSearchFuture.join();
 
+        long searchTotalTime = System.currentTimeMillis() - searchStartTime;
+        log.info("[EVAL] 검색 총 소요 시간: {}ms (kNN: {}개, BM25: {}개)", searchTotalTime, vectorHits.size(), keywordHits.size());
+
         // 5. RRF로 결합 (부모 클래스의 protected 메서드 사용)
-        return applyRrf(vectorHits, keywordHits);
+        long rrfStartTime = System.currentTimeMillis();
+        List<MmrCandidate> candidates = applyRrf(vectorHits, keywordHits);
+        long rrfElapsedTime = System.currentTimeMillis() - rrfStartTime;
+        log.info("[EVAL] RRF 결합 실행 시간: {}ms (결과: {}개)", rrfElapsedTime, candidates.size());
+
+        return candidates;
     }
 }
