@@ -2,6 +2,7 @@ package com.techfork.global.elasticsearch.query;
 
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.KnnSearch;
+import co.elastic.clients.elasticsearch._types.query_dsl.ChildScoreMode;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -132,6 +133,7 @@ public class VectorSearchQueryBuilder implements VectorQueryBuilder {
                         .should(s -> s
                                 .nested(n -> n
                                         .path("contentChunks")
+                                        .scoreMode(ChildScoreMode.Max)
                                         .query(nq -> nq
                                                 .match(m -> m
                                                         .field("contentChunks.text")
