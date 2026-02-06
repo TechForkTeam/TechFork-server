@@ -20,6 +20,7 @@ import com.techfork.domain.recommendation.service.MmrService.MmrResult;
 import com.techfork.domain.user.document.UserProfileDocument;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
+import com.techfork.global.util.RrfScorer;
 import com.techfork.global.util.TimeDecayStrategy;
 import com.techfork.global.util.VectorUtil;
 import lombok.RequiredArgsConstructor;
@@ -116,9 +117,13 @@ public class LlmRecommendationService implements RecommendationService {
                 .map(readPost -> readPost.getPost().getId())
                 .collect(Collectors.toSet());
 
+        Optional<UserProfileDocument> profileOpt = userProfileDocumentRepository.findByUserId(user.getId());
+        List<String> keyKeywords = profileOpt.map(UserProfileDocument::getKeyKeywords).orElse(List.of());
+
         RecommendationProperties.EmbeddingWeights weights = properties.getEmbeddingWeights();
         Query filterQuery = vectorQueryBuilder.createExcludeFilter(readPostIds);
 
+        // 1. kNN 검색
         List<KnnSearch> knnSearches = vectorQueryBuilder.createKnnSearches(
                 TITLE_EMBEDDING_FIELD, SUMMARY_EMBEDDING_FIELD, CONTENT_CHUNKS_EMBEDDING_FIELD,
                 userProfileVector, weights.getTitle(), weights.getSummary(), weights.getContent(),
@@ -126,7 +131,7 @@ public class LlmRecommendationService implements RecommendationService {
         );
 
         long startTime = System.currentTimeMillis();
-        SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
+        SearchResponse<PostDocument> vectorResponse = elasticsearchClient.search(s -> s
                         .index(POSTS_INDEX)
                         .knn(knnSearches)
                         .size(properties.getKnnSearchSize())
@@ -134,26 +139,73 @@ public class LlmRecommendationService implements RecommendationService {
                 PostDocument.class
         );
 
-        log.info("후보군 검색 완료: {} 개, 소요 시간: {}ms",
-                response.hits().hits().size(), System.currentTimeMillis() - startTime);
+        List<Hit<PostDocument>> vectorHits = vectorResponse.hits().hits();
 
-        return response.hits().hits().stream()
+        // 2. BM25 검색
+        Query bm25Query = vectorQueryBuilder.createBm25Query(
+                keyKeywords, weights.getTitle(), weights.getSummary(), weights.getContent()
+        );
+
+        SearchResponse<PostDocument> keywordResponse = elasticsearchClient.search(s -> s
+                        .index(POSTS_INDEX)
+                        .query(q -> q.bool(b -> {
+                            b.must(bm25Query);
+                            if (filterQuery != null) b.filter(filterQuery);
+                            return b;
+                        }))
+                        .size(properties.getKnnSearchSize()),
+                PostDocument.class
+        );
+        List<Hit<PostDocument>> keywordHits = keywordResponse.hits().hits();
+
+        log.info("후보군 검색 완료: kNN {} 개, BM25 {} 개, 소요 시간: {}ms",
+                vectorHits.size(), keywordHits.size(), System.currentTimeMillis() - startTime);
+
+        // 3. RRF로 결합
+        return applyRrf(vectorHits, keywordHits);
+    }
+
+    protected List<MmrCandidate> applyRrf(List<Hit<PostDocument>> vectorHits, List<Hit<PostDocument>> keywordHits) {
+        // Post ID 리스트 추출 (null 체크)
+        List<Long> vectorPostIds = vectorHits.stream()
                 .filter(hit -> hit.source() != null)
-                .map(this::mapToMmrCandidate)
+                .map(hit -> hit.source().getPostId())
+                .toList();
+
+        List<Long> keywordPostIds = keywordHits.stream()
+                .filter(hit -> hit.source() != null)
+                .map(hit -> hit.source().getPostId())
+                .toList();
+
+        // RRF 스코어 계산
+        Map<Long, Double> rrfScores = RrfScorer.calculateRrfScores(vectorPostIds, keywordPostIds);
+
+        // Hit을 postId 기준으로 맵핑
+        Map<Long, Hit<PostDocument>> hitMap = new HashMap<>();
+        vectorHits.stream()
+                .filter(hit -> hit.source() != null)
+                .forEach(hit -> hitMap.putIfAbsent(hit.source().getPostId(), hit));
+        keywordHits.stream()
+                .filter(hit -> hit.source() != null)
+                .forEach(hit -> hitMap.putIfAbsent(hit.source().getPostId(), hit));
+
+        // RRF 스코어 순으로 정렬하여 MMR Candidate 생성
+        return rrfScores.entrySet().stream()
+                .sorted(Map.Entry.<Long, Double>comparingByValue().reversed())
+                .map(entry -> mapToMmrCandidate(hitMap.get(entry.getKey()), entry.getValue()))
                 .filter(candidate -> candidate.getSummaryVector() != null)
                 .toList();
     }
 
-    private MmrCandidate mapToMmrCandidate(Hit<PostDocument> hit) {
+    protected MmrCandidate mapToMmrCandidate(Hit<PostDocument> hit, double rrfScore) {
         PostDocument doc = hit.source();
-        double score = Objects.requireNonNullElse(hit.score(), 0.0);
         double timeDecayWeight = timeDecayStrategy.calculateWeight(Objects.requireNonNull(doc).getPublishedAt());
-        
+
         return MmrCandidate.builder()
                 .postId(doc.getPostId())
                 .titleVector(VectorUtil.convertToFloatArray(doc.getTitleEmbedding()))
                 .summaryVector(VectorUtil.convertToFloatArray(doc.getSummaryEmbedding()))
-                .similarityScore(score * timeDecayWeight)
+                .similarityScore(rrfScore * timeDecayWeight)
                 .build();
     }
 }

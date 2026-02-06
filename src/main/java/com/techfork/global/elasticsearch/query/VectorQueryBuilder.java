@@ -47,4 +47,15 @@ public interface VectorQueryBuilder {
             int numCandidates,
             Query filter
     );
+
+    /**
+     * BM25 키워드 검색 쿼리 생성
+     *
+     * @param keywords 검색할 키워드 리스트
+     * @param titleBoost 제목 필드 가중치
+     * @param summaryBoost 요약 필드 가중치
+     * @param contentBoost 본문 필드 가중치
+     * @return BM25 검색 Query 객체 (키워드가 없으면 null)
+     */
+    Query createBm25Query(List<String> keywords, float titleBoost, float summaryBoost, float contentBoost);
 }

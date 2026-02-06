@@ -5,8 +5,15 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.KnnSearch;
+import com.techfork.domain.activity.repository.ReadPostRepository;
 import com.techfork.domain.post.document.PostDocument;
+import com.techfork.domain.post.entity.Post;
+import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.recommendation.config.RecommendationProperties;
+import com.techfork.domain.recommendation.entity.RecommendedPost;
+import com.techfork.domain.recommendation.repository.RecommendationHistoryRepository;
+import com.techfork.domain.recommendation.repository.RecommendedPostRepository;
+import com.techfork.domain.recommendation.service.LlmRecommendationService;
 import com.techfork.domain.recommendation.service.MmrService;
 import com.techfork.domain.recommendation.service.MmrService.MmrCandidate;
 import com.techfork.domain.recommendation.service.MmrService.MmrResult;
@@ -15,32 +22,48 @@ import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
 import com.techfork.global.elasticsearch.query.VectorQueryBuilder;
 import com.techfork.global.util.TimeDecayStrategy;
-import com.techfork.global.util.VectorUtil;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * 추천 시스템 성능 평가를 위한 전용 서비스
+ * LlmRecommendationService를 상속하여 RRF, MMR 로직 재사용
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
-public class RecommendationEvaluationService {
+public class RecommendationEvaluationService extends LlmRecommendationService {
 
-    private final ElasticsearchClient elasticsearchClient;
     private final UserProfileDocumentRepository userProfileDocumentRepository;
     private final VectorQueryBuilder vectorQueryBuilder;
-    private final TimeDecayStrategy timeDecayStrategy;
+    private final ElasticsearchClient elasticsearchClient;
 
     private static final String POSTS_INDEX = "posts";
     private static final String TITLE_EMBEDDING_FIELD = "titleEmbedding";
     private static final String SUMMARY_EMBEDDING_FIELD = "summaryEmbedding";
     private static final String CONTENT_CHUNKS_EMBEDDING_FIELD = "contentChunks.embedding";
+
+    public RecommendationEvaluationService(
+            ElasticsearchClient elasticsearchClient,
+            UserProfileDocumentRepository userProfileDocumentRepository,
+            RecommendedPostRepository recommendedPostRepository,
+            RecommendationHistoryRepository recommendationHistoryRepository,
+            ReadPostRepository readPostRepository,
+            PostRepository postRepository,
+            MmrService mmrService,
+            TimeDecayStrategy timeDecayStrategy,
+            RecommendationProperties properties,
+            VectorQueryBuilder vectorQueryBuilder
+    ) {
+        super(elasticsearchClient, userProfileDocumentRepository, recommendedPostRepository,
+                recommendationHistoryRepository, readPostRepository, postRepository,
+                mmrService, timeDecayStrategy, properties, vectorQueryBuilder);
+        this.elasticsearchClient = elasticsearchClient;
+        this.userProfileDocumentRepository = userProfileDocumentRepository;
+        this.vectorQueryBuilder = vectorQueryBuilder;
+    }
 
     /**
      * 추천 생성 (평가 전용 - Train/Test Split 지원)
@@ -51,11 +74,12 @@ public class RecommendationEvaluationService {
             return Collections.emptyList();
         }
 
-        float[] userProfileVector = profileOpt.get().getProfileVector();
-        List<String> keywords = profileOpt.get().getInterests();
+        UserProfileDocument profile = profileOpt.get();
+        float[] userProfileVector = profile.getProfileVector();
+        List<String> keyKeywords = profile.getKeyKeywords();
 
         try {
-            List<MmrCandidate> candidates = searchCandidatesWithCustomReadHistory(userProfileVector, keywords, user, trainPostIds, properties);
+            List<MmrCandidate> candidates = searchCandidatesWithCustomReadHistory(userProfileVector, keyKeywords, trainPostIds, properties);
 
             if (candidates.isEmpty()) {
                 return Collections.emptyList();
@@ -77,14 +101,14 @@ public class RecommendationEvaluationService {
 
     private List<MmrCandidate> searchCandidatesWithCustomReadHistory(
             float[] userProfileVector,
-            List<String> keywords,
-            User user,
+            List<String> keyKeywords,
             Set<Long> readPostIds,
             RecommendationProperties properties) throws IOException {
 
         RecommendationProperties.EmbeddingWeights weights = properties.getEmbeddingWeights();
         Query filterQuery = vectorQueryBuilder.createExcludeFilter(readPostIds);
 
+        // 1. kNN 검색
         List<KnnSearch> knnSearches = vectorQueryBuilder.createKnnSearches(
                 TITLE_EMBEDDING_FIELD, SUMMARY_EMBEDDING_FIELD, CONTENT_CHUNKS_EMBEDDING_FIELD,
                 userProfileVector, weights.getTitle(), weights.getSummary(), weights.getContent(),
@@ -96,21 +120,26 @@ public class RecommendationEvaluationService {
                 PostDocument.class
         );
 
-        return vectorResponse.hits().hits().stream()
-                .filter(hit -> hit.source() != null)
-                .map(hit -> mapToMmrCandidate(hit, hit.score() != null ? hit.score() : 0.0))
-                .filter(candidate -> candidate.getSummaryVector() != null)
-                .toList();
-    }
+        List<Hit<PostDocument>> vectorHits = vectorResponse.hits().hits();
 
-    private MmrCandidate mapToMmrCandidate(Hit<PostDocument> hit, double score) {
-        PostDocument doc = hit.source();
-        double timeDecayWeight = timeDecayStrategy.calculateWeight(Objects.requireNonNull(doc).getPublishedAt());
-        return MmrCandidate.builder()
-                .postId(doc.getPostId())
-                .titleVector(VectorUtil.convertToFloatArray(doc.getTitleEmbedding()))
-                .summaryVector(VectorUtil.convertToFloatArray(doc.getSummaryEmbedding()))
-                .similarityScore(score * timeDecayWeight)
-                .build();
+        // 2. BM25 검색
+        Query bm25Query = vectorQueryBuilder.createBm25Query(
+                keyKeywords, weights.getTitle(), weights.getSummary(), weights.getContent()
+        );
+
+        SearchResponse<PostDocument> keywordResponse = elasticsearchClient.search(s -> s
+                        .index(POSTS_INDEX)
+                        .query(q -> q.bool(b -> {
+                            b.must(bm25Query);
+                            if (filterQuery != null) b.filter(filterQuery);
+                            return b;
+                        }))
+                        .size(properties.getKnnSearchSize()),
+                PostDocument.class
+        );
+        List<Hit<PostDocument>> keywordHits = keywordResponse.hits().hits();
+
+        // 3. RRF로 결합 (부모 클래스의 protected 메서드 사용)
+        return applyRrf(vectorHits, keywordHits);
     }
 }

@@ -104,4 +104,45 @@ public class VectorSearchQueryBuilder implements VectorQueryBuilder {
 
         return knnSearches;
     }
+
+    @Override
+    public Query createBm25Query(List<String> keywords, float titleBoost, float summaryBoost, float contentBoost) {
+        if (keywords == null || keywords.isEmpty()) {
+            return null;
+        }
+
+        String combinedKeywords = String.join(" ", keywords);
+
+        return Query.of(q -> q
+                .bool(b -> b
+                        .should(s -> s
+                                .match(m -> m
+                                        .field("title")
+                                        .query(combinedKeywords)
+                                        .boost(titleBoost)
+                                )
+                        )
+                        .should(s -> s
+                                .match(m -> m
+                                        .field("summary")
+                                        .query(combinedKeywords)
+                                        .boost(summaryBoost)
+                                )
+                        )
+                        .should(s -> s
+                                .nested(n -> n
+                                        .path("contentChunks")
+                                        .query(nq -> nq
+                                                .match(m -> m
+                                                        .field("contentChunks.text")
+                                                        .query(combinedKeywords)
+                                                )
+                                        )
+                                        .boost(contentBoost)
+                                )
+                        )
+                        .minimumShouldMatch("1")
+                )
+        );
+    }
 }
