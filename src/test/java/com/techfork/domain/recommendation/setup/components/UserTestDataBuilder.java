@@ -20,10 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -97,13 +95,15 @@ public class UserTestDataBuilder {
 
     public void createScrapPosts(User user, List<Post> readPosts, int scrapCount) {
         LocalDateTime now = LocalDateTime.now();
-        List<ScrabPost> scrabPosts = new ArrayList<>();
 
-        List<Post> postsToScrap = new ArrayList<>(readPosts);
+        List<Post> postsToScrap = readPosts.stream()
+                .distinct()
+                .collect(Collectors.toList());
         Collections.shuffle(postsToScrap);
 
         int actualScrapCount = Math.min(scrapCount, postsToScrap.size());
 
+        List<ScrabPost> scrabPosts = new ArrayList<>();
         for (int i = 0; i < actualScrapCount; i++) {
             Post post = postsToScrap.get(i);
             ScrabPost scrabPost = ScrabPost.create(
