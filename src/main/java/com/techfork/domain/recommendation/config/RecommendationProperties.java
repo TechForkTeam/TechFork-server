@@ -15,9 +15,9 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "recommendation")
 public class RecommendationProperties {
 
-    private Integer knnSearchSize = 100;
+    private Integer knnSearchSize = 80;
 
-    private Integer numCandidates = 200;
+    private Integer numCandidates = 180;
 
     private Integer mmrCandidateSize = 80;
 

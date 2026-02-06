@@ -94,8 +94,8 @@ webhook:
     url: ${DISCORD_WEBHOOK_URL}
 
 recommendation:
-  knn-search-size: 100
-  num-candidates: 200
+  knn-search-size: 80
+  num-candidates: 180
   mmr-final-size: 30
   lambda: 0.95
   active-user-hours: 24
