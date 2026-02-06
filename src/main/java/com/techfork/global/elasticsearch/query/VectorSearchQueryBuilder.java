@@ -2,7 +2,6 @@ package com.techfork.global.elasticsearch.query;
 
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.KnnSearch;
-import co.elastic.clients.elasticsearch._types.query_dsl.FunctionBoostMode;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -64,10 +63,10 @@ public class VectorSearchQueryBuilder implements VectorQueryBuilder {
         if (titleWeight > 0) {
             knnSearches.add(KnnSearch.of(ks -> {
                 ks.field(titleField)
-                  .queryVector(vectorList)
-                  .k(k)
-                  .numCandidates(numCandidates)
-                  .boost(titleWeight);
+                        .queryVector(vectorList)
+                        .k(k)
+                        .numCandidates(numCandidates)
+                        .boost(titleWeight);
                 if (filter != null) {
                     ks.filter(filter);
                 }
@@ -78,10 +77,10 @@ public class VectorSearchQueryBuilder implements VectorQueryBuilder {
         if (summaryWeight > 0) {
             knnSearches.add(KnnSearch.of(ks -> {
                 ks.field(summaryField)
-                  .queryVector(vectorList)
-                  .k(k)
-                  .numCandidates(numCandidates)
-                  .boost(summaryWeight);
+                        .queryVector(vectorList)
+                        .k(k)
+                        .numCandidates(numCandidates)
+                        .boost(summaryWeight);
                 if (filter != null) {
                     ks.filter(filter);
                 }
@@ -92,10 +91,10 @@ public class VectorSearchQueryBuilder implements VectorQueryBuilder {
         if (contentWeight > 0 && contentField != null) {
             knnSearches.add(KnnSearch.of(ks -> {
                 ks.field(contentField)
-                  .queryVector(vectorList)
-                  .k(k)
-                  .numCandidates(numCandidates)
-                  .boost(contentWeight);
+                        .queryVector(vectorList)
+                        .k(k)
+                        .numCandidates(numCandidates)
+                        .boost(contentWeight);
                 if (filter != null) {
                     ks.filter(filter);
                 }
