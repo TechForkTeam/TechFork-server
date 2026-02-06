@@ -55,7 +55,7 @@ public class UserDataSetupAndExporter extends IntegrationTestBase {
     @Autowired
     private FileExporter fileExporter;
 
-    private static final int USER_COUNT = 5;
+    private static final int USER_COUNT = 15;
     private static final int READ_POST_COUNT = 80;   // 프로필 구성용 (읽은 글) - 1100개 데이터셋 기준 (약 7%)
     private static final int HOLDOUT_COUNT = 30;     // Ground Truth (평가용, 숨김) - 평가 샘플 (약 2.7%)
 
@@ -86,18 +86,37 @@ public class UserDataSetupAndExporter extends IntegrationTestBase {
 
     @Test
     @Order(2)
-    @DisplayName("STEP 2: 테스트 사용자 5명 생성 (임베딩 포함)")
+    @DisplayName("STEP 2: 테스트 사용자 15명 생성 (임베딩 포함)")
     @Transactional
     @Commit
     void step2_CreateTestUsers() throws IOException {
         log.info("===== STEP 2: 테스트 사용자 생성 =====");
 
         List<List<EInterestCategory>> interestCombos = Arrays.asList(
-                Arrays.asList(EInterestCategory.BACKEND),
-                Arrays.asList(EInterestCategory.FRONTEND),
-                Arrays.asList(EInterestCategory.AI_ML),
+                // Backend 중심 (4명)
                 Arrays.asList(EInterestCategory.BACKEND, EInterestCategory.DATABASE),
-                Arrays.asList(EInterestCategory.AI_ML, EInterestCategory.DATA_SCIENCE)
+                Arrays.asList(EInterestCategory.BACKEND, EInterestCategory.ARCHITECTURE),
+                Arrays.asList(EInterestCategory.BACKEND, EInterestCategory.SECURITY),
+                Arrays.asList(EInterestCategory.BACKEND, EInterestCategory.FRONTEND),
+
+                // Frontend 중심 (3명)
+                Arrays.asList(EInterestCategory.FRONTEND, EInterestCategory.PRODUCT_UX),
+                Arrays.asList(EInterestCategory.FRONTEND, EInterestCategory.ARCHITECTURE),
+                Arrays.asList(EInterestCategory.FRONTEND),
+
+                // Data & AI (3명)
+                Arrays.asList(EInterestCategory.AI_ML, EInterestCategory.DATA_SCIENCE),
+                Arrays.asList(EInterestCategory.DATA_ENGINEERING, EInterestCategory.DATABASE),
+                Arrays.asList(EInterestCategory.AI_ML, EInterestCategory.CLOUD),
+
+                // DevOps & Infrastructure (3명)
+                Arrays.asList(EInterestCategory.DEVOPS, EInterestCategory.CLOUD),
+                Arrays.asList(EInterestCategory.CLOUD, EInterestCategory.ARCHITECTURE),
+                Arrays.asList(EInterestCategory.SYSTEMS_OS, EInterestCategory.NETWORKING),
+
+                // Mobile (2명)
+                Arrays.asList(EInterestCategory.IOS, EInterestCategory.ANDROID),
+                Arrays.asList(EInterestCategory.IOS, EInterestCategory.PRODUCT_UX)
         );
 
         Map<Long, Map<Long, Integer>> userGroundTruthMap = new HashMap<>();
