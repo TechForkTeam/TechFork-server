@@ -101,9 +101,9 @@ recommendation:
   active-user-hours: 24
   # 임베딩 가중치 설정 (합계 1.0)
   embedding-weights:
-    title: 0.5      # 제목 중요도 50%
-    summary: 0.5    # 요약 중요도 50%
-    content: 0.0    # 콘텐츠 청크 중요도 0% (제외)
+    title: 0.4      # 제목 중요도 50%
+    summary: 0.4    # 요약 중요도 50%
+    content: 0.2    # 콘텐츠 청크 중요도 0% (제외)
   # 시간 감쇠 가중치 설정
   time-decay:
     days-7: 1.3      # 최근 7일: +30%
