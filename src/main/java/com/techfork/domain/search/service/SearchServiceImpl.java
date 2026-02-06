@@ -14,6 +14,7 @@ import com.techfork.domain.search.dto.SearchResult;
 import com.techfork.domain.user.document.UserProfileDocument;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
 import com.techfork.global.llm.EmbeddingClient;
+import com.techfork.global.util.RrfScorer;
 import com.techfork.global.util.VectorUtil;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -245,21 +246,29 @@ public class SearchServiceImpl implements SearchService {
     }
 
     private List<SearchResult> calculateRRF(List<Hit<PostDocument>> lexicalHits, List<Hit<PostDocument>> semanticHits) {
-        Map<String, Integer> lexicalRankMap = new HashMap<>();
-        AtomicInteger rank = new AtomicInteger(1);
-        lexicalHits.forEach(hit -> lexicalRankMap.put(hit.id(), rank.getAndIncrement()));
+        // Hit ID 리스트 추출
+        List<String> lexicalIds = lexicalHits.stream().map(Hit::id).toList();
+        List<String> semanticIds = semanticHits.stream().map(Hit::id).toList();
 
-        Map<String, Integer> semanticRankMap = new HashMap<>();
-        rank.set(1);
-        semanticHits.forEach(hit -> semanticRankMap.put(hit.id(), rank.getAndIncrement()));
+        // RRF 스코어 계산
+        Map<String, Double> rrfScores = RrfScorer.calculateRrfScores(lexicalIds, semanticIds);
 
-        Map<String, SearchResult> combinedResults = new HashMap<>();
-        Map<String, Double> rrfScores = new HashMap<>();
+        // Hit을 docId 기준으로 맵핑 (semantic 우선 - 벡터 포함 보장)
+        Map<String, Hit<PostDocument>> hitMap = new HashMap<>();
+        lexicalHits.forEach(hit -> hitMap.put(hit.id(), hit));
+        semanticHits.forEach(hit -> hitMap.put(hit.id(), hit)); // semantic 결과로 덮어쓰기 (벡터 포함)
 
-        processHitsForRRF(lexicalHits, lexicalRankMap, rrfScores, combinedResults);
-        processHitsForRRF(semanticHits, semanticRankMap, rrfScores, combinedResults);
+        // SearchResult로 변환
+        Map<String, SearchResult> resultMap = new HashMap<>();
+        for (Map.Entry<String, Hit<PostDocument>> entry : hitMap.entrySet()) {
+            String docId = entry.getKey();
+            Hit<PostDocument> hit = entry.getValue();
+            SearchResult result = mapToSearchResult(hit);
+            resultMap.put(docId, result);
+        }
 
-        return combinedResults.values().stream()
+        // 최종 스코어 적용 및 정렬
+        return resultMap.values().stream()
                 .map(searchResult -> {
                     double finalScore = rrfScores.get(searchResult.getPostId().toString());
                     return searchResult.toBuilder()
@@ -270,41 +279,6 @@ public class SearchServiceImpl implements SearchService {
                 .sorted(Comparator.comparing(SearchResult::getFinalScore).reversed())
                 .limit(generalSearchProperties.getSearchSize())
                 .collect(Collectors.toList());
-    }
-
-    private void processHitsForRRF(List<Hit<PostDocument>> hits,
-                                   Map<String, Integer> rankMap,
-                                   Map<String, Double> rrfScores,
-                                   Map<String, SearchResult> combinedResults) {
-        hits.forEach(hit -> {
-            String docId = hit.id();
-            double score = 1.0 / (generalSearchProperties.getRRF_K() + rankMap.get(docId));
-            rrfScores.merge(docId, score, Double::sum);
-
-            SearchResult newResult = mapToSearchResult(hit);
-
-            if (!combinedResults.containsKey(docId)) {
-                combinedResults.put(docId, newResult);
-            } else {
-                SearchResult existing = combinedResults.get(docId);
-                boolean needUpdate = false;
-                SearchResult.SearchResultBuilder builder = existing.toBuilder();
-
-                if (existing.getTitleVector() == null && newResult.getTitleVector() != null) {
-                    builder.titleVector(newResult.getTitleVector());
-                    needUpdate = true;
-                }
-
-                if (existing.getSummaryVector() == null && newResult.getSummaryVector() != null) {
-                    builder.summaryVector(newResult.getSummaryVector());
-                    needUpdate = true;
-                }
-
-                if (needUpdate) {
-                    combinedResults.put(docId, builder.build());
-                }
-            }
-        });
     }
 
     private SearchResult mapToSearchResult(Hit<PostDocument> hit) {
