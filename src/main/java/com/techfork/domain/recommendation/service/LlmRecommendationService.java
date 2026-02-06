@@ -1,7 +1,6 @@
 package com.techfork.domain.recommendation.service;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.KnnSearch;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
@@ -183,7 +182,7 @@ public class LlmRecommendationService implements RecommendationService {
         RecommendationProperties.EmbeddingWeights weights = properties.getEmbeddingWeights();
 
         // 1. 읽은 글 제외 필터 쿼리 생성 (Pre-filtering)
-        Query filterQuery = createExcludeFilter(readPostIds);
+        Query filterQuery = vectorQueryBuilder.createExcludeFilter(readPostIds);
 
         // 2. 네이티브 k-NN 검색 객체 리스트 생성 (Title + Summary + Content)
         List<KnnSearch> knnSearches = vectorQueryBuilder.createKnnSearches(
@@ -239,7 +238,7 @@ public class LlmRecommendationService implements RecommendationService {
         RecommendationProperties.EmbeddingWeights weights = properties.getEmbeddingWeights();
 
         // 1. 읽은 글 제외 필터 쿼리 생성 (Pre-filtering)
-        Query filterQuery = createExcludeFilter(readPostIds);
+        Query filterQuery = vectorQueryBuilder.createExcludeFilter(readPostIds);
 
         // 2. 네이티브 k-NN 검색 객체 리스트 생성 (Title + Summary + Content)
         List<KnnSearch> knnSearches = vectorQueryBuilder.createKnnSearches(
@@ -275,30 +274,6 @@ public class LlmRecommendationService implements RecommendationService {
                 .map(this::mapToMmrCandidate)
                 .filter(candidate -> candidate.getSummaryVector() != null)
                 .toList();
-    }
-
-    /**
-     * 읽은 글 제외를 위한 필터 쿼리 생성
-     */
-    private Query createExcludeFilter(Set<Long> readPostIds) {
-        if (readPostIds == null || readPostIds.isEmpty()) {
-            return null;
-        }
-
-        List<FieldValue> excludeValues = readPostIds.stream()
-                .map(FieldValue::of)
-                .toList();
-
-        return Query.of(q -> q
-                .bool(b -> b
-                        .mustNot(mn -> mn
-                                .terms(t -> t
-                                        .field("postId")
-                                        .terms(v -> v.value(excludeValues))
-                                )
-                        )
-                )
-        );
     }
 
     /**
