@@ -19,6 +19,8 @@ public class RecommendationProperties {
 
     private Integer numCandidates = 200;
 
+    private Integer mmrCandidateSize = 80;
+
     private Integer mmrFinalSize = 30;
 
     private Double lambda = 0.95;

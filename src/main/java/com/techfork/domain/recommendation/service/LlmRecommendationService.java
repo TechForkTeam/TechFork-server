@@ -214,8 +214,10 @@ public class LlmRecommendationService implements RecommendationService {
                 .forEach(hit -> hitMap.putIfAbsent(hit.source().getPostId(), hit));
 
         // RRF 스코어 순으로 정렬하여 MMR Candidate 생성
+        // MMR 성능을 위해 상위 N개만 선택 (MMR은 O(n²)이므로 후보 수 제한 필요)
         return rrfScores.entrySet().stream()
                 .sorted(Map.Entry.<Long, Double>comparingByValue().reversed())
+                .limit(properties.getMmrCandidateSize())
                 .map(entry -> mapToMmrCandidate(hitMap.get(entry.getKey()), entry.getValue()))
                 .filter(candidate -> candidate.getSummaryVector() != null)
                 .toList();
