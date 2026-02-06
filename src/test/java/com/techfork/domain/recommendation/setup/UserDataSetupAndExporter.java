@@ -327,6 +327,7 @@ public class UserDataSetupAndExporter extends IntegrationTestBase {
         }
 
         dto.put("interests", profile.getInterests());
+        dto.put("keyKeywords", profile.getKeyKeywords());
 
         return dto;
     }
