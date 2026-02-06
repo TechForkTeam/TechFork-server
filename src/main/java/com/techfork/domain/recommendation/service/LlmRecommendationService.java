@@ -157,6 +157,11 @@ public class LlmRecommendationService implements RecommendationService {
         });
 
         CompletableFuture<List<Hit<PostDocument>>> keywordSearchFuture = CompletableFuture.supplyAsync(() -> {
+            // 키워드가 없으면 BM25 검색 생략
+            if (bm25Query == null) {
+                log.debug("키워드가 없어 BM25 검색 생략");
+                return Collections.emptyList();
+            }
             try {
                 SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
                                 .index(POSTS_INDEX)
