@@ -25,6 +25,7 @@ import com.techfork.global.util.TimeDecayStrategy;
 import com.techfork.global.util.VectorUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +39,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
+@Primary
 @Transactional
 @RequiredArgsConstructor
 public class LlmRecommendationService implements RecommendationService {

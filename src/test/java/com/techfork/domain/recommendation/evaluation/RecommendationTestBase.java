@@ -39,7 +39,7 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
 
     @Autowired protected EvaluationFixtureLoader fixtureLoader;
     @Autowired protected RecommendationQualityService qualityService;
-    @Autowired protected RecommendationEvaluationService evaluationService; // 새로운 서비스 주입
+    @Autowired protected RecommendationEvaluationService evaluationService; // 새로운 서비스
     @Autowired protected PostDocumentRepository postDocumentRepository;
     @Autowired protected ReadPostRepository readPostRepository;
     @Autowired protected com.techfork.domain.user.repository.UserRepository userRepository;
