@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * 추천 시스템 성능 평가를 위한 전용 서비스
@@ -108,38 +109,61 @@ public class RecommendationEvaluationService extends LlmRecommendationService {
         RecommendationProperties.EmbeddingWeights weights = properties.getEmbeddingWeights();
         Query filterQuery = vectorQueryBuilder.createExcludeFilter(readPostIds);
 
-        // 1. kNN 검색
+        // 1. kNN 검색 쿼리 준비
         List<KnnSearch> knnSearches = vectorQueryBuilder.createKnnSearches(
                 TITLE_EMBEDDING_FIELD, SUMMARY_EMBEDDING_FIELD, CONTENT_CHUNKS_EMBEDDING_FIELD,
                 userProfileVector, weights.getTitle(), weights.getSummary(), weights.getContent(),
                 properties.getKnnSearchSize(), properties.getNumCandidates(), filterQuery
         );
 
-        SearchResponse<PostDocument> vectorResponse = elasticsearchClient.search(s -> s
-                        .index(POSTS_INDEX).knn(knnSearches).size(properties.getKnnSearchSize()),
-                PostDocument.class
-        );
-
-        List<Hit<PostDocument>> vectorHits = vectorResponse.hits().hits();
-
-        // 2. BM25 검색
+        // 2. BM25 검색 쿼리 준비
         Query bm25Query = vectorQueryBuilder.createBm25Query(
                 keyKeywords, weights.getTitle(), weights.getSummary(), weights.getContent()
         );
 
-        SearchResponse<PostDocument> keywordResponse = elasticsearchClient.search(s -> s
-                        .index(POSTS_INDEX)
-                        .query(q -> q.bool(b -> {
-                            b.must(bm25Query);
-                            if (filterQuery != null) b.filter(filterQuery);
-                            return b;
-                        }))
-                        .size(properties.getKnnSearchSize()),
-                PostDocument.class
-        );
-        List<Hit<PostDocument>> keywordHits = keywordResponse.hits().hits();
+        // 3. kNN과 BM25 검색 병렬 실행
+        CompletableFuture<List<Hit<PostDocument>>> vectorSearchFuture = CompletableFuture.supplyAsync(() -> {
+            try {
+                SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
+                                .index(POSTS_INDEX)
+                                .knn(knnSearches)
+                                .size(properties.getKnnSearchSize()),
+                        PostDocument.class
+                );
+                return response.hits().hits();
+            } catch (IOException e) {
+                log.error("kNN 검색 실패", e);
+                return Collections.emptyList();
+            }
+        });
 
-        // 3. RRF로 결합 (부모 클래스의 protected 메서드 사용)
+        CompletableFuture<List<Hit<PostDocument>>> keywordSearchFuture = CompletableFuture.supplyAsync(() -> {
+            try {
+                SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
+                                .index(POSTS_INDEX)
+                                .query(q -> q.bool(b -> {
+                                    b.must(bm25Query);
+                                    if (filterQuery != null) b.filter(filterQuery);
+                                    return b;
+                                }))
+                                .size(properties.getKnnSearchSize()),
+                        PostDocument.class
+                );
+                return response.hits().hits();
+            } catch (IOException e) {
+                log.error("BM25 검색 실패", e);
+                return Collections.emptyList();
+            }
+        });
+
+        // 4. 두 검색 완료 대기
+        CompletableFuture<Void> allSearches = CompletableFuture.allOf(vectorSearchFuture, keywordSearchFuture);
+        allSearches.join();
+
+        List<Hit<PostDocument>> vectorHits = vectorSearchFuture.join();
+        List<Hit<PostDocument>> keywordHits = keywordSearchFuture.join();
+
+        // 5. RRF로 결합 (부모 클래스의 protected 메서드 사용)
         return applyRrf(vectorHits, keywordHits);
     }
 }
