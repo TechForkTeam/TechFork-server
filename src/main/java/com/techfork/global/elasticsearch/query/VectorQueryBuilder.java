@@ -38,13 +38,4 @@ public interface VectorQueryBuilder {
             int numCandidates,
             Query filter
     );
-
-    /**
-     * 랜덤 점수를 위한 function_score 쿼리 생성
-     *
-     * @param randomSeed 랜덤 시드
-     * @param randomWeight 랜덤 가중치
-     * @return function_score 쿼리
-     */
-    Query createRandomScoreQuery(long randomSeed, double randomWeight);
 }

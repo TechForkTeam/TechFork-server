@@ -81,21 +81,4 @@ public class VectorSearchQueryBuilder implements VectorQueryBuilder {
 
         return knnSearches;
     }
-
-    @Override
-    public Query createRandomScoreQuery(long randomSeed, double randomWeight) {
-        return Query.of(q -> q
-                .functionScore(fs -> fs
-                        .query(mq -> mq.matchAll(m -> m))
-                        .functions(fn -> fn
-                                .randomScore(rs -> rs
-                                        .seed(String.valueOf(randomSeed))
-                                        .field("_seq_no")
-                                )
-                                .weight(randomWeight)
-                        )
-                        .boostMode(FunctionBoostMode.Sum)
-                )
-        );
-    }
 }

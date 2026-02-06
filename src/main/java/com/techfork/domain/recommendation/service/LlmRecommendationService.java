@@ -182,10 +182,6 @@ public class LlmRecommendationService implements RecommendationService {
         // 가중치 가져오기
         RecommendationProperties.EmbeddingWeights weights = properties.getEmbeddingWeights();
 
-        // 랜덤 시드 생성 (현재 시간 기반)
-        long randomSeed = System.currentTimeMillis();
-        double randomWeight = 0.0; 
-
         // 1. 읽은 글 제외 필터 쿼리 생성 (Pre-filtering)
         Query filterQuery = createExcludeFilter(readPostIds);
 
@@ -203,17 +199,13 @@ public class LlmRecommendationService implements RecommendationService {
                 filterQuery
         );
 
-        // 3. 랜덤 요소 추가 (function_score)
-        Query randomQuery = vectorQueryBuilder.createRandomScoreQuery(randomSeed, randomWeight);
-
-        log.debug("ES k-NN 검색 실행 (Train/Test Split) - 가중치 [title:{}, summary:{}], 랜덤가중치: {}",
-                weights.getTitle(), weights.getSummary(), randomWeight);
+        log.debug("ES k-NN 검색 실행 (Train/Test Split) - 가중치 [title:{}, summary:{}, content:{}]",
+                weights.getTitle(), weights.getSummary(), weights.getContent());
 
         long startTime = System.currentTimeMillis();
         SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
                         .index(POSTS_INDEX)
                         .knn(knnSearches)       // k-NN 검색 (관련성 + 필터링)
-                        .query(randomQuery)     // 랜덤 점수 추가
                         .size(properties.getKnnSearchSize())
                 ,
                 PostDocument.class
@@ -246,10 +238,6 @@ public class LlmRecommendationService implements RecommendationService {
         // 가중치 가져오기
         RecommendationProperties.EmbeddingWeights weights = properties.getEmbeddingWeights();
 
-        // 랜덤 시드 생성 (현재 시간 기반)
-        long randomSeed = System.currentTimeMillis();
-        double randomWeight = 0.0; // 랜덤 가중치 20%
-
         // 1. 읽은 글 제외 필터 쿼리 생성 (Pre-filtering)
         Query filterQuery = createExcludeFilter(readPostIds);
 
@@ -267,17 +255,13 @@ public class LlmRecommendationService implements RecommendationService {
                 filterQuery
         );
 
-        // 3. 랜덤 요소 추가 (function_score)
-        Query randomQuery = vectorQueryBuilder.createRandomScoreQuery(randomSeed, randomWeight);
-
-        log.debug("ES k-NN 검색 실행 - 가중치 [title:{}, summary:{}], 랜덤시드: {}, 랜덤가중치: {}",
-                weights.getTitle(), weights.getSummary(), randomSeed, randomWeight);
+        log.debug("ES k-NN 검색 실행 - 가중치 [title:{}, summary:{}, content:{}]",
+                weights.getTitle(), weights.getSummary(), weights.getContent());
 
         long startTime = System.currentTimeMillis();
         SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
                         .index(POSTS_INDEX)
                         .knn(knnSearches)       // k-NN 검색 (관련성 + 필터링)
-                        .query(randomQuery)     // 랜덤 점수 추가
                         .size(properties.getKnnSearchSize())
                 ,
                 PostDocument.class
