@@ -127,12 +127,63 @@ public class LlmRecommendationService implements RecommendationService {
     }
 
     /**
+     * Elasticsearch 네이티브 k-NN 검색으로 초기 후보군 조회
+     * - 이미 읽은 글 제외
+     */
+    private List<MmrCandidate> searchCandidates(float[] userProfileVector, User user) throws IOException {
+        // 이미 읽은 글 ID 목록
+        Set<Long> readPostIds = readPostRepository.findRecentReadPostsByUserIdWithMinDuration(user.getId(), PageRequest.of(0, 1000))
+                .stream()
+                .map(readPost -> readPost.getPost().getId())
+                .collect(Collectors.toSet());
+
+        log.debug("사용자 {}의 읽은 게시글 {} 개 제외", user.getId(), readPostIds.size());
+
+        // 가중치 가져오기
+        RecommendationProperties.EmbeddingWeights weights = properties.getEmbeddingWeights();
+
+        // 1. 읽은 글 제외 필터 쿼리 생성 (Pre-filtering)
+        Query filterQuery = vectorQueryBuilder.createExcludeFilter(readPostIds);
+
+        // 2. 네이티브 k-NN 검색 객체 리스트 생성 (Title + Summary + Content)
+        List<KnnSearch> knnSearches = vectorQueryBuilder.createKnnSearches(
+                TITLE_EMBEDDING_FIELD,
+                SUMMARY_EMBEDDING_FIELD,
+                CONTENT_CHUNKS_EMBEDDING_FIELD,
+                userProfileVector,
+                weights.getTitle(),
+                weights.getSummary(),
+                weights.getContent(),
+                properties.getKnnSearchSize(),
+                properties.getNumCandidates(),
+                filterQuery
+        );
+
+        log.debug("ES k-NN 검색 실행 - 가중치 [title:{}, summary:{}, content:{}]",
+                weights.getTitle(), weights.getSummary(), weights.getContent());
+
+        long startTime = System.currentTimeMillis();
+        SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
+                        .index(POSTS_INDEX)
+                        .knn(knnSearches)       // k-NN 검색 (관련성 + 필터링)
+                        .size(properties.getKnnSearchSize())
+                ,
+                PostDocument.class
+        );
+        long duration = System.currentTimeMillis() - startTime;
+        log.info("추천 후보군 검색 완료: {} 개, 소요 시간: {}ms", response.hits().hits().size(), duration);
+
+        // 결과를 MmrCandidate로 변환
+        return response.hits().hits().stream()
+                .filter(hit -> hit.source() != null)
+                .map(this::mapToMmrCandidate)
+                .filter(candidate -> candidate.getSummaryVector() != null)
+                .toList();
+    }
+
+    /**
      * 추천 생성 (평가 전용 - Train/Test Split 지원)
      * 특정 읽은 글 목록(Train Set)만 제외하고 추천 생성
-     *
-     * @param user 사용자
-     * @param trainPostIds Train Set 게시글 ID 목록 (제외할 글)
-     * @return 추천된 게시글 ID 리스트
      */
     public List<Long> generateRecommendationsForEvaluation(User user, Set<Long> trainPostIds) {
         // 1. 사용자 프로필 벡터 조회
@@ -211,62 +262,6 @@ public class LlmRecommendationService implements RecommendationService {
         );
         long duration = System.currentTimeMillis() - startTime;
         log.info("추천 후보군 검색 완료 (Evaluation): {} 개, 소요 시간: {}ms", response.hits().hits().size(), duration);
-
-        // 결과를 MmrCandidate로 변환
-        return response.hits().hits().stream()
-                .filter(hit -> hit.source() != null)
-                .map(this::mapToMmrCandidate)
-                .filter(candidate -> candidate.getSummaryVector() != null)
-                .toList();
-    }
-
-    /**
-     * Elasticsearch 네이티브 k-NN 검색으로 초기 후보군 조회
-     * - 이미 읽은 글 제외
-     * - 랜덤 시드를 사용하여 매번 다른 후보군 생성
-     */
-    private List<MmrCandidate> searchCandidates(float[] userProfileVector, User user) throws IOException {
-        // 이미 읽은 글 ID 목록
-        Set<Long> readPostIds = readPostRepository.findRecentReadPostsByUserIdWithMinDuration(user.getId(), PageRequest.of(0, 1000))
-                .stream()
-                .map(readPost -> readPost.getPost().getId())
-                .collect(Collectors.toSet());
-
-        log.debug("사용자 {}의 읽은 게시글 {} 개 제외", user.getId(), readPostIds.size());
-
-        // 가중치 가져오기
-        RecommendationProperties.EmbeddingWeights weights = properties.getEmbeddingWeights();
-
-        // 1. 읽은 글 제외 필터 쿼리 생성 (Pre-filtering)
-        Query filterQuery = vectorQueryBuilder.createExcludeFilter(readPostIds);
-
-        // 2. 네이티브 k-NN 검색 객체 리스트 생성 (Title + Summary + Content)
-        List<KnnSearch> knnSearches = vectorQueryBuilder.createKnnSearches(
-                TITLE_EMBEDDING_FIELD,
-                SUMMARY_EMBEDDING_FIELD,
-                CONTENT_CHUNKS_EMBEDDING_FIELD,
-                userProfileVector,
-                weights.getTitle(),
-                weights.getSummary(),
-                weights.getContent(),
-                properties.getKnnSearchSize(),
-                properties.getNumCandidates(),
-                filterQuery
-        );
-
-        log.debug("ES k-NN 검색 실행 - 가중치 [title:{}, summary:{}, content:{}]",
-                weights.getTitle(), weights.getSummary(), weights.getContent());
-
-        long startTime = System.currentTimeMillis();
-        SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
-                        .index(POSTS_INDEX)
-                        .knn(knnSearches)       // k-NN 검색 (관련성 + 필터링)
-                        .size(properties.getKnnSearchSize())
-                ,
-                PostDocument.class
-        );
-        long duration = System.currentTimeMillis() - startTime;
-        log.info("추천 후보군 검색 완료: {} 개, 소요 시간: {}ms", response.hits().hits().size(), duration);
 
         // 결과를 MmrCandidate로 변환
         return response.hits().hits().stream()
