@@ -335,6 +335,7 @@ public class EvaluationFixtureLoader {
             Long originalUserId = ((Number) dto.get("userId")).longValue();
             String profileText = (String) dto.get("profileText");
             List<String> interests = (List<String>) dto.get("interests");
+            List<String> keyKeywords = (List<String>) dto.get("keyKeywords");
 
             // JSON의 원래 User ID를 실제 DB User ID로 매핑
             User user = userMap.get(originalUserId);
@@ -359,6 +360,7 @@ public class EvaluationFixtureLoader {
                     .profileText(profileText)
                     .profileVector(profileVector)
                     .interests(interests)
+                    .keyKeywords(keyKeywords)
                     .build();
 
             userProfileDocumentRepository.save(profile);

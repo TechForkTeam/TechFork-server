@@ -15,7 +15,7 @@ public class IntegrationTestConfig {
             new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:8.18.0")
                     .withEnv("xpack.security.enabled", "false")
                     .withEnv("discovery.type", "single-node")
-                    .withEnv("ES_JAVA_OPTS", "-Xms256m -Xmx256m");
+                    .withEnv("ES_JAVA_OPTS", "-Xms2g -Xmx2g");
 
     private static final MySQLContainer<?> mysql =
             new MySQLContainer<>("mysql:8.0.36");

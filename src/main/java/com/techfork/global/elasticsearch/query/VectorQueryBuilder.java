@@ -3,12 +3,21 @@ package com.techfork.global.elasticsearch.query;
 import co.elastic.clients.elasticsearch._types.KnnSearch;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Elasticsearch 벡터 검색 쿼리 빌더 인터페이스
  * 네이티브 k-NN 검색 및 하이브리드 검색을 위한 쿼리 생성 제공
  */
 public interface VectorQueryBuilder {
+
+    /**
+     * 읽은 글 제외를 위한 필터 쿼리 생성 (Pre-filtering용)
+     *
+     * @param readPostIds 제외할 게시글 ID 목록
+     * @return Elasticsearch Query 객체
+     */
+    Query createExcludeFilter(Set<Long> readPostIds);
 
     /**
      * 네이티브 k-NN 검색 객체 리스트 생성
@@ -40,11 +49,13 @@ public interface VectorQueryBuilder {
     );
 
     /**
-     * 랜덤 점수를 위한 function_score 쿼리 생성
+     * BM25 키워드 검색 쿼리 생성
      *
-     * @param randomSeed 랜덤 시드
-     * @param randomWeight 랜덤 가중치
-     * @return function_score 쿼리
+     * @param keywords 검색할 키워드 리스트
+     * @param titleBoost 제목 필드 가중치
+     * @param summaryBoost 요약 필드 가중치
+     * @param contentBoost 본문 필드 가중치
+     * @return BM25 검색 Query 객체 (키워드가 없으면 null)
      */
-    Query createRandomScoreQuery(long randomSeed, double randomWeight);
+    Query createBm25Query(List<String> keywords, float titleBoost, float summaryBoost, float contentBoost);
 }

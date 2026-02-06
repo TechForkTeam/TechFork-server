@@ -128,13 +128,13 @@ resilience4j:
   ratelimiter:
     configs:
       default:
-        limit-for-period: 37
+        limit-for-period: 60
         limit-refresh-period: 1m
         timeout-duration: 10s
     instances:
       llmSummary:
         base-config: default
-        limit-for-period: 37
+        limit-for-period: 60
         limit-refresh-period: 1m
         timeout-duration: 15s
       llmEmbedding:

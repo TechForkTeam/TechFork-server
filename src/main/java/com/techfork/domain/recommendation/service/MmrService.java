@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * MMR (Maximal Marginal Relevance) 알고리즘 구현
@@ -21,6 +22,7 @@ import java.util.List;
 public class MmrService {
 
     private final RecommendationProperties properties;
+    private final Random random = new Random();
 
     @Getter
     @Builder
@@ -38,6 +40,18 @@ public class MmrService {
         private double similarityScore;
         private double mmrScore;
         private int rank;
+    }
+
+    private static class ScoredCandidate {
+        MmrCandidate candidate;
+        double mmrScore;
+        int originalIndex;
+
+        ScoredCandidate(MmrCandidate candidate, double mmrScore, int originalIndex) {
+            this.candidate = candidate;
+            this.mmrScore = mmrScore;
+            this.originalIndex = originalIndex;
+        }
     }
 
     /**
@@ -61,8 +75,10 @@ public class MmrService {
         log.debug("MMR 선택 시작: candidates={}, finalSize={}, lambda={}",
                 candidates.size(), finalSize, lambda);
 
-        // 첫 번째는 가장 유사도가 높은 문서 선택
-        MmrCandidate first = remainingCandidates.remove(0);
+        // 첫 번째는 상위 K개 중에서 랜덤하게 선택 (다양성 증가)
+        int topK = Math.min(5, remainingCandidates.size());
+        int randomIndex = random.nextInt(topK);
+        MmrCandidate first = remainingCandidates.remove(randomIndex);
         selectedResults.add(MmrResult.builder()
                 .postId(first.getPostId())
                 .similarityScore(first.getSimilarityScore())
@@ -70,32 +86,31 @@ public class MmrService {
                 .rank(1)
                 .build());
 
-        // 나머지 문서들을 MMR 점수 기반으로 선택
+        // 나머지 문서들을 MMR 점수 기반으로 선택 (Top-K 샘플링으로 랜덤성 추가)
         while (selectedResults.size() < finalSize && !remainingCandidates.isEmpty()) {
-            MmrCandidate bestCandidate = null;
-            double bestMmrScore = Double.NEGATIVE_INFINITY;
-            int bestIndex = -1;
-
+            // 모든 후보의 MMR 점수 계산
+            List<ScoredCandidate> scoredCandidates = new ArrayList<>();
             for (int i = 0; i < remainingCandidates.size(); i++) {
                 MmrCandidate candidate = remainingCandidates.get(i);
                 double mmrScore = calculateMmrScore(candidate, selectedResults, lambda, candidates);
-
-                if (mmrScore > bestMmrScore) {
-                    bestMmrScore = mmrScore;
-                    bestCandidate = candidate;
-                    bestIndex = i;
-                }
+                scoredCandidates.add(new ScoredCandidate(candidate, mmrScore, i));
             }
 
-            if (bestCandidate != null) {
-                remainingCandidates.remove(bestIndex);
-                selectedResults.add(MmrResult.builder()
-                        .postId(bestCandidate.getPostId())
-                        .similarityScore(bestCandidate.getSimilarityScore())
-                        .mmrScore(bestMmrScore)
-                        .rank(selectedResults.size() + 1)
-                        .build());
-            }
+            // MMR 점수 내림차순 정렬
+            scoredCandidates.sort((a, b) -> Double.compare(b.mmrScore, a.mmrScore));
+
+            // 상위 K개 중에서 랜덤 선택
+            int topKForSelection = Math.min(3, scoredCandidates.size());
+            int randomIdx = random.nextInt(topKForSelection);
+            ScoredCandidate selected = scoredCandidates.get(randomIdx);
+
+            remainingCandidates.remove(selected.originalIndex);
+            selectedResults.add(MmrResult.builder()
+                    .postId(selected.candidate.getPostId())
+                    .similarityScore(selected.candidate.getSimilarityScore())
+                    .mmrScore(selected.mmrScore)
+                    .rank(selectedResults.size() + 1)
+                    .build());
         }
 
         log.info("MMR 선택 완료: 전체 {} 후보 중 {} 개 선택",

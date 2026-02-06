@@ -1,21 +1,11 @@
 package com.techfork.domain.recommendation.evaluation;
 
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.techfork.domain.activity.repository.ReadPostRepository;
 import com.techfork.domain.post.repository.PostDocumentRepository;
-import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.recommendation.config.RecommendationProperties;
-import com.techfork.domain.recommendation.repository.RecommendationHistoryRepository;
-import com.techfork.domain.recommendation.repository.RecommendedPostRepository;
-import com.techfork.domain.recommendation.service.LlmRecommendationService;
-import com.techfork.domain.recommendation.service.MmrService;
 import com.techfork.domain.recommendation.util.EvaluationFixtureLoader;
 import com.techfork.domain.user.entity.User;
-import com.techfork.domain.user.enums.EInterestCategory;
-import com.techfork.domain.user.repository.UserProfileDocumentRepository;
 import com.techfork.global.common.IntegrationTestBase;
-import com.techfork.global.elasticsearch.query.VectorQueryBuilder;
-import com.techfork.global.util.TimeDecayStrategy;
 import com.techfork.global.util.VectorUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,7 +15,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -36,9 +25,9 @@ import java.util.*;
 public abstract class RecommendationTestBase extends IntegrationTestBase {
 
     // 테스트 상수
-    protected static final int K_FIRST_ROW = 4;      // 첫 줄
-    protected static final int K_FIRST_SCREEN = 8;   // 첫 화면
-    protected static final int K_DEEP_EXPLORE = 30;  // 깊은 탐색
+    protected static final int K_FIRST_ROW = 4;
+    protected static final int K_FIRST_SCREEN = 8;
+    protected static final int K_DEEP_EXPLORE = 30;
     
     protected static final float DEFAULT_TITLE_WEIGHT = 0.4f;
     protected static final float DEFAULT_SUMMARY_WEIGHT = 0.4f;
@@ -50,15 +39,9 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
 
     @Autowired protected EvaluationFixtureLoader fixtureLoader;
     @Autowired protected RecommendationQualityService qualityService;
+    @Autowired protected RecommendationEvaluationService evaluationService; // 새로운 서비스
     @Autowired protected PostDocumentRepository postDocumentRepository;
-    @Autowired protected ElasticsearchClient elasticsearchClient;
-    @Autowired protected UserProfileDocumentRepository userProfileDocumentRepository;
-    @Autowired protected RecommendedPostRepository recommendedPostRepository;
-    @Autowired protected RecommendationHistoryRepository recommendationHistoryRepository;
     @Autowired protected ReadPostRepository readPostRepository;
-    @Autowired protected PostRepository postRepository;
-    @Autowired protected TimeDecayStrategy timeDecayStrategy;
-    @Autowired protected VectorQueryBuilder vectorQueryBuilder;
     @Autowired protected com.techfork.domain.user.repository.UserRepository userRepository;
 
     protected static List<User> cachedTestUsers;
@@ -115,10 +98,6 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
         return cachedTestUsers;
     }
 
-    protected double calculateCompositeScore(double recall, double ndcg, double ild) {
-        return recall * RECALL_WEIGHT + ndcg * NDCG_WEIGHT + ild * ILD_WEIGHT;
-    }
-
     protected RecommendationProperties createProperties(float tw, float sw, float cw, double lambda) {
         RecommendationProperties props = new RecommendationProperties();
         props.setKnnSearchSize(100);
@@ -132,15 +111,6 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
         return props;
     }
 
-    protected LlmRecommendationService createRecommendationService(RecommendationProperties props) {
-        MmrService mmrService = new MmrService(props);
-        return new LlmRecommendationService(
-                elasticsearchClient, userProfileDocumentRepository, recommendedPostRepository,
-                recommendationHistoryRepository, readPostRepository, postRepository,
-                mmrService, timeDecayStrategy, props, vectorQueryBuilder
-        );
-    }
-
     protected EvaluationResult calculateAverageMetrics(String configName, List<UserMetrics> metrics) {
         double r4 = metrics.stream().mapToDouble(UserMetrics::getRecall4).average().orElse(0.0);
         double n4 = metrics.stream().mapToDouble(UserMetrics::getNdcg4).average().orElse(0.0);
@@ -149,7 +119,8 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
         double r30 = metrics.stream().mapToDouble(UserMetrics::getRecall30).average().orElse(0.0);
         double n30 = metrics.stream().mapToDouble(UserMetrics::getNdcg30).average().orElse(0.0);
         double ild = metrics.stream().mapToDouble(UserMetrics::getIld).average().orElse(0.0);
-        double score = calculateCompositeScore(r8, n8, ild);
+        
+        double score = r8 * RECALL_WEIGHT + n8 * NDCG_WEIGHT + ild * ILD_WEIGHT;
 
         return EvaluationResult.builder()
                 .configName(configName)
@@ -160,10 +131,7 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
                 .build();
     }
 
-    /**
-     * ILD 없이 일반 평가 (가중치 비교용)
-     */
-    protected Optional<UserMetrics> evaluateUserWithGroundTruth(User user, LlmRecommendationService service) {
+    protected Optional<UserMetrics> evaluateUserWithGroundTruth(User user, RecommendationProperties props) {
         try {
             Map<Long, Integer> groundTruth = cachedGroundTruth.get(user.getId());
             if (groundTruth == null || groundTruth.isEmpty()) return Optional.empty();
@@ -171,7 +139,8 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
             Set<Long> readIds = readPostRepository.findRecentReadPostsByUserIdWithMinDuration(user.getId(), org.springframework.data.domain.PageRequest.of(0, 10000))
                     .stream().map(rp -> rp.getPost().getId()).collect(java.util.stream.Collectors.toSet());
             
-            List<Long> recIds = service.generateRecommendationsForEvaluation(user, readIds);
+            // 새로운 서비스 사용
+            List<Long> recIds = evaluationService.generateRecommendationsForEvaluation(user, readIds, props);
             if (recIds.isEmpty()) return Optional.empty();
 
             double r4 = qualityService.calculateRecall(recIds, groundTruth.keySet(), K_FIRST_ROW);
@@ -187,10 +156,7 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
         }
     }
 
-    /**
-     * ILD 포함 평가 (Lambda 최적화용)
-     */
-    protected Optional<UserMetrics> evaluateUserWithGroundTruthAndILD(User user, LlmRecommendationService service) {
+    protected Optional<UserMetrics> evaluateUserWithGroundTruthAndILD(User user, RecommendationProperties props) {
         try {
             Map<Long, Integer> groundTruth = cachedGroundTruth.get(user.getId());
             if (groundTruth == null || groundTruth.isEmpty()) return Optional.empty();
@@ -198,7 +164,8 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
             Set<Long> readIds = readPostRepository.findRecentReadPostsByUserIdWithMinDuration(user.getId(), org.springframework.data.domain.PageRequest.of(0, 10000))
                     .stream().map(rp -> rp.getPost().getId()).collect(java.util.stream.Collectors.toSet());
             
-            List<Long> recIds = service.generateRecommendationsForEvaluation(user, readIds);
+            // 새로운 서비스 사용
+            List<Long> recIds = evaluationService.generateRecommendationsForEvaluation(user, readIds, props);
             if (recIds.isEmpty()) return Optional.empty();
 
             double r4 = qualityService.calculateRecall(recIds, groundTruth.keySet(), K_FIRST_ROW);
@@ -221,11 +188,10 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
     }
 
     protected EvaluationResult evaluateConfigWithGroundTruth(ConfigCombo config, List<User> testUsers) {
-        LlmRecommendationService service = createRecommendationService(
-                createProperties(config.getTitleWeight(), config.getSummaryWeight(), config.getContentWeight(), config.getMmrLambda()));
+        RecommendationProperties props = createProperties(config.getTitleWeight(), config.getSummaryWeight(), config.getContentWeight(), config.getMmrLambda());
         
         List<UserMetrics> metrics = testUsers.stream()
-                .map(user -> evaluateUserWithGroundTruth(user, service))
+                .map(user -> evaluateUserWithGroundTruth(user, props))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .toList();
@@ -234,11 +200,10 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
     }
 
     protected EvaluationResult evaluateConfigWithGroundTruthAndILD(ConfigCombo config, List<User> testUsers) {
-        LlmRecommendationService service = createRecommendationService(
-                createProperties(config.getTitleWeight(), config.getSummaryWeight(), config.getContentWeight(), config.getMmrLambda()));
+        RecommendationProperties props = createProperties(config.getTitleWeight(), config.getSummaryWeight(), config.getContentWeight(), config.getMmrLambda());
         
         List<UserMetrics> metrics = testUsers.stream()
-                .map(user -> evaluateUserWithGroundTruthAndILD(user, service))
+                .map(user -> evaluateUserWithGroundTruthAndILD(user, props))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .toList();
