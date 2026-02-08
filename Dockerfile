@@ -1,6 +1,8 @@
 # Java 17
 FROM eclipse-temurin:17-jdk
 
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 ARG JAR_FILE=build/libs/*.jar
 
 # jar 파일 복사
