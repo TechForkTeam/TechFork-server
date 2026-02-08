@@ -5,9 +5,9 @@ DEPLOY_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 STATE_FILE="${DEPLOY_DIR}/.active-color"
 LOCK_DIR="${DEPLOY_DIR}/.deploy.lock"
 DOCKER_DIR="${DEPLOY_DIR}/docker"
-COMPOSE_INFRA="${DOCKER_DIR}/docker-compose.infra.yml"
-COMPOSE_BLUE="${DOCKER_DIR}/docker-compose.blue.yml"
-COMPOSE_GREEN="${DOCKER_DIR}/docker-compose.green.yml"
+COMPOSE_INFRA="-p techfork-infra -f ${DOCKER_DIR}/docker-compose.infra.yml"
+COMPOSE_BLUE="-p techfork-blue -f ${DOCKER_DIR}/docker-compose.blue.yml"
+COMPOSE_GREEN="-p techfork-green -f ${DOCKER_DIR}/docker-compose.green.yml"
 UPSTREAM_CONF="${DOCKER_DIR}/nginx/conf.d/upstream.conf"
 
 HEALTH_CHECK_RETRIES=30
@@ -110,7 +110,7 @@ docker network create techfork-network 2>/dev/null || true
 
 # Step 2: Start infrastructure
 log "Starting infrastructure services..."
-docker compose -f "$COMPOSE_INFRA" up -d
+docker compose $COMPOSE_INFRA up -d
 
 log "Waiting for Elasticsearch to be healthy..."
 timeout 120 bash -c 'until docker exec techfork-elasticsearch curl -sf http://localhost:9200/_cluster/health > /dev/null 2>&1; do sleep 5; done' || {
@@ -132,18 +132,18 @@ TARGET_CONTAINER=$(get_container_name "$TARGET_COLOR")
 
 # Step 4: Pull new image
 log "Pulling latest image for ${TARGET_COLOR}..."
-docker compose -f "$TARGET_COMPOSE" pull
+docker compose $TARGET_COMPOSE pull
 
 # Step 5: Start target container
 log "Starting ${TARGET_COLOR} container..."
-docker compose -f "$TARGET_COMPOSE" up -d
+docker compose $TARGET_COMPOSE up -d
 
 # Step 6: Health check
 if health_check "$TARGET_CONTAINER"; then
     log "Target container ${TARGET_CONTAINER} is healthy"
 else
     log "ROLLBACK: Stopping failed ${TARGET_COLOR} container..."
-    docker compose -f "$TARGET_COMPOSE" down
+    docker compose $TARGET_COMPOSE down
     log "Rollback complete. Active deployment unchanged: ${ACTIVE_COLOR:-none}"
     exit 1
 fi
@@ -158,7 +158,7 @@ sleep 10
 if [ -n "$ACTIVE_COLOR" ]; then
     OLD_COMPOSE=$(get_compose_file "$ACTIVE_COLOR")
     log "Stopping old ${ACTIVE_COLOR} container..."
-    docker compose -f "$OLD_COMPOSE" down
+    docker compose $OLD_COMPOSE down
 fi
 
 # Step 10: Save active color
