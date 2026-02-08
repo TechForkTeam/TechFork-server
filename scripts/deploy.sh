@@ -110,6 +110,14 @@ docker network create techfork-network 2>/dev/null || true
 
 # Step 2: Start infrastructure
 log "Starting infrastructure services..."
+
+log "Resetting upstream to prevent Nginx crash..."
+cat > "$UPSTREAM_CONF" <<EOF
+upstream springapp {
+    server 127.0.0.1:9999; # 아무도 없는 포트 (502 Bad Gateway가 뜨겠지만 Nginx는 켜짐)
+}
+EOF
+
 docker compose $COMPOSE_INFRA up -d
 
 log "Waiting for Elasticsearch to be healthy..."
