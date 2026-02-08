@@ -84,16 +84,6 @@ echo "===== System Tuning for Elasticsearch ====="
 echo 'vm.max_map_count=262144' >> /etc/sysctl.conf
 sysctl -w vm.max_map_count=262144
 
-# 파일 디스크립터 제한 증가
-cat >> /etc/security/limits.conf <<EOF
-* soft nofile 65536
-* hard nofile 65536
-* soft nproc 65536
-* hard nproc 65536
-ubuntu soft memlock unlimited
-ubuntu hard memlock unlimited
-EOF
-
 # ===========================================
 # Nginx 설정
 # ===========================================
