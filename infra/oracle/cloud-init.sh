@@ -283,22 +283,6 @@ COMPOSE
 chown -R ubuntu:ubuntu /opt/tech-fork
 
 # ===========================================
-# 환경 변수 템플릿 생성
-# ===========================================
-echo "===== Create Environment Template ====="
-cat > /opt/tech-fork/.env.template <<ENV
-DOCKER_IMAGE=ghcr.io/your-org/tech-fork
-BRANCH=main
-SPRING_PROFILES_ACTIVE=prod
-DB_URL=jdbc:mysql://mysql:3306/techblog
-DB_USERNAME=techfork
-DB_PASSWORD=${db_password}
-REDIS_PASSWORD=${redis_password}
-ANTHROPIC_API_KEY=your-anthropic-key
-OPENAI_API_KEY=your-openai-key
-ENV
-
-# ===========================================
 # 방화벽 설정 (iptables)
 # ===========================================
 echo "===== Configure Firewall ====="
