@@ -61,12 +61,6 @@ usermod -aG docker ubuntu
 echo "Docker version: $(docker --version)"
 
 # ===========================================
-# Nginx 설치
-# ===========================================
-echo "===== Install Nginx ====="
-apt-get install -y nginx
-
-# ===========================================
 # 시스템 튜닝 (Elasticsearch 권장 설정)
 # ===========================================
 echo "===== System Tuning for Elasticsearch ====="
@@ -76,70 +70,12 @@ echo 'vm.max_map_count=262144' >> /etc/sysctl.conf
 sysctl -w vm.max_map_count=262144
 
 # ===========================================
-# Nginx 설정
+# 배포 디렉토리 및 Docker 네트워크 생성
 # ===========================================
-echo "===== Configure Nginx ====="
-cat > /etc/nginx/sites-available/tech-fork <<'NGINX'
-upstream springapp {
-    server 127.0.0.1:8080 fail_timeout=0;
-}
-
-server {
-    listen 80;
-    server_name ${domain_name} www.${domain_name} api.${domain_name};
-
-    client_max_body_size 10M;
-
-    access_log /var/log/nginx/tech-fork-access.log;
-    error_log /var/log/nginx/tech-fork-error.log;
-
-    # Cloudflare Real IP 설정
-    set_real_ip_from 173.245.48.0/20;
-    set_real_ip_from 103.21.244.0/22;
-    set_real_ip_from 103.22.200.0/22;
-    set_real_ip_from 103.31.4.0/22;
-    set_real_ip_from 141.101.64.0/18;
-    set_real_ip_from 108.162.192.0/18;
-    set_real_ip_from 190.93.240.0/20;
-    set_real_ip_from 188.114.96.0/20;
-    set_real_ip_from 197.234.240.0/22;
-    set_real_ip_from 198.41.128.0/17;
-    set_real_ip_from 162.158.0.0/15;
-    set_real_ip_from 104.16.0.0/13;
-    set_real_ip_from 104.24.0.0/14;
-    set_real_ip_from 172.64.0.0/13;
-    set_real_ip_from 131.0.72.0/22;
-    real_ip_header CF-Connecting-IP;
-
-    location / {
-        proxy_pass http://springapp;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        # 타임아웃 설정 (검색 응답 시간 고려)
-        proxy_connect_timeout 60s;
-        proxy_send_timeout 60s;
-        proxy_read_timeout 60s;
-    }
-
-    # Health Check 엔드포인트
-    location /health {
-        proxy_pass http://springapp/actuator/health;
-        proxy_set_header Host $host;
-    }
-}
-NGINX
-
-# 사이트 활성화
-ln -sf /etc/nginx/sites-available/tech-fork /etc/nginx/sites-enabled/
-rm -f /etc/nginx/sites-enabled/default
-
-# Nginx 테스트 및 재시작
-nginx -t
-systemctl restart nginx
-systemctl enable nginx
+echo "===== Setup Deployment Structure ====="
+mkdir -p /home/ubuntu/deploy/nginx/conf.d
+docker network create techfork-network 2>/dev/null || true
+chown -R ubuntu:ubuntu /home/ubuntu/deploy
 
 # ===========================================
 # 방화벽 설정 (iptables)
@@ -157,3 +93,4 @@ iptables -P OUTPUT ACCEPT
 echo "===== Cloud Init Completed: $(date) ====="
 echo "Next steps:"
 echo "1. SSH into the instance: ssh ubuntu@<public-ip>"
+echo "2. Push to develop/main branch to trigger CD pipeline"
