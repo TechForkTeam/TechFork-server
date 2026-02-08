@@ -53,11 +53,13 @@ services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.18.0
     container_name: techfork-elasticsearch
+    hostname: techfork-elasticsearch
     restart: always
     ports:
       - "9200:9200"
       - "9300:9300"
     environment:
+      - node.name=techfork-elasticsearch
       - discovery.type=single-node
       - xpack.security.enabled=false
       - "ES_JAVA_OPTS=-Xms8g -Xmx8g"
