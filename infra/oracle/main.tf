@@ -205,7 +205,8 @@ resource "oci_core_instance" "app" {
   # 실패 시 재시도 필요
   lifecycle {
     ignore_changes = [
-      source_details[0].source_id  # 이미지 업데이트 무시
+      source_details[0].source_id,  # 이미지 업데이트 무시
+      metadata                       # cloud-init 변경 시 인스턴스 재생성 방지
     ]
   }
 }

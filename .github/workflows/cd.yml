@@ -86,15 +86,16 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "docker-compose.yml,deploy.sh"
+          source: "docker/,scripts/deploy.sh"
           target: "~/deploy/"
 
-      - name: Deploy with docker-compose
+      - name: Deploy with blue-green strategy
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          command_timeout: 10m
           envs: >-
             DOCKER_IMAGE,BRANCH,SPRING_PROFILES_ACTIVE,DB_URL,DB_PASSWORD,REDIS_PASSWORD,
             DISCORD_WEBHOOK_URL,ANTHROPIC_API_KEY,OPENAI_API_KEY,
@@ -103,8 +104,8 @@ jobs:
             JWT_SECRET,JWT_REDIRECT_URI,SERVER_DOMAIN
           script: |
             cd ~/deploy
-            chmod +x deploy.sh
-            ./deploy.sh
+            chmod +x scripts/deploy.sh
+            ./scripts/deploy.sh
 
       - name: Health check
         run: |
