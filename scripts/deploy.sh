@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-DEPLOY_DIR="$(cd "$(dirname "$0")" && pwd)"
+DEPLOY_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 STATE_FILE="${DEPLOY_DIR}/.active-color"
 LOCK_DIR="${DEPLOY_DIR}/.deploy.lock"
 COMPOSE_INFRA="${DEPLOY_DIR}/docker-compose.infra.yml"
