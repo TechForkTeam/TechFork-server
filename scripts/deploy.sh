@@ -4,10 +4,11 @@ set -euo pipefail
 DEPLOY_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 STATE_FILE="${DEPLOY_DIR}/.active-color"
 LOCK_DIR="${DEPLOY_DIR}/.deploy.lock"
-COMPOSE_INFRA="${DEPLOY_DIR}/docker-compose.infra.yml"
-COMPOSE_BLUE="${DEPLOY_DIR}/docker-compose.blue.yml"
-COMPOSE_GREEN="${DEPLOY_DIR}/docker-compose.green.yml"
-UPSTREAM_CONF="${DEPLOY_DIR}/nginx/conf.d/upstream.conf"
+DOCKER_DIR="${DEPLOY_DIR}/docker"
+COMPOSE_INFRA="${DOCKER_DIR}/docker-compose.infra.yml"
+COMPOSE_BLUE="${DOCKER_DIR}/docker-compose.blue.yml"
+COMPOSE_GREEN="${DOCKER_DIR}/docker-compose.green.yml"
+UPSTREAM_CONF="${DOCKER_DIR}/nginx/conf.d/upstream.conf"
 
 HEALTH_CHECK_RETRIES=30
 HEALTH_CHECK_INTERVAL=5
