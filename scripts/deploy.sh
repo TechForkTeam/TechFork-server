@@ -99,25 +99,10 @@ if ! mkdir "$LOCK_DIR" 2>/dev/null; then
 fi
 trap cleanup EXIT
 
-# Export environment variables
-export DOCKER_IMAGE=${DOCKER_IMAGE}
-export BRANCH=${BRANCH}
-export SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
-export DB_URL=${DB_URL}
-export DB_PASSWORD=${DB_PASSWORD}
-export REDIS_PASSWORD=${REDIS_PASSWORD}
-export ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-export OPENAI_API_KEY=${OPENAI_API_KEY}
-export DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
-export KAKAO_REST_API_KEY=${KAKAO_REST_API_KEY}
-export KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET}
-export APPLE_TEAM_ID=${APPLE_TEAM_ID}
-export APPLE_KEY_ID=${APPLE_KEY_ID}
-export APPLE_CLIENT_ID=${APPLE_CLIENT_ID}
-export APPLE_PRIVATE_KEY=${APPLE_PRIVATE_KEY}
-export JWT_SECRET=${JWT_SECRET}
-export JWT_REDIRECT_URI=${JWT_REDIRECT_URI}
-export SERVER_DOMAIN=${SERVER_DOMAIN}
+# Generate .env from SSH-injected environment variables
+log "Writing .env file..."
+env | grep -E '^(DOCKER_IMAGE|BRANCH|SPRING_PROFILES_ACTIVE|DB_|REDIS_|ANTHROPIC_|OPENAI_|DISCORD_|KAKAO_|APPLE_|JWT_|SERVER_)' > "${DOCKER_DIR}/.env"
+chmod 600 "${DOCKER_DIR}/.env"
 
 # Step 1: Ensure Docker network exists
 log "Ensuring Docker network exists..."
