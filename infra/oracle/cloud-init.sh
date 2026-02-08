@@ -67,15 +67,6 @@ echo "===== Install Nginx ====="
 apt-get install -y nginx
 
 # ===========================================
-# 애플리케이션 디렉토리 생성
-# ===========================================
-echo "===== Create Application Directories ====="
-mkdir -p /opt/tech-fork
-mkdir -p /var/log/tech-fork
-chown -R ubuntu:ubuntu /opt/tech-fork
-chown -R ubuntu:ubuntu /var/log/tech-fork
-
-# ===========================================
 # 시스템 튜닝 (Elasticsearch 권장 설정)
 # ===========================================
 echo "===== System Tuning for Elasticsearch ====="
