@@ -166,5 +166,3 @@ iptables -P OUTPUT ACCEPT
 echo "===== Cloud Init Completed: $(date) ====="
 echo "Next steps:"
 echo "1. SSH into the instance: ssh ubuntu@<public-ip>"
-echo "2. Copy .env.template to .env and fill in the values"
-echo "3. Run: cd /opt/tech-fork && docker compose up -d"
