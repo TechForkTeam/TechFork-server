@@ -103,5 +103,11 @@ networks:
 
 volumes:
   mysql-data:
+    external: true
+    name: deploy_mysql-data
   redis-data:
+    external: true
+    name: deploy_redis-data
   elasticsearch-data:
+    external: true
+    name: deploy_elasticsearch-data
