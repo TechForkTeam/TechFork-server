@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS posts (
     view_count BIGINT NOT NULL DEFAULT 0,
     tech_blog_id BIGINT NOT NULL,
     PRIMARY KEY (id),
-    UNIQUE KEY uk_posts_url (url),
+    UNIQUE KEY uk_posts_url (url(768)),
     INDEX idx_post_published_at_id (published_at, id),
     INDEX idx_post_view_count_id (view_count, id),
     INDEX idx_post_company_published_at_id (company, published_at, id),
