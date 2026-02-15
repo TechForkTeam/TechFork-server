@@ -1,7 +1,9 @@
 spring:
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: validate
+  flyway:
+    enabled: true
     properties:
       hibernate:
         format_sql: true
@@ -10,7 +12,7 @@ spring:
 
   batch:
     jdbc:
-      initialize-schema: always
+      initialize-schema: never
     job:
       names: ''
 
