@@ -26,7 +26,7 @@ spring:
       enabled: false
   batch:
     jdbc:
-      initialize-schema: always
+      initialize-schema: never
     job:
       names: ''
   security:
