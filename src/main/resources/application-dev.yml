@@ -10,7 +10,11 @@ spring:
       connection-timeout: 20000
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
     properties:
       hibernate:
         show_sql: false  # 로깅으로만 출력 (중복 방지)
