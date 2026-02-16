@@ -8,6 +8,7 @@ DOCKER_DIR="${DEPLOY_DIR}/docker"
 COMPOSE_INFRA="-p techfork-infra -f ${DOCKER_DIR}/docker-compose.infra.yml"
 COMPOSE_BLUE="-p techfork-blue -f ${DOCKER_DIR}/docker-compose.blue.yml"
 COMPOSE_GREEN="-p techfork-green -f ${DOCKER_DIR}/docker-compose.green.yml"
+COMPOSE_DEV="-p techfork-dev -f ${DOCKER_DIR}/docker-compose.dev.yml"
 UPSTREAM_CONF="${DOCKER_DIR}/nginx/conf.d/upstream.conf"
 
 HEALTH_CHECK_RETRIES=30
@@ -173,7 +174,17 @@ fi
 echo "$TARGET_COLOR" > "$STATE_FILE"
 log "Active color is now: ${TARGET_COLOR}"
 
-# Step 11: Cleanup
+# Step 11: Deploy dev container
+log "Deploying dev container..."
+docker compose $COMPOSE_DEV pull
+docker compose $COMPOSE_DEV up -d
+if health_check "techfork-app-dev"; then
+    log "Dev container is healthy"
+else
+    log "WARNING: Dev container health check failed, but continuing (non-blocking)"
+fi
+
+# Step 12: Cleanup
 log "Pruning unused Docker images..."
 docker image prune -af
 

@@ -84,6 +84,7 @@ public class SecurityConfig {
                 "https://techfork-fe.vercel.app",
                 "https://techfork.shop",
                 "https://api.techfork.shop",
+                "https://dev.techfork.shop",
                 "https://appleid.apple.com"  // Apple Sign In form_post
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
