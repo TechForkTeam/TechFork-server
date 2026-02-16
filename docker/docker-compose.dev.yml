@@ -1,0 +1,39 @@
+services:
+  app-dev:
+    image: ${DOCKER_IMAGE}:${BRANCH}
+    container_name: techfork-app-dev
+    restart: always
+    environment:
+      - JAVA_OPTS=-Xms512m -Xmx512m
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - DB_URL=${DB_URL}
+      - DB_USERNAME=techfork
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      - KAKAO_REST_API_KEY=${KAKAO_REST_API_KEY}
+      - KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET}
+      - APPLE_TEAM_ID=${APPLE_TEAM_ID}
+      - APPLE_KEY_ID=${APPLE_KEY_ID}
+      - APPLE_CLIENT_ID=${APPLE_CLIENT_ID}
+      - APPLE_PRIVATE_KEY_PATH=keys/AuthKey_${APPLE_KEY_ID}.p8
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REDIRECT_URI=${JWT_REDIRECT_URI_DEV}
+      - JWT_LOGIN_FAILURE_REDIRECT_URI=${JWT_LOGIN_FAILURE_REDIRECT_URI_DEV}
+      - SERVER_DOMAIN=${SERVER_DOMAIN}
+    networks:
+      techfork-network:
+        aliases:
+          - app-dev
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+networks:
+  techfork-network:
+    external: true
