@@ -21,6 +21,7 @@ services:
       - APPLE_PRIVATE_KEY_PATH=keys/AuthKey_${APPLE_KEY_ID}.p8
       - JWT_SECRET=${JWT_SECRET}
       - JWT_REDIRECT_URI=${JWT_REDIRECT_URI}
+      - JWT_LOGIN_FAILURE_REDIRECT_URI=${JWT_LOGIN_FAILURE_REDIRECT_URI}
       - SERVER_DOMAIN=${SERVER_DOMAIN}
     networks:
       techfork-network:
