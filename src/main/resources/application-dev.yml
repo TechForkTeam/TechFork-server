@@ -43,3 +43,6 @@ logging:
     org.springframework.batch: INFO
     org.hibernate.SQL: INFO
     org.hibernate.type.descriptor.sql.BasicBinder: WARN
+
+apple:
+  private-key-path: /app/keys/AuthKey_${APPLE_KEY_ID}.p8

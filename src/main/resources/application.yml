@@ -77,7 +77,7 @@ jwt:
 apple:
   team-id: ${APPLE_TEAM_ID}
   key-id: ${APPLE_KEY_ID}
-  private-key-path: ${APPLE_PRIVATE_KEY_PATH:keys/AppleAuthKey.p8}
+  private-key-path: keys/AppleAuthKey.p8
 
 server:
   domain: ${SERVER_DOMAIN:localhost}
