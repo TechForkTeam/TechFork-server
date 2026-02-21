@@ -4,11 +4,11 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -65,8 +65,7 @@ public class AppleClientSecretGenerator {
      */
     private PrivateKey getPrivateKey() throws Exception {
         try {
-            ClassPathResource resource = new ClassPathResource(privateKeyPath);
-            String privateKeyContent = new String(Files.readAllBytes(resource.getFile().toPath()));
+            String privateKeyContent = new String(Files.readAllBytes(Paths.get(privateKeyPath)));
 
             // PEM 파일에서 헤더/푸터 제거
             privateKeyContent = privateKeyContent
