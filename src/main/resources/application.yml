@@ -93,24 +93,6 @@ webhook:
   discord:
     url: ${DISCORD_WEBHOOK_URL}
 
-recommendation:
-  knn-search-size: 80
-  num-candidates: 180
-  mmr-final-size: 30
-  lambda: 0.95
-  active-user-hours: 24
-  # 임베딩 가중치 설정 (합계 1.0)
-  embedding-weights:
-    title: 0.4      # 제목 중요도 50%
-    summary: 0.4    # 요약 중요도 50%
-    content: 0.2    # 콘텐츠 청크 중요도 0% (제외)
-  # 시간 감쇠 가중치 설정
-  time-decay:
-    days-7: 1.3      # 최근 7일: +30%
-    days-30: 1.0     # 최근 30일: 변화 없음
-    days-90: 0.7     # 최근 90일: -30%
-    days-over: 0.4   # 90일 이상: -60%
-
 # Resilience4j 설정 (LLM API 호출용)
 resilience4j:
   circuitbreaker:
