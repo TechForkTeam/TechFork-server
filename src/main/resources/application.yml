@@ -83,8 +83,6 @@ server:
   domain: ${SERVER_DOMAIN:localhost}
   forward-headers-strategy: native
 
-
-
 scheduler:
   enabled: true
 
@@ -148,19 +146,3 @@ resilience4j:
         retry-exceptions:
           - com.techfork.global.llm.exception.LlmNetworkException
           - com.techfork.global.llm.exception.LlmRateLimitException
-
----
-spring:
-  config:
-    activate:
-      on-profile: local
----
-spring:
-  config:
-    activate:
-      on-profile: local-tunnel
----
-spring:
-  config:
-    activate:
-      on-profile: dev
