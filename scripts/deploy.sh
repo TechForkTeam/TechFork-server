@@ -102,7 +102,7 @@ trap cleanup EXIT
 
 # Generate .env from SSH-injected environment variables
 log "Writing .env file..."
-env | grep -E '^(DOCKER_IMAGE|BRANCH|SPRING_PROFILES_ACTIVE|DB_|REDIS_|ANTHROPIC_|OPENAI_|DISCORD_|KAKAO_|APPLE_|JWT_|SERVER_)' > "${DOCKER_DIR}/.env"
+env | grep -E '^(DOCKER_IMAGE|BRANCH|SPRING_PROFILES_ACTIVE|DB_|REDIS_|ANTHROPIC_|OPENAI_|DISCORD_|KAKAO_|APPLE_TEAM_ID|APPLE_KEY_ID|APPLE_CLIENT_ID|JWT_|SERVER_)' > "${DOCKER_DIR}/.env"
 chmod 600 "${DOCKER_DIR}/.env"
 
 # Step 1: Ensure Docker network exists
