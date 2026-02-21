@@ -32,11 +32,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Create Apple Private Key file
-        run: |
-          mkdir -p src/main/resources/keys
-          echo "${{ secrets.APPLE_PRIVATE_KEY }}" > src/main/resources/keys/AuthKey_${{ secrets.APPLE_KEY_ID }}.p8
-
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
@@ -71,7 +66,6 @@ jobs:
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
       APPLE_CLIENT_ID: ${{ secrets.APPLE_CLIENT_ID }}
-      APPLE_PRIVATE_KEY: ${{ secrets.APPLE_PRIVATE_KEY }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       JWT_REDIRECT_URI: ${{ secrets.JWT_REDIRECT_URI }}
       JWT_REDIRECT_URI_DEV: ${{ secrets.JWT_REDIRECT_URI_DEV }}
@@ -92,6 +86,22 @@ jobs:
           source: "docker/,scripts/deploy.sh"
           target: "~/deploy/"
 
+      - name: Place Apple private key on server
+        uses: appleboy/ssh-action@v1
+        env:
+          APPLE_PRIVATE_KEY: ${{ secrets.APPLE_PRIVATE_KEY }}
+          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: APPLE_PRIVATE_KEY,APPLE_KEY_ID
+          script: |
+            mkdir -p ~/keys
+            chmod 700 ~/keys
+            printf '%s' "$APPLE_PRIVATE_KEY" > ~/keys/AuthKey_${APPLE_KEY_ID}.p8
+            chmod 600 ~/keys/AuthKey_${APPLE_KEY_ID}.p8
+
       - name: Deploy with blue-green strategy
         uses: appleboy/ssh-action@v1
         with:
@@ -103,7 +113,7 @@ jobs:
             DOCKER_IMAGE,BRANCH,SPRING_PROFILES_ACTIVE,DB_URL,DB_PASSWORD,REDIS_PASSWORD,
             DISCORD_WEBHOOK_URL,ANTHROPIC_API_KEY,OPENAI_API_KEY,
             KAKAO_REST_API_KEY,KAKAO_CLIENT_SECRET,
-            APPLE_TEAM_ID,APPLE_KEY_ID,APPLE_CLIENT_ID,APPLE_PRIVATE_KEY,
+            APPLE_TEAM_ID,APPLE_KEY_ID,APPLE_CLIENT_ID,
             JWT_SECRET,JWT_REDIRECT_URI,JWT_REDIRECT_URI_DEV,JWT_LOGIN_FAILURE_REDIRECT_URI,JWT_LOGIN_FAILURE_REDIRECT_URI_DEV,SERVER_DOMAIN
           script: |
             cd ~/deploy
