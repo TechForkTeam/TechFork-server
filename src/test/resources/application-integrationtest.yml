@@ -92,22 +92,6 @@ webhook:
   discord:
     url: http://test-webhook-url
 
-recommendation:
-  knn-search-size: 100
-  num-candidates: 200
-  mmr-final-size: 30
-  lambda: 0.95
-  active-user-hours: 24
-  embedding-weights:
-    title: 0.5
-    summary: 0.5
-    content: 0.0
-  time-decay:
-    days-7: 1.3
-    days-30: 1.0
-    days-90: 0.7
-    days-over: 0.4
-
 resilience4j:
   circuitbreaker:
     configs:
