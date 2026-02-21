@@ -56,7 +56,7 @@ stop-dev-tunnel.sh
 .env
 
 ### Apple Private Keys ###
-src/main/resources/keys/
+/keys
 *.p8
 
 ### Test json files ###
