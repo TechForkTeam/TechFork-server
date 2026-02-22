@@ -103,6 +103,7 @@
     <logger name="org.hibernate.type" level="WARN"/>
     <logger name="org.springframework.batch" level="INFO"/>
     <logger name="com.zaxxer.hikari" level="WARN"/>
+    <logger name="org.springframework.web" level="WARN"/>
 
     <!-- ================================================================
          프로파일별 Root
