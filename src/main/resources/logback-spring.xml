@@ -53,6 +53,21 @@
         </rollingPolicy>
     </appender>
 
+    <!-- 크롤러 전용 파일 (배치 로그가 일반 API 로그와 섞이지 않도록 분리) -->
+    <appender name="FILE_CRAWLER" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/${APP_NAME}-crawler.log</file>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [rid=%X{requestId:-?}] %logger{36} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/archive/${APP_NAME}-crawler.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+    
     <appender name="ASYNC_FILE_APP" class="ch.qos.logback.classic.AsyncAppender">
         <discardingThreshold>0</discardingThreshold>
         <queueSize>1024</queueSize>
@@ -66,12 +81,24 @@
         <includeCallerData>true</includeCallerData>
         <appender-ref ref="FILE_ERROR"/>
     </appender>
+    
+    <appender name="ASYNC_FILE_CRAWLER" class="ch.qos.logback.classic.AsyncAppender">
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>512</queueSize>
+        <includeCallerData>false</includeCallerData>
+        <appender-ref ref="FILE_CRAWLER"/>
+    </appender>
 
     <!-- ================================================================
          패키지별 로거 (레벨만 조정, appender는 root 상속)
          ================================================================ -->
     <logger name="com.techfork" level="INFO"/>
-    <logger name="com.techfork.domain.source" level="DEBUG"/>  <!-- RSS 크롤링 상세 추적 -->
+    <!-- RSS 크롤링: 전용 파일로 분리, root(일반 파일)에는 중복 기록 안 함 -->
+    <logger name="com.techfork.domain.source" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_FILE_CRAWLER"/>
+        <appender-ref ref="ASYNC_FILE_ERROR"/>
+    </logger>
     <logger name="org.hibernate.SQL" level="INFO"/>
     <logger name="org.hibernate.type" level="WARN"/>
     <logger name="org.springframework.batch" level="INFO"/>
