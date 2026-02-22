@@ -12,20 +12,16 @@
     <springProperty name="APP_NAME" source="spring.application.name" defaultValue="techfork"/>
 
     <!-- ================================================================
-         콘솔 Appender (컬러 + MDC 포함)
+         Appender 정의
          ================================================================ -->
+
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>
-                %d{HH:mm:ss.SSS} %highlight(%-5level) [%cyan(%thread)] [rid=%X{requestId:-?} uid=%X{userId:-?}] %boldWhite(%logger{36}) - %msg%n
-            </pattern>
+            <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) [%cyan(%thread)] [rid=%X{requestId:-?} uid=%X{userId:-?}] %boldWhite(%logger{36}) - %msg%n</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
 
-    <!-- ================================================================
-         파일 Appender — app.log (전체 로그, 날짜+크기 롤링)
-         ================================================================ -->
     <appender name="FILE_APP" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_DIR}/${APP_NAME}.log</file>
         <encoder>
@@ -33,18 +29,13 @@
             <charset>UTF-8</charset>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <!-- 날짜 단위 롤링, 같은 날 100MB 초과 시 인덱스 증가 -->
             <fileNamePattern>${LOG_DIR}/archive/${APP_NAME}.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
             <maxFileSize>100MB</maxFileSize>
-            <!-- 보관 기간: 30일 / 총 용량: 3GB -->
             <maxHistory>30</maxHistory>
             <totalSizeCap>3GB</totalSizeCap>
         </rollingPolicy>
     </appender>
 
-    <!-- ================================================================
-         파일 Appender — error.log (ERROR 레벨만)
-         ================================================================ -->
     <appender name="FILE_ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_DIR}/${APP_NAME}-error.log</file>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
@@ -62,11 +53,7 @@
         </rollingPolicy>
     </appender>
 
-    <!-- ================================================================
-         비동기 래퍼 (파일 I/O 블로킹 방지)
-         ================================================================ -->
     <appender name="ASYNC_FILE_APP" class="ch.qos.logback.classic.AsyncAppender">
-        <!-- 큐가 80% 찰 때까지는 TRACE~DEBUG도 드롭하지 않음 -->
         <discardingThreshold>0</discardingThreshold>
         <queueSize>1024</queueSize>
         <includeCallerData>false</includeCallerData>
@@ -81,23 +68,26 @@
     </appender>
 
     <!-- ================================================================
-         프로파일별 설정
+         패키지별 로거 (레벨만 조정, appender는 root 상속)
+         ================================================================ -->
+    <logger name="com.techfork" level="INFO"/>
+    <logger name="com.techfork.domain.source" level="DEBUG"/>  <!-- RSS 크롤링 상세 추적 -->
+    <logger name="org.hibernate.SQL" level="INFO"/>
+    <logger name="org.hibernate.type" level="WARN"/>
+    <logger name="org.springframework.batch" level="INFO"/>
+    <logger name="com.zaxxer.hikari" level="WARN"/>
+
+    <!-- ================================================================
+         프로파일별 Root
          ================================================================ -->
 
-    <!-- local / local-tunnel: 콘솔만 -->
+    <!-- local / local-tunnel: 콘솔만, 애플리케이션 코드는 DEBUG -->
     <springProfile name="local,local-tunnel">
+        <logger name="com.techfork" level="DEBUG"/>
+        <logger name="org.hibernate.SQL" level="DEBUG"/>
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
         </root>
-        <logger name="com.techfork" level="DEBUG" additivity="false">
-            <appender-ref ref="CONSOLE"/>
-        </logger>
-        <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
-            <appender-ref ref="CONSOLE"/>
-        </logger>
-        <logger name="org.springframework.batch" level="INFO" additivity="false">
-            <appender-ref ref="CONSOLE"/>
-        </logger>
     </springProfile>
 
     <!-- dev: 콘솔 + 파일 -->
@@ -107,18 +97,6 @@
             <appender-ref ref="ASYNC_FILE_APP"/>
             <appender-ref ref="ASYNC_FILE_ERROR"/>
         </root>
-        <logger name="com.techfork" level="INFO" additivity="false">
-            <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="ASYNC_FILE_APP"/>
-            <appender-ref ref="ASYNC_FILE_ERROR"/>
-        </logger>
-        <logger name="org.hibernate.SQL" level="INFO" additivity="false">
-            <appender-ref ref="ASYNC_FILE_APP"/>
-        </logger>
-        <logger name="org.springframework.batch" level="INFO" additivity="false">
-            <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="ASYNC_FILE_APP"/>
-        </logger>
     </springProfile>
 
 </configuration>
