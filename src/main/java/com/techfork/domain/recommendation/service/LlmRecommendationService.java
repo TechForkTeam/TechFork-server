@@ -25,6 +25,7 @@ import com.techfork.global.util.TimeDecayStrategy;
 import com.techfork.global.util.VectorUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 /**
@@ -55,6 +57,8 @@ public class LlmRecommendationService implements RecommendationService {
     private final TimeDecayStrategy timeDecayStrategy;
     private final RecommendationProperties properties;
     private final VectorQueryBuilder vectorQueryBuilder;
+    @Qualifier("recommendationAsyncExecutor")
+    private final Executor recommendationAsyncExecutor;
 
     private static final String POSTS_INDEX = "posts";
     private static final String TITLE_EMBEDDING_FIELD = "titleEmbedding";
@@ -154,7 +158,7 @@ public class LlmRecommendationService implements RecommendationService {
                 log.error("kNN 검색 실패", e);
                 return Collections.emptyList();
             }
-        });
+        }, recommendationAsyncExecutor);
 
         CompletableFuture<List<Hit<PostDocument>>> keywordSearchFuture = CompletableFuture.supplyAsync(() -> {
             // 키워드가 없으면 BM25 검색 생략
@@ -178,7 +182,7 @@ public class LlmRecommendationService implements RecommendationService {
                 log.error("BM25 검색 실패", e);
                 return Collections.emptyList();
             }
-        });
+        }, recommendationAsyncExecutor);
 
         // 4. 두 검색 완료 대기
         CompletableFuture<Void> allSearches = CompletableFuture.allOf(vectorSearchFuture, keywordSearchFuture);
