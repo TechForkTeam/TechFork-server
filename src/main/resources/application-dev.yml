@@ -38,11 +38,8 @@ spring:
     uris: http://elasticsearch:9200
 
 logging:
-  level:
-    com.techfork: INFO
-    org.springframework.batch: INFO
-    org.hibernate.SQL: INFO
-    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+  file:
+    path: /app/logs
 
 apple:
   private-key-path: /app/keys/AuthKey_${APPLE_KEY_ID}.p8
