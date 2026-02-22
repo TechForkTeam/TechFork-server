@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook">
+    <shutdownHook class="ch.qos.logback.core.hook.DefaultShutdownHook">
         <delay>2000</delay>
     </shutdownHook>
 
