@@ -21,6 +21,8 @@ spring:
           model: gpt-4o-mini
           temperature: 0.3
           max-tokens: 8192
+  jpa:
+    open-in-view: false
   devtools:
     restart:
       enabled: false

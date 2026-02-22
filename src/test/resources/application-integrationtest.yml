@@ -8,8 +8,6 @@ spring:
       hibernate:
         format_sql: true
         highlight_sql: true
-        dialect: org.hibernate.dialect.MySQL8Dialect
-
   batch:
     jdbc:
       initialize-schema: never
