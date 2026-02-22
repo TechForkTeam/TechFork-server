@@ -17,8 +17,8 @@ public class SearchConfig {
         executor.setCorePoolSize(20);
         executor.setMaxPoolSize(50);
         executor.setQueueCapacity(100);
-        executor.setThreadNamePrefix("SearchExec-");
         executor.setTaskDecorator(new MdcTaskDecorator());
+        executor.setThreadNamePrefix("SearchExec-");
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         return executor;
     }
