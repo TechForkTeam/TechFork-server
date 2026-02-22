@@ -1,10 +1,11 @@
 package com.techfork.global.filter;
 
+import com.techfork.global.constant.MdcKey;
 import jakarta.servlet.FilterChain;
+import lombok.extern.slf4j.Slf4j;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import com.techfork.global.constant.MdcKey;
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -25,14 +26,15 @@ import java.util.UUID;
  * - uri: 요청 URI
  * - clientIp: 클라이언트 IP (X-Forwarded-For 우선)
  */
+@Slf4j
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class MdcLoggingFilter extends OncePerRequestFilter {
 
-
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        long startTime = System.currentTimeMillis();
         try {
             MDC.put(MdcKey.REQUEST_ID, UUID.randomUUID().toString().replace("-", "").substring(0, 12));
             MDC.put(MdcKey.METHOD, request.getMethod());
@@ -41,6 +43,12 @@ public class MdcLoggingFilter extends OncePerRequestFilter {
             MDC.put(MdcKey.USER_ID, "anonymous");
 
             filterChain.doFilter(request, response);
+
+            log.info("{} {} {} {}ms",
+                    request.getMethod(),
+                    request.getRequestURI(),
+                    response.getStatus(),
+                    System.currentTimeMillis() - startTime);
         } finally {
             MDC.clear();
         }
