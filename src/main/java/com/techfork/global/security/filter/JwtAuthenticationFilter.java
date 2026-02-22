@@ -4,6 +4,7 @@ import com.techfork.domain.auth.exception.AuthErrorCode;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.constant.Constants;
+import com.techfork.global.constant.MdcKey;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.global.security.jwt.JwtUtil;
 import com.techfork.global.security.oauth.UserPrincipal;
@@ -67,7 +68,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 securityContext.setAuthentication(authentication);
                 SecurityContextHolder.setContext(securityContext);
 
-                MDC.put("userId", String.valueOf(userId));
+                MDC.put(MdcKey.USER_ID, String.valueOf(userId));
                 log.debug("Set authentication for user: {}", userId);
             }
         } catch (Exception e) {

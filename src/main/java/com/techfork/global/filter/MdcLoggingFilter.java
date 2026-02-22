@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.techfork.global.constant.MdcKey;
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -28,21 +29,16 @@ import java.util.UUID;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class MdcLoggingFilter extends OncePerRequestFilter {
 
-    private static final String REQUEST_ID = "requestId";
-    private static final String USER_ID = "userId";
-    private static final String METHOD = "method";
-    private static final String URI = "uri";
-    private static final String CLIENT_IP = "clientIp";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         try {
-            MDC.put(REQUEST_ID, UUID.randomUUID().toString().replace("-", "").substring(0, 12));
-            MDC.put(METHOD, request.getMethod());
-            MDC.put(URI, request.getRequestURI());
-            MDC.put(CLIENT_IP, resolveClientIp(request));
-            MDC.put(USER_ID, "anonymous");
+            MDC.put(MdcKey.REQUEST_ID, UUID.randomUUID().toString().replace("-", "").substring(0, 12));
+            MDC.put(MdcKey.METHOD, request.getMethod());
+            MDC.put(MdcKey.URI, request.getRequestURI());
+            MDC.put(MdcKey.CLIENT_IP, resolveClientIp(request));
+            MDC.put(MdcKey.USER_ID, "anonymous");
 
             filterChain.doFilter(request, response);
         } finally {
