@@ -1,8 +1,10 @@
 package com.techfork.domain.source.listener;
 
 import com.techfork.domain.source.service.WebhookNotificationService;
+import com.techfork.global.constant.MdcKey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobExecutionListener;
@@ -30,9 +32,10 @@ public class RssCrawlingJobListener implements JobExecutionListener {
 
     @Override
     public void beforeJob(JobExecution jobExecution) {
-        Long jobExecutionId = jobExecution.getId();
+        MDC.put(MdcKey.REQUEST_ID, "batch-" + jobExecution.getId());
+        MDC.put(MdcKey.USER_ID, "system");
         log.info("RSS crawling job started: jobExecutionId={}, startTime={}",
-                jobExecutionId, jobExecution.getStartTime());
+                jobExecution.getId(), jobExecution.getStartTime());
     }
 
     @Override
@@ -44,6 +47,7 @@ public class RssCrawlingJobListener implements JobExecutionListener {
         } else {
             handleJobFailure(jobExecution, "Job failed with status: " + batchStatus);
         }
+        MDC.clear();
     }
 
     /**

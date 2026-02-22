@@ -52,6 +52,9 @@ stop-dev-tunnel.sh
 /CLAUDE.md
 /.claude
 
+### logs ###
+logs/
+
 ### env ###
 .env
 
