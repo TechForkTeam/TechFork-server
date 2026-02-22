@@ -28,6 +28,8 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * 추천 시스템 성능 평가를 위한 전용 서비스
@@ -60,7 +62,8 @@ public class RecommendationEvaluationService extends LlmRecommendationService {
     ) {
         super(elasticsearchClient, userProfileDocumentRepository, recommendedPostRepository,
                 recommendationHistoryRepository, readPostRepository, postRepository,
-                mmrService, timeDecayStrategy, properties, vectorQueryBuilder);
+                mmrService, timeDecayStrategy, properties, vectorQueryBuilder,
+                Executors.newSingleThreadExecutor());
         this.elasticsearchClient = elasticsearchClient;
         this.userProfileDocumentRepository = userProfileDocumentRepository;
         this.vectorQueryBuilder = vectorQueryBuilder;
