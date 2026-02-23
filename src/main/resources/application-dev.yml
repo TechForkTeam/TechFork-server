@@ -8,8 +8,9 @@ spring:
       # 풀 크기
       maximum-pool-size: 20
       minimum-idle: 20
-
+      # 타임아웃
       connection-timeout: 5000
+      max-lifetime: 1800000
   jpa:
     hibernate:
       ddl-auto: validate
