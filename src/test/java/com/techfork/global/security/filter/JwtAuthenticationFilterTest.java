@@ -237,49 +237,21 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    @DisplayName("JWT 인증 실패 - 탈퇴한 회원 (WITHDRAWN 상태)")
-    void doFilterInternal_Fail_WithdrawnUser() throws Exception {
+    @DisplayName("JWT 인증 실패 - 탈퇴한 회원 (캐시 미스 후 DB 조회)")
+    void doFilterInternal_Fail_WithdrawnUser_CacheMiss() throws Exception {
         // Given
         User withdrawnUser = User.createSocialUser(SocialType.KAKAO, "withdrawnSocialId", "withdrawn@example.com", null);
         withdrawnUser.updateUser("탈퇴유저", "withdrawn@example.com", "개발자였습니다.");
-        withdrawnUser.withdraw(); // 탈퇴 처리
+        withdrawnUser.withdraw();
         ReflectionTestUtils.setField(withdrawnUser, "id", userId);
 
         given(request.getHeader("Authorization")).willReturn("Bearer " + validAccessToken);
         willDoNothing().given(jwtUtil).validateToken(validAccessToken);
         willDoNothing().given(jwtUtil).validateTokenType(validAccessToken, TOKEN_TYPE_ACCESS);
         given(jwtUtil.getUserIdFromToken(validAccessToken)).willReturn(userId);
+        given(userAuthCacheService.get(userId)).willReturn(null);
         given(userRepository.findById(userId)).willReturn(Optional.of(withdrawnUser));
-
-        // When
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
-
-        // Then
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        assertThat(authentication).isNull(); // 인증 실패
-
-        // 탈퇴한 회원은 SecurityContext에 설정되지 않음
-        verify(jwtUtil).validateToken(validAccessToken);
-        verify(jwtUtil).validateTokenType(validAccessToken, TOKEN_TYPE_ACCESS);
-        verify(userRepository).findById(userId);
-        verify(filterChain).doFilter(request, response);
-    }
-
-    @Test
-    @DisplayName("JWT 인증 실패 - 탈퇴 회원 토큰으로 API 접근 시도")
-    void doFilterInternal_Fail_WithdrawnUserCannotAccessAPI() throws Exception {
-        // Given
-        User withdrawnUser = User.createSocialUser(SocialType.KAKAO, "kakaoUser123", "user@gmail.com", "profile.jpg");
-        withdrawnUser.updateUser("카카오유저", "user@gmail.com", "백엔드 개발자");
-        withdrawnUser.withdraw(); // 탈퇴
-        ReflectionTestUtils.setField(withdrawnUser, "id", 2L);
-
-        String withdrawnUserToken = "withdrawn.user.access.token";
-        given(request.getHeader("Authorization")).willReturn("Bearer " + withdrawnUserToken);
-        willDoNothing().given(jwtUtil).validateToken(withdrawnUserToken);
-        willDoNothing().given(jwtUtil).validateTokenType(withdrawnUserToken, TOKEN_TYPE_ACCESS);
-        given(jwtUtil.getUserIdFromToken(withdrawnUserToken)).willReturn(2L);
-        given(userRepository.findById(2L)).willReturn(Optional.of(withdrawnUser));
+        given(jwtProperties.getAccessTokenExpiration()).willReturn(180000L);
 
         // When
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -288,13 +260,8 @@ class JwtAuthenticationFilterTest {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         assertThat(authentication).isNull();
 
-        // 탈퇴 회원 상태 확인
-        assertThat(withdrawnUser.isWithdrawn()).isTrue();
-        assertThat(withdrawnUser.getStatus()).isEqualTo(UserStatus.WITHDRAWN);
-        assertThat(withdrawnUser.getNickName()).isNull(); // 익명화됨
-        assertThat(withdrawnUser.getEmail()).isNull(); // 익명화됨
-
-        verify(userRepository).findById(2L);
+        verify(userRepository).findById(userId);
+        verify(userAuthCacheService, never()).put(anyLong(), any(), anyLong()); // 탈퇴 유저는 캐시 저장 안 함
         verify(filterChain).doFilter(request, response);
     }
 }
