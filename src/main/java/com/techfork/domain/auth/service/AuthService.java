@@ -12,6 +12,7 @@ import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.global.security.auth.service.RefreshTokenService;
+import com.techfork.global.security.auth.service.UserAuthCacheService;
 import com.techfork.global.security.jwt.JwtDTO;
 import com.techfork.global.security.jwt.JwtProperties;
 import com.techfork.global.security.jwt.JwtUtil;
@@ -37,6 +38,7 @@ public class AuthService {
     private final JwtProperties jwtProperties;
     private final AuthConverter authConverter;
     private final KakaoOAuthService kakaoOAuthService;
+    private final UserAuthCacheService userAuthCacheService;
 
     @Value("${server.domain}")
     private String domain;
@@ -54,7 +56,9 @@ public class AuthService {
         long expiration = jwtProperties.getRefreshTokenExpiration();
         saveAndSetRefreshToken(response, userId, newTokens.refreshToken(), expiration);
 
-        log.info("Token refreshed for userId: {}", userId);
+        userAuthCacheService.put(userId, user, jwtProperties.getAccessTokenExpiration());
+
+        log.info("Token refreshed");
 
         return TokenRefreshResponse.builder()
                 .accessToken(newTokens.accessToken())

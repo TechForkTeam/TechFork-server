@@ -9,6 +9,7 @@ import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.exception.UserErrorCode;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.exception.GeneralException;
+import com.techfork.global.security.auth.service.UserAuthCacheService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,9 @@ class UserCommandServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private UserAuthCacheService userAuthCacheService;
 
     @InjectMocks
     private UserCommandService userCommandService;
@@ -81,6 +85,7 @@ class UserCommandServiceTest {
 
         verify(userRepository, times(1)).findByIdWithInterestCategories(userId);
         verify(interestCommandService, times(1)).saveUserInterests(eq(mockUser), any(SaveInterestRequest.class));
+        verify(userAuthCacheService).evict(userId);
     }
 
     @Test
@@ -142,6 +147,7 @@ class UserCommandServiceTest {
         assertThat(mockUser.getDescription()).isNull();
 
         verify(interestCommandService, times(1)).saveUserInterests(eq(mockUser), any(SaveInterestRequest.class));
+        verify(userAuthCacheService).evict(userId);
     }
 
     @Test
@@ -182,6 +188,7 @@ class UserCommandServiceTest {
         // Then
         assertThat(mockUser.getNickName()).isEqualTo("풀스택개발자");
         verify(interestCommandService, times(1)).saveUserInterests(eq(mockUser), any(SaveInterestRequest.class));
+        verify(userAuthCacheService).evict(userId);
     }
 
     // ===== 프로필 수정 테스트 =====
@@ -308,6 +315,7 @@ class UserCommandServiceTest {
         assertThat(testUser.getSocialId()).isEqualTo(originalSocialId);
 
         verify(userRepository).findById(userId);
+        verify(userAuthCacheService).evict(userId);
     }
 
     @Test

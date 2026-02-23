@@ -2,10 +2,13 @@ package com.techfork.global.security.filter;
 
 import com.techfork.domain.auth.exception.AuthErrorCode;
 import com.techfork.domain.user.entity.User;
+import com.techfork.domain.user.enums.UserStatus;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.constant.Constants;
 import com.techfork.global.constant.MdcKey;
 import com.techfork.global.exception.GeneralException;
+import com.techfork.global.security.auth.service.UserAuthCacheService;
+import com.techfork.global.security.jwt.JwtProperties;
 import com.techfork.global.security.jwt.JwtUtil;
 import com.techfork.global.security.oauth.UserPrincipal;
 import com.techfork.global.util.HeaderUtil;
@@ -40,6 +43,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+    private final UserAuthCacheService userAuthCacheService;
+    private final JwtProperties jwtProperties;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -54,14 +59,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 jwtUtil.validateTokenType(jwt, TOKEN_TYPE_ACCESS);
 
                 Long userId = jwtUtil.getUserIdFromToken(jwt);
-                User user = userRepository.findById(userId)
-                        .orElseThrow(() -> new GeneralException(AuthErrorCode.USER_NOT_FOUND));
+                UserPrincipal userPrincipal = userAuthCacheService.get(userId);
 
-                if (user.isWithdrawn()) {
+                if (userPrincipal == null) {
+                    User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new GeneralException(AuthErrorCode.USER_NOT_FOUND));
+
+                    userPrincipal = UserPrincipal.buildUserPrincipal(user);
+
+                    if (userPrincipal.getStatus() == UserStatus.WITHDRAWN) {
+                        throw new GeneralException(AuthErrorCode.WITHDRAWN_USER);
+                    }
+
+                    userAuthCacheService.put(userId, user, jwtProperties.getAccessTokenExpiration());
+                } else if (userPrincipal.getStatus() == UserStatus.WITHDRAWN) {
                     throw new GeneralException(AuthErrorCode.WITHDRAWN_USER);
                 }
 
-                UserPrincipal userPrincipal = UserPrincipal.buildUserPrincipal(user);
                 UsernamePasswordAuthenticationToken authentication = createAuthentication(userPrincipal, request);
 
                 SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
