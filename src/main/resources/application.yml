@@ -21,6 +21,19 @@ spring:
           model: gpt-4o-mini
           temperature: 0.3
           max-tokens: 8192
+  datasource:
+    hikari:
+      # 풀 크기
+      maximum-pool-size: 10
+      minimum-idle: 10
+      # 타임아웃
+      connection-timeout: 5000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      # 커넥션 유효성
+      keepalive-time: 60000
+      # 모니터링
+      pool-name: TechFork-HikariCP
   jpa:
     open-in-view: false
   devtools:

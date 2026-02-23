@@ -4,17 +4,6 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
-    hikari:
-      # 풀 크기
-      maximum-pool-size: 20
-      minimum-idle: 20
-      # 타임아웃
-      connection-timeout: 5000
-      max-lifetime: 1800000
-      # 커넥션 유효성
-      keepalive-time: 60000
-      # 모니터링
-      pool-name: TechFork-HikariCP
   jpa:
     hibernate:
       ddl-auto: validate
