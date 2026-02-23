@@ -85,6 +85,7 @@ class UserCommandServiceTest {
 
         verify(userRepository, times(1)).findByIdWithInterestCategories(userId);
         verify(interestCommandService, times(1)).saveUserInterests(eq(mockUser), any(SaveInterestRequest.class));
+        verify(userAuthCacheService).evict(userId);
     }
 
     @Test
@@ -146,6 +147,7 @@ class UserCommandServiceTest {
         assertThat(mockUser.getDescription()).isNull();
 
         verify(interestCommandService, times(1)).saveUserInterests(eq(mockUser), any(SaveInterestRequest.class));
+        verify(userAuthCacheService).evict(userId);
     }
 
     @Test
@@ -186,6 +188,7 @@ class UserCommandServiceTest {
         // Then
         assertThat(mockUser.getNickName()).isEqualTo("풀스택개발자");
         verify(interestCommandService, times(1)).saveUserInterests(eq(mockUser), any(SaveInterestRequest.class));
+        verify(userAuthCacheService).evict(userId);
     }
 
     // ===== 프로필 수정 테스트 =====

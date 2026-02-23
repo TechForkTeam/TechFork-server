@@ -31,6 +31,8 @@ public class UserCommandService {
         user.updateUser(request.nickname(), request.email(), request.description());
 
         interestCommandService.saveUserInterests(user, new SaveInterestRequest(request.interests()));
+
+        userAuthCacheService.evict(userId);
     }
 
     public void updateUserProfile(Long userId, UpdateUserProfileRequest request) {
