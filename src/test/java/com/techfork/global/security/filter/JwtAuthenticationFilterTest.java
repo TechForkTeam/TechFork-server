@@ -102,6 +102,35 @@ class JwtAuthenticationFilterTest {
         verify(filterChain).doFilter(request, response);
     }
 
+    @Test
+    @DisplayName("JWT 인증 성공 - 캐시 히트: DB 조회 없이 인증")
+    void doFilterInternal_Success_CacheHit() throws Exception {
+        // Given
+        UserPrincipal cachedPrincipal = UserPrincipal.builder()
+                .id(userId)
+                .role(Role.USER)
+                .status(UserStatus.ACTIVE)
+                .email("test@example.com")
+                .build();
+
+        given(request.getHeader("Authorization")).willReturn("Bearer " + validAccessToken);
+        willDoNothing().given(jwtUtil).validateToken(validAccessToken);
+        given(jwtUtil.getUserIdFromToken(validAccessToken)).willReturn(userId);
+        given(userAuthCacheService.get(userId)).willReturn(cachedPrincipal);
+
+        // When
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        // Then
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        assertThat(authentication).isNotNull();
+        assertThat(authentication.getPrincipal()).isEqualTo(cachedPrincipal);
+
+        verify(userRepository, never()).findById(anyLong());
+        verify(userAuthCacheService, never()).put(anyLong(), any(), anyLong());
+        verify(filterChain).doFilter(request, response);
+    }
+
     // ===== 인증 실패 테스트 =====
 
     @Test
