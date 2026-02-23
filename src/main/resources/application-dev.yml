@@ -5,8 +5,10 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     hikari:
+      # 풀 크기
       maximum-pool-size: 20
-      minimum-idle: 10
+      minimum-idle: 20
+
       connection-timeout: 20000
   jpa:
     hibernate:
