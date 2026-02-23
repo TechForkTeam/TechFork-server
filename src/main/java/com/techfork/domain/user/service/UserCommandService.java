@@ -7,6 +7,7 @@ import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.exception.UserErrorCode;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.exception.GeneralException;
+import com.techfork.global.security.auth.service.UserAuthCacheService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ public class UserCommandService {
 
     private final InterestCommandService interestCommandService;
     private final UserRepository userRepository;
+    private final UserAuthCacheService userAuthCacheService;
 
     public void completeOnboarding(Long userId, @Valid OnboardingRequest request) {
         User user = userRepository.findByIdWithInterestCategories(userId)
@@ -52,7 +54,8 @@ public class UserCommandService {
         }
 
         user.withdraw();
+        userAuthCacheService.evict(userId);
 
-        log.info("User withdrawn - userId: {}, status changed to WITHDRAWN and personal data anonymized", userId);
+        log.info("User withdrawn - status changed to WITHDRAWN and personal data anonymized");
     }
 }
