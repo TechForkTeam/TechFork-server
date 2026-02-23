@@ -13,6 +13,8 @@ spring:
       max-lifetime: 1800000
       # 커넥션 유효성
       keepalive-time: 60000
+      # 모니터링
+      pool-name: TechFork-HikariCP
   jpa:
     hibernate:
       ddl-auto: validate
