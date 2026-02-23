@@ -251,7 +251,6 @@ class JwtAuthenticationFilterTest {
         given(jwtUtil.getUserIdFromToken(validAccessToken)).willReturn(userId);
         given(userAuthCacheService.get(userId)).willReturn(null);
         given(userRepository.findById(userId)).willReturn(Optional.of(withdrawnUser));
-        given(jwtProperties.getAccessTokenExpiration()).willReturn(180000L);
 
         // When
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);

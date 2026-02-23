@@ -66,10 +66,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             .orElseThrow(() -> new GeneralException(AuthErrorCode.USER_NOT_FOUND));
 
                     userPrincipal = UserPrincipal.buildUserPrincipal(user);
-                    userAuthCacheService.put(userId, user, jwtProperties.getAccessTokenExpiration());
-                }
 
-                if (userPrincipal.getStatus() == UserStatus.WITHDRAWN) {
+                    if (userPrincipal.getStatus() == UserStatus.WITHDRAWN) {
+                        throw new GeneralException(AuthErrorCode.WITHDRAWN_USER);
+                    }
+
+                    userAuthCacheService.put(userId, user, jwtProperties.getAccessTokenExpiration());
+                } else if (userPrincipal.getStatus() == UserStatus.WITHDRAWN) {
                     throw new GeneralException(AuthErrorCode.WITHDRAWN_USER);
                 }
 
