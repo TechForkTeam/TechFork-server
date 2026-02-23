@@ -264,4 +264,32 @@ class JwtAuthenticationFilterTest {
         verify(userAuthCacheService, never()).put(anyLong(), any(), anyLong()); // 탈퇴 유저는 캐시 저장 안 함
         verify(filterChain).doFilter(request, response);
     }
+
+    @Test
+    @DisplayName("JWT 인증 실패 - 탈퇴한 회원 (캐시 히트)")
+    void doFilterInternal_Fail_WithdrawnUser_CacheHit() throws Exception {
+        // Given
+        UserPrincipal withdrawnPrincipal = UserPrincipal.builder()
+                .id(userId)
+                .role(Role.USER)
+                .status(UserStatus.WITHDRAWN)
+                .email(null)
+                .build();
+
+        given(request.getHeader("Authorization")).willReturn("Bearer " + validAccessToken);
+        willDoNothing().given(jwtUtil).validateToken(validAccessToken);
+        willDoNothing().given(jwtUtil).validateTokenType(validAccessToken, TOKEN_TYPE_ACCESS);
+        given(jwtUtil.getUserIdFromToken(validAccessToken)).willReturn(userId);
+        given(userAuthCacheService.get(userId)).willReturn(withdrawnPrincipal);
+
+        // When
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        // Then
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        assertThat(authentication).isNull();
+
+        verify(userRepository, never()).findById(anyLong()); // 캐시 히트이므로 DB 조회 없음
+        verify(filterChain).doFilter(request, response);
+    }
 }
