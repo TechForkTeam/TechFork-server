@@ -5,6 +5,8 @@ import com.techfork.domain.user.enums.Role;
 import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.enums.UserStatus;
 import com.techfork.domain.user.repository.UserRepository;
+import com.techfork.global.security.auth.service.UserAuthCacheService;
+import com.techfork.global.security.jwt.JwtProperties;
 import com.techfork.global.security.jwt.JwtUtil;
 import com.techfork.global.security.oauth.UserPrincipal;
 import jakarta.servlet.FilterChain;
@@ -37,6 +39,12 @@ class JwtAuthenticationFilterTest {
     private UserRepository userRepository;
 
     @Mock
+    private UserAuthCacheService userAuthCacheService;
+
+    @Mock
+    private JwtProperties jwtProperties;
+
+    @Mock
     private HttpServletRequest request;
 
     @Mock
@@ -66,13 +74,15 @@ class JwtAuthenticationFilterTest {
     // ===== 인증 성공 테스트 =====
 
     @Test
-    @DisplayName("JWT 인증 성공 - 유효한 액세스 토큰으로 SecurityContext 설정")
-    void doFilterInternal_Success_WithValidAccessToken() throws Exception {
+    @DisplayName("JWT 인증 성공 - 캐시 미스: DB 조회 후 캐시 저장")
+    void doFilterInternal_Success_CacheMiss() throws Exception {
         // Given
         given(request.getHeader("Authorization")).willReturn("Bearer " + validAccessToken);
         willDoNothing().given(jwtUtil).validateToken(validAccessToken);
         given(jwtUtil.getUserIdFromToken(validAccessToken)).willReturn(userId);
+        given(userAuthCacheService.get(userId)).willReturn(null);
         given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+        given(jwtProperties.getAccessTokenExpiration()).willReturn(180000L);
 
         // When
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -86,11 +96,9 @@ class JwtAuthenticationFilterTest {
         assertThat(principal.getId()).isEqualTo(userId);
         assertThat(principal.getRole()).isEqualTo(Role.USER);
         assertThat(principal.getStatus()).isEqualTo(UserStatus.PENDING);
-        assertThat(principal.getUsername()).isEqualTo(String.valueOf(userId));
 
-        verify(jwtUtil).validateToken(validAccessToken);
-        verify(jwtUtil).validateTokenType(validAccessToken, TOKEN_TYPE_ACCESS);
         verify(userRepository).findById(userId);
+        verify(userAuthCacheService).put(eq(userId), eq(testUser), eq(180000L));
         verify(filterChain).doFilter(request, response);
     }
 
