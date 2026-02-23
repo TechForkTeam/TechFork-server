@@ -13,6 +13,7 @@ import com.techfork.domain.user.enums.UserStatus;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.global.security.auth.service.RefreshTokenService;
+import com.techfork.global.security.auth.service.UserAuthCacheService;
 import com.techfork.global.security.jwt.JwtDTO;
 import com.techfork.global.security.jwt.JwtProperties;
 import com.techfork.global.security.jwt.JwtUtil;
@@ -60,6 +61,9 @@ class AuthServiceTest {
     @Mock
     private KakaoOAuthService kakaoOAuthService;
 
+    @Mock
+    private UserAuthCacheService userAuthCacheService;
+
     @InjectMocks
     private AuthService authService;
 
@@ -96,6 +100,7 @@ class AuthServiceTest {
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(jwtUtil.generateTokens(userId, Role.USER)).willReturn(newTokens);
         given(jwtProperties.getRefreshTokenExpiration()).willReturn(900000L);
+        given(jwtProperties.getAccessTokenExpiration()).willReturn(180000L);
 
         // When
         TokenRefreshResponse result = authService.refreshToken(validRefreshToken, response);
@@ -105,6 +110,7 @@ class AuthServiceTest {
         verify(jwtUtil).isValidToken(validRefreshToken);
         verify(jwtUtil).validateTokenType(validRefreshToken, TOKEN_TYPE_REFRESH);
         verify(refreshTokenService).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
+        verify(userAuthCacheService).put(eq(userId), eq(user), eq(180000L));
         verify(response).addHeader(eq("Set-Cookie"), anyString());
     }
 
