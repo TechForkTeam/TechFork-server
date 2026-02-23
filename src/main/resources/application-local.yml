@@ -4,10 +4,6 @@ spring:
     url: jdbc:mysql://localhost:3306/techblog?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
     username: techfork
     password: techfork1234
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
-      connection-timeout: 20000
   jpa:
     hibernate:
       ddl-auto: validate
