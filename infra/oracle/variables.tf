@@ -143,3 +143,12 @@ variable "docker_image" {
   type        = string
   default     = "ghcr.io/your-org/tech-fork"
 }
+
+# ===========================================
+# 백업 설정
+# ===========================================
+variable "backup_retention_days" {
+  description = "백업 파일 보관 기간 (일). OCI Lifecycle Policy로 자동 삭제됨"
+  type        = number
+  default     = 7
+}

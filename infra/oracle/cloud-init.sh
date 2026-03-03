@@ -74,8 +74,22 @@ sysctl -w vm.max_map_count=262144
 # ===========================================
 echo "===== Setup Deployment Structure ====="
 mkdir -p /home/ubuntu/deploy/nginx/conf.d
+mkdir -p /home/ubuntu/deploy/es-snapshots  # ES 스냅샷 저장 경로
+chmod 777 /home/ubuntu/deploy/es-snapshots  # ES 컨테이너(UID 1000)가 쓸 수 있도록
 docker network create techfork-network 2>/dev/null || true
 chown -R ubuntu:ubuntu /home/ubuntu/deploy
+
+# ===========================================
+# OCI CLI 설치 (Instance Principal 백업 인증용)
+# 백업 실행은 GitHub Actions (backup.yml)이 SSH로 트리거
+# ===========================================
+echo "===== Install OCI CLI ====="
+sudo -u ubuntu bash -c '
+  curl -fsSL https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh \
+    | bash -s -- --accept-all-defaults
+  echo "export PATH=\$PATH:/home/ubuntu/bin" >> /home/ubuntu/.bashrc
+'
+echo "OCI CLI 설치 완료"
 
 # ===========================================
 # 방화벽 설정 (iptables)
