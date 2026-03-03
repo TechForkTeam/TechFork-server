@@ -63,8 +63,10 @@ services:
       - discovery.type=single-node
       - xpack.security.enabled=false
       - "ES_JAVA_OPTS=-Xms8g -Xmx8g"
+      - path.repo=/usr/share/elasticsearch/snapshots  # 백업 스냅샷 저장 경로
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
+      - /home/ubuntu/deploy/es-snapshots:/usr/share/elasticsearch/snapshots  # 백업용 바인드 마운트
     networks:
       techfork-network:
         aliases:
