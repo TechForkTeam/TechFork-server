@@ -87,6 +87,7 @@ main() {
   log ""
   log "  2. 백업 수동 실행 테스트"
   log "     bash ~/deploy/docker/backup/backup.sh"
+  log "     tail -f ~/deploy/backup.log"
   log ""
   log "  3. 이후 백업은 GitHub Actions (backup.yml)이 매일 02:00 KST에 자동 실행"
   log "========================================"

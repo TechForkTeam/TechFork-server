@@ -28,7 +28,7 @@ fi
 # ===========================================
 DATE=$(date +%Y%m%d_%H%M%S)
 TEMP_DIR=$(mktemp -d)
-LOG_FILE="/var/log/techfork-backup.log"
+LOG_FILE="/home/ubuntu/deploy/backup.log"
 
 MYSQL_CONTAINER="techfork-mysql"
 DB_ROOT_PASSWORD="${DB_PASSWORD:-}"
