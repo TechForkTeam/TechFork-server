@@ -184,8 +184,9 @@ backup_elasticsearch() {
 
   upload_to_oci "${backup_file}" "elasticsearch/elasticsearch_${DATE}.tar.gz"
 
-  # 로컬 스냅샷 파일 정리 (OCI 업로드 후 불필요)
-  rm -rf "${ES_SNAPSHOT_HOST_DIR:?}"/*
+  # 로컬 스냅샷 파일 정리 (ES API로 삭제 - 컨테이너 소유 파일이므로 rm 불가)
+  curl -sf -X DELETE "${ES_HOST}/_snapshot/${ES_REPO_NAME}/${snap_name}" > /dev/null \
+    || log "WARNING: 스냅샷 삭제 실패 (무시 가능)"
   log "===== Elasticsearch 백업 완료 ====="
 }
 
