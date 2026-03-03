@@ -3,8 +3,8 @@
 # TechFork 데이터베이스 백업 스크립트
 #
 # 대상: MySQL(mysqldump), Elasticsearch(Snapshot API)
-# 저장소: OCI Object Storage (Instance Principal 인증)
-# 실행: 크론잡 (매일 02:00 KST = 17:00 UTC)
+# 저장소: OCI Object Storage (API Key 인증 - ~/.oci/config)
+# 실행: GitHub Actions (매일 02:00 KST = 17:00 UTC)
 #
 # 디렉토리 구조 (버킷 내부):
 #   mysql/mysql_YYYYMMDD_HHMMSS.sql.gz
@@ -67,9 +67,9 @@ check_prerequisites() {
     error_exit "Docker가 실행 중이지 않습니다."
   fi
 
-  # OCI Instance Principal 인증 확인
-  OCI_NAMESPACE=$(${OCI_CLI} os ns get --auth instance_principal --query 'data' --raw-output 2>/dev/null) \
-    || error_exit "OCI Instance Principal 인증 실패. Dynamic Group 및 IAM Policy 설정을 확인하세요."
+  # OCI API Key 인증 확인 (~/.oci/config)
+  OCI_NAMESPACE=$(${OCI_CLI} os ns get --query 'data' --raw-output 2>/dev/null) \
+    || error_exit "OCI 인증 실패. ~/.oci/config 설정을 확인하세요."
 
   log "OCI 네임스페이스: ${OCI_NAMESPACE}"
 }
@@ -83,7 +83,6 @@ upload_to_oci() {
 
   log "OCI 업로드 중: ${OCI_BUCKET}/${remote_path}"
   ${OCI_CLI} os object put \
-    --auth instance_principal \
     --namespace "${OCI_NAMESPACE}" \
     --bucket-name "${OCI_BUCKET}" \
     --name "${remote_path}" \
@@ -191,8 +190,8 @@ backup_elasticsearch() {
 }
 
 # ===========================================
-# 오래된 백업 삭제 (OCI Lifecycle Policy 대신 직접 처리)
-# OCI API의 time-created 기준으로 N일 이상된 객체 삭제
+# 오래된 백업 삭제
+# OCI API의 time-created 기준으로 N일 초과 객체 삭제
 # ===========================================
 cleanup_old_backups() {
   local prefix="$1"
@@ -200,7 +199,6 @@ cleanup_old_backups() {
 
   local old_objects
   old_objects=$(${OCI_CLI} os object list \
-    --auth instance_principal \
     --namespace "${OCI_NAMESPACE}" \
     --bucket-name "${OCI_BUCKET}" \
     --prefix "${prefix}/" \
@@ -231,7 +229,6 @@ for obj in data.get('data', []):
     [ -z "${obj_name}" ] && continue
     log "삭제: ${obj_name}"
     ${OCI_CLI} os object delete \
-      --auth instance_principal \
       --namespace "${OCI_NAMESPACE}" \
       --bucket-name "${OCI_BUCKET}" \
       --object-name "${obj_name}" \
