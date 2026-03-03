@@ -1,0 +1,46 @@
+name: Backup - MySQL & Elasticsearch
+
+on:
+  schedule:
+    - cron: '0 17 * * *'  # 매일 02:00 KST (17:00 UTC)
+  workflow_dispatch:        # 수동 실행
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Run backup on server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          command_timeout: 30m
+          script: |
+            bash /home/ubuntu/deploy/docker/backup/backup.sh
+
+      - name: Notify Discord on failure
+        if: failure()
+        run: |
+          curl -s -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "❌ 백업 실패",
+                "description": "MySQL 또는 Elasticsearch 백업 중 오류가 발생했습니다.",
+                "color": 15158332,
+                "fields": [
+                  {
+                    "name": "워크플로우",
+                    "value": "'"${{ github.workflow }}"'",
+                    "inline": true
+                  },
+                  {
+                    "name": "실행 링크",
+                    "value": "[확인하기]('"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"')",
+                    "inline": true
+                  }
+                ]
+              }]
+            }'
