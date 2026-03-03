@@ -56,6 +56,25 @@ output "api_url" {
 }
 
 # ===========================================
+# Backup Outputs
+# ===========================================
+
+output "backup_bucket_name" {
+  description = "백업 Object Storage 버킷 이름"
+  value       = oci_objectstorage_bucket.backup.name
+}
+
+output "backup_bucket_namespace" {
+  description = "Object Storage 네임스페이스 (OCI CLI 사용 시 필요)"
+  value       = data.oci_objectstorage_namespace.ns.namespace
+}
+
+output "backup_bucket_url" {
+  description = "OCI Console에서 버킷 확인 URL"
+  value       = "https://console.ap-chuncheon-1.oraclecloud.com/object-storage/buckets/${data.oci_objectstorage_namespace.ns.namespace}/${oci_objectstorage_bucket.backup.name}"
+}
+
+# ===========================================
 # Resource Summary
 # ===========================================
 
