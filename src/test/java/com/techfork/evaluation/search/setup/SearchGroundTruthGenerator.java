@@ -37,15 +37,15 @@ import java.util.stream.Collectors;
  * <ol>
  *   <li>ES "posts" 인덱스에서 company별 층화 샘플링 (약 200~300개 문서)</li>
  *   <li>각 문서에 대해 LLM으로 검색 쿼리 3개 생성 (단일/복합/자연어)</li>
- *   <li>생성된 쿼리를 실제 검색 엔진에 실행 → 상위 20개 결과</li>
- *   <li>LLM-as-a-Judge로 각 (쿼리, 문서) 쌍의 관련도 0~5점 평가</li>
+ *   <li>TREC Pooling: BM25 only / Vector only / Hybrid 3종 검색 결과를 union해 후보 풀 구성</li>
+ *   <li>LLM-as-a-Judge로 각 (쿼리, 문서) 쌍의 관련도 0~3점 평가</li>
  *   <li>결과를 {@code fixtures/evaluation/generated-search-ground-truth.json}으로 저장</li>
  * </ol>
  *
  * <p>실행 조건:
  * <ul>
  *   <li>로컬 터널 환경 필요: {@code -Dspring.profiles.active=local-tunnel}</li>
- *   <li>LLM 호출 비용 발생 (약 240문서 × 3쿼리 × 20결과 = 최대 ~14,400 LLM 호출)</li>
+ *   <li>LLM 호출 비용 발생 (약 240문서 × 3쿼리 × ~35결과(union) = 최대 ~25,200 LLM 호출)</li>
  *   <li>llmSummary 레이트리미터 적용 (37 req/min) — 실행 시간 수 시간 소요</li>
  * </ul>
  */
@@ -58,13 +58,13 @@ class SearchGroundTruthGenerator {
 
     private static final int DOCS_PER_COMPANY = 5;
     private static final int TOP_N_SEARCH_RESULTS = 20;
-    private static final int SCORE_THRESHOLD = 0;
+    private static final int SCORE_THRESHOLD = 1;
 
     private static final String QUERY_GEN_SYSTEM_PROMPT =
             "당신은 검색 쿼리 생성 전문가입니다. 기술 블로그 포스트를 보고 사용자가 이 글을 찾기 위해 검색할 법한 쿼리를 생성합니다.";
 
     private static final String JUDGE_SYSTEM_PROMPT =
-            "당신은 검색 품질 평가 전문가(Judge)입니다. 검색 쿼리와 문서의 관련도를 0~5점으로 평가합니다.";
+            "당신은 검색 품질 평가 전문가(Judge)입니다. 검색 쿼리와 문서의 관련도를 0~3점으로 평가합니다.";
 
     @Autowired
     private ElasticsearchClient elasticsearchClient;
@@ -234,11 +234,27 @@ class SearchGroundTruthGenerator {
             queryCount++;
 
             try {
-                List<SearchResult> results = searchService.searchGeneral(query);
-                List<SearchResult> top20 = results.subList(0, Math.min(results.size(), TOP_N_SEARCH_RESULTS));
+                // TREC Pooling: 3종 검색 결과를 union해 후보 풀 구성
+                List<SearchResult> bm25Results = searchService.searchOnlyBm25(query);
+                List<SearchResult> vectorResults = searchService.searchOnlySemantic(query);
+                List<SearchResult> hybridResults = searchService.searchGeneral(query);
+
+                Map<Long, SearchResult> poolMap = new LinkedHashMap<>();
+                for (SearchResult r : bm25Results.subList(0, Math.min(bm25Results.size(), TOP_N_SEARCH_RESULTS))) {
+                    poolMap.putIfAbsent(r.getPostId(), r);
+                }
+                for (SearchResult r : vectorResults.subList(0, Math.min(vectorResults.size(), TOP_N_SEARCH_RESULTS))) {
+                    poolMap.putIfAbsent(r.getPostId(), r);
+                }
+                for (SearchResult r : hybridResults.subList(0, Math.min(hybridResults.size(), TOP_N_SEARCH_RESULTS))) {
+                    poolMap.putIfAbsent(r.getPostId(), r);
+                }
+                List<SearchResult> candidatePool = new ArrayList<>(poolMap.values());
+                log.debug("쿼리 '{}': BM25={}, Vector={}, Hybrid={} → union={}", query,
+                        bm25Results.size(), vectorResults.size(), hybridResults.size(), candidatePool.size());
 
                 Map<String, Integer> idealResultsMap = new LinkedHashMap<>();
-                for (SearchResult result : top20) {
+                for (SearchResult result : candidatePool) {
                     try {
                         int score = scoreRelevance(query, result);
                         if (score > SCORE_THRESHOLD) {
@@ -276,12 +292,10 @@ class SearchGroundTruthGenerator {
                 - 요약: %s
 
                 ## 평가 기준
-                5점: 쿼리와 완벽히 일치. 이 문서가 가장 먼저 나와야 할 결과.
-                4점: 쿼리와 매우 관련 있음. 상위 결과로 적합.
-                3점: 쿼리와 관련 있으나 핵심적이지 않음.
-                2점: 쿼리와 약간 관련 있으나 직접적이지 않음.
-                1점: 쿼리와 거의 관련 없음.
-                0점: 쿼리와 전혀 관련 없음.
+                3점: 쿼리 의도와 정확히 일치. 이 문서가 가장 먼저 나와야 할 결과.
+                2점: 쿼리와 관련 있음. 상위 결과로 적합.
+                1점: 쿼리와 약간 관련 있음. 주변 참고 자료 수준.
+                0점: 쿼리와 무관.
 
                 ## 응답 형식
                 반드시 아래 JSON 형식만 출력하세요:
@@ -320,10 +334,10 @@ class SearchGroundTruthGenerator {
         Matcher matcher = Pattern.compile("\"score\"\\s*:\\s*(\\d)").matcher(response);
         if (matcher.find()) {
             int score = Integer.parseInt(matcher.group(1));
-            return Math.max(0, Math.min(5, score));
+            return Math.max(0, Math.min(3, score));
         }
-        // fallback: 응답에서 0~5 범위의 단독 숫자 추출
-        Matcher fallback = Pattern.compile("\\b([0-5])\\b").matcher(response);
+        // fallback: 응답에서 0~3 범위의 단독 숫자 추출
+        Matcher fallback = Pattern.compile("\\b([0-3])\\b").matcher(response);
         if (fallback.find()) {
             return Integer.parseInt(fallback.group(1));
         }
