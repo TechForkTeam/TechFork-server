@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.evaluation;
+package com.techfork.evaluation.recommendation;
 
 import com.techfork.domain.user.entity.User;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +21,7 @@ public class LambdaOptimizationTest extends RecommendationTestBase {
     @DisplayName("Lambda 최적화 - Ground-Truth 기반 평가")
     void optimizeLambdaWithGroundTruth() {
         log.info("===== Lambda 최적화 테스트 (Ground-Truth 기반) =====");
-        
+
         if (cachedGroundTruth == null || cachedGroundTruth.isEmpty()) {
             log.warn("Ground-Truth 데이터가 없습니다. Fixture 로드를 확인하세요.");
             return;
@@ -42,7 +42,7 @@ public class LambdaOptimizationTest extends RecommendationTestBase {
                     return result;
                 })
                 .toList();
-        
+
         printBestLambdaResults(results);
     }
 

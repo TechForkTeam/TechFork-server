@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.util;
+package com.techfork.evaluation.recommendation.util;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;

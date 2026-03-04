@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.evaluation;
+package com.techfork.evaluation.recommendation;
 
 import com.techfork.domain.user.entity.User;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +31,7 @@ public class TitleSummaryRatioOptimizationTest extends RecommendationTestBase {
 
         printWeightComparisonHeader();
         List<EvaluationResult> results = new ArrayList<>();
-        
+
         for (ConfigCombo config : configs) {
             EvaluationResult result = evaluateConfigWithGroundTruth(config, testUsers);
             results.add(result);
@@ -77,7 +77,7 @@ public class TitleSummaryRatioOptimizationTest extends RecommendationTestBase {
         if (bestNdcg8 != null) {
             log.info(" [nDCG@8 최고]");
             log.info(String.format("최적 설정: %s", bestNdcg8.getConfigName()));
-            log.info(String.format("성능: R@8: %.4f, nDCG@8: %.4f", 
+            log.info(String.format("성능: R@8: %.4f, nDCG@8: %.4f",
                     bestNdcg8.getAvgRecall8(), bestNdcg8.getAvgNdcg8()));
         }
 
@@ -89,7 +89,7 @@ public class TitleSummaryRatioOptimizationTest extends RecommendationTestBase {
         if (bestRecall8 != null && (bestNdcg8 == null || !bestRecall8.getConfigName().equals(bestNdcg8.getConfigName()))) {
             log.info(" [Recall@8 최고]");
             log.info(String.format("최적 설정: %s", bestRecall8.getConfigName()));
-            log.info(String.format("성능: R@8: %.4f, nDCG@8: %.4f", 
+            log.info(String.format("성능: R@8: %.4f, nDCG@8: %.4f",
                     bestRecall8.getAvgRecall8(), bestRecall8.getAvgNdcg8()));
         }
     }

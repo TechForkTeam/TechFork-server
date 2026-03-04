@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.setup.components;
+package com.techfork.evaluation.recommendation.setup.components;
 
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
@@ -126,10 +126,10 @@ public class TestDataGenerator {
         UserProfileDocument userProfile = null;
         try {
             userProfileService.generateUserProfileSync(user.getId());
-            
+
             // Elasticsearch Refresh: 저장이 검색 가능해지도록 강제 갱신
             elasticsearchOperations.indexOps(UserProfileDocument.class).refresh();
-            
+
             Optional<UserProfileDocument> userProfileOpt = userProfileDocumentRepository.findByUserId(user.getId());
             if (userProfileOpt.isPresent()) {
                 userProfile = userProfileOpt.get();

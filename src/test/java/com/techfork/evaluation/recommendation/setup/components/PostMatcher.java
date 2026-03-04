@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.setup.components;
+package com.techfork.evaluation.recommendation.setup.components;
 
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;

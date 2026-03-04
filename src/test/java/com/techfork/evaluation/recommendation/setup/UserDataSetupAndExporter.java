@@ -1,12 +1,12 @@
-package com.techfork.domain.recommendation.setup;
+package com.techfork.evaluation.recommendation.setup;
 
 import com.techfork.domain.activity.entity.ReadPost;
 import com.techfork.domain.activity.repository.ReadPostRepository;
 import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.recommendation.setup.components.FileExporter;
-import com.techfork.domain.recommendation.setup.components.TestDataGenerator;
-import com.techfork.domain.recommendation.setup.components.TestDataGenerator.UserCreationResult;
-import com.techfork.domain.recommendation.util.EvaluationFixtureLoader;
+import com.techfork.evaluation.recommendation.setup.components.FileExporter;
+import com.techfork.evaluation.recommendation.setup.components.TestDataGenerator;
+import com.techfork.evaluation.recommendation.setup.components.TestDataGenerator.UserCreationResult;
+import com.techfork.evaluation.recommendation.util.EvaluationFixtureLoader;
 import com.techfork.domain.user.document.UserProfileDocument;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.enums.EInterestCategory;
@@ -71,12 +71,12 @@ public class UserDataSetupAndExporter extends IntegrationTestBase {
 
         try {
             Map<Long, Post> remoteToActualMap = fixtureLoader.loadPostsOnly();
-            
+
             // 역매핑 맵 생성 (실제 DB ID -> 원래 원격 ID)
             actualToRemotePostIdMap.clear();
-            remoteToActualMap.forEach((remoteId, post) -> 
+            remoteToActualMap.forEach((remoteId, post) ->
                 actualToRemotePostIdMap.put(post.getId(), remoteId));
-            
+
             log.info("✓ 게시글 픽스처 로드 및 ID 매핑 완료 ({} 개)", actualToRemotePostIdMap.size());
         } catch (Exception e) {
             log.error("게시글 픽스처 로드 실패. PostDataExporter를 먼저 실행하세요.", e);
@@ -300,12 +300,12 @@ public class UserDataSetupAndExporter extends IntegrationTestBase {
     private Map<String, Object> convertReadPostToDto(ReadPost readPost) {
         Map<String, Object> dto = new HashMap<>();
         dto.put("userId", readPost.getUser().getId());
-        
+
         // 실제 DB ID -> 원격 DB ID로 변환
         Long actualPostId = readPost.getPost().getId();
         Long remotePostId = actualToRemotePostIdMap.get(actualPostId);
         dto.put("postId", remotePostId != null ? remotePostId : actualPostId);
-        
+
         dto.put("readAt", readPost.getReadAt().toString());
         dto.put("readDurationSeconds", readPost.getReadDurationSeconds());
         return dto;

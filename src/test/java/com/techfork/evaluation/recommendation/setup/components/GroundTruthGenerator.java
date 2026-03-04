@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.setup.components;
+package com.techfork.evaluation.recommendation.setup.components;
 
 import com.techfork.domain.post.document.PostDocument;
 import com.techfork.domain.post.entity.Post;
@@ -45,7 +45,7 @@ public class GroundTruthGenerator {
         for (Post post : posts) {
             count++;
             log.info("Ground Truth 평가 중 ({}/{}): Post ID {}", count, posts.size(), post.getId());
-            
+
             try {
                 int score = calculateRelevanceScoreWithLLM(post, userProfile);
                 groundTruthScores.put(post.getId(), score);
@@ -65,9 +65,9 @@ public class GroundTruthGenerator {
     private int calculateRelevanceScoreWithLLM(Post post, UserProfileDocument userProfile) {
         // PostDocument에서 더 풍부한 정보 가져오기 (요약문, 본문 청크 등)
         Optional<PostDocument> postDocOpt = postDocumentRepository.findByPostId(post.getId());
-        
+
         String postSummary = postDocOpt.map(PostDocument::getSummary).orElse(post.getSummary());
-        
+
         // 본문 내용 일부 가져오기 (Content Chunks가 있다면 도입부와 결론부 위주로 추출)
         StringBuilder contentContext = new StringBuilder();
         if (postDocOpt.isPresent() && postDocOpt.get().getContentChunks() != null) {
@@ -89,27 +89,27 @@ public class GroundTruthGenerator {
         }
 
         String systemPrompt = "당신은 기술 블로그 추천 시스템의 품질 평가자(Judge)입니다. 사용자 프로필과 게시글 내용을 바탕으로 적합성을 1~5점 척도로 평가하세요.";
-        
+
         String userPrompt = String.format("""
                 다음 사용자가 해당 게시글을 추천받았을 때 얼마나 만족할지 평가해주세요.
-                
+
                 ## 사용자 프로필
                 %s
-                
+
                 ## 게시글 정보
                 - 제목: %s
                 - 회사/블로그: %s
                 - 요약: %s
                 - 본문 내용(일부):
                 %s
-                
+
                 ## 평가 기준
                 5점 (매우 강한 추천): 사용자의 핵심 관심사(주력 기술, 해결하려는 문제)와 정확히 일치하며, 반드시 읽어야 할 글.
                 4점 (추천): 사용자의 관심사와 밀접하게 관련되어 있으며, 흥미를 느낄 만한 글.
                 3점 (보통): 사용자의 관심사와 관련은 있으나, 핵심 분야가 아니거나 너무 일반적인 내용.
                 2점 (약간 관련): 키워드는 일부 겹치지만, 사용자의 주된 관심사와 거리가 먼 글.
                 1점 (관련 없음): 사용자의 관심사와 전혀 무관한 글.
-                
+
                 ## 응답 형식
                 반드시 점수(숫자 1~5)만 출력하세요. 설명은 필요 없습니다.
                 """,
@@ -133,7 +133,7 @@ public class GroundTruthGenerator {
                 int score = Integer.parseInt(matcher.group(1));
                 return Math.max(1, Math.min(5, score)); // 1~5 범위 제한
             }
-            
+
             // 숫자를 못 찾은 경우
             log.warn("LLM 응답에서 점수를 파싱할 수 없음: {}", response);
             return 1;

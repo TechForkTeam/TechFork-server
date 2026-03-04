@@ -1,4 +1,4 @@
-package com.techfork.domain.search;
+package com.techfork.evaluation.search.setup;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.techfork.domain.activity.repository.ScrabPostRepository;
@@ -7,10 +7,7 @@ import com.techfork.domain.search.dto.SearchResult;
 import com.techfork.domain.search.service.GeneralSearchProperties;
 import com.techfork.domain.search.service.SearchServiceImpl;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
-import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.llm.EmbeddingClient;
-import java.util.concurrent.Executor;
-
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -19,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
+import java.util.concurrent.Executor;
 
 /**
  * ground-truth.json 테스트

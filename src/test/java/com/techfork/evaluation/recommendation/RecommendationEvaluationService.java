@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.evaluation;
+package com.techfork.evaluation.recommendation;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.SearchResponse;

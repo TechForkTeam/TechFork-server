@@ -1,9 +1,9 @@
-package com.techfork.domain.recommendation.evaluation;
+package com.techfork.evaluation.recommendation;
 
 import com.techfork.domain.activity.repository.ReadPostRepository;
 import com.techfork.domain.post.repository.PostDocumentRepository;
 import com.techfork.domain.recommendation.config.RecommendationProperties;
-import com.techfork.domain.recommendation.util.EvaluationFixtureLoader;
+import com.techfork.evaluation.recommendation.util.EvaluationFixtureLoader;
 import com.techfork.domain.user.entity.User;
 import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.global.util.VectorUtil;
@@ -28,7 +28,7 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
     protected static final int K_FIRST_ROW = 4;
     protected static final int K_FIRST_SCREEN = 8;
     protected static final int K_DEEP_EXPLORE = 30;
-    
+
     protected static final float DEFAULT_TITLE_WEIGHT = 0.4f;
     protected static final float DEFAULT_SUMMARY_WEIGHT = 0.4f;
     protected static final float DEFAULT_CONTENT_WEIGHT = 0.2f;
@@ -119,7 +119,7 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
         double r30 = metrics.stream().mapToDouble(UserMetrics::getRecall30).average().orElse(0.0);
         double n30 = metrics.stream().mapToDouble(UserMetrics::getNdcg30).average().orElse(0.0);
         double ild = metrics.stream().mapToDouble(UserMetrics::getIld).average().orElse(0.0);
-        
+
         double score = r8 * RECALL_WEIGHT + n8 * NDCG_WEIGHT + ild * ILD_WEIGHT;
 
         return EvaluationResult.builder()
@@ -138,7 +138,7 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
 
             Set<Long> readIds = readPostRepository.findRecentReadPostsByUserIdWithMinDuration(user.getId(), org.springframework.data.domain.PageRequest.of(0, 10000))
                     .stream().map(rp -> rp.getPost().getId()).collect(java.util.stream.Collectors.toSet());
-            
+
             // 새로운 서비스 사용
             List<Long> recIds = evaluationService.generateRecommendationsForEvaluation(user, readIds, props);
             if (recIds.isEmpty()) return Optional.empty();
@@ -163,7 +163,7 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
 
             Set<Long> readIds = readPostRepository.findRecentReadPostsByUserIdWithMinDuration(user.getId(), org.springframework.data.domain.PageRequest.of(0, 10000))
                     .stream().map(rp -> rp.getPost().getId()).collect(java.util.stream.Collectors.toSet());
-            
+
             // 새로운 서비스 사용
             List<Long> recIds = evaluationService.generateRecommendationsForEvaluation(user, readIds, props);
             if (recIds.isEmpty()) return Optional.empty();
@@ -174,7 +174,7 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
             double n8 = qualityService.calculateNDCG(recIds, groundTruth, K_FIRST_SCREEN);
             double r30 = qualityService.calculateRecall(recIds, groundTruth.keySet(), K_DEEP_EXPLORE);
             double n30 = qualityService.calculateNDCG(recIds, groundTruth, K_DEEP_EXPLORE);
-            
+
             List<float[]> vectors = recIds.stream().limit(K_FIRST_SCREEN)
                     .map(id -> postDocumentRepository.findByPostId(id).map(d -> VectorUtil.convertToFloatArray(d.getSummaryEmbedding())).orElse(null))
                     .filter(Objects::nonNull).toList();
@@ -189,28 +189,28 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
 
     protected EvaluationResult evaluateConfigWithGroundTruth(ConfigCombo config, List<User> testUsers) {
         RecommendationProperties props = createProperties(config.getTitleWeight(), config.getSummaryWeight(), config.getContentWeight(), config.getMmrLambda());
-        
+
         List<UserMetrics> metrics = testUsers.stream()
                 .map(user -> evaluateUserWithGroundTruth(user, props))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .toList();
-        
+
         return calculateAverageMetrics(config.getName(), metrics);
     }
 
     protected EvaluationResult evaluateConfigWithGroundTruthAndILD(ConfigCombo config, List<User> testUsers) {
         RecommendationProperties props = createProperties(config.getTitleWeight(), config.getSummaryWeight(), config.getContentWeight(), config.getMmrLambda());
-        
+
         List<UserMetrics> metrics = testUsers.stream()
                 .map(user -> evaluateUserWithGroundTruthAndILD(user, props))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .toList();
-        
+
         return calculateAverageMetrics(config.getName(), metrics);
     }
-    
+
     protected void printWeightComparisonHeader() {
         log.info(String.format("\n%-25s | %-10s | %-10s | %-10s | %-10s | %-10s | %-10s",
                 "설정", "R@4", "R@8", "R@30", "nDCG@4", "nDCG@8", "nDCG@30"));

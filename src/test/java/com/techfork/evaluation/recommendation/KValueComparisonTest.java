@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.evaluation;
+package com.techfork.evaluation.recommendation;
 
 import com.techfork.domain.recommendation.config.RecommendationProperties;
 import com.techfork.domain.user.entity.User;

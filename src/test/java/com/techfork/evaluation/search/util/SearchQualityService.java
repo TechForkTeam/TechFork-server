@@ -1,13 +1,10 @@
-package com.techfork.domain.search_quality;
-
-import org.springframework.stereotype.Service;
+package com.techfork.evaluation.search.util;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@Service
 public class SearchQualityService {
 
     /**
