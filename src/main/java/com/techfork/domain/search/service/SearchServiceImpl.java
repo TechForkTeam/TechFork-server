@@ -64,7 +64,10 @@ public class SearchServiceImpl implements SearchService {
         log.debug("general search started: with query: '{}'", query);
         long startTime = System.currentTimeMillis();
 
+        long embedStart = System.currentTimeMillis();
         List<Float> queryVector = queryEmbedding(query);
+        log.debug("Embedding done. Time={}ms", System.currentTimeMillis() - embedStart);
+
         List<SearchResult> searchResults = performHybridSearch(query, queryVector);
 
         searchResults = attachPostMetadata(searchResults, null);
