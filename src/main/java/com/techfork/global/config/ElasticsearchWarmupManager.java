@@ -26,15 +26,18 @@ public class ElasticsearchWarmupManager implements ApplicationRunner {
     private static final String POSTS_INDEX = "posts";
     private static final String USER_PROFILES_INDEX = "user_profiles";
     private static final int EMBEDDING_DIMENSION = 3072;
+    private static final int JIT_C1_WARMUP_ITERATIONS = 100;
 
     private final ElasticsearchClient elasticsearchClient;
     private final RecommendationProperties recommendationProperties;
 
     @Override
     public void run(ApplicationArguments args) {
-        log.info("[ES Warmup] Starting initial warmup...");
+        log.info("[ES Warmup] Starting initial warmup ({} iterations)...", JIT_C1_WARMUP_ITERATIONS);
         warmupClusterHealth();
-        warmupIndex();
+        for (int i = 0; i < JIT_C1_WARMUP_ITERATIONS; i++) {
+            warmupIndex();
+        }
         log.info("[ES Warmup] Initial warmup completed");
     }
 
