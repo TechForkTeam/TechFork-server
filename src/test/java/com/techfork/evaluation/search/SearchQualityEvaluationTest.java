@@ -9,8 +9,8 @@ import com.techfork.domain.search.dto.SearchResult;
 import com.techfork.domain.search.service.GeneralSearchProperties;
 import com.techfork.domain.search.service.SearchService;
 import com.techfork.domain.search.service.SearchServiceImpl;
-import com.techfork.domain.search_quality.GroundTruthItem;
-import com.techfork.domain.search_quality.SearchQualityService;
+import com.techfork.evaluation.search.GroundTruthItem;
+import com.techfork.evaluation.search.SearchQualityService;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.llm.EmbeddingClient;
@@ -84,7 +84,7 @@ class SearchQualityEvaluationTest {
     private void runEvaluationWithWarmup(String phaseName, Map<String, GeneralSearchProperties> scenarios, boolean measureLatency) throws IOException {
         List<GroundTruthItem> groundTruths = loadGroundTruth();
         if (groundTruths.isEmpty()) {
-            log.warn("⚠️ Ground Truth 데이터가 없습니다. src/test/resources/ground-truth.json 파일을 확인하세요.");
+            log.warn("⚠️ Ground Truth 데이터가 없습니다. src/test/resources/fixtures/evaluation/search-ground-truth.json 파일을 확인하세요.");
             return;
         }
 
@@ -197,7 +197,7 @@ class SearchQualityEvaluationTest {
     private void runEvaluation(String phaseName, Map<String, GeneralSearchProperties> scenarios, boolean measureLatency) throws IOException {
         List<GroundTruthItem> groundTruths = loadGroundTruth();
         if (groundTruths.isEmpty()) {
-            log.warn("⚠️ Ground Truth 데이터가 없습니다. src/test/resources/ground-truth.json 파일을 확인하세요.");
+            log.warn("⚠️ Ground Truth 데이터가 없습니다. src/test/resources/fixtures/evaluation/search-ground-truth.json 파일을 확인하세요.");
             return;
         }
 
@@ -403,7 +403,7 @@ class SearchQualityEvaluationTest {
 
     private List<GroundTruthItem> loadGroundTruth() throws IOException {
         try {
-            ClassPathResource resource = new ClassPathResource("ground-truth.json");
+            ClassPathResource resource = new ClassPathResource("fixtures/evaluation/search-ground-truth.json");
             return objectMapper.readValue(resource.getInputStream(), new TypeReference<>() {});
         } catch (IOException e) {
             log.error("❌ ground-truth.json 로드 실패: src/test/resources 경로를 확인하세요.", e);
