@@ -23,11 +23,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Executor;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -60,11 +60,32 @@ class SearchGroundTruthGenerator {
     private static final int TOP_N_SEARCH_RESULTS = 20;
     private static final int SCORE_THRESHOLD = 1;
 
-    private static final String QUERY_GEN_SYSTEM_PROMPT =
-            "당신은 검색 쿼리 생성 전문가입니다. 기술 블로그 포스트를 보고 사용자가 이 글을 찾기 위해 검색할 법한 쿼리를 생성합니다.";
+    private static final String QUERY_GEN_SYSTEM_PROMPT = """
+            너는 시니어 백엔드 개발자이자 검색 쿼리 설계 전문가야.
+            한국 개발자가 기술 블로그를 검색할 때 실제로 입력할 법한 쿼리 3개를 생성해.
 
-    private static final String JUDGE_SYSTEM_PROMPT =
-            "당신은 검색 품질 평가 전문가(Judge)입니다. 검색 쿼리와 문서의 관련도를 0~3점으로 평가합니다.";
+            [생성 규칙]
+            1. 단일 키워드: 핵심 기술/개념 1개 (예: "Docker", "Redis")
+            2. 복합 키워드: 기술 + 행동/문제 조합 (예: "Spring Boot JPA 최적화")
+            3. 자연어 질문: 실제 궁금증 형태 (예: "쿠버네티스 배포 자동화 방법")
+
+            반드시 아래 JSON 배열만 출력해. 다른 설명은 절대 추가하지 마.
+            ["쿼리1", "쿼리2", "쿼리3"]
+            """;
+
+    private static final String JUDGE_SYSTEM_PROMPT = """
+            너는 시니어 백엔드 개발자이자 정보 검색(IR) 평가 전문가야.
+            사용자의 검색 쿼리 의도를 파악하고, 제공된 기술 블로그 게시글 목록이 쿼리와 얼마나 관련 있는지 평가해.
+
+            [평가 기준]
+            3점 (Perfect): 쿼리 의도를 완벽히 해결하는 핵심 정답글 (문제 해결 코드, 정확한 원인 분석 포함)
+            2점 (Relevant): 부분적으로 도움이 되거나 관련 기술의 기본 개념을 잘 설명하는 글
+            1점 (Marginal): 검색어 키워드는 포함되어 있으나 쿼리의 핵심 의도와는 거리가 있는 글
+            0점 (Irrelevant): 전혀 관련 없거나 다른 기술을 설명하는 글
+
+            반드시 아래 JSON 배열만 출력해. 다른 설명은 절대 추가하지 마.
+            [{"postId": 123, "score": 2, "reason": "10자 이내 사유"}, ...]
+            """;
 
     @Autowired
     private ElasticsearchClient elasticsearchClient;
@@ -191,21 +212,9 @@ class SearchGroundTruthGenerator {
 
     private List<String> generateQueriesForDocument(PostDocument doc) {
         String userPrompt = String.format("""
-                다음 기술 블로그 포스트에 대해 한국 개발자가 실제로 검색할 법한 쿼리 3개를 만들어줘.
-
-                ## 포스트 정보
-                - 제목: %s
-                - 회사: %s
-                - 요약: %s
-
-                ## 생성 규칙
-                1. 단일 키워드 쿼리 (예: "Docker", "Redis")
-                2. 복합 키워드 쿼리 (예: "Spring Boot JPA 최적화")
-                3. 자연어 질문 쿼리 (예: "쿠버네티스 배포 자동화 방법")
-
-                ## 응답 형식
-                반드시 JSON 배열만 출력하세요. 다른 설명 없이 아래 형식으로만 응답합니다:
-                ["쿼리1", "쿼리2", "쿼리3"]
+                제목: %s
+                회사: %s
+                요약: %s
                 """,
                 doc.getTitle(),
                 doc.getCompany(),
@@ -303,23 +312,10 @@ class SearchGroundTruthGenerator {
             }
 
             String userPrompt = String.format("""
-                    다음 검색 쿼리에 대해 각 문서의 관련도를 평가해주세요.
+                    [검색 쿼리]: %s
 
-                    ## 검색 쿼리
-                    %s
-
-                    ## 평가 기준
-                    3점: 쿼리 의도와 정확히 일치. 가장 먼저 나와야 할 결과.
-                    2점: 쿼리와 관련 있음. 상위 결과로 적합.
-                    1점: 쿼리와 약간 관련 있음. 주변 참고 자료 수준.
-                    0점: 쿼리와 무관.
-
-                    ## 평가할 문서 목록
+                    [평가할 문서 목록]
                     [%s]
-
-                    ## 응답 형식
-                    반드시 아래 JSON 배열만 출력하세요. 다른 설명 없이:
-                    [{"postId": 123, "score": 2}, {"postId": 456, "score": 0}, ...]
                     """,
                     query,
                     docsJson
@@ -348,12 +344,25 @@ class SearchGroundTruthGenerator {
         return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ").replace("\r", "");
     }
 
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
     private void parseBatchScores(String response, Map<Long, Integer> scores) {
-        Matcher m = Pattern.compile("\"postId\"\\s*:\\s*(\\d+).*?\"score\"\\s*:\\s*(\\d)", Pattern.DOTALL).matcher(response);
-        while (m.find()) {
-            long postId = Long.parseLong(m.group(1));
-            int score = Math.max(0, Math.min(3, Integer.parseInt(m.group(2))));
-            scores.put(postId, score);
+        try {
+            int start = response.indexOf('[');
+            int end = response.lastIndexOf(']');
+            if (start == -1 || end == -1 || start >= end) {
+                log.warn("배치 점수 파싱 실패 - JSON 배열 없음: {}", response);
+                return;
+            }
+            JsonNode array = objectMapper.readTree(response.substring(start, end + 1));
+            for (JsonNode node : array) {
+                if (!node.has("postId") || !node.has("score")) continue;
+                long postId = node.get("postId").asLong();
+                int score = Math.max(0, Math.min(3, node.get("score").asInt()));
+                scores.put(postId, score);
+            }
+        } catch (Exception e) {
+            log.warn("배치 점수 파싱 실패: {}", e.getMessage());
         }
     }
 
