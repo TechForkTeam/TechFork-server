@@ -1,4 +1,4 @@
-package com.techfork.evaluation.search;
+package com.techfork.evaluation.search.util;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

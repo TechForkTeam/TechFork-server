@@ -1,4 +1,4 @@
-package com.techfork.evaluation.search;
+package com.techfork.evaluation.search.util;
 
 import java.util.Comparator;
 import java.util.List;

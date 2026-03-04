@@ -9,10 +9,9 @@ import com.techfork.domain.search.dto.SearchResult;
 import com.techfork.domain.search.service.GeneralSearchProperties;
 import com.techfork.domain.search.service.SearchService;
 import com.techfork.domain.search.service.SearchServiceImpl;
-import com.techfork.evaluation.search.GroundTruthItem;
-import com.techfork.evaluation.search.SearchQualityService;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
-import com.techfork.domain.user.repository.UserRepository;
+import com.techfork.evaluation.search.util.GroundTruthItem;
+import com.techfork.evaluation.search.util.SearchQualityService;
 import com.techfork.global.llm.EmbeddingClient;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
@@ -38,8 +37,7 @@ class SearchQualityEvaluationTest {
     @Autowired
     private EmbeddingClient embeddingClient;
 
-    @Autowired
-    private SearchQualityService searchQualityService;
+    private final SearchQualityService searchQualityService = new SearchQualityService();
 
     @Autowired
     private UserProfileDocumentRepository userProfileDocumentRepository;
@@ -404,7 +402,8 @@ class SearchQualityEvaluationTest {
     private List<GroundTruthItem> loadGroundTruth() throws IOException {
         try {
             ClassPathResource resource = new ClassPathResource("fixtures/evaluation/search-ground-truth.json");
-            return objectMapper.readValue(resource.getInputStream(), new TypeReference<>() {});
+            return objectMapper.readValue(resource.getInputStream(), new TypeReference<>() {
+            });
         } catch (IOException e) {
             log.error("❌ ground-truth.json 로드 실패: src/test/resources 경로를 확인하세요.", e);
             throw e;

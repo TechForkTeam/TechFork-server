@@ -1,4 +1,4 @@
-package com.techfork.domain.search;
+package com.techfork.evaluation.search.setup;
 
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.entity.UserInterestCategory;
