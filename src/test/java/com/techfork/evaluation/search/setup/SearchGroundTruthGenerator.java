@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
  * <p>실행 조건:
  * <ul>
  *   <li>로컬 터널 환경 필요: {@code -Dspring.profiles.active=local-tunnel}</li>
- *   <li>LLM 호출 비용 발생 (약 240문서 × 3쿼리 × ~35결과(union) = 최대 ~25,200 LLM 호출)</li>
+ *   <li>LLM 호출 비용 발생 (약 240문서 × 3쿼리 × ~2배치(20개씩) = 최대 ~1,440 LLM 호출)</li>
  *   <li>llmSummary 레이트리미터 적용 (37 req/min) — 실행 시간 수 시간 소요</li>
  * </ul>
  */
@@ -254,16 +254,15 @@ class SearchGroundTruthGenerator {
                         bm25Results.size(), vectorResults.size(), hybridResults.size(), candidatePool.size());
 
                 Map<String, Integer> idealResultsMap = new LinkedHashMap<>();
-                for (SearchResult result : candidatePool) {
-                    try {
-                        int score = scoreRelevance(query, result);
+                try {
+                    Map<Long, Integer> batchScores = scoreBatch(query, candidatePool);
+                    batchScores.forEach((postId, score) -> {
                         if (score > SCORE_THRESHOLD) {
-                            idealResultsMap.put(String.valueOf(result.getPostId()), score);
+                            idealResultsMap.put(String.valueOf(postId), score);
                         }
-                    } catch (Exception e) {
-                        log.warn("관련도 평가 실패 (query='{}', postId={}): {}",
-                                query, result.getPostId(), e.getMessage());
-                    }
+                    });
+                } catch (Exception e) {
+                    log.warn("배치 관련도 평가 실패 (query='{}'): {}", query, e.getMessage());
                 }
 
                 if (!idealResultsMap.isEmpty()) {
@@ -279,36 +278,83 @@ class SearchGroundTruthGenerator {
         return items;
     }
 
-    private int scoreRelevance(String query, SearchResult result) {
-        String userPrompt = String.format("""
-                다음 검색 쿼리와 문서의 관련도를 평가해주세요.
+    private static final int BATCH_SIZE = 20;
 
-                ## 검색 쿼리
-                %s
+    /**
+     * 후보 문서 목록을 BATCH_SIZE 단위로 나눠 LLM에 일괄 평가 요청.
+     * 호출 수: ceil(candidatePool.size() / BATCH_SIZE)
+     */
+    private Map<Long, Integer> scoreBatch(String query, List<SearchResult> candidatePool) {
+        Map<Long, Integer> scores = new LinkedHashMap<>();
+        List<List<SearchResult>> batches = partition(candidatePool, BATCH_SIZE);
 
-                ## 문서 정보
-                - 제목: %s
-                - 회사: %s
-                - 요약: %s
+        for (List<SearchResult> batch : batches) {
+            StringBuilder docsJson = new StringBuilder();
+            for (SearchResult r : batch) {
+                docsJson.append(String.format(
+                        """
+                        {"postId": %d, "title": "%s", "company": "%s", "summary": "%s"},
+                        """,
+                        r.getPostId(),
+                        escape(r.getTitle()),
+                        escape(r.getCompanyName()),
+                        escape(r.getSummary() != null ? r.getSummary() : "")
+                ));
+            }
 
-                ## 평가 기준
-                3점: 쿼리 의도와 정확히 일치. 이 문서가 가장 먼저 나와야 할 결과.
-                2점: 쿼리와 관련 있음. 상위 결과로 적합.
-                1점: 쿼리와 약간 관련 있음. 주변 참고 자료 수준.
-                0점: 쿼리와 무관.
+            String userPrompt = String.format("""
+                    다음 검색 쿼리에 대해 각 문서의 관련도를 평가해주세요.
 
-                ## 응답 형식
-                반드시 아래 JSON 형식만 출력하세요:
-                {"score": 3, "reason": "간단한 이유"}
-                """,
-                query,
-                result.getTitle(),
-                result.getCompanyName(),
-                result.getSummary() != null ? result.getSummary() : "(요약 없음)"
-        );
+                    ## 검색 쿼리
+                    %s
 
-        String response = llmClient.call(JUDGE_SYSTEM_PROMPT, userPrompt);
-        return parseScoreFromJson(response);
+                    ## 평가 기준
+                    3점: 쿼리 의도와 정확히 일치. 가장 먼저 나와야 할 결과.
+                    2점: 쿼리와 관련 있음. 상위 결과로 적합.
+                    1점: 쿼리와 약간 관련 있음. 주변 참고 자료 수준.
+                    0점: 쿼리와 무관.
+
+                    ## 평가할 문서 목록
+                    [%s]
+
+                    ## 응답 형식
+                    반드시 아래 JSON 배열만 출력하세요. 다른 설명 없이:
+                    [{"postId": 123, "score": 2}, {"postId": 456, "score": 0}, ...]
+                    """,
+                    query,
+                    docsJson
+            );
+
+            try {
+                String response = llmClient.call(JUDGE_SYSTEM_PROMPT, userPrompt);
+                parseBatchScores(response, scores);
+            } catch (Exception e) {
+                log.warn("배치 LLM 호출 실패 (query='{}', batchSize={}): {}", query, batch.size(), e.getMessage());
+            }
+        }
+        return scores;
+    }
+
+    private static <T> List<List<T>> partition(List<T> list, int size) {
+        List<List<T>> partitions = new ArrayList<>();
+        for (int i = 0; i < list.size(); i += size) {
+            partitions.add(list.subList(i, Math.min(i + size, list.size())));
+        }
+        return partitions;
+    }
+
+    private static String escape(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ").replace("\r", "");
+    }
+
+    private void parseBatchScores(String response, Map<Long, Integer> scores) {
+        Matcher m = Pattern.compile("\"postId\"\\s*:\\s*(\\d+).*?\"score\"\\s*:\\s*(\\d)", Pattern.DOTALL).matcher(response);
+        while (m.find()) {
+            long postId = Long.parseLong(m.group(1));
+            int score = Math.max(0, Math.min(3, Integer.parseInt(m.group(2))));
+            scores.put(postId, score);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -330,18 +376,5 @@ class SearchGroundTruthGenerator {
                 .collect(Collectors.toList());
     }
 
-    private int parseScoreFromJson(String response) {
-        Matcher matcher = Pattern.compile("\"score\"\\s*:\\s*(\\d)").matcher(response);
-        if (matcher.find()) {
-            int score = Integer.parseInt(matcher.group(1));
-            return Math.max(0, Math.min(3, score));
-        }
-        // fallback: 응답에서 0~3 범위의 단독 숫자 추출
-        Matcher fallback = Pattern.compile("\\b([0-3])\\b").matcher(response);
-        if (fallback.find()) {
-            return Integer.parseInt(fallback.group(1));
-        }
-        log.warn("점수 파싱 실패: {}", response);
-        return 0;
-    }
+
 }
