@@ -1,4 +1,4 @@
-package com.techfork.domain.search;
+package com.techfork.evaluation.search;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.techfork.domain.activity.repository.ScrabPostRepository;

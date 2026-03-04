@@ -1,10 +1,10 @@
-package com.techfork.domain.recommendation.setup;
+package com.techfork.evaluation.recommendation.setup;
 
 import com.techfork.domain.post.document.PostDocument;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostDocumentRepository;
 import com.techfork.domain.post.repository.PostRepository;
-import com.techfork.domain.recommendation.setup.components.FileExporter;
+import com.techfork.evaluation.recommendation.setup.components.FileExporter;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;

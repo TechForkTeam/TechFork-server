@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.evaluation;
+package com.techfork.evaluation.recommendation;
 
 import com.techfork.global.util.VectorUtil;
 import org.springframework.stereotype.Component;
