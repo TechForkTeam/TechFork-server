@@ -73,7 +73,7 @@ public class SearchServiceImpl implements SearchService {
         log.debug("general search started: with query: '{}'", query);
         long startTime = System.currentTimeMillis();
 
-        List<SearchResult> searchResults = performHybridSearch(query);
+        List<SearchResult> searchResults = performHybridSearch(query, generalSearchProperties.getSearchSize());
 
         searchResults = attachPostMetadata(searchResults, null);
 
@@ -88,11 +88,15 @@ public class SearchServiceImpl implements SearchService {
         log.debug("Personalized search started for userId: {} with query: '{}'", userId, query);
         long startTime = System.currentTimeMillis();
 
-        List<SearchResult> initialResults = performHybridSearch(query);
-        log.debug("Initial hybrid search found {} documents.", initialResults.size());
-
         Optional<UserProfileDocument> userProfileOpt = userProfileDocumentRepository.findByUserId(userId);
         boolean hasProfile = userProfileOpt.isPresent() && userProfileOpt.get().getProfileVector() != null;
+
+        int candidateSize = hasProfile
+                ? generalSearchProperties.getRRF_WINDOW_SIZE()
+                : generalSearchProperties.getSearchSize();
+
+        List<SearchResult> initialResults = performHybridSearch(query, candidateSize);
+        log.debug("Initial hybrid search found {} documents.", initialResults.size());
 
         List<SearchResult> finalResults;
         if (!hasProfile) {
@@ -137,7 +141,7 @@ public class SearchServiceImpl implements SearchService {
         return embeddingClient.embed(query);
     }
 
-    private List<SearchResult> performHybridSearch(String query) {
+    private List<SearchResult> performHybridSearch(String query, int candidateSize) {
         // BM25: 임베딩 없이 즉시 시작
         CompletableFuture<List<Hit<PostDocument>>> lexicalFuture = CompletableFuture.supplyAsync(() -> {
                     long t = System.currentTimeMillis();
@@ -160,7 +164,7 @@ public class SearchServiceImpl implements SearchService {
         return lexicalFuture
                 .thenCombine(semanticFuture, (lexicalHits, semanticHits) -> {
                     log.debug("Merging results: Lexical Hits={}, Semantic Hits={}", lexicalHits.size(), semanticHits.size());
-                    return calculateRRF(lexicalHits, semanticHits);
+                    return calculateRRF(lexicalHits, semanticHits, candidateSize);
                 })
                 .exceptionally(ex -> {
                     log.error("Hybrid search failed for query: '{}'", query, ex);
@@ -270,7 +274,7 @@ public class SearchServiceImpl implements SearchService {
         );
     }
 
-    private List<SearchResult> calculateRRF(List<Hit<PostDocument>> lexicalHits, List<Hit<PostDocument>> semanticHits) {
+    private List<SearchResult> calculateRRF(List<Hit<PostDocument>> lexicalHits, List<Hit<PostDocument>> semanticHits, int limit) {
         // Hit ID 리스트 추출
         List<String> lexicalIds = lexicalHits.stream().map(Hit::id).toList();
         List<String> semanticIds = semanticHits.stream().map(Hit::id).toList();
@@ -302,7 +306,7 @@ public class SearchServiceImpl implements SearchService {
                             .build();
                 })
                 .sorted(Comparator.comparing(SearchResult::getFinalScore).reversed())
-                .limit(generalSearchProperties.getSearchSize())
+                .limit(limit)
                 .collect(Collectors.toList());
     }
 
@@ -356,6 +360,7 @@ public class SearchServiceImpl implements SearchService {
                             .build();
                 })
                 .sorted(Comparator.comparing(SearchResult::getFinalScore).reversed())
+                .limit(generalSearchProperties.getSearchSize())
                 .collect(Collectors.toList());
     }
 
