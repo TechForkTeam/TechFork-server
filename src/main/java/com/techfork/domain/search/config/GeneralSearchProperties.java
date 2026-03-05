@@ -35,14 +35,12 @@ public class GeneralSearchProperties {
     private Integer knnK = 20;
     private Integer knnNumCandidates = 60;
 
-    // --- [RRF 및 가중치 설정] ---
-
-    private double hybridScoreWeight = 50.0;
-    private double personalScoreWeight = 1.0;
+    // --- [RRF 전 후보군 사이즈 크기] ---
     private int RRF_WINDOW_SIZE = 60;
 
     // --- [rerank 가중치 설정] ---
-
+    private double personalScoreWeight = 0.1;
+    private double hybridScoreWeight = 50.0;
     private double rerankDocumentTitleWeight = 0.6;
     private double rerankDocumentSummaryWeight = 0.4;
 }
