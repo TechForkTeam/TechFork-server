@@ -1,6 +1,6 @@
 package com.techfork.evaluation.search;
 
-import com.techfork.domain.search.service.GeneralSearchProperties;
+import com.techfork.domain.search.config.GeneralSearchProperties;
 import com.techfork.evaluation.search.util.GroundTruthItem;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

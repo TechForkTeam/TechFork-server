@@ -8,7 +8,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.techfork.domain.activity.repository.ScrabPostRepository;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.search.dto.SearchResult;
-import com.techfork.domain.search.service.GeneralSearchProperties;
+import com.techfork.domain.search.config.GeneralSearchProperties;
 import com.techfork.domain.search.service.SearchService;
 import com.techfork.domain.search.service.SearchServiceImpl;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;

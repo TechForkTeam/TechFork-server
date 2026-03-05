@@ -1,4 +1,4 @@
-package com.techfork.domain.search.service;
+package com.techfork.domain.search.config;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,7 +20,7 @@ public class GeneralSearchProperties {
     // 최종 검색 결과 개수
     private Integer searchSize = 20;
 
-    // BM25 가중치
+    // BM25/Vector 필드 가중치 (공통 적용)
     private Float exactBoost = 2.0f;
     private Float titleBoost = 3.0f;
     private Float summaryBoost = 1.5f;
@@ -39,6 +39,7 @@ public class GeneralSearchProperties {
     private int RRF_WINDOW_SIZE = 40;
 
     // --- [rerank 가중치 설정] ---
+
     private double rerankDocumentTitleWeight = 0.6;
     private double rerankDocumentSummaryWeight = 0.4;
 }

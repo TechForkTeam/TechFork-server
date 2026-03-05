@@ -10,7 +10,9 @@ import com.techfork.domain.activity.repository.ScrabPostRepository;
 import com.techfork.domain.post.document.PostDocument;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
+import com.techfork.domain.search.config.GeneralSearchProperties;
 import com.techfork.domain.search.dto.SearchResult;
+
 import com.techfork.domain.user.document.UserProfileDocument;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
 import com.techfork.global.llm.EmbeddingClient;
@@ -38,6 +40,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class SearchServiceImpl implements SearchService {
+
+    private static final String POSTS_INDEX = "posts";
+    private static final String TITLE_FIELD_FORMAT = "title^%.1f";
+    private static final String SUMMARY_FIELD_FORMAT = "summary^%.1f";
+    private static final String CONTENT_CHUNKS_PATH = "contentChunks";
+    private static final String CHUNK_TEXT_FIELD = "contentChunks.chunkText";
+    private static final String MINIMUM_SHOULD_MATCH = "1";
 
     private final ElasticsearchClient elasticsearchClient;
     private final EmbeddingClient embeddingClient;
@@ -163,8 +172,8 @@ public class SearchServiceImpl implements SearchService {
     }
 
     private List<Hit<PostDocument>> performLexicalSearch(String query) {
-        String titleField = String.format(SearchConstants.TITLE_FIELD_FORMAT, generalSearchProperties.getTitleBoost());
-        String summaryField = String.format(SearchConstants.SUMMARY_FIELD_FORMAT, generalSearchProperties.getSummaryBoost());
+        String titleField = String.format(TITLE_FIELD_FORMAT, generalSearchProperties.getTitleBoost());
+        String summaryField = String.format(SUMMARY_FIELD_FORMAT, generalSearchProperties.getSummaryBoost());
         boolean useBm25Chunk = generalSearchProperties.getChunkBoost() > 0.0f;
 
         Query lexicalQuery = Query.of(q -> q
@@ -187,14 +196,14 @@ public class SearchServiceImpl implements SearchService {
                                     .boost(generalSearchProperties.getFuzzyBoost())
                             )
                     )
-                    .minimumShouldMatch(SearchConstants.MINIMUM_SHOULD_MATCH);
+                    .minimumShouldMatch(MINIMUM_SHOULD_MATCH);
                     if (useBm25Chunk) {
                         b.should(sh -> sh
                                 .nested(n -> n
-                                        .path(SearchConstants.CONTENT_CHUNKS_PATH)
+                                        .path(CONTENT_CHUNKS_PATH)
                                         .query(nq -> nq
                                                 .match(m -> m
-                                                        .field(SearchConstants.CHUNK_TEXT_FIELD)
+                                                        .field(CHUNK_TEXT_FIELD)
                                                         .query(query)
                                                 )
                                         )
@@ -208,7 +217,7 @@ public class SearchServiceImpl implements SearchService {
 
         try {
             SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
-                            .index(SearchConstants.POSTS_INDEX)
+                            .index(POSTS_INDEX)
                             .size(generalSearchProperties.getRRF_WINDOW_SIZE())
                             .query(lexicalQuery),
                     PostDocument.class
@@ -232,7 +241,7 @@ public class SearchServiceImpl implements SearchService {
 
         try {
             SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
-                            .index(SearchConstants.POSTS_INDEX)
+                            .index(POSTS_INDEX)
                             .size(generalSearchProperties.getRRF_WINDOW_SIZE())
                             .knn(knnSearches),
                     PostDocument.class
