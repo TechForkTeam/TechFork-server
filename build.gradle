@@ -148,3 +148,15 @@ tasks.register('evaluationTest', Test) {
 		exceptionFormat "full"
 	}
 }
+
+tasks.register('evaluationSetup', Test) {
+	useJUnitPlatform {
+		includeTags 'evaluation-setup'
+	}
+
+	testLogging {
+		events "passed", "skipped", "failed"
+		exceptionFormat "full"
+		showStandardStreams = true
+	}
+}
