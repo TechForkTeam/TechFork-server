@@ -73,11 +73,7 @@ public class SearchServiceImpl implements SearchService {
         log.debug("general search started: with query: '{}'", query);
         long startTime = System.currentTimeMillis();
 
-        long embedStart = System.currentTimeMillis();
-        List<Float> queryVector = queryEmbedding(query);
-        log.debug("Embedding done. Time={}ms", System.currentTimeMillis() - embedStart);
-
-        List<SearchResult> searchResults = performHybridSearch(query, queryVector);
+        List<SearchResult> searchResults = performHybridSearch(query);
 
         searchResults = attachPostMetadata(searchResults, null);
 
@@ -92,9 +88,7 @@ public class SearchServiceImpl implements SearchService {
         log.debug("Personalized search started for userId: {} with query: '{}'", userId, query);
         long startTime = System.currentTimeMillis();
 
-        List<Float> queryVector = queryEmbedding(query);
-
-        List<SearchResult> initialResults = performHybridSearch(query, queryVector);
+        List<SearchResult> initialResults = performHybridSearch(query);
         log.debug("Initial hybrid search found {} documents.", initialResults.size());
 
         Optional<UserProfileDocument> userProfileOpt = userProfileDocumentRepository.findByUserId(userId);
@@ -143,7 +137,8 @@ public class SearchServiceImpl implements SearchService {
         return embeddingClient.embed(query);
     }
 
-    private List<SearchResult> performHybridSearch(String query, List<Float> queryVector) {
+    private List<SearchResult> performHybridSearch(String query) {
+        // BM25: 임베딩 없이 즉시 시작
         CompletableFuture<List<Hit<PostDocument>>> lexicalFuture = CompletableFuture.supplyAsync(() -> {
                     long t = System.currentTimeMillis();
                     var result = performLexicalSearch(query);
@@ -151,14 +146,18 @@ public class SearchServiceImpl implements SearchService {
                     return result;
                 }, searchAsyncExecutor);
 
+        // 임베딩 → KNN: BM25와 동시에 시작
         CompletableFuture<List<Hit<PostDocument>>> semanticFuture = CompletableFuture.supplyAsync(() -> {
                     long t = System.currentTimeMillis();
+                    List<Float> queryVector = queryEmbedding(query);
+                    log.debug("Embedding done. Time={}ms", System.currentTimeMillis() - t);
+                    long t2 = System.currentTimeMillis();
                     var result = performSemanticSearch(queryVector);
-                    log.debug("Semantic search done. Hits={}, Time={}ms", result.size(), System.currentTimeMillis() - t);
+                    log.debug("Semantic search done. Hits={}, Time={}ms", result.size(), System.currentTimeMillis() - t2);
                     return result;
                 }, searchAsyncExecutor);
 
-        CompletableFuture<List<SearchResult>> hybridResultFuture = lexicalFuture
+        return lexicalFuture
                 .thenCombine(semanticFuture, (lexicalHits, semanticHits) -> {
                     log.debug("Merging results: Lexical Hits={}, Semantic Hits={}", lexicalHits.size(), semanticHits.size());
                     return calculateRRF(lexicalHits, semanticHits);
@@ -166,9 +165,8 @@ public class SearchServiceImpl implements SearchService {
                 .exceptionally(ex -> {
                     log.error("Hybrid search failed for query: '{}'", query, ex);
                     throw new RuntimeException("통합 검색 중 오류 발생", ex);
-                });
-
-        return hybridResultFuture.join();
+                })
+                .join();
     }
 
     private List<Hit<PostDocument>> performLexicalSearch(String query) {
