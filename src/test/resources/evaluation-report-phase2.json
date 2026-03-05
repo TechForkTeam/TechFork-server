@@ -1,0 +1,70 @@
+{
+  "evaluatedAt" : "2026-03-05T13:01:55.146757483",
+  "groundTruthFile" : "generated-search-ground-truth.json",
+  "totalQueries" : 531,
+  "phaseName" : "Phase 2: 필드 가중치 세부 조정",
+  "scenarios" : [ {
+    "scenarioName" : "1. Phase1 Summary 중심 (Baseline, 0.20/0.60/0.20)",
+    "averageNDCG4" : 0.7224,
+    "averageNDCG8" : 0.7251,
+    "averageNDCG20" : 0.7624,
+    "averageRecall4" : 0.51,
+    "averageRecall8" : 0.6308,
+    "averageRecall20" : 0.7959,
+    "avgLatencyMs" : 0.0
+  }, {
+    "scenarioName" : "2. Summary 강화 (0.15/0.70/0.15)",
+    "averageNDCG4" : 0.7262,
+    "averageNDCG8" : 0.7278,
+    "averageNDCG20" : 0.7638,
+    "averageRecall4" : 0.5115,
+    "averageRecall8" : 0.6322,
+    "averageRecall20" : 0.7945,
+    "avgLatencyMs" : 0.0
+  }, {
+    "scenarioName" : "3. Summary 최대 (0.10/0.80/0.10)",
+    "averageNDCG4" : 0.7247,
+    "averageNDCG8" : 0.7237,
+    "averageNDCG20" : 0.7624,
+    "averageRecall4" : 0.509,
+    "averageRecall8" : 0.6256,
+    "averageRecall20" : 0.7932,
+    "avgLatencyMs" : 0.0
+  }, {
+    "scenarioName" : "4. Chunk 비중 확대 (0.10/0.60/0.30)",
+    "averageNDCG4" : 0.7189,
+    "averageNDCG8" : 0.7208,
+    "averageNDCG20" : 0.7551,
+    "averageRecall4" : 0.5076,
+    "averageRecall8" : 0.6277,
+    "averageRecall20" : 0.7866,
+    "avgLatencyMs" : 0.0
+  }, {
+    "scenarioName" : "5. Title 비중 확대 (0.30/0.60/0.10)",
+    "averageNDCG4" : 0.7174,
+    "averageNDCG8" : 0.7209,
+    "averageNDCG20" : 0.764,
+    "averageRecall4" : 0.504,
+    "averageRecall8" : 0.6251,
+    "averageRecall20" : 0.803,
+    "avgLatencyMs" : 0.0
+  }, {
+    "scenarioName" : "6. Summary+Title 균형 (0.30/0.55/0.15)",
+    "averageNDCG4" : 0.7156,
+    "averageNDCG8" : 0.721,
+    "averageNDCG20" : 0.7627,
+    "averageRecall4" : 0.5028,
+    "averageRecall8" : 0.627,
+    "averageRecall20" : 0.8,
+    "avgLatencyMs" : 0.0
+  }, {
+    "scenarioName" : "7. Summary+Title 균형 강화 (0.35/0.55/0.10)",
+    "averageNDCG4" : 0.7149,
+    "averageNDCG8" : 0.7197,
+    "averageNDCG20" : 0.7626,
+    "averageRecall4" : 0.5019,
+    "averageRecall8" : 0.6247,
+    "averageRecall20" : 0.8007,
+    "avgLatencyMs" : 0.0
+  } ]
+}

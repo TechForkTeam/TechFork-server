@@ -10,7 +10,9 @@ import com.techfork.domain.activity.repository.ScrabPostRepository;
 import com.techfork.domain.post.document.PostDocument;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
+import com.techfork.domain.search.config.GeneralSearchProperties;
 import com.techfork.domain.search.dto.SearchResult;
+
 import com.techfork.domain.user.document.UserProfileDocument;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
 import com.techfork.global.llm.EmbeddingClient;
@@ -39,6 +41,13 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class SearchServiceImpl implements SearchService {
 
+    private static final String POSTS_INDEX = "posts";
+    private static final String TITLE_FIELD_FORMAT = "title^%.1f";
+    private static final String SUMMARY_FIELD_FORMAT = "summary^%.1f";
+    private static final String CONTENT_CHUNKS_PATH = "contentChunks";
+    private static final String CHUNK_TEXT_FIELD = "contentChunks.chunkText";
+    private static final String MINIMUM_SHOULD_MATCH = "1";
+
     private final ElasticsearchClient elasticsearchClient;
     private final EmbeddingClient embeddingClient;
     private final GeneralSearchProperties generalSearchProperties;
@@ -64,11 +73,7 @@ public class SearchServiceImpl implements SearchService {
         log.debug("general search started: with query: '{}'", query);
         long startTime = System.currentTimeMillis();
 
-        long embedStart = System.currentTimeMillis();
-        List<Float> queryVector = queryEmbedding(query);
-        log.debug("Embedding done. Time={}ms", System.currentTimeMillis() - embedStart);
-
-        List<SearchResult> searchResults = performHybridSearch(query, queryVector);
+        List<SearchResult> searchResults = performHybridSearch(query, generalSearchProperties.getSearchSize());
 
         searchResults = attachPostMetadata(searchResults, null);
 
@@ -83,13 +88,15 @@ public class SearchServiceImpl implements SearchService {
         log.debug("Personalized search started for userId: {} with query: '{}'", userId, query);
         long startTime = System.currentTimeMillis();
 
-        List<Float> queryVector = queryEmbedding(query);
-
-        List<SearchResult> initialResults = performHybridSearch(query, queryVector);
-        log.debug("Initial hybrid search found {} documents.", initialResults.size());
-
         Optional<UserProfileDocument> userProfileOpt = userProfileDocumentRepository.findByUserId(userId);
         boolean hasProfile = userProfileOpt.isPresent() && userProfileOpt.get().getProfileVector() != null;
+
+        int candidateSize = hasProfile
+                ? generalSearchProperties.getRRF_WINDOW_SIZE()
+                : generalSearchProperties.getSearchSize();
+
+        List<SearchResult> initialResults = performHybridSearch(query, candidateSize);
+        log.debug("Initial hybrid search found {} documents.", initialResults.size());
 
         List<SearchResult> finalResults;
         if (!hasProfile) {
@@ -134,7 +141,8 @@ public class SearchServiceImpl implements SearchService {
         return embeddingClient.embed(query);
     }
 
-    private List<SearchResult> performHybridSearch(String query, List<Float> queryVector) {
+    private List<SearchResult> performHybridSearch(String query, int candidateSize) {
+        // BM25: 임베딩 없이 즉시 시작
         CompletableFuture<List<Hit<PostDocument>>> lexicalFuture = CompletableFuture.supplyAsync(() -> {
                     long t = System.currentTimeMillis();
                     var result = performLexicalSearch(query);
@@ -142,69 +150,85 @@ public class SearchServiceImpl implements SearchService {
                     return result;
                 }, searchAsyncExecutor);
 
+        // 임베딩 → KNN: BM25와 동시에 시작
         CompletableFuture<List<Hit<PostDocument>>> semanticFuture = CompletableFuture.supplyAsync(() -> {
                     long t = System.currentTimeMillis();
+                    List<Float> queryVector = queryEmbedding(query);
+                    log.debug("Embedding done. Time={}ms", System.currentTimeMillis() - t);
+                    long t2 = System.currentTimeMillis();
                     var result = performSemanticSearch(queryVector);
-                    log.debug("Semantic search done. Hits={}, Time={}ms", result.size(), System.currentTimeMillis() - t);
+                    log.debug("Semantic search done. Hits={}, Time={}ms", result.size(), System.currentTimeMillis() - t2);
                     return result;
                 }, searchAsyncExecutor);
 
-        CompletableFuture<List<SearchResult>> hybridResultFuture = lexicalFuture
+        return lexicalFuture
                 .thenCombine(semanticFuture, (lexicalHits, semanticHits) -> {
                     log.debug("Merging results: Lexical Hits={}, Semantic Hits={}", lexicalHits.size(), semanticHits.size());
-                    return calculateRRF(lexicalHits, semanticHits);
+                    return calculateRRF(lexicalHits, semanticHits, candidateSize);
                 })
                 .exceptionally(ex -> {
                     log.error("Hybrid search failed for query: '{}'", query, ex);
                     throw new RuntimeException("통합 검색 중 오류 발생", ex);
-                });
-
-        return hybridResultFuture.join();
+                })
+                .join();
     }
 
     private List<Hit<PostDocument>> performLexicalSearch(String query) {
-        String titleField = String.format(SearchConstants.TITLE_FIELD_FORMAT, generalSearchProperties.getTitleBoost());
-        String summaryField = String.format(SearchConstants.SUMMARY_FIELD_FORMAT, generalSearchProperties.getSummaryBoost());
+        String titleField = String.format(TITLE_FIELD_FORMAT, generalSearchProperties.getTitleBoost());
+        String summaryField = String.format(SUMMARY_FIELD_FORMAT, generalSearchProperties.getSummaryBoost());
+        boolean useBm25Chunk = generalSearchProperties.getBm25ChunkBoost() > 0.0f;
+
+        Query titleSummaryQuery = Query.of(q -> q
+                .disMax(dm -> dm
+                        .queries(
+                                Query.of(inner -> inner
+                                        .multiMatch(m -> m
+                                                .query(query)
+                                                .type(TextQueryType.MostFields)
+                                                .fields(titleField, summaryField)
+                                                .boost(generalSearchProperties.getExactBoost())
+                                        )
+                                ),
+                                Query.of(inner -> inner
+                                        .multiMatch(m -> m
+                                                .query(query)
+                                                .fields(titleField, summaryField)
+                                                .type(TextQueryType.MostFields)
+                                                .fuzziness("AUTO")
+                                                .prefixLength(1)
+                                                .boost(generalSearchProperties.getFuzzyBoost())
+                                        )
+                                )
+                        )
+                        .tieBreaker((double) generalSearchProperties.getTieBreaker())
+                )
+        );
 
         Query lexicalQuery = Query.of(q -> q
-                .bool(b -> b
-                        .should(sh -> sh
-                                .multiMatch(m -> m
-                                        .query(query)
-                                        .type(TextQueryType.MostFields)
-                                        .fields(titleField, summaryField)
-                                        .boost(generalSearchProperties.getExactBoost())
-                                )
-                        )
-                        .should(sh -> sh
-                                .multiMatch(m -> m
-                                        .query(query)
-                                        .fields(titleField, summaryField)
-                                        .type(TextQueryType.MostFields)
-                                        .fuzziness("AUTO")
-                                        .prefixLength(1)
-                                        .boost(generalSearchProperties.getFuzzyBoost())
-                                )
-                        )
-                        .should(sh -> sh
+                .bool(b -> {
+                    b.should(titleSummaryQuery)
+                    .minimumShouldMatch(MINIMUM_SHOULD_MATCH);
+                    if (useBm25Chunk) {
+                        b.should(sh -> sh
                                 .nested(n -> n
-                                        .path(SearchConstants.CONTENT_CHUNKS_PATH)
+                                        .path(CONTENT_CHUNKS_PATH)
                                         .query(nq -> nq
                                                 .match(m -> m
-                                                        .field(SearchConstants.CHUNK_TEXT_FIELD)
+                                                        .field(CHUNK_TEXT_FIELD)
                                                         .query(query)
                                                 )
                                         )
-                                        .boost(generalSearchProperties.getChunkBoost())
+                                        .boost(generalSearchProperties.getBm25ChunkBoost())
                                 )
-                        )
-                        .minimumShouldMatch(SearchConstants.MINIMUM_SHOULD_MATCH)
-                )
+                        );
+                    }
+                    return b;
+                })
         );
 
         try {
             SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
-                            .index(SearchConstants.POSTS_INDEX)
+                            .index(POSTS_INDEX)
                             .size(generalSearchProperties.getRRF_WINDOW_SIZE())
                             .query(lexicalQuery),
                     PostDocument.class
@@ -220,13 +244,15 @@ public class SearchServiceImpl implements SearchService {
         int numCandidates = generalSearchProperties.getKnnNumCandidates();
 
         List<KnnSearch> knnSearches = new ArrayList<>();
-        knnSearches.add(createKnnSearch("titleEmbedding", queryVector, k, numCandidates, generalSearchProperties.getVectorTitleBoost()));
-        knnSearches.add(createKnnSearch("summaryEmbedding", queryVector, k, numCandidates, generalSearchProperties.getVectorSummaryBoost()));
-        knnSearches.add(createKnnSearch("contentChunks.embedding", queryVector, k, numCandidates, generalSearchProperties.getVectorContentChunkBoost()));
+        knnSearches.add(createKnnSearch("titleEmbedding", queryVector, k, numCandidates, generalSearchProperties.getTitleBoost()));
+        knnSearches.add(createKnnSearch("summaryEmbedding", queryVector, k, numCandidates, generalSearchProperties.getSummaryBoost()));
+        if (generalSearchProperties.getVectorChunkBoost() > 0.0f) {
+            knnSearches.add(createKnnSearch("contentChunks.embedding", queryVector, k, numCandidates, generalSearchProperties.getVectorChunkBoost()));
+        }
 
         try {
             SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
-                            .index(SearchConstants.POSTS_INDEX)
+                            .index(POSTS_INDEX)
                             .size(generalSearchProperties.getRRF_WINDOW_SIZE())
                             .knn(knnSearches),
                     PostDocument.class
@@ -248,7 +274,7 @@ public class SearchServiceImpl implements SearchService {
         );
     }
 
-    private List<SearchResult> calculateRRF(List<Hit<PostDocument>> lexicalHits, List<Hit<PostDocument>> semanticHits) {
+    private List<SearchResult> calculateRRF(List<Hit<PostDocument>> lexicalHits, List<Hit<PostDocument>> semanticHits, int limit) {
         // Hit ID 리스트 추출
         List<String> lexicalIds = lexicalHits.stream().map(Hit::id).toList();
         List<String> semanticIds = semanticHits.stream().map(Hit::id).toList();
@@ -280,7 +306,7 @@ public class SearchServiceImpl implements SearchService {
                             .build();
                 })
                 .sorted(Comparator.comparing(SearchResult::getFinalScore).reversed())
-                .limit(generalSearchProperties.getSearchSize())
+                .limit(limit)
                 .collect(Collectors.toList());
     }
 
@@ -334,6 +360,7 @@ public class SearchServiceImpl implements SearchService {
                             .build();
                 })
                 .sorted(Comparator.comparing(SearchResult::getFinalScore).reversed())
+                .limit(generalSearchProperties.getSearchSize())
                 .collect(Collectors.toList());
     }
 

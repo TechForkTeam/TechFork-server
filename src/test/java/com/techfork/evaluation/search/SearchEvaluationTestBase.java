@@ -8,7 +8,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.techfork.domain.activity.repository.ScrabPostRepository;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.search.dto.SearchResult;
-import com.techfork.domain.search.service.GeneralSearchProperties;
+import com.techfork.domain.search.config.GeneralSearchProperties;
 import com.techfork.domain.search.service.SearchService;
 import com.techfork.domain.search.service.SearchServiceImpl;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
@@ -184,10 +184,6 @@ public abstract class SearchEvaluationTestBase {
         log.info("✅ 리포트 저장 완료: {}", outputFile.getAbsolutePath());
     }
 
-    /**
-     * Lexical/Vector 필드 가중치를 동일하게 설정한다.
-     * RRF 구조상 두 경로의 필드 비율을 다르게 설정해도 의미 없음.
-     */
     protected GeneralSearchProperties createProperties(
             float titleBoost, float summaryBoost, float chunkBoost,
             int k, int candidates) {
@@ -197,17 +193,42 @@ public abstract class SearchEvaluationTestBase {
 
         props.setTitleBoost(titleBoost);
         props.setSummaryBoost(summaryBoost);
-        props.setChunkBoost(chunkBoost);
-
-        props.setVectorTitleBoost(titleBoost);
-        props.setVectorSummaryBoost(summaryBoost);
-        props.setVectorContentChunkBoost(chunkBoost);
+        props.setBm25ChunkBoost(chunkBoost);
+        props.setVectorChunkBoost(chunkBoost);
 
         props.setKnnK(k);
         props.setKnnNumCandidates(candidates);
 
         props.setPersonalScoreWeight(1.0);
-        props.setRRF_K(60);
+        props.setRRF_WINDOW_SIZE(60);
+
+        return props;
+    }
+
+    /**
+     * Phase 5용 오버로드: dis_max 구조 파라미터 (exactBoost, tieBreaker, bm25ChunkBoost, vectorChunkBoost) 지원
+     */
+    protected GeneralSearchProperties createProperties(
+            float titleBoost, float summaryBoost, float bm25ChunkBoost, float vectorChunkBoost,
+            float exactBoost, float fuzzyBoost, float tieBreaker,
+            int k, int candidates) {
+
+        GeneralSearchProperties props = new GeneralSearchProperties();
+        props.setSearchSize(20);
+
+        props.setTitleBoost(titleBoost);
+        props.setSummaryBoost(summaryBoost);
+        props.setBm25ChunkBoost(bm25ChunkBoost);
+        props.setVectorChunkBoost(vectorChunkBoost);
+
+        props.setExactBoost(exactBoost);
+        props.setFuzzyBoost(fuzzyBoost);
+        props.setTieBreaker(tieBreaker);
+
+        props.setKnnK(k);
+        props.setKnnNumCandidates(candidates);
+
+        props.setPersonalScoreWeight(1.0);
         props.setRRF_WINDOW_SIZE(60);
 
         return props;
@@ -216,17 +237,19 @@ public abstract class SearchEvaluationTestBase {
     private void printResult(String name, GeneralSearchProperties p, ScenarioMetrics m, boolean showLatency) {
         System.out.println("\n#######################################################################################");
         System.out.println("▶ " + name);
-        System.out.printf("   [Field ] Title:%.2f | Summary:%.2f | Chunk:%.2f%n",
-                p.getTitleBoost(), p.getSummaryBoost(), p.getChunkBoost());
+        System.out.printf("   [Field ] Title:%.2f | Summary:%.2f | BM25Chunk:%.2f | VecChunk:%.2f%n",
+                p.getTitleBoost(), p.getSummaryBoost(), p.getBm25ChunkBoost(), p.getVectorChunkBoost());
+        System.out.printf("   [BM25 ] exact:%.2f | fuzzy:%.2f | tieBreaker:%.2f%n",
+                p.getExactBoost(), p.getFuzzyBoost(), p.getTieBreaker());
         System.out.printf("   [KNN  ] k=%d | candidates=%d%n",
                 p.getKnnK(), p.getKnnNumCandidates());
         System.out.println("---------------------------------------------------------------------------------------");
-        System.out.printf("   📊 nDCG@4  : %.4f   nDCG@8  : %.4f ★   nDCG@20 : %.4f%n",
+        System.out.printf("   nDCG@4  : %.4f   nDCG@8  : %.4f    nDCG@20 : %.4f%n",
                 m.ndcg4(), m.ndcg8(), m.ndcg20());
-        System.out.printf("   📊 Recall@4: %.4f   Recall@8: %.4f ★   Recall@20: %.4f%n",
+        System.out.printf("   Recall@4: %.4f   Recall@8: %.4f    Recall@20: %.4f%n",
                 m.recall4(), m.recall8(), m.recall20());
         if (showLatency) {
-            System.out.printf("   ⏱️ Latency : %.2f ms%n", m.avgLatencyMs());
+            System.out.printf("   Latency : %.2f ms%n", m.avgLatencyMs());
         }
         System.out.println("#######################################################################################");
     }

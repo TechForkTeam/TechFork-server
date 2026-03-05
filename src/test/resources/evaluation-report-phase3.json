@@ -1,0 +1,34 @@
+{
+  "evaluatedAt" : "2026-03-05T13:36:14.748388887",
+  "groundTruthFile" : "generated-search-ground-truth.json",
+  "totalQueries" : 531,
+  "phaseName" : "Phase 3: Chunk 구조 최적화",
+  "scenarios" : [ {
+    "scenarioName" : "1. Chunk 모두 포함 (Baseline)",
+    "averageNDCG4" : 0.7263,
+    "averageNDCG8" : 0.7279,
+    "averageNDCG20" : 0.764,
+    "averageRecall4" : 0.5115,
+    "averageRecall8" : 0.6323,
+    "averageRecall20" : 0.7947,
+    "avgLatencyMs" : 593.02
+  }, {
+    "scenarioName" : "2. BM25 Chunk 제외",
+    "averageNDCG4" : 0.7265,
+    "averageNDCG8" : 0.7256,
+    "averageNDCG20" : 0.7647,
+    "averageRecall4" : 0.5117,
+    "averageRecall8" : 0.6265,
+    "averageRecall20" : 0.7961,
+    "avgLatencyMs" : 572.25
+  }, {
+    "scenarioName" : "3. Vector Chunk 제외",
+    "averageNDCG4" : 0.7257,
+    "averageNDCG8" : 0.7253,
+    "averageNDCG20" : 0.7665,
+    "averageRecall4" : 0.5115,
+    "averageRecall8" : 0.627,
+    "averageRecall20" : 0.8001,
+    "avgLatencyMs" : 587.31
+  } ]
+}

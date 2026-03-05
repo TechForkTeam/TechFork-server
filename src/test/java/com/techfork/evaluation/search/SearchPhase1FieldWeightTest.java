@@ -1,6 +1,6 @@
 package com.techfork.evaluation.search;
 
-import com.techfork.domain.search.service.GeneralSearchProperties;
+import com.techfork.domain.search.config.GeneralSearchProperties;
 import com.techfork.evaluation.search.util.GroundTruthItem;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,7 +25,7 @@ class SearchPhase1FieldWeightTest extends SearchEvaluationTestBase {
     void evaluate() throws IOException {
         List<GroundTruthItem> groundTruths = loadGroundTruth();
         Map<String, ScenarioMetrics> results = runEvaluation(
-                "Phase 1: 필드 가중치 최적화", createScenarios(), groundTruths, false);
+                "Phase 1: 필드 가중치 최적화", createScenarios(), groundTruths, true);
         saveReport("evaluation-report-phase1.json", "Phase 1: 필드 가중치 최적화",
                 results, groundTruths.size());
     }
@@ -50,6 +50,9 @@ class SearchPhase1FieldWeightTest extends SearchEvaluationTestBase {
 
         scenarios.put("6. 균등 가중치",
                 createProperties(0.33f, 0.33f, 0.34f, 60, 200));
+
+        scenarios.put("7. Title+Summary만 (Chunk 제외)",
+                createProperties(0.5f, 0.5f, 0.0f, 60, 200));
 
         return scenarios;
     }

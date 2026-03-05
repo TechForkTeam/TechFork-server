@@ -1,4 +1,4 @@
-package com.techfork.domain.search.service;
+package com.techfork.domain.search.config;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,29 +20,27 @@ public class GeneralSearchProperties {
     // 최종 검색 결과 개수
     private Integer searchSize = 20;
 
-    // BM25 가중치
+    // BM25/Vector 필드 가중치 - Phase 2 최적값
+    private Float titleBoost = 0.15f;
+    private Float summaryBoost = 0.70f;
+    private Float bm25ChunkBoost = 0.15f;
+    private Float vectorChunkBoost = 0.15f;
+
+    // --- [BM25 설정]
     private Float exactBoost = 2.0f;
-    private Float titleBoost = 3.0f;
-    private Float summaryBoost = 1.5f;
     private Float fuzzyBoost = 1.0f;
-    private Float chunkBoost = 1.0f;
+    private Float tieBreaker = 0.3f;
 
-    // --- [Vector & KNN 설정] ---
+    // --- [Vector & KNN 설정] --- Phase 4 최적값
+    private Integer knnK = 20;
+    private Integer knnNumCandidates = 60;
 
-    private Integer knnK = 40;
-    private Integer knnNumCandidates = 50;
-    private Float vectorTitleBoost = 3.0f;
-    private Float vectorSummaryBoost = 1.5f;
-    private Float vectorContentChunkBoost = 0.8f;
-
-    // --- [RRF 및 가중치 설정] ---
-
-    private double hybridScoreWeight = 50.0;
-    private double personalScoreWeight = 1.0;
-    private int RRF_K = 40;
-    private int RRF_WINDOW_SIZE = 40;
+    // --- [RRF 전 후보군 사이즈 크기] ---
+    private int RRF_WINDOW_SIZE = 60;
 
     // --- [rerank 가중치 설정] ---
+    private double personalScoreWeight = 0.1;
+    private double hybridScoreWeight = 50.0;
     private double rerankDocumentTitleWeight = 0.6;
     private double rerankDocumentSummaryWeight = 0.4;
 }

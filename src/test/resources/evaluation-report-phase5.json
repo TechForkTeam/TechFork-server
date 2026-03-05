@@ -1,0 +1,34 @@
+{
+  "evaluatedAt" : "2026-03-05T16:18:18.321173701",
+  "groundTruthFile" : "generated-search-ground-truth.json",
+  "totalQueries" : 531,
+  "phaseName" : "Phase 5: 쿼리 구조 개선 (bool → dis_max)",
+  "scenarios" : [ {
+    "scenarioName" : "1. 기존 챔피언 재평가 (dis_max, summary=0.70, bm25Chunk=0.15, exact=2.0, tie=0.3)",
+    "averageNDCG4" : 0.7367,
+    "averageNDCG8" : 0.7331,
+    "averageNDCG20" : 0.7755,
+    "averageRecall4" : 0.5167,
+    "averageRecall8" : 0.6318,
+    "averageRecall20" : 0.8094,
+    "avgLatencyMs" : 566.9
+  }, {
+    "scenarioName" : "2. dis_max + chunk 너프 (dis_max, summary=0.75, bm25Chunk=0.10, exact=2.0, tie=0.3)",
+    "averageNDCG4" : 0.7342,
+    "averageNDCG8" : 0.732,
+    "averageNDCG20" : 0.7741,
+    "averageRecall4" : 0.5146,
+    "averageRecall8" : 0.6324,
+    "averageRecall20" : 0.8087,
+    "avgLatencyMs" : 550.54
+  }, {
+    "scenarioName" : "3. dis_max + exact 맹신형 (dis_max, summary=0.75, bm25Chunk=0.10, exact=3.0, tie=0.3)",
+    "averageNDCG4" : 0.7283,
+    "averageNDCG8" : 0.7257,
+    "averageNDCG20" : 0.7702,
+    "averageRecall4" : 0.5103,
+    "averageRecall8" : 0.6275,
+    "averageRecall20" : 0.8076,
+    "avgLatencyMs" : 551.64
+  } ]
+}
