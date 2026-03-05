@@ -224,10 +224,10 @@ public class SearchServiceImpl implements SearchService {
         int numCandidates = generalSearchProperties.getKnnNumCandidates();
 
         List<KnnSearch> knnSearches = new ArrayList<>();
-        knnSearches.add(createKnnSearch("titleEmbedding", queryVector, k, numCandidates, generalSearchProperties.getVectorTitleBoost()));
-        knnSearches.add(createKnnSearch("summaryEmbedding", queryVector, k, numCandidates, generalSearchProperties.getVectorSummaryBoost()));
-        if (generalSearchProperties.getVectorContentChunkBoost() > 0.0f) {
-            knnSearches.add(createKnnSearch("contentChunks.embedding", queryVector, k, numCandidates, generalSearchProperties.getVectorContentChunkBoost()));
+        knnSearches.add(createKnnSearch("titleEmbedding", queryVector, k, numCandidates, generalSearchProperties.getTitleBoost()));
+        knnSearches.add(createKnnSearch("summaryEmbedding", queryVector, k, numCandidates, generalSearchProperties.getSummaryBoost()));
+        if (generalSearchProperties.getChunkBoost() > 0.0f) {
+            knnSearches.add(createKnnSearch("contentChunks.embedding", queryVector, k, numCandidates, generalSearchProperties.getChunkBoost()));
         }
 
         try {

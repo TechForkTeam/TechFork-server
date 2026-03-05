@@ -31,15 +31,11 @@ public class GeneralSearchProperties {
 
     private Integer knnK = 40;
     private Integer knnNumCandidates = 50;
-    private Float vectorTitleBoost = 3.0f;
-    private Float vectorSummaryBoost = 1.5f;
-    private Float vectorContentChunkBoost = 0.8f;
 
     // --- [RRF 및 가중치 설정] ---
 
     private double hybridScoreWeight = 50.0;
     private double personalScoreWeight = 1.0;
-    private int RRF_K = 40;
     private int RRF_WINDOW_SIZE = 40;
 
     // --- [rerank 가중치 설정] ---

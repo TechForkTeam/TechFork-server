@@ -184,10 +184,6 @@ public abstract class SearchEvaluationTestBase {
         log.info("✅ 리포트 저장 완료: {}", outputFile.getAbsolutePath());
     }
 
-    /**
-     * Lexical/Vector 필드 가중치를 동일하게 설정한다.
-     * RRF 구조상 두 경로의 필드 비율을 다르게 설정해도 의미 없음.
-     */
     protected GeneralSearchProperties createProperties(
             float titleBoost, float summaryBoost, float chunkBoost,
             int k, int candidates) {
@@ -199,45 +195,10 @@ public abstract class SearchEvaluationTestBase {
         props.setSummaryBoost(summaryBoost);
         props.setChunkBoost(chunkBoost);
 
-        props.setVectorTitleBoost(titleBoost);
-        props.setVectorSummaryBoost(summaryBoost);
-        props.setVectorContentChunkBoost(chunkBoost);
-
         props.setKnnK(k);
         props.setKnnNumCandidates(candidates);
 
         props.setPersonalScoreWeight(1.0);
-        props.setRRF_K(60);
-        props.setRRF_WINDOW_SIZE(60);
-
-        return props;
-    }
-
-    /**
-     * BM25 chunk boost와 Vector chunk boost를 독립적으로 설정한다.
-     * Phase 3 BM25 구조 실험용.
-     */
-    protected GeneralSearchProperties createProperties(
-            float titleBoost, float summaryBoost,
-            float bm25ChunkBoost, float vectorChunkBoost,
-            int k, int candidates) {
-
-        GeneralSearchProperties props = new GeneralSearchProperties();
-        props.setSearchSize(20);
-
-        props.setTitleBoost(titleBoost);
-        props.setSummaryBoost(summaryBoost);
-        props.setChunkBoost(bm25ChunkBoost);
-
-        props.setVectorTitleBoost(titleBoost);
-        props.setVectorSummaryBoost(summaryBoost);
-        props.setVectorContentChunkBoost(vectorChunkBoost);
-
-        props.setKnnK(k);
-        props.setKnnNumCandidates(candidates);
-
-        props.setPersonalScoreWeight(1.0);
-        props.setRRF_K(60);
         props.setRRF_WINDOW_SIZE(60);
 
         return props;
