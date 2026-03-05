@@ -1,0 +1,70 @@
+{
+  "evaluatedAt" : "2026-03-05T13:14:26.5591568",
+  "groundTruthFile" : "generated-search-ground-truth.json",
+  "totalQueries" : 531,
+  "phaseName" : "Phase 1: 필드 가중치 최적화",
+  "scenarios" : [ {
+    "scenarioName" : "1. Title 중심",
+    "averageNDCG4" : 0.6778,
+    "averageNDCG8" : 0.6735,
+    "averageNDCG20" : 0.7278,
+    "averageRecall4" : 0.4728,
+    "averageRecall8" : 0.5756,
+    "averageRecall20" : 0.7823,
+    "avgLatencyMs" : 1165.02
+  }, {
+    "scenarioName" : "2. Summary 중심",
+    "averageNDCG4" : 0.7226,
+    "averageNDCG8" : 0.7251,
+    "averageNDCG20" : 0.7635,
+    "averageRecall4" : 0.5106,
+    "averageRecall8" : 0.6305,
+    "averageRecall20" : 0.7979,
+    "avgLatencyMs" : 1125.63
+  }, {
+    "scenarioName" : "3. Chunk 중심 (본문)",
+    "averageNDCG4" : 0.7005,
+    "averageNDCG8" : 0.6983,
+    "averageNDCG20" : 0.7332,
+    "averageRecall4" : 0.4858,
+    "averageRecall8" : 0.596,
+    "averageRecall20" : 0.7566,
+    "avgLatencyMs" : 1276.13
+  }, {
+    "scenarioName" : "4. Title+Summary 중심",
+    "averageNDCG4" : 0.7126,
+    "averageNDCG8" : 0.7118,
+    "averageNDCG20" : 0.7666,
+    "averageRecall4" : 0.5003,
+    "averageRecall8" : 0.6118,
+    "averageRecall20" : 0.8168,
+    "avgLatencyMs" : 1122.25
+  }, {
+    "scenarioName" : "5. Summary+Chunk 중심",
+    "averageNDCG4" : 0.7191,
+    "averageNDCG8" : 0.7172,
+    "averageNDCG20" : 0.7556,
+    "averageRecall4" : 0.5088,
+    "averageRecall8" : 0.6207,
+    "averageRecall20" : 0.7853,
+    "avgLatencyMs" : 1196.42
+  }, {
+    "scenarioName" : "6. 균등 가중치",
+    "averageNDCG4" : 0.7146,
+    "averageNDCG8" : 0.7144,
+    "averageNDCG20" : 0.7591,
+    "averageRecall4" : 0.5022,
+    "averageRecall8" : 0.6169,
+    "averageRecall20" : 0.7954,
+    "avgLatencyMs" : 1178.08
+  }, {
+    "scenarioName" : "7. Title+Summary만 (Chunk 제외)",
+    "averageNDCG4" : 0.7103,
+    "averageNDCG8" : 0.71,
+    "averageNDCG20" : 0.7674,
+    "averageRecall4" : 0.4992,
+    "averageRecall8" : 0.611,
+    "averageRecall20" : 0.822,
+    "avgLatencyMs" : 1055.31
+  } ]
+}
