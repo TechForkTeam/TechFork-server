@@ -213,6 +213,36 @@ public abstract class SearchEvaluationTestBase {
         return props;
     }
 
+    /**
+     * BM25 chunk boost와 Vector chunk boost를 독립적으로 설정한다.
+     * Phase 3 BM25 구조 실험용.
+     */
+    protected GeneralSearchProperties createProperties(
+            float titleBoost, float summaryBoost,
+            float bm25ChunkBoost, float vectorChunkBoost,
+            int k, int candidates) {
+
+        GeneralSearchProperties props = new GeneralSearchProperties();
+        props.setSearchSize(20);
+
+        props.setTitleBoost(titleBoost);
+        props.setSummaryBoost(summaryBoost);
+        props.setChunkBoost(bm25ChunkBoost);
+
+        props.setVectorTitleBoost(titleBoost);
+        props.setVectorSummaryBoost(summaryBoost);
+        props.setVectorContentChunkBoost(vectorChunkBoost);
+
+        props.setKnnK(k);
+        props.setKnnNumCandidates(candidates);
+
+        props.setPersonalScoreWeight(1.0);
+        props.setRRF_K(60);
+        props.setRRF_WINDOW_SIZE(60);
+
+        return props;
+    }
+
     private void printResult(String name, GeneralSearchProperties p, ScenarioMetrics m, boolean showLatency) {
         System.out.println("\n#######################################################################################");
         System.out.println("▶ " + name);
