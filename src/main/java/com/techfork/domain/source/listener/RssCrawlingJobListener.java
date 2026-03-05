@@ -1,6 +1,7 @@
 package com.techfork.domain.source.listener;
 
 import com.techfork.domain.source.service.WebhookNotificationService;
+import com.techfork.global.config.ElasticsearchCacheManager;
 import com.techfork.global.constant.MdcKey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ import java.util.Map;
 public class RssCrawlingJobListener implements JobExecutionListener {
 
     private final WebhookNotificationService webhookNotificationService;
+    private final ElasticsearchCacheManager elasticsearchCacheManager;
 
     @Override
     public void beforeJob(JobExecution jobExecution) {
@@ -64,6 +66,8 @@ public class RssCrawlingJobListener implements JobExecutionListener {
 
         log.info("RSS crawling completed successfully: jobExecutionId={}, total={}, success={}, failed={}, duration={}ms",
                 jobExecution.getId(), readCount, writeCount, skipCount, durationMs);
+
+        elasticsearchCacheManager.forceMergeAndWarmupPosts();
     }
 
     /**

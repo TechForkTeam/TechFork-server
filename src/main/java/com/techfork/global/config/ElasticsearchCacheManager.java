@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Slf4j
@@ -57,6 +58,22 @@ public class ElasticsearchCacheManager implements ApplicationRunner {
         } catch (Exception e) {
             log.warn("[ES Index] preload failed for '{}': {}", index, e.getMessage());
         }
+    }
+
+    public void forceMergeAndWarmupPosts() {
+        CompletableFuture.runAsync(() -> {
+            try {
+                long start = System.currentTimeMillis();
+                elasticsearchClient.indices().forcemerge(f -> f
+                        .index(POSTS_INDEX)
+                        .maxNumSegments(1L)
+                );
+                log.info("[ES ForceMerge] posts index merged to 1 segment. Time={}ms", System.currentTimeMillis() - start);
+            } catch (Exception e) {
+                log.warn("[ES ForceMerge] posts force merge failed: {}", e.getMessage());
+            }
+            warmupPostsKnn();
+        });
     }
 
     private void warmupPostsKnn() {
