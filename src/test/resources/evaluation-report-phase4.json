@@ -1,0 +1,70 @@
+{
+  "evaluatedAt" : "2026-03-05T14:23:22.531034984",
+  "groundTruthFile" : "generated-search-ground-truth.json",
+  "totalQueries" : 531,
+  "phaseName" : "Phase 4: KNN 파라미터 최적화",
+  "scenarios" : [ {
+    "scenarioName" : "1. k=20, c=60",
+    "averageNDCG4" : 0.7371,
+    "averageNDCG8" : 0.7338,
+    "averageNDCG20" : 0.7762,
+    "averageRecall4" : 0.5187,
+    "averageRecall8" : 0.6334,
+    "averageRecall20" : 0.811,
+    "avgLatencyMs" : 561.14
+  }, {
+    "scenarioName" : "2. k=30, c=90",
+    "averageNDCG4" : 0.7324,
+    "averageNDCG8" : 0.7309,
+    "averageNDCG20" : 0.7679,
+    "averageRecall4" : 0.5174,
+    "averageRecall8" : 0.6354,
+    "averageRecall20" : 0.7979,
+    "avgLatencyMs" : 604.34
+  }, {
+    "scenarioName" : "3. k=40, c=120",
+    "averageNDCG4" : 0.7316,
+    "averageNDCG8" : 0.7324,
+    "averageNDCG20" : 0.7702,
+    "averageRecall4" : 0.5174,
+    "averageRecall8" : 0.637,
+    "averageRecall20" : 0.8016,
+    "avgLatencyMs" : 603.59
+  }, {
+    "scenarioName" : "4. k=50, c=150",
+    "averageNDCG4" : 0.7304,
+    "averageNDCG8" : 0.7296,
+    "averageNDCG20" : 0.7681,
+    "averageRecall4" : 0.5176,
+    "averageRecall8" : 0.6344,
+    "averageRecall20" : 0.8013,
+    "avgLatencyMs" : 599.63
+  }, {
+    "scenarioName" : "5. k=60, c=200",
+    "averageNDCG4" : 0.7262,
+    "averageNDCG8" : 0.7276,
+    "averageNDCG20" : 0.764,
+    "averageRecall4" : 0.5115,
+    "averageRecall8" : 0.632,
+    "averageRecall20" : 0.7949,
+    "avgLatencyMs" : 595.63
+  }, {
+    "scenarioName" : "6. k=80, c=250",
+    "averageNDCG4" : 0.7263,
+    "averageNDCG8" : 0.7239,
+    "averageNDCG20" : 0.7628,
+    "averageRecall4" : 0.5111,
+    "averageRecall8" : 0.6249,
+    "averageRecall20" : 0.7924,
+    "avgLatencyMs" : 599.57
+  }, {
+    "scenarioName" : "7. k=100, c=300",
+    "averageNDCG4" : 0.7223,
+    "averageNDCG8" : 0.7208,
+    "averageNDCG20" : 0.7612,
+    "averageRecall4" : 0.5062,
+    "averageRecall8" : 0.6194,
+    "averageRecall20" : 0.792,
+    "avgLatencyMs" : 604.74
+  } ]
+}
