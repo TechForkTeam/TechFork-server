@@ -20,14 +20,16 @@ public class GeneralSearchProperties {
     // 최종 검색 결과 개수
     private Integer searchSize = 20;
 
-    // BM25/Vector 필드 가중치 (공통 적용) - Phase 2 최적값
+    // BM25/Vector 필드 가중치 - Phase 2 최적값
     private Float titleBoost = 0.15f;
     private Float summaryBoost = 0.70f;
-    private Float chunkBoost = 0.15f;
+    private Float bm25ChunkBoost = 0.15f;
+    private Float vectorChunkBoost = 0.15f;
 
     // --- [BM25 설정]
     private Float exactBoost = 2.0f;
     private Float fuzzyBoost = 1.0f;
+    private Float tieBreaker = 0.3f;
 
     // --- [Vector & KNN 설정] --- Phase 4 최적값
     private Integer knnK = 20;
