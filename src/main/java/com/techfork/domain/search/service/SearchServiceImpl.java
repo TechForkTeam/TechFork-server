@@ -165,28 +165,31 @@ public class SearchServiceImpl implements SearchService {
     private List<Hit<PostDocument>> performLexicalSearch(String query) {
         String titleField = String.format(SearchConstants.TITLE_FIELD_FORMAT, generalSearchProperties.getTitleBoost());
         String summaryField = String.format(SearchConstants.SUMMARY_FIELD_FORMAT, generalSearchProperties.getSummaryBoost());
+        boolean useBm25Chunk = generalSearchProperties.getChunkBoost() > 0.0f;
 
         Query lexicalQuery = Query.of(q -> q
-                .bool(b -> b
-                        .should(sh -> sh
-                                .multiMatch(m -> m
-                                        .query(query)
-                                        .type(TextQueryType.MostFields)
-                                        .fields(titleField, summaryField)
-                                        .boost(generalSearchProperties.getExactBoost())
-                                )
-                        )
-                        .should(sh -> sh
-                                .multiMatch(m -> m
-                                        .query(query)
-                                        .fields(titleField, summaryField)
-                                        .type(TextQueryType.MostFields)
-                                        .fuzziness("AUTO")
-                                        .prefixLength(1)
-                                        .boost(generalSearchProperties.getFuzzyBoost())
-                                )
-                        )
-                        .should(sh -> sh
+                .bool(b -> {
+                    b.should(sh -> sh
+                            .multiMatch(m -> m
+                                    .query(query)
+                                    .type(TextQueryType.MostFields)
+                                    .fields(titleField, summaryField)
+                                    .boost(generalSearchProperties.getExactBoost())
+                            )
+                    )
+                    .should(sh -> sh
+                            .multiMatch(m -> m
+                                    .query(query)
+                                    .fields(titleField, summaryField)
+                                    .type(TextQueryType.MostFields)
+                                    .fuzziness("AUTO")
+                                    .prefixLength(1)
+                                    .boost(generalSearchProperties.getFuzzyBoost())
+                            )
+                    )
+                    .minimumShouldMatch(SearchConstants.MINIMUM_SHOULD_MATCH);
+                    if (useBm25Chunk) {
+                        b.should(sh -> sh
                                 .nested(n -> n
                                         .path(SearchConstants.CONTENT_CHUNKS_PATH)
                                         .query(nq -> nq
@@ -197,9 +200,10 @@ public class SearchServiceImpl implements SearchService {
                                         )
                                         .boost(generalSearchProperties.getChunkBoost())
                                 )
-                        )
-                        .minimumShouldMatch(SearchConstants.MINIMUM_SHOULD_MATCH)
-                )
+                        );
+                    }
+                    return b;
+                })
         );
 
         try {
@@ -222,7 +226,9 @@ public class SearchServiceImpl implements SearchService {
         List<KnnSearch> knnSearches = new ArrayList<>();
         knnSearches.add(createKnnSearch("titleEmbedding", queryVector, k, numCandidates, generalSearchProperties.getVectorTitleBoost()));
         knnSearches.add(createKnnSearch("summaryEmbedding", queryVector, k, numCandidates, generalSearchProperties.getVectorSummaryBoost()));
-        knnSearches.add(createKnnSearch("contentChunks.embedding", queryVector, k, numCandidates, generalSearchProperties.getVectorContentChunkBoost()));
+        if (generalSearchProperties.getVectorContentChunkBoost() > 0.0f) {
+            knnSearches.add(createKnnSearch("contentChunks.embedding", queryVector, k, numCandidates, generalSearchProperties.getVectorContentChunkBoost()));
+        }
 
         try {
             SearchResponse<PostDocument> response = elasticsearchClient.search(s -> s
