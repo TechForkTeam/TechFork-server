@@ -23,6 +23,8 @@ services:
       - JWT_REDIRECT_URI=${JWT_REDIRECT_URI}
       - JWT_LOGIN_FAILURE_REDIRECT_URI=${JWT_LOGIN_FAILURE_REDIRECT_URI}
       - SERVER_DOMAIN=${SERVER_DOMAIN}
+    ports:
+      - "8080:8080"
     volumes:
       - ~/keys:/app/keys:ro
     networks:

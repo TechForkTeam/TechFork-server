@@ -5,20 +5,16 @@
 
 export const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080';
 
-const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
-
 export const AUTH_HEADERS = {
     headers: {
         'Authorization': `Bearer ${__ENV.AUTH_TOKEN || ''}`,
         'Content-Type': 'application/json',
-        'User-Agent': UA,
     },
 };
 
 export const DEFAULT_HEADERS = {
     headers: {
         'Content-Type': 'application/json',
-        'User-Agent': UA,
     },
 };
 
