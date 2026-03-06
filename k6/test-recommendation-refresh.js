@@ -1,5 +1,5 @@
 import { recommendRefreshTest } from './scenarios/recommendation-refresh.js';
-import { handleSummary } from './summarize.js';
+import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.2/index.js';
 
 // AUTH_TOKEN 필수: k6 run --env AUTH_TOKEN=<JWT> --env BASE_URL=http://... test-recommendation-refresh.js
 
@@ -26,4 +26,10 @@ export const options = {
 };
 
 export { recommendRefreshTest };
-export { handleSummary };
+
+export function handleSummary(data) {
+    return {
+        'summary.json': JSON.stringify(data, null, 2),
+        stdout: textSummary(data, { indent: ' ', enableColors: true }),
+    };
+}
