@@ -97,6 +97,9 @@ apple:
 server:
   domain: ${SERVER_DOMAIN:localhost}
   forward-headers-strategy: native
+  tomcat:
+    mbeanregistry:
+      enabled: true
 
 management:
   server:
