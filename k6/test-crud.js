@@ -7,8 +7,8 @@ export const options = {
             executor: 'ramping-vus',
             startVUs: 0,
             stages: [
-                { duration: '30s', target: 20 },
-                { duration: '2m',  target: 20 },
+                { duration: '30s', target: 30 },
+                { duration: '2m',  target: 30 },
                 { duration: '30s', target: 0  },
             ],
             exec: 'crudTest',
