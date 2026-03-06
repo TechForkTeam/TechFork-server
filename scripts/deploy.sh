@@ -57,7 +57,7 @@ health_check() {
 
     log "Waiting for ${container} to become healthy..."
     for i in $(seq 1 "$HEALTH_CHECK_RETRIES"); do
-        if docker exec techfork-nginx curl -sf "http://${container}:8080/actuator/health" > /dev/null 2>&1; then
+        if docker exec techfork-nginx curl -sf "http://${container}:9090/actuator/health" > /dev/null 2>&1; then
             log "Health check passed (attempt ${i}/${HEALTH_CHECK_RETRIES})"
             return 0
         fi
