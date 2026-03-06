@@ -98,6 +98,20 @@ server:
   domain: ${SERVER_DOMAIN:localhost}
   forward-headers-strategy: native
 
+management:
+  server:
+    port: 9090
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: techfork
+
 scheduler:
   enabled: true
 
