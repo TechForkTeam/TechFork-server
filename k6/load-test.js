@@ -17,6 +17,7 @@ import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.2/index.js';
 // 총 45 VU 기준
 // crud: 31 VU (69%) / search_anonymous: 7 VU (16%) / search_personalized: 3 VU (7%) / recommendation_read: 4 VU (9%)
 export const options = {
+    summaryTrendStats: ['med', 'p(95)', 'p(99)'],
     scenarios: {
         crud: {
             executor: 'ramping-vus',
