@@ -1,15 +1,17 @@
 import { searchAnonymousTest } from './scenarios/search-anonymous.js';
 import { handleSummary } from './summarize.js';
 
+const TARGET_VU = parseInt(__ENV.VU || '15');
+
 export const options = {
     scenarios: {
         search_anonymous: {
             executor: 'ramping-vus',
             startVUs: 0,
             stages: [
-                { duration: '30s', target: 15 },
-                { duration: '2m',  target: 15 },
-                { duration: '30s', target: 0  },
+                { duration: '30s', target: TARGET_VU },
+                { duration: '2m',  target: TARGET_VU },
+                { duration: '30s', target: 0          },
             ],
             exec: 'searchAnonymousTest',
         },

@@ -3,15 +3,17 @@ import { handleSummary } from './summarize.js';
 
 // AUTH_TOKEN 필수: k6 run --env AUTH_TOKEN=<JWT> --env BASE_URL=http://... test-recommendation-read.js
 
+const TARGET_VU = parseInt(__ENV.VU || '20');
+
 export const options = {
     scenarios: {
         recommendation_read: {
             executor: 'ramping-vus',
             startVUs: 0,
             stages: [
-                { duration: '30s', target: 20 },
-                { duration: '2m',  target: 20 },
-                { duration: '30s', target: 0  },
+                { duration: '30s', target: TARGET_VU },
+                { duration: '2m',  target: TARGET_VU },
+                { duration: '30s', target: 0          },
             ],
             exec: 'recommendReadTest',
         },

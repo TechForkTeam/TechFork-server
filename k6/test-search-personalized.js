@@ -3,15 +3,17 @@ import { handleSummary } from './summarize.js';
 
 // AUTH_TOKEN 필수: k6 run --env AUTH_TOKEN=<JWT> --env BASE_URL=http://... test-search-personalized.js
 
+const TARGET_VU = parseInt(__ENV.VU || '10');
+
 export const options = {
     scenarios: {
         search_personalized: {
             executor: 'ramping-vus',
             startVUs: 0,
             stages: [
-                { duration: '30s', target: 10 },
-                { duration: '2m',  target: 10 },
-                { duration: '30s', target: 0  },
+                { duration: '30s', target: TARGET_VU },
+                { duration: '2m',  target: TARGET_VU },
+                { duration: '30s', target: 0          },
             ],
             exec: 'searchPersonalizedTest',
         },

@@ -1,15 +1,17 @@
 import { crudTest } from './scenarios/crud.js';
 import { handleSummary } from './summarize.js';
 
+const TARGET_VU = parseInt(__ENV.VU || '30');
+
 export const options = {
     scenarios: {
         crud: {
             executor: 'ramping-vus',
             startVUs: 0,
             stages: [
-                { duration: '30s', target: 30 },
-                { duration: '2m',  target: 30 },
-                { duration: '30s', target: 0  },
+                { duration: '30s', target: TARGET_VU },
+                { duration: '2m',  target: TARGET_VU },
+                { duration: '30s', target: 0          },
             ],
             exec: 'crudTest',
         },
