@@ -14,9 +14,9 @@ public class SearchConfig {
     @Bean(name = "searchAsyncExecutor")
     public Executor searchAsyncExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(20);
-        executor.setMaxPoolSize(50);
-        executor.setQueueCapacity(100);
+        executor.setCorePoolSize(8);
+        executor.setMaxPoolSize(12);
+        executor.setQueueCapacity(50);
         executor.setTaskDecorator(new MdcTaskDecorator());
         executor.setThreadNamePrefix("SearchExec-");
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
