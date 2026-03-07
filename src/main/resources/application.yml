@@ -24,8 +24,8 @@ spring:
   datasource:
     hikari:
       # 풀 크기
-      maximum-pool-size: 10
-      minimum-idle: 10
+      maximum-pool-size: 20
+      minimum-idle: 20
       # 타임아웃
       connection-timeout: 5000
       idle-timeout: 600000
@@ -100,6 +100,9 @@ server:
   tomcat:
     mbeanregistry:
       enabled: true
+    threads:
+      max: 100
+      min-spare: 20
 
 management:
   server:
