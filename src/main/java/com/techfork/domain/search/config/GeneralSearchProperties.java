@@ -24,7 +24,7 @@ public class GeneralSearchProperties {
     private Float titleBoost = 0.15f;
     private Float summaryBoost = 0.70f;
     private Float bm25ChunkBoost = 0.15f;
-    private Float vectorChunkBoost = 0.15f;
+    private Float vectorChunkBoost = 0.00f;
 
     // --- [BM25 설정]
     private Float exactBoost = 2.0f;
