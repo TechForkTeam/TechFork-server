@@ -101,7 +101,7 @@ server:
     mbeanregistry:
       enabled: true
     threads:
-      max: 200
+      max: 100
       min-spare: 20
 
 management:
