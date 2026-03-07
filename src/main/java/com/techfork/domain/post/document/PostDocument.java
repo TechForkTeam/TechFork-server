@@ -10,11 +10,13 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
+import org.springframework.data.elasticsearch.annotations.Mapping;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Document(indexName = "posts")
+@Mapping(mappingPath = "elasticsearch/posts-mapping.json")
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

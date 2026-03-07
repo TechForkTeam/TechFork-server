@@ -1,0 +1,47 @@
+{
+  "properties": {
+    "postId": { "type": "long" },
+    "title": { "type": "text" },
+    "summary": { "type": "text" },
+    "shortSummary": { "type": "text" },
+    "company": { "type": "keyword" },
+    "url": { "type": "keyword" },
+    "logoUrl": { "type": "keyword" },
+    "thumbnailUrl": { "type": "keyword" },
+    "publishedAt": { "type": "keyword" },
+    "titleEmbedding": {
+      "type": "dense_vector",
+      "dims": 3072,
+      "index": true,
+      "similarity": "cosine",
+      "index_options": {
+        "type": "int8_hnsw"
+      }
+    },
+    "summaryEmbedding": {
+      "type": "dense_vector",
+      "dims": 3072,
+      "index": true,
+      "similarity": "cosine",
+      "index_options": {
+        "type": "int8_hnsw"
+      }
+    },
+    "contentChunks": {
+      "type": "nested",
+      "properties": {
+        "chunkOrder": { "type": "integer" },
+        "chunkText": { "type": "text" },
+        "embedding": {
+          "type": "dense_vector",
+          "dims": 3072,
+          "index": true,
+          "similarity": "cosine",
+          "index_options": {
+            "type": "int8_hnsw"
+          }
+        }
+      }
+    }
+  }
+}
