@@ -11,13 +11,11 @@ import org.springframework.data.annotation.Transient;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
-import org.springframework.data.elasticsearch.annotations.Mapping;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Document(indexName = "user_profiles")
-@Mapping(mappingPath = "elasticsearch/user-profiles-mapping.json")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @JsonIgnoreProperties(ignoreUnknown = true)
