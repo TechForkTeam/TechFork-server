@@ -15,11 +15,11 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "recommendation")
 public class RecommendationProperties {
 
-    private Integer knnSearchSize = 80;
+    private Integer knnSearchSize = 50;
 
-    private Integer numCandidates = 180;
+    private Integer numCandidates = 150;
 
-    private Integer mmrCandidateSize = 80;
+    private Integer mmrCandidateSize = 60;
 
     private Integer mmrFinalSize = 30;
 
@@ -40,8 +40,8 @@ public class RecommendationProperties {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class EmbeddingWeights {
-        private Float title = 0.4f;
-        private Float summary = 0.4f;
+        private Float title = 0.6f;
+        private Float summary = 0.2f;
         private Float content = 0.2f;
     }
 
