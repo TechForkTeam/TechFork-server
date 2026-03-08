@@ -113,6 +113,39 @@ public class RecommendationEvaluationService extends LlmRecommendationService {
         }
     }
 
+    /**
+     * 1차 후보군만 반환 (MMR bypass) - RRF 결과를 similarityScore 내림차순으로 반환
+     */
+    public List<Long> generateCandidatesOnly(User user, Set<Long> trainPostIds, RecommendationProperties properties) {
+        Optional<UserProfileDocument> profileOpt = userProfileDocumentRepository.findByUserId(user.getId());
+        if (profileOpt.isEmpty() || profileOpt.get().getProfileVector() == null) {
+            return Collections.emptyList();
+        }
+
+        UserProfileDocument profile = profileOpt.get();
+        float[] userProfileVector = profile.getProfileVector();
+        List<String> keyKeywords = profile.getKeyKeywords();
+
+        try {
+            List<MmrCandidate> candidates = searchCandidatesWithCustomReadHistory(
+                    userProfileVector, keyKeywords, trainPostIds, properties);
+
+            if (candidates.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            // MMR 없이 similarityScore 내림차순으로 반환
+            return candidates.stream()
+                    .sorted(Comparator.comparingDouble(MmrCandidate::getSimilarityScore).reversed())
+                    .map(MmrCandidate::getPostId)
+                    .toList();
+
+        } catch (Exception e) {
+            log.error("사용자 {} 1차 후보군 생성 실패", user.getId(), e);
+            return Collections.emptyList();
+        }
+    }
+
     private List<MmrCandidate> searchCandidatesWithCustomReadHistory(
             float[] userProfileVector,
             List<String> keyKeywords,

@@ -1,0 +1,66 @@
+{
+  "evaluatedAt" : "2026-03-08T17:19:29.2938803",
+  "groundTruthUsers" : 15,
+  "testName" : "설정별 성능 비교 (1차 후보군)",
+  "mmrApplied" : false,
+  "configs" : [ {
+    "configName" : "균등 가중치",
+    "averageRecall4" : 0.0422,
+    "averageRecall8" : 0.0911,
+    "averageRecall30" : 0.2356,
+    "averageNDCG4" : 0.2628,
+    "averageNDCG8" : 0.2777,
+    "averageNDCG30" : 0.2665
+  }, {
+    "configName" : "제목 중심",
+    "averageRecall4" : 0.0444,
+    "averageRecall8" : 0.1,
+    "averageRecall30" : 0.2444,
+    "averageNDCG4" : 0.2619,
+    "averageNDCG8" : 0.2934,
+    "averageNDCG30" : 0.2783
+  }, {
+    "configName" : "요약 중심",
+    "averageRecall4" : 0.04,
+    "averageRecall8" : 0.0689,
+    "averageRecall30" : 0.1956,
+    "averageNDCG4" : 0.256,
+    "averageNDCG8" : 0.2319,
+    "averageNDCG30" : 0.2257
+  }, {
+    "configName" : "컨텐츠 중심",
+    "averageRecall4" : 0.0444,
+    "averageRecall8" : 0.0822,
+    "averageRecall30" : 0.2156,
+    "averageNDCG4" : 0.2744,
+    "averageNDCG8" : 0.2685,
+    "averageNDCG30" : 0.2537
+  }, {
+    "configName" : "현재 기본값",
+    "averageRecall4" : 0.0467,
+    "averageRecall8" : 0.0911,
+    "averageRecall30" : 0.2356,
+    "averageNDCG4" : 0.2883,
+    "averageNDCG8" : 0.2892,
+    "averageNDCG30" : 0.2725
+  }, {
+    "configName" : "제목+요약 중심",
+    "averageRecall4" : 0.0467,
+    "averageRecall8" : 0.0911,
+    "averageRecall30" : 0.2356,
+    "averageNDCG4" : 0.2883,
+    "averageNDCG8" : 0.2888,
+    "averageNDCG30" : 0.2725
+  }, {
+    "configName" : "제목+요약만 (컨텐츠 0)",
+    "averageRecall4" : 0.0467,
+    "averageRecall8" : 0.0867,
+    "averageRecall30" : 0.2333,
+    "averageNDCG4" : 0.2906,
+    "averageNDCG8" : 0.281,
+    "averageNDCG30" : 0.27
+  } ],
+  "bestByRecall8" : "제목 중심",
+  "bestByNDCG8" : "제목 중심",
+  "bestByBalanced" : "제목 중심"
+}

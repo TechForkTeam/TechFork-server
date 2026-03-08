@@ -7,6 +7,9 @@ import com.techfork.evaluation.recommendation.util.EvaluationFixtureLoader;
 import com.techfork.domain.user.entity.User;
 import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.global.util.VectorUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,6 +18,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.io.File;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -232,5 +239,103 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
     protected void printLambdaOptimizationResult(EvaluationResult result) {
         log.info(String.format("%-25s | %.4f    | %.4f    | %.4f    | %.4f",
                 result.getConfigName(), result.getAvgRecall8(), result.getAvgNdcg8(), result.getAvgIld(), result.getCompositeScore()));
+    }
+
+    // -----------------------------------------------------------------------
+    // MMR bypass (1차 후보군만 평가)
+    // -----------------------------------------------------------------------
+
+    protected Optional<UserMetrics> evaluateUserCandidatesOnly(User user, RecommendationProperties props) {
+        try {
+            Map<Long, Integer> groundTruth = cachedGroundTruth.get(user.getId());
+            if (groundTruth == null || groundTruth.isEmpty()) return Optional.empty();
+
+            Set<Long> readIds = readPostRepository.findRecentReadPostsByUserIdWithMinDuration(user.getId(), org.springframework.data.domain.PageRequest.of(0, 10000))
+                    .stream().map(rp -> rp.getPost().getId()).collect(java.util.stream.Collectors.toSet());
+
+            List<Long> recIds = evaluationService.generateCandidatesOnly(user, readIds, props);
+            if (recIds.isEmpty()) return Optional.empty();
+
+            double r4 = qualityService.calculateRecall(recIds, groundTruth.keySet(), K_FIRST_ROW);
+            double n4 = qualityService.calculateNDCG(recIds, groundTruth, K_FIRST_ROW);
+            double r8 = qualityService.calculateRecall(recIds, groundTruth.keySet(), K_FIRST_SCREEN);
+            double n8 = qualityService.calculateNDCG(recIds, groundTruth, K_FIRST_SCREEN);
+            double r30 = qualityService.calculateRecall(recIds, groundTruth.keySet(), K_DEEP_EXPLORE);
+            double n30 = qualityService.calculateNDCG(recIds, groundTruth, K_DEEP_EXPLORE);
+
+            return Optional.of(new UserMetrics(r4, n4, r8, n8, r30, n30, 0.0));
+        } catch (Exception e) {
+            log.warn("사용자 {} candidates-only 평가 중 오류: {}", user.getId(), e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    protected EvaluationResult evaluateConfigCandidatesOnly(ConfigCombo config, List<User> testUsers) {
+        RecommendationProperties props = createProperties(config.getTitleWeight(), config.getSummaryWeight(), config.getContentWeight(), config.getMmrLambda());
+
+        List<UserMetrics> metrics = testUsers.stream()
+                .map(user -> evaluateUserCandidatesOnly(user, props))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .toList();
+
+        return calculateAverageMetrics(config.getName(), metrics);
+    }
+
+    // -----------------------------------------------------------------------
+    // JSON 리포트 저장
+    // -----------------------------------------------------------------------
+
+    protected void saveRecommendationReport(String fileName, String testName, boolean mmrApplied,
+                                            List<EvaluationResult> results) throws IOException {
+        List<Map<String, Object>> configList = new ArrayList<>();
+        for (EvaluationResult r : results) {
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("configName", r.getConfigName());
+            entry.put("averageRecall4", round4(r.getAvgRecall4()));
+            entry.put("averageRecall8", round4(r.getAvgRecall8()));
+            entry.put("averageRecall30", round4(r.getAvgRecall30()));
+            entry.put("averageNDCG4", round4(r.getAvgNdcg4()));
+            entry.put("averageNDCG8", round4(r.getAvgNdcg8()));
+            entry.put("averageNDCG30", round4(r.getAvgNdcg30()));
+            if (mmrApplied) {
+                entry.put("averageILD", round4(r.getAvgIld()));
+                entry.put("compositeScore", round4(r.getCompositeScore()));
+            }
+            configList.add(entry);
+        }
+
+        // Best 설정 계산
+        String bestByRecall8 = results.stream()
+                .max(Comparator.comparingDouble(EvaluationResult::getAvgRecall8))
+                .map(EvaluationResult::getConfigName).orElse("");
+        String bestByNdcg8 = results.stream()
+                .max(Comparator.comparingDouble(EvaluationResult::getAvgNdcg8))
+                .map(EvaluationResult::getConfigName).orElse("");
+        String bestByBalanced = results.stream()
+                .max(Comparator.comparingDouble(r -> (r.getAvgRecall8() + r.getAvgNdcg8()) / 2.0))
+                .map(EvaluationResult::getConfigName).orElse("");
+
+        Map<String, Object> report = new LinkedHashMap<>();
+        report.put("evaluatedAt", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        report.put("groundTruthUsers", cachedGroundTruth.size());
+        report.put("testName", testName);
+        report.put("mmrApplied", mmrApplied);
+        report.put("configs", configList);
+        report.put("bestByRecall8", bestByRecall8);
+        report.put("bestByNDCG8", bestByNdcg8);
+        report.put("bestByBalanced", bestByBalanced);
+
+        ObjectMapper writer = new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .enable(SerializationFeature.INDENT_OUTPUT);
+
+        File outputFile = new File("src/test/resources/" + fileName);
+        writer.writeValue(outputFile, report);
+        log.info("리포트 저장 완료: {}", outputFile.getAbsolutePath());
+    }
+
+    private static double round4(double v) {
+        return Math.round(v * 10000.0) / 10000.0;
     }
 }

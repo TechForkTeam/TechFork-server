@@ -18,10 +18,12 @@ import java.util.List;
 @Slf4j
 public class RecommendationConfigComparisonTest extends RecommendationTestBase {
 
+    private static final String REPORT_FILE = "evaluation-report-recommendation-phase1.json";
+
     @Test
-    @DisplayName("여러 설정 비교 평가 (Ground-Truth 기반)")
-    void compareConfigurationsWithGroundTruth() {
-        log.info("===== 설정별 성능 비교 (Ground-Truth 기반) =====");
+    @DisplayName("여러 설정 비교 평가 (1차 후보군, MMR bypass)")
+    void compareConfigurationsWithGroundTruth() throws Exception {
+        log.info("===== 설정별 성능 비교 (1차 후보군, MMR bypass) =====");
         log.info("Ground-Truth: {} 명 사용자", cachedGroundTruth.size());
 
         List<ConfigCombo> configs = createTestConfigs();
@@ -29,8 +31,11 @@ public class RecommendationConfigComparisonTest extends RecommendationTestBase {
         log.info("테스트 사용자: {} 명", testUsers.size());
 
         printWeightComparisonHeader();
-        List<EvaluationResult> results = evaluateAllConfigsWithGroundTruth(configs, testUsers);
+        List<EvaluationResult> results = evaluateAllConfigsCandidatesOnly(configs, testUsers);
         printBestWeightResult(results);
+
+        // JSON 리포트 저장
+        saveRecommendationReport(REPORT_FILE, "설정별 성능 비교 (1차 후보군)", false, results);
     }
 
     /**
@@ -64,15 +69,15 @@ public class RecommendationConfigComparisonTest extends RecommendationTestBase {
     }
 
     /**
-     * 모든 설정 평가 (Ground-Truth 기반 - ILD 제외)
+     * 모든 설정 평가 (1차 후보군만 - MMR bypass)
      */
-    private List<EvaluationResult> evaluateAllConfigsWithGroundTruth(
+    private List<EvaluationResult> evaluateAllConfigsCandidatesOnly(
             List<ConfigCombo> configs,
             List<User> testUsers) {
         List<EvaluationResult> results = new ArrayList<>();
 
         for (ConfigCombo config : configs) {
-            EvaluationResult result = evaluateConfigWithGroundTruth(config, testUsers);
+            EvaluationResult result = evaluateConfigCandidatesOnly(config, testUsers);
             results.add(result);
             printWeightComparisonResult(result);
         }
