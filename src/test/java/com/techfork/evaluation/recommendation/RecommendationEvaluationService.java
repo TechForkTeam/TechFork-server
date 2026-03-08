@@ -7,7 +7,6 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.KnnSearch;
 import com.techfork.domain.activity.repository.ReadPostRepository;
 import com.techfork.domain.post.document.PostDocument;
-import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.recommendation.config.RecommendationProperties;
 import com.techfork.domain.recommendation.entity.RecommendedPost;
@@ -17,6 +16,7 @@ import com.techfork.domain.recommendation.service.LlmRecommendationService;
 import com.techfork.domain.recommendation.service.MmrService;
 import com.techfork.domain.recommendation.service.MmrService.MmrCandidate;
 import com.techfork.domain.recommendation.service.MmrService.MmrResult;
+import com.techfork.global.util.RrfScorer;
 import com.techfork.domain.user.document.UserProfileDocument;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
@@ -146,6 +146,40 @@ public class RecommendationEvaluationService extends LlmRecommendationService {
         }
     }
 
+    /**
+     * 부모의 applyRrf를 오버라이드하여 mmrCandidateSize limit을 제거.
+     * 테스트에서 다양한 mmrCandidateSize를 시도할 수 있도록 호출 측에서 limit 적용.
+     */
+    @Override
+    protected List<MmrCandidate> applyRrf(List<Hit<PostDocument>> vectorHits, List<Hit<PostDocument>> keywordHits) {
+        List<Long> vectorPostIds = vectorHits.stream()
+                .filter(hit -> hit.source() != null)
+                .map(hit -> hit.source().getPostId())
+                .toList();
+
+        List<Long> keywordPostIds = keywordHits.stream()
+                .filter(hit -> hit.source() != null)
+                .map(hit -> hit.source().getPostId())
+                .toList();
+
+        Map<Long, Double> rrfScores = RrfScorer.calculateRrfScores(vectorPostIds, keywordPostIds);
+
+        Map<Long, Hit<PostDocument>> hitMap = new HashMap<>();
+        vectorHits.stream()
+                .filter(hit -> hit.source() != null)
+                .forEach(hit -> hitMap.putIfAbsent(hit.source().getPostId(), hit));
+        keywordHits.stream()
+                .filter(hit -> hit.source() != null)
+                .forEach(hit -> hitMap.putIfAbsent(hit.source().getPostId(), hit));
+
+        // limit 없이 전체 후보 반환
+        return rrfScores.entrySet().stream()
+                .sorted(Map.Entry.<Long, Double>comparingByValue().reversed())
+                .map(entry -> mapToMmrCandidate(hitMap.get(entry.getKey()), entry.getValue()))
+                .filter(candidate -> candidate.getSummaryVector() != null)
+                .toList();
+    }
+
     private List<MmrCandidate> searchCandidatesWithCustomReadHistory(
             float[] userProfileVector,
             List<String> keyKeywords,
@@ -227,9 +261,15 @@ public class RecommendationEvaluationService extends LlmRecommendationService {
 
         // 5. RRF로 결합 (부모 클래스의 protected 메서드 사용)
         long rrfStartTime = System.currentTimeMillis();
-        List<MmrCandidate> candidates = applyRrf(vectorHits, keywordHits);
+        List<MmrCandidate> allCandidates = applyRrf(vectorHits, keywordHits);
         long rrfElapsedTime = System.currentTimeMillis() - rrfStartTime;
-        log.info("[EVAL] RRF 결합 실행 시간: {}ms (결과: {}개)", rrfElapsedTime, candidates.size());
+
+        // 테스트 properties의 mmrCandidateSize로 limit (부모 applyRrf는 기본 properties를 사용하므로)
+        List<MmrCandidate> candidates = allCandidates.stream()
+                .limit(properties.getMmrCandidateSize())
+                .toList();
+        log.info("[EVAL] RRF 결합 실행 시간: {}ms (전체: {}개, mmrCandidateSize: {}개)",
+                rrfElapsedTime, allCandidates.size(), candidates.size());
 
         return candidates;
     }

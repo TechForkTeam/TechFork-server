@@ -69,7 +69,10 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
 
             // ES 세그먼트 병합 + HNSW 웜업 (프로덕션과 동일한 조건)
             forceMergeIndices();
-            elasticsearchCacheManager.keepAliveWarmup();
+            // 웜업을 여러 번 실행하여 HNSW 그래프 + OS 캐시를 확실히 로드
+            for (int i = 0; i < 3; i++) {
+                elasticsearchCacheManager.keepAliveWarmup();
+            }
             log.info("===== ES forcemerge + warmup 완료 =====");
         }
     }
@@ -198,8 +201,9 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
             Set<Long> readIds = readPostRepository.findRecentReadPostsByUserIdWithMinDuration(user.getId(), org.springframework.data.domain.PageRequest.of(0, 10000))
                     .stream().map(rp -> rp.getPost().getId()).collect(java.util.stream.Collectors.toSet());
 
-            // 새로운 서비스 사용
+            long start = System.currentTimeMillis();
             List<Long> recIds = evaluationService.generateRecommendationsForEvaluation(user, readIds, props);
+            double latencyMs = System.currentTimeMillis() - start;
             if (recIds.isEmpty()) return Optional.empty();
 
             double r4 = qualityService.calculateRecall(recIds, groundTruth.keySet(), K_FIRST_ROW);
@@ -214,7 +218,7 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
                     .filter(Objects::nonNull).toList();
             double ild = qualityService.calculateILD(vectors);
 
-            return Optional.of(new UserMetrics(r4, n4, r8, n8, r30, n30, ild, 0.0));
+            return Optional.of(new UserMetrics(r4, n4, r8, n8, r30, n30, ild, latencyMs));
         } catch (Exception e) {
             log.warn("사용자 {} 평가 중 오류: {}", user.getId(), e.getMessage());
             return Optional.empty();
@@ -331,6 +335,7 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
                 entry.put("averageILD", round4(r.getAvgIld()));
                 entry.put("compositeScore", round4(r.getCompositeScore()));
             }
+            entry.put("avgLatencyMs", Math.round(r.getAvgLatencyMs() * 100.0) / 100.0);
             configList.add(entry);
         }
 
