@@ -75,9 +75,9 @@ public class MmrService {
         log.debug("MMR 선택 시작: candidates={}, finalSize={}, lambda={}",
                 candidates.size(), finalSize, lambda);
 
-        // 첫 번째는 상위 K개 중에서 랜덤하게 선택 (다양성 증가)
-        int topK = Math.min(5, remainingCandidates.size());
-        int randomIndex = random.nextInt(topK);
+        // 첫 번째는 상위 K개 중에서 랜덤하게 선택 (다양성 증가, mmrFirstTopK=1이면 결정적)
+        int topK = Math.min(properties.getMmrFirstTopK(), remainingCandidates.size());
+        int randomIndex = topK <= 1 ? 0 : random.nextInt(topK);
         MmrCandidate first = remainingCandidates.remove(randomIndex);
         selectedResults.add(MmrResult.builder()
                 .postId(first.getPostId())
@@ -99,9 +99,9 @@ public class MmrService {
             // MMR 점수 내림차순 정렬
             scoredCandidates.sort((a, b) -> Double.compare(b.mmrScore, a.mmrScore));
 
-            // 상위 K개 중에서 랜덤 선택
-            int topKForSelection = Math.min(3, scoredCandidates.size());
-            int randomIdx = random.nextInt(topKForSelection);
+            // 상위 K개 중에서 랜덤 선택 (mmrTopK=1이면 결정적)
+            int topKForSelection = Math.min(properties.getMmrTopK(), scoredCandidates.size());
+            int randomIdx = topKForSelection <= 1 ? 0 : random.nextInt(topKForSelection);
             ScoredCandidate selected = scoredCandidates.get(randomIdx);
 
             remainingCandidates.remove(selected.originalIndex);

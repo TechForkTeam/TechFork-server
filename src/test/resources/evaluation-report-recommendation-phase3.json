@@ -1,0 +1,54 @@
+{
+  "evaluatedAt" : "2026-03-08T20:43:54.2551289",
+  "groundTruthUsers" : 15,
+  "testName" : "MMR 후보군 크기 비교",
+  "mmrApplied" : true,
+  "configs" : [ {
+    "configName" : "후보 40개",
+    "averageRecall4" : 0.04,
+    "averageRecall8" : 0.0889,
+    "averageRecall30" : 0.2089,
+    "averageNDCG4" : 0.229,
+    "averageNDCG8" : 0.2721,
+    "averageNDCG30" : 0.2385,
+    "averageILD" : 0.6376,
+    "compositeScore" : 0.2719,
+    "avgLatencyMs" : 866.27
+  }, {
+    "configName" : "후보 60개",
+    "averageRecall4" : 0.0378,
+    "averageRecall8" : 0.0933,
+    "averageRecall30" : 0.2067,
+    "averageNDCG4" : 0.2144,
+    "averageNDCG8" : 0.279,
+    "averageNDCG30" : 0.2358,
+    "averageILD" : 0.653,
+    "compositeScore" : 0.2795,
+    "avgLatencyMs" : 853.8
+  }, {
+    "configName" : "현재 (80개)",
+    "averageRecall4" : 0.0378,
+    "averageRecall8" : 0.0889,
+    "averageRecall30" : 0.2044,
+    "averageNDCG4" : 0.2189,
+    "averageNDCG8" : 0.2692,
+    "averageNDCG30" : 0.2332,
+    "averageILD" : 0.6633,
+    "compositeScore" : 0.2759,
+    "avgLatencyMs" : 932.07
+  }, {
+    "configName" : "후보 100개",
+    "averageRecall4" : 0.0378,
+    "averageRecall8" : 0.0889,
+    "averageRecall30" : 0.2044,
+    "averageNDCG4" : 0.2189,
+    "averageNDCG8" : 0.2692,
+    "averageNDCG30" : 0.2324,
+    "averageILD" : 0.6657,
+    "compositeScore" : 0.2764,
+    "avgLatencyMs" : 944.6
+  } ],
+  "bestByRecall8" : "후보 60개",
+  "bestByNDCG8" : "후보 60개",
+  "bestByBalanced" : "후보 60개"
+}

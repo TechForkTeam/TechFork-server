@@ -18,10 +18,12 @@ import java.util.*;
 @Slf4j
 public class KValueComparisonTest extends RecommendationTestBase {
 
+    private static final String REPORT_FILE = "evaluation-report-recommendation-phase2.json";
+
     @Test
-    @DisplayName("knnSearchSize와 numCandidates 값 비교 평가")
-    void compareKValues() {
-        log.info("===== K 값에 따른 성능 및 품질 비교 =====");
+    @DisplayName("knnSearchSize와 numCandidates 값 비교 평가 (1차 후보군, MMR bypass)")
+    void compareKValues() throws Exception {
+        log.info("===== K 값에 따른 성능 및 품질 비교 (1차 후보군, MMR bypass) =====");
         log.info("Ground-Truth: {} 명 사용자", cachedGroundTruth.size());
 
         List<KConfig> kConfigs = createKConfigs();
@@ -31,6 +33,9 @@ public class KValueComparisonTest extends RecommendationTestBase {
         printKComparisonHeader();
         List<KResult> results = evaluateAllKConfigs(kConfigs, testUsers);
         printBestKResult(results);
+
+        // JSON 리포트 저장
+        saveKValueReport(REPORT_FILE, "K값 성능 비교 (1차 후보군)", false, toReportEntries(results));
     }
 
     /**
@@ -38,23 +43,20 @@ public class KValueComparisonTest extends RecommendationTestBase {
      */
     private List<KConfig> createKConfigs() {
         return Arrays.asList(
-                // 현재 기본값
-                KConfig.builder().name("현재 (50/100)")
-                        .knnSearchSize(50).numCandidates(100).build(),
+                KConfig.builder().name("소형 (30/90)")
+                        .knnSearchSize(30).numCandidates(90).build(),
 
-                KConfig.builder().name("중간-하 (60/120)")
-                        .knnSearchSize(60).numCandidates(120).build(),
+                KConfig.builder().name("중간-하 (40/120)")
+                        .knnSearchSize(40).numCandidates(120).build(),
 
-                // 중간 값
-                KConfig.builder().name("중간 (70/150)")
-                        .knnSearchSize(70).numCandidates(150).build(),
+                KConfig.builder().name("현재 (50/150)")
+                        .knnSearchSize(50).numCandidates(150).build(),
 
-                KConfig.builder().name("중간-상 (80/180)")
-                        .knnSearchSize(80).numCandidates(180).build(),
+                KConfig.builder().name("중간 (60/180)")
+                        .knnSearchSize(60).numCandidates(180).build(),
 
-                // 이전 값
-                KConfig.builder().name("이전 (100/200)")
-                        .knnSearchSize(100).numCandidates(200).build()
+                KConfig.builder().name("중간-상 (70/210)")
+                        .knnSearchSize(70).numCandidates(210).build()
         );
     }
 
@@ -75,16 +77,16 @@ public class KValueComparisonTest extends RecommendationTestBase {
             properties.setMmrFinalSize(30);
             properties.setLambda(1.0); // 다양성 제외, 관련성만
 
-            // 가중치는 최적값으로 고정 (제목+요약 중심)
+            // 가중치는 최적값으로 고정 (제목 중심)
             RecommendationProperties.EmbeddingWeights weights = new RecommendationProperties.EmbeddingWeights();
-            weights.setTitle(0.4f);
-            weights.setSummary(0.4f);
+            weights.setTitle(0.6f);
+            weights.setSummary(0.2f);
             weights.setContent(0.2f);
             properties.setEmbeddingWeights(weights);
 
-            // 평가 수행 - UserMetrics 수집
+            // 평가 수행 - MMR bypass, 1차 후보군만
             List<UserMetrics> userMetrics = testUsers.stream()
-                    .map(user -> evaluateUserWithGroundTruth(user, properties))
+                    .map(user -> evaluateUserCandidatesOnly(user, properties))
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .toList();
@@ -116,6 +118,7 @@ public class KValueComparisonTest extends RecommendationTestBase {
         double n8 = userMetrics.stream().mapToDouble(UserMetrics::getNdcg8).average().orElse(0.0);
         double r30 = userMetrics.stream().mapToDouble(UserMetrics::getRecall30).average().orElse(0.0);
         double n30 = userMetrics.stream().mapToDouble(UserMetrics::getNdcg30).average().orElse(0.0);
+        double latency = userMetrics.stream().mapToDouble(UserMetrics::getLatencyMs).average().orElse(0.0);
 
         return KMetrics.builder()
                 .recallAt4(r4)
@@ -124,17 +127,18 @@ public class KValueComparisonTest extends RecommendationTestBase {
                 .ndcgAt8(n8)
                 .recallAt30(r30)
                 .ndcgAt30(n30)
+                .avgLatencyMs(latency)
                 .build();
     }
 
     private void printKComparisonHeader() {
         log.info("");
-        log.info("설정                           | K값       | Candidates | R@4    | R@8    | R@30   | nDCG@4 | nDCG@8 | nDCG@30 | 실행시간");
-        log.info("----------------------------------------------------------------------------------------------");
+        log.info("설정                           | K값       | Candidates | R@4    | R@8    | R@30   | nDCG@4 | nDCG@8 | nDCG@30 | Latency | 실행시간");
+        log.info("-----------------------------------------------------------------------------------------------------------");
     }
 
     private void printKResult(KResult result) {
-        log.info(String.format("%-30s | %-9s | %-10s | %.4f | %.4f | %.4f | %.4f | %.4f | %.4f | %dms",
+        log.info(String.format("%-30s | %-9s | %-10s | %.4f | %.4f | %.4f | %.4f | %.4f | %.4f | %.0fms | %dms",
                 result.name,
                 result.knnSearchSize,
                 result.numCandidates,
@@ -144,6 +148,7 @@ public class KValueComparisonTest extends RecommendationTestBase {
                 result.metrics.ndcgAt4,
                 result.metrics.ndcgAt8,
                 result.metrics.ndcgAt30,
+                result.metrics.avgLatencyMs,
                 result.executionTimeMs
         ));
     }
@@ -219,6 +224,25 @@ public class KValueComparisonTest extends RecommendationTestBase {
         });
     }
 
+    private List<Map<String, Object>> toReportEntries(List<KResult> results) {
+        List<Map<String, Object>> entries = new ArrayList<>();
+        for (KResult r : results) {
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("configName", r.name);
+            entry.put("knnSearchSize", r.knnSearchSize);
+            entry.put("numCandidates", r.numCandidates);
+            entry.put("averageRecall4", Math.round(r.metrics.recallAt4 * 10000.0) / 10000.0);
+            entry.put("averageRecall8", Math.round(r.metrics.recallAt8 * 10000.0) / 10000.0);
+            entry.put("averageRecall30", Math.round(r.metrics.recallAt30 * 10000.0) / 10000.0);
+            entry.put("averageNDCG4", Math.round(r.metrics.ndcgAt4 * 10000.0) / 10000.0);
+            entry.put("averageNDCG8", Math.round(r.metrics.ndcgAt8 * 10000.0) / 10000.0);
+            entry.put("averageNDCG30", Math.round(r.metrics.ndcgAt30 * 10000.0) / 10000.0);
+            entry.put("avgLatencyMs", Math.round(r.metrics.avgLatencyMs * 100.0) / 100.0);
+            entries.add(entry);
+        }
+        return entries;
+    }
+
     @Getter
     @Builder
     private static class KConfig {
@@ -236,6 +260,7 @@ public class KValueComparisonTest extends RecommendationTestBase {
         private double ndcgAt8;
         private double recallAt30;
         private double ndcgAt30;
+        private double avgLatencyMs;
     }
 
     @Getter

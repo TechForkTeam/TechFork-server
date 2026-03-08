@@ -1,0 +1,65 @@
+{
+  "evaluatedAt" : "2026-03-08T20:11:18.7722936",
+  "groundTruthUsers" : 15,
+  "testName" : "K값 성능 비교 (1차 후보군)",
+  "mmrApplied" : false,
+  "configs" : [ {
+    "configName" : "소형 (30/90)",
+    "knnSearchSize" : 30,
+    "numCandidates" : 90,
+    "averageRecall4" : 0.0356,
+    "averageRecall8" : 0.08,
+    "averageRecall30" : 0.2178,
+    "averageNDCG4" : 0.2065,
+    "averageNDCG8" : 0.2318,
+    "averageNDCG30" : 0.2338,
+    "avgLatencyMs" : 476.87
+  }, {
+    "configName" : "중간-하 (40/120)",
+    "knnSearchSize" : 40,
+    "numCandidates" : 120,
+    "averageRecall4" : 0.04,
+    "averageRecall8" : 0.0867,
+    "averageRecall30" : 0.2244,
+    "averageNDCG4" : 0.2493,
+    "averageNDCG8" : 0.2618,
+    "averageNDCG30" : 0.2535,
+    "avgLatencyMs" : 549.73
+  }, {
+    "configName" : "현재 (50/150)",
+    "knnSearchSize" : 50,
+    "numCandidates" : 150,
+    "averageRecall4" : 0.04,
+    "averageRecall8" : 0.0867,
+    "averageRecall30" : 0.2244,
+    "averageNDCG4" : 0.2542,
+    "averageNDCG8" : 0.2655,
+    "averageNDCG30" : 0.258,
+    "avgLatencyMs" : 618.47
+  }, {
+    "configName" : "중간 (60/180)",
+    "knnSearchSize" : 60,
+    "numCandidates" : 180,
+    "averageRecall4" : 0.0422,
+    "averageRecall8" : 0.0844,
+    "averageRecall30" : 0.22,
+    "averageNDCG4" : 0.2625,
+    "averageNDCG8" : 0.2634,
+    "averageNDCG30" : 0.2568,
+    "avgLatencyMs" : 767.2
+  }, {
+    "configName" : "중간-상 (70/210)",
+    "knnSearchSize" : 70,
+    "numCandidates" : 210,
+    "averageRecall4" : 0.0422,
+    "averageRecall8" : 0.0978,
+    "averageRecall30" : 0.2356,
+    "averageNDCG4" : 0.2536,
+    "averageNDCG8" : 0.2825,
+    "averageNDCG30" : 0.2697,
+    "avgLatencyMs" : 928.87
+  } ],
+  "bestByRecall8" : "중간-상 (70/210)",
+  "bestByNDCG8" : "중간-상 (70/210)",
+  "bestByBalanced" : "중간-상 (70/210)"
+}

@@ -1,0 +1,87 @@
+{
+  "evaluatedAt" : "2026-03-08T20:53:33.0543158",
+  "groundTruthUsers" : 15,
+  "testName" : "Lambda 최적화",
+  "mmrApplied" : true,
+  "configs" : [ {
+    "configName" : "λ=0.80",
+    "averageRecall4" : 0.0267,
+    "averageRecall8" : 0.0533,
+    "averageRecall30" : 0.2044,
+    "averageNDCG4" : 0.1664,
+    "averageNDCG8" : 0.1714,
+    "averageNDCG30" : 0.2087,
+    "averageILD" : 0.6936,
+    "compositeScore" : 0.2286,
+    "avgLatencyMs" : 972.0
+  }, {
+    "configName" : "λ=0.85",
+    "averageRecall4" : 0.0311,
+    "averageRecall8" : 0.0622,
+    "averageRecall30" : 0.2,
+    "averageNDCG4" : 0.1779,
+    "averageNDCG8" : 0.1887,
+    "averageNDCG30" : 0.2087,
+    "averageILD" : 0.6897,
+    "compositeScore" : 0.2383,
+    "avgLatencyMs" : 848.87
+  }, {
+    "configName" : "λ=0.90",
+    "averageRecall4" : 0.0378,
+    "averageRecall8" : 0.0711,
+    "averageRecall30" : 0.2044,
+    "averageNDCG4" : 0.2148,
+    "averageNDCG8" : 0.2212,
+    "averageNDCG30" : 0.2209,
+    "averageILD" : 0.6822,
+    "compositeScore" : 0.2534,
+    "avgLatencyMs" : 836.93
+  }, {
+    "configName" : "λ=0.93",
+    "averageRecall4" : 0.04,
+    "averageRecall8" : 0.0867,
+    "averageRecall30" : 0.2022,
+    "averageNDCG4" : 0.2241,
+    "averageNDCG8" : 0.2618,
+    "averageNDCG30" : 0.2268,
+    "averageILD" : 0.6631,
+    "compositeScore" : 0.272,
+    "avgLatencyMs" : 813.2
+  }, {
+    "configName" : "λ=0.95",
+    "averageRecall4" : 0.04,
+    "averageRecall8" : 0.0933,
+    "averageRecall30" : 0.2022,
+    "averageNDCG4" : 0.229,
+    "averageNDCG8" : 0.2816,
+    "averageNDCG30" : 0.2335,
+    "averageILD" : 0.6506,
+    "compositeScore" : 0.2801,
+    "avgLatencyMs" : 808.6
+  }, {
+    "configName" : "λ=0.97",
+    "averageRecall4" : 0.04,
+    "averageRecall8" : 0.0911,
+    "averageRecall30" : 0.2111,
+    "averageNDCG4" : 0.2324,
+    "averageNDCG8" : 0.2733,
+    "averageNDCG30" : 0.2416,
+    "averageILD" : 0.6375,
+    "compositeScore" : 0.2733,
+    "avgLatencyMs" : 799.8
+  }, {
+    "configName" : "λ=1.00",
+    "averageRecall4" : 0.0356,
+    "averageRecall8" : 0.0889,
+    "averageRecall30" : 0.2244,
+    "averageNDCG4" : 0.213,
+    "averageNDCG8" : 0.2582,
+    "averageNDCG30" : 0.25,
+    "averageILD" : 0.6136,
+    "compositeScore" : 0.2616,
+    "avgLatencyMs" : 828.6
+  } ],
+  "bestByRecall8" : "λ=0.95",
+  "bestByNDCG8" : "λ=0.95",
+  "bestByBalanced" : "λ=0.95"
+}
