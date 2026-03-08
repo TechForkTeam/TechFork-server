@@ -1,0 +1,76 @@
+{
+  "evaluatedAt" : "2026-03-08T19:26:07.4391387",
+  "groundTruthUsers" : 15,
+  "testName" : "K값 성능 비교 (1차 후보군)",
+  "mmrApplied" : false,
+  "configs" : [ {
+    "configName" : "소형 (40/80)",
+    "knnSearchSize" : 40,
+    "numCandidates" : 80,
+    "averageRecall4" : 0.04,
+    "averageRecall8" : 0.0867,
+    "averageRecall30" : 0.2244,
+    "averageNDCG4" : 0.244,
+    "averageNDCG8" : 0.2581,
+    "averageNDCG30" : 0.2525,
+    "avgLatencyMs" : 722.6
+  }, {
+    "configName" : "현재 (50/100)",
+    "knnSearchSize" : 50,
+    "numCandidates" : 100,
+    "averageRecall4" : 0.04,
+    "averageRecall8" : 0.0911,
+    "averageRecall30" : 0.2267,
+    "averageNDCG4" : 0.2542,
+    "averageNDCG8" : 0.2771,
+    "averageNDCG30" : 0.2593,
+    "avgLatencyMs" : 594.93
+  }, {
+    "configName" : "중간-하 (60/120)",
+    "knnSearchSize" : 60,
+    "numCandidates" : 120,
+    "averageRecall4" : 0.04,
+    "averageRecall8" : 0.0844,
+    "averageRecall30" : 0.2222,
+    "averageNDCG4" : 0.2466,
+    "averageNDCG8" : 0.2585,
+    "averageNDCG30" : 0.2565,
+    "avgLatencyMs" : 688.2
+  }, {
+    "configName" : "중간 (70/150)",
+    "knnSearchSize" : 70,
+    "numCandidates" : 150,
+    "averageRecall4" : 0.0422,
+    "averageRecall8" : 0.0978,
+    "averageRecall30" : 0.2333,
+    "averageNDCG4" : 0.2536,
+    "averageNDCG8" : 0.2825,
+    "averageNDCG30" : 0.2681,
+    "avgLatencyMs" : 806.07
+  }, {
+    "configName" : "중간-상 (80/180)",
+    "knnSearchSize" : 80,
+    "numCandidates" : 180,
+    "averageRecall4" : 0.0422,
+    "averageRecall8" : 0.1022,
+    "averageRecall30" : 0.24,
+    "averageNDCG4" : 0.2458,
+    "averageNDCG8" : 0.2877,
+    "averageNDCG30" : 0.2722,
+    "avgLatencyMs" : 871.47
+  }, {
+    "configName" : "이전 (100/200)",
+    "knnSearchSize" : 100,
+    "numCandidates" : 200,
+    "averageRecall4" : 0.0444,
+    "averageRecall8" : 0.1,
+    "averageRecall30" : 0.2444,
+    "averageNDCG4" : 0.2619,
+    "averageNDCG8" : 0.2934,
+    "averageNDCG30" : 0.2783,
+    "avgLatencyMs" : 1176.8
+  } ],
+  "bestByRecall8" : "중간-상 (80/180)",
+  "bestByNDCG8" : "이전 (100/200)",
+  "bestByBalanced" : "이전 (100/200)"
+}
