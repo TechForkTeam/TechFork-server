@@ -25,6 +25,10 @@ public class RecommendationProperties {
 
     private Double lambda = 0.95;
 
+    private Integer mmrFirstTopK = 5;
+
+    private Integer mmrTopK = 3;
+
     private Integer activeUserHours = 24;
 
     private EmbeddingWeights embeddingWeights = new EmbeddingWeights();
