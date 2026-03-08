@@ -1,76 +1,65 @@
 {
-  "evaluatedAt" : "2026-03-08T19:40:17.6998357",
+  "evaluatedAt" : "2026-03-08T20:11:18.7722936",
   "groundTruthUsers" : 15,
   "testName" : "K값 성능 비교 (1차 후보군)",
   "mmrApplied" : false,
   "configs" : [ {
-    "configName" : "소형 (40/80)",
-    "knnSearchSize" : 40,
-    "numCandidates" : 80,
-    "averageRecall4" : 0.04,
-    "averageRecall8" : 0.0844,
-    "averageRecall30" : 0.2244,
-    "averageNDCG4" : 0.2499,
-    "averageNDCG8" : 0.2598,
-    "averageNDCG30" : 0.2544,
-    "avgLatencyMs" : 669.2
+    "configName" : "소형 (30/90)",
+    "knnSearchSize" : 30,
+    "numCandidates" : 90,
+    "averageRecall4" : 0.0356,
+    "averageRecall8" : 0.08,
+    "averageRecall30" : 0.2178,
+    "averageNDCG4" : 0.2065,
+    "averageNDCG8" : 0.2318,
+    "averageNDCG30" : 0.2338,
+    "avgLatencyMs" : 476.87
   }, {
-    "configName" : "현재 (50/100)",
+    "configName" : "중간-하 (40/120)",
+    "knnSearchSize" : 40,
+    "numCandidates" : 120,
+    "averageRecall4" : 0.04,
+    "averageRecall8" : 0.0867,
+    "averageRecall30" : 0.2244,
+    "averageNDCG4" : 0.2493,
+    "averageNDCG8" : 0.2618,
+    "averageNDCG30" : 0.2535,
+    "avgLatencyMs" : 549.73
+  }, {
+    "configName" : "현재 (50/150)",
     "knnSearchSize" : 50,
-    "numCandidates" : 100,
+    "numCandidates" : 150,
     "averageRecall4" : 0.04,
     "averageRecall8" : 0.0867,
     "averageRecall30" : 0.2244,
     "averageNDCG4" : 0.2542,
     "averageNDCG8" : 0.2655,
-    "averageNDCG30" : 0.2578,
-    "avgLatencyMs" : 658.07
+    "averageNDCG30" : 0.258,
+    "avgLatencyMs" : 618.47
   }, {
-    "configName" : "중간-하 (60/120)",
+    "configName" : "중간 (60/180)",
     "knnSearchSize" : 60,
-    "numCandidates" : 120,
+    "numCandidates" : 180,
     "averageRecall4" : 0.0422,
     "averageRecall8" : 0.0844,
-    "averageRecall30" : 0.2222,
-    "averageNDCG4" : 0.2582,
-    "averageNDCG8" : 0.2639,
-    "averageNDCG30" : 0.2569,
-    "avgLatencyMs" : 751.2
+    "averageRecall30" : 0.22,
+    "averageNDCG4" : 0.2625,
+    "averageNDCG8" : 0.2634,
+    "averageNDCG30" : 0.2568,
+    "avgLatencyMs" : 767.2
   }, {
-    "configName" : "중간 (70/150)",
+    "configName" : "중간-상 (70/210)",
     "knnSearchSize" : 70,
-    "numCandidates" : 150,
+    "numCandidates" : 210,
     "averageRecall4" : 0.0422,
     "averageRecall8" : 0.0978,
     "averageRecall30" : 0.2356,
     "averageNDCG4" : 0.2536,
-    "averageNDCG8" : 0.2827,
-    "averageNDCG30" : 0.27,
-    "avgLatencyMs" : 854.8
-  }, {
-    "configName" : "중간-상 (80/180)",
-    "knnSearchSize" : 80,
-    "numCandidates" : 180,
-    "averageRecall4" : 0.0422,
-    "averageRecall8" : 0.1022,
-    "averageRecall30" : 0.2378,
-    "averageNDCG4" : 0.2458,
-    "averageNDCG8" : 0.287,
-    "averageNDCG30" : 0.2699,
-    "avgLatencyMs" : 977.53
-  }, {
-    "configName" : "이전 (100/200)",
-    "knnSearchSize" : 100,
-    "numCandidates" : 200,
-    "averageRecall4" : 0.0444,
-    "averageRecall8" : 0.1,
-    "averageRecall30" : 0.2444,
-    "averageNDCG4" : 0.2619,
-    "averageNDCG8" : 0.2923,
-    "averageNDCG30" : 0.2778,
-    "avgLatencyMs" : 1226.13
+    "averageNDCG8" : 0.2825,
+    "averageNDCG30" : 0.2697,
+    "avgLatencyMs" : 928.87
   } ],
-  "bestByRecall8" : "중간-상 (80/180)",
-  "bestByNDCG8" : "이전 (100/200)",
-  "bestByBalanced" : "이전 (100/200)"
+  "bestByRecall8" : "중간-상 (70/210)",
+  "bestByNDCG8" : "중간-상 (70/210)",
+  "bestByBalanced" : "중간-상 (70/210)"
 }

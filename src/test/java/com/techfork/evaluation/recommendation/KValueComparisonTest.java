@@ -43,23 +43,20 @@ public class KValueComparisonTest extends RecommendationTestBase {
      */
     private List<KConfig> createKConfigs() {
         return Arrays.asList(
-                KConfig.builder().name("소형 (40/80)")
-                        .knnSearchSize(40).numCandidates(80).build(),
+                KConfig.builder().name("소형 (30/90)")
+                        .knnSearchSize(30).numCandidates(90).build(),
 
-                KConfig.builder().name("현재 (50/100)")
-                        .knnSearchSize(50).numCandidates(100).build(),
+                KConfig.builder().name("중간-하 (40/120)")
+                        .knnSearchSize(40).numCandidates(120).build(),
 
-                KConfig.builder().name("중간-하 (60/120)")
-                        .knnSearchSize(60).numCandidates(120).build(),
+                KConfig.builder().name("현재 (50/150)")
+                        .knnSearchSize(50).numCandidates(150).build(),
 
-                KConfig.builder().name("중간 (70/150)")
-                        .knnSearchSize(70).numCandidates(150).build(),
+                KConfig.builder().name("중간 (60/180)")
+                        .knnSearchSize(60).numCandidates(180).build(),
 
-                KConfig.builder().name("중간-상 (80/180)")
-                        .knnSearchSize(80).numCandidates(180).build(),
-
-                KConfig.builder().name("이전 (100/200)")
-                        .knnSearchSize(100).numCandidates(200).build()
+                KConfig.builder().name("중간-상 (70/210)")
+                        .knnSearchSize(70).numCandidates(210).build()
         );
     }
 
