@@ -12,36 +12,80 @@ import com.techfork.domain.source.dto.RssFeedItem;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.global.util.ContentCleaner;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemReader;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-@Slf4j
 @Component
 @StepScope
-@RequiredArgsConstructor
+@Slf4j
 public class RssFeedReader implements ItemReader<RssFeedItem> {
+
+    private static final int RSS_FETCH_TASK_TIMEOUT_SECONDS = 45;
 
     private final TechBlogRepository techBlogRepository;
     private final PostRepository postRepository;
     private final WebClient webClient;
+    @Qualifier("rssFetchTaskExecutor")
+    private final AsyncTaskExecutor rssFetchTaskExecutor;
+    private final int rssFetchTaskTimeoutSeconds;
 
     private List<RssFeedItem> items;
     private int currentIndex = 0;
+
+    @Autowired
+    public RssFeedReader(
+            TechBlogRepository techBlogRepository,
+            PostRepository postRepository,
+            WebClient webClient,
+            @Qualifier("rssFetchTaskExecutor") AsyncTaskExecutor rssFetchTaskExecutor
+    ) {
+        this(
+                techBlogRepository,
+                postRepository,
+                webClient,
+                rssFetchTaskExecutor,
+                RSS_FETCH_TASK_TIMEOUT_SECONDS
+        );
+    }
+
+    RssFeedReader(
+            TechBlogRepository techBlogRepository,
+            PostRepository postRepository,
+            WebClient webClient,
+            @Qualifier("rssFetchTaskExecutor") AsyncTaskExecutor rssFetchTaskExecutor,
+            int rssFetchTaskTimeoutSeconds
+    ) {
+        this.techBlogRepository = techBlogRepository;
+        this.postRepository = postRepository;
+        this.webClient = webClient;
+        this.rssFetchTaskExecutor = rssFetchTaskExecutor;
+        this.rssFetchTaskTimeoutSeconds = rssFetchTaskTimeoutSeconds;
+    }
 
     @Override
     public RssFeedItem read() {
@@ -61,28 +105,67 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
         List<TechBlog> techBlogs = techBlogRepository.findAll();
         log.info("총 {}개 테크 블로그 RSS 수집 시작", techBlogs.size());
 
-        List<RssFeedItem> allItems = techBlogs.parallelStream()
-                .flatMap(techBlog -> {
-                    try {
-                        List<RssFeedItem> feedItems = fetchRssFeed(techBlog);
-                        log.info("[{}] RSS 수집 성공: {}개", techBlog.getCompanyName(), feedItems.size());
-                        return feedItems.stream();
-                    } catch (Exception e) {
-                        log.error("[{}] RSS 수집 실패: {}", techBlog.getCompanyName(), e.getMessage());
-                        return Stream.empty();
-                    }
-                })
+        List<FeedFetchTask> fetchTasks = techBlogs.stream()
+                .map(this::submitFetchTask)
+                .toList();
+
+        List<RssFeedItem> allItems = fetchTasks.stream()
+                .flatMap(this::collectFeedItems)
                 .toList();
 
         Set<String> existingUrls = postRepository.findExistingUrls(
                 allItems.stream().map(RssFeedItem::url).toList()
         );
 
-        items = allItems.stream()
-                .filter(item -> !existingUrls.contains(item.url()))
-                .toList();
+        Map<String, RssFeedItem> uniqueItemsByUrl = new LinkedHashMap<>();
+        for (RssFeedItem item : allItems) {
+            if (!existingUrls.contains(item.url())) {
+                uniqueItemsByUrl.putIfAbsent(item.url(), item);
+            }
+        }
+
+        items = List.copyOf(uniqueItemsByUrl.values());
 
         log.info("RSS 수집 초기화 완료: 총 {}개 아이템", items.size());
+    }
+
+    private FeedFetchTask submitFetchTask(TechBlog techBlog) {
+        Future<List<RssFeedItem>> future = rssFetchTaskExecutor.submit(() -> fetchFeedSafely(techBlog));
+        return new FeedFetchTask(techBlog, future);
+    }
+
+    private List<RssFeedItem> fetchFeedSafely(TechBlog techBlog) {
+        try {
+            List<RssFeedItem> feedItems = fetchRssFeed(techBlog);
+            log.info("[{}] RSS 수집 성공: {}개", techBlog.getCompanyName(), feedItems.size());
+            return feedItems;
+        } catch (Exception e) {
+            log.error("[{}] RSS 수집 실패: {}", techBlog.getCompanyName(), e.getMessage());
+            return List.of();
+        }
+    }
+
+    private Stream<RssFeedItem> collectFeedItems(FeedFetchTask fetchTask) {
+        try {
+            return fetchTask.future()
+                    .get(rssFetchTaskTimeoutSeconds, TimeUnit.SECONDS)
+                    .stream();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("[{}] RSS 수집 대기 중 인터럽트 발생", fetchTask.techBlog().getCompanyName(), e);
+            return Stream.empty();
+        } catch (TimeoutException e) {
+            boolean cancelled = fetchTask.future().cancel(true);
+            log.error("[{}] RSS 수집 타임아웃: {}초 (cancelled={})",
+                    fetchTask.techBlog().getCompanyName(),
+                    rssFetchTaskTimeoutSeconds,
+                    cancelled);
+            return Stream.empty();
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            log.error("[{}] RSS 수집 Future 처리 실패: {}", fetchTask.techBlog().getCompanyName(), cause.getMessage());
+            return Stream.empty();
+        }
     }
 
     private List<RssFeedItem> fetchRssFeed(TechBlog techBlog) throws Exception {
@@ -258,5 +341,8 @@ public class RssFeedReader implements ItemReader<RssFeedItem> {
         }
 
         return null;
+    }
+
+    private record FeedFetchTask(TechBlog techBlog, Future<List<RssFeedItem>> future) {
     }
 }
