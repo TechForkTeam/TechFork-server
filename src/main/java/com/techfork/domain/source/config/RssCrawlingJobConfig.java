@@ -169,8 +169,8 @@ public class RssCrawlingJobConfig {
     @Bean(name = "rssFetchTaskExecutor")
     public AsyncTaskExecutor rssFetchTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(4);
-        executor.setMaxPoolSize(8);
+        executor.setCorePoolSize(20);
+        executor.setMaxPoolSize(20);
         executor.setQueueCapacity(32);
         executor.setThreadNamePrefix("rss-fetch-");
         executor.setTaskDecorator(new MdcTaskDecorator());
