@@ -5,6 +5,7 @@ import com.techfork.domain.source.batch.PostBatchWriter;
 import com.techfork.domain.source.batch.RssFeedReader;
 import com.techfork.domain.source.batch.RssToPostProcessor;
 import com.techfork.domain.source.dto.RssFeedItem;
+import com.techfork.global.common.IntegrationTestBase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,10 +19,7 @@ import org.springframework.batch.test.JobRepositoryTestUtils;
 import org.springframework.batch.test.context.SpringBatchTest;
 import org.springframework.batch.item.Chunk;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.jdbc.Sql;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -30,10 +28,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @SpringBatchTest
-@SpringBootTest
-@ActiveProfiles("test")
-@Sql(scripts = "classpath:org/springframework/batch/core/schema-h2.sql")
-class RssCrawlingJobIntegrationTest {
+class RssCrawlingJobIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private JobLauncherTestUtils jobLauncherTestUtils;
