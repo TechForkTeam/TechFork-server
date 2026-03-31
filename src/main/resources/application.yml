@@ -126,6 +126,15 @@ webhook:
   discord:
     url: ${DISCORD_WEBHOOK_URL}
 
+cloudflare:
+  third-party-thumbnail-optimization:
+    enabled: ${CLOUDFLARE_THIRD_PARTY_THUMBNAIL_OPTIMIZATION_ENABLED:false}
+    delivery-base-url: ${CLOUDFLARE_THIRD_PARTY_THUMBNAIL_OPTIMIZATION_DELIVERY_BASE_URL:}
+    width: 480
+    quality: 75
+    fit: scale-down
+    format: auto
+
 # Resilience4j 설정 (LLM API 호출용)
 resilience4j:
   circuitbreaker:
