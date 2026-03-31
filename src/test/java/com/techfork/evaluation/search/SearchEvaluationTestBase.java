@@ -14,7 +14,9 @@ import com.techfork.domain.search.service.SearchServiceImpl;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
 import com.techfork.evaluation.search.util.GroundTruthItem;
 import com.techfork.evaluation.search.util.SearchQualityService;
+import com.techfork.global.config.CloudflareThirdPartyThumbnailOptimizationProperties;
 import com.techfork.global.llm.EmbeddingClient;
+import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -101,11 +103,14 @@ public abstract class SearchEvaluationTestBase {
         for (Map.Entry<String, GeneralSearchProperties> entry : scenarios.entrySet()) {
             String scenarioName = entry.getKey();
             GeneralSearchProperties props = entry.getValue();
+            CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer = new CloudflareThirdPartyThumbnailOptimizer(
+                    new CloudflareThirdPartyThumbnailOptimizationProperties()
+            );
 
             SearchService svc = new SearchServiceImpl(
                     elasticsearchClient, embeddingClient, props,
                     userProfileDocumentRepository, postRepository,
-                    scrabPostRepository, searchAsyncExecutor);
+                    scrabPostRepository, searchAsyncExecutor, thumbnailOptimizer);
 
             // index: [nDCG@4, nDCG@8, nDCG@20, Recall@4, Recall@8, Recall@20, latency]
             double[] sums = new double[7];

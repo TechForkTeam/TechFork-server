@@ -8,6 +8,8 @@ import com.techfork.domain.post.enums.EPostSortType;
 import com.techfork.domain.post.repository.PostKeywordRepository;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.global.exception.GeneralException;
+import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +25,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -47,8 +50,16 @@ class PostQueryServiceTest {
     @Mock
     private PostConverter postConverter;
 
+    @Mock
+    private CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
+
     @InjectMocks
     private PostQueryService postQueryService;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(thumbnailOptimizer.optimize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+    }
 
     @Test
     @DisplayName("getCompanies() - 회사 목록 조회 성공")

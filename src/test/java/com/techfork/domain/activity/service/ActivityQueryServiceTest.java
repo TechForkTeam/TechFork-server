@@ -14,6 +14,7 @@ import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.exception.UserErrorCode;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.exception.GeneralException;
+import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,6 +33,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -54,6 +56,9 @@ class ActivityQueryServiceTest {
     @Mock
     private ActivityConverter activityConverter;
 
+    @Mock
+    private CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
+
     @InjectMocks
     private ActivityQueryService activityQueryService;
 
@@ -64,6 +69,7 @@ class ActivityQueryServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(thumbnailOptimizer.optimize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
         mockUser = mock(User.class);
 
         mockBookmarksFirstPage = Arrays.asList(

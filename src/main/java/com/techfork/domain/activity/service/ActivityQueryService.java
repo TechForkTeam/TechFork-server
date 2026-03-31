@@ -13,6 +13,7 @@ import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.exception.UserErrorCode;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.exception.GeneralException;
+import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -34,6 +35,7 @@ public class ActivityQueryService {
     private final PostKeywordRepository postKeywordRepository;
     private final ReadPostRepository readPostRepository;
     private final ActivityConverter activityConverter;
+    private final CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
 
     public BookmarkListResponse getBookmarks(Long userId, Long lastBookmarkId, int size) {
         User user = userRepository.findById(userId)
@@ -81,7 +83,7 @@ public class ActivityQueryService {
                         .companyName(post.companyName())
                         .logoUrl(post.logoUrl())
                         .publishedAt(post.publishedAt())
-                        .thumbnailUrl(post.thumbnailUrl())
+                        .thumbnailUrl(thumbnailOptimizer.optimize(post.thumbnailUrl()))
                         .viewCount(post.viewCount())
                         .keywords(keywordMap.getOrDefault(post.postId(), List.of()))
                         .isBookmarked(post.isBookmarked())
@@ -115,7 +117,7 @@ public class ActivityQueryService {
                         .companyName(readPost.companyName())
                         .logoUrl(readPost.logoUrl())
                         .publishedAt(readPost.publishedAt())
-                        .thumbnailUrl(readPost.thumbnailUrl())
+                        .thumbnailUrl(thumbnailOptimizer.optimize(readPost.thumbnailUrl()))
                         .viewCount(readPost.viewCount())
                         .keywords(keywordMap.getOrDefault(readPost.postId(), List.of()))
                         .isBookmarked(null)
@@ -145,7 +147,7 @@ public class ActivityQueryService {
                         .companyName(readPost.companyName())
                         .logoUrl(readPost.logoUrl())
                         .publishedAt(readPost.publishedAt())
-                        .thumbnailUrl(readPost.thumbnailUrl())
+                        .thumbnailUrl(thumbnailOptimizer.optimize(readPost.thumbnailUrl()))
                         .viewCount(readPost.viewCount())
                         .keywords(readPost.keywords())
                         .isBookmarked(bookmarkedPostIds.contains(readPost.postId()))

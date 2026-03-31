@@ -16,6 +16,7 @@ import com.techfork.domain.search.dto.SearchResult;
 import com.techfork.domain.user.document.UserProfileDocument;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
 import com.techfork.global.llm.EmbeddingClient;
+import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import com.techfork.global.util.RrfScorer;
 import com.techfork.global.util.VectorUtil;
 import java.io.IOException;
@@ -55,6 +56,7 @@ public class SearchServiceImpl implements SearchService {
     private final PostRepository postRepository;
     private final ScrabPostRepository scrabPostRepository;
     private final Executor searchAsyncExecutor;
+    private final CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
 
     @Override
     public List<SearchResult> searchOnlyBm25(String query) {
@@ -325,7 +327,7 @@ public class SearchServiceImpl implements SearchService {
                 .companyName(doc.getCompany())
                 .url(doc.getUrl())
                 .logoUrl(doc.getLogoUrl())
-                .thumbnailUrl(doc.getThumbnailUrl())
+                .thumbnailUrl(thumbnailOptimizer.optimize(doc.getThumbnailUrl()))
                 .publishedAt(doc.getPublishedAt())
                 .hybridScore(score)
                 .finalScore(score)

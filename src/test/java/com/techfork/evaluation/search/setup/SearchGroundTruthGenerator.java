@@ -11,8 +11,10 @@ import com.techfork.domain.search.service.SearchServiceImpl;
 import com.techfork.domain.user.repository.UserProfileDocumentRepository;
 import com.techfork.evaluation.recommendation.setup.components.FileExporter;
 import com.techfork.evaluation.search.util.GroundTruthItem;
+import com.techfork.global.config.CloudflareThirdPartyThumbnailOptimizationProperties;
 import com.techfork.global.llm.EmbeddingClient;
 import com.techfork.global.llm.LlmClient;
+import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -138,9 +140,12 @@ class SearchGroundTruthGenerator {
 
         // Step 3 & 4: 각 쿼리로 검색 실행 + LLM 관련도 평가
         log.info("=== [Step 3 & 4] 검색 실행 및 LLM 관련도 평가 시작 ===");
+        CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer = new CloudflareThirdPartyThumbnailOptimizer(
+                new CloudflareThirdPartyThumbnailOptimizationProperties()
+        );
         SearchServiceImpl searchService = new SearchServiceImpl(
                 elasticsearchClient, embeddingClient, generalSearchProperties,
-                userProfileDocumentRepository, postRepository, scrabPostRepository, searchAsyncExecutor);
+                userProfileDocumentRepository, postRepository, scrabPostRepository, searchAsyncExecutor, thumbnailOptimizer);
 
         List<GroundTruthItem> groundTruthItems = scoreAllQueries(uniqueQueryMap, searchService);
         log.info("최종 ground-truth 항목 수: {}", groundTruthItems.size());
