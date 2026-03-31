@@ -9,6 +9,7 @@ import com.techfork.domain.post.repository.PostKeywordRepository;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.global.exception.CommonErrorCode;
 import com.techfork.global.exception.GeneralException;
+import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -31,6 +32,7 @@ public class PostQueryService {
     private final PostKeywordRepository postKeywordRepository;
     private final ScrabPostRepository scrabPostRepository;
     private final PostConverter postConverter;
+    private final CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
 
     public CompanyListResponse getCompanies() {
         List<String> companies = postRepository.findDistinctCompanies();
@@ -145,7 +147,7 @@ public class PostQueryService {
                         .company(post.company())
                         .url(post.url())
                         .logoUrl(post.logoUrl())
-                        .thumbnailUrl(post.thumbnailUrl())
+                        .thumbnailUrl(thumbnailOptimizer.optimize(post.thumbnailUrl()))
                         .publishedAt(post.publishedAt())
                         .viewCount(post.viewCount())
                         .keywords(keywordMap.getOrDefault(post.id(), List.of()))
@@ -175,7 +177,7 @@ public class PostQueryService {
                         .company(post.company())
                         .url(post.url())
                         .logoUrl(post.logoUrl())
-                        .thumbnailUrl(post.thumbnailUrl())
+                        .thumbnailUrl(thumbnailOptimizer.optimize(post.thumbnailUrl()))
                         .publishedAt(post.publishedAt())
                         .viewCount(post.viewCount())
                         .keywords(post.keywords())

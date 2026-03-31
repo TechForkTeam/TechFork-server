@@ -5,12 +5,17 @@ import com.techfork.domain.post.entity.PostKeyword;
 import com.techfork.domain.recommendation.dto.RecommendationListResponse;
 import com.techfork.domain.recommendation.dto.RecommendedPostDto;
 import com.techfork.domain.recommendation.entity.RecommendedPost;
+import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class RecommendationConverter {
+
+    private final CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
 
     public RecommendationListResponse toRecommendationListResponse(List<RecommendedPost> recommendedPosts) {
         List<RecommendedPostDto> dtos = recommendedPosts.stream()
@@ -38,7 +43,7 @@ public class RecommendationConverter {
                 .company(post.getCompany())
                 .url(post.getUrl())
                 .logoUrl(post.getTechBlog().getLogoUrl())
-                .thumbnailUrl(post.getThumbnailUrl())
+                .thumbnailUrl(thumbnailOptimizer.optimize(post.getThumbnailUrl()))
                 .viewCount(post.getViewCount())
                 .isBookmarked(null) // Will be set later in service layer
                 .publishedAt(post.getPublishedAt())
