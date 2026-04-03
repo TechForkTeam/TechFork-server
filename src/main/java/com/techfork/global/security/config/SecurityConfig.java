@@ -82,6 +82,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "https://localhost",
+                "https://dev2.techfork.site",
                 "https://techfork.site",
                 "https://appleid.apple.com"  // Apple Sign In form_post
         ));
