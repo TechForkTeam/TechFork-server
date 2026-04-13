@@ -1,13 +1,13 @@
 package com.techfork.domain.source.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestOperations;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -16,8 +16,9 @@ import java.util.Map;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class WebhookNotificationService {
+
+    private final RestOperations restOperations;
 
     @Value("${webhook.discord.url:#{null}}")
     private String discordWebhookUrl;
@@ -25,7 +26,9 @@ public class WebhookNotificationService {
     @Value("${webhook.enabled:false}")
     private boolean webhookEnabled;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    public WebhookNotificationService(@Qualifier("webhookRestOperations") RestOperations restOperations) {
+        this.restOperations = restOperations;
+    }
 
     public void sendCrawlingFailureNotification(Map<String, Object> context) {
         if (!webhookEnabled) {
@@ -65,7 +68,7 @@ public class WebhookNotificationService {
             headers.setContentType(MediaType.APPLICATION_JSON);
 
             HttpEntity<Map<String, String>> request = new HttpEntity<>(payload, headers);
-            restTemplate.postForEntity(discordWebhookUrl, request, String.class);
+            restOperations.postForEntity(discordWebhookUrl, request, String.class);
 
             log.info("Discord notification sent successfully");
         } catch (Exception e) {

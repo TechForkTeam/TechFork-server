@@ -56,16 +56,12 @@ public class RssCrawlingJobListener implements JobExecutionListener {
      * Job 성공 처리
      */
     private void handleJobSuccess(JobExecution jobExecution) {
-        StepExecution stepExecution = jobExecution.getStepExecutions().iterator().next();
-
-        int readCount = (int) stepExecution.getReadCount();
-        int writeCount = (int) stepExecution.getWriteCount();
-        int skipCount = (int) stepExecution.getSkipCount();
+        StepExecutionSummary summary = aggregateStepExecutionSummary(jobExecution);
 
         long durationMs = Duration.between(jobExecution.getStartTime(), jobExecution.getEndTime()).toMillis();
 
         log.info("RSS crawling completed successfully: jobExecutionId={}, total={}, success={}, failed={}, duration={}ms",
-                jobExecution.getId(), readCount, writeCount, skipCount, durationMs);
+                jobExecution.getId(), summary.readCount(), summary.writeCount(), summary.skipCount(), durationMs);
 
         elasticsearchCacheManager.forceMergeAndWarmupPosts();
     }
@@ -84,5 +80,22 @@ public class RssCrawlingJobListener implements JobExecutionListener {
         context.put("jobExecutionId", jobExecution.getId());
 
         webhookNotificationService.sendCrawlingFailureNotification(context);
+    }
+
+    private StepExecutionSummary aggregateStepExecutionSummary(JobExecution jobExecution) {
+        long totalReadCount = 0L;
+        long totalWriteCount = 0L;
+        long totalSkipCount = 0L;
+
+        for (StepExecution stepExecution : jobExecution.getStepExecutions()) {
+            totalReadCount += stepExecution.getReadCount();
+            totalWriteCount += stepExecution.getWriteCount();
+            totalSkipCount += stepExecution.getSkipCount();
+        }
+
+        return new StepExecutionSummary(totalReadCount, totalWriteCount, totalSkipCount);
+    }
+
+    private record StepExecutionSummary(long readCount, long writeCount, long skipCount) {
     }
 }
