@@ -65,3 +65,4 @@ logs/
 ### Test json files ###
 src/test/resources/fixtures/evaluation/
 .omx/
+.omc/
