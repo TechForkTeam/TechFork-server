@@ -1,6 +1,6 @@
 package com.techfork.domain.post.service;
 
-import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.repository.BookmarkRepository;
 import com.techfork.domain.post.converter.PostConverter;
 import com.techfork.domain.post.dto.*;
 import com.techfork.domain.post.entity.PostKeyword;
@@ -30,7 +30,7 @@ public class PostQueryService {
 
     private final PostRepository postRepository;
     private final PostKeywordRepository postKeywordRepository;
-    private final ScrabPostRepository scrabPostRepository;
+    private final BookmarkRepository bookmarkRepository;
     private final PostConverter postConverter;
     private final CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
 
@@ -117,7 +117,7 @@ public class PostQueryService {
 
         Boolean isBookmarked = null;
         if (userId != null) {
-            isBookmarked = !scrabPostRepository.findBookmarkedPostIds(userId, List.of(postId)).isEmpty();
+            isBookmarked = !bookmarkRepository.findBookmarkedPostIds(userId, List.of(postId)).isEmpty();
         }
 
         return postConverter.toPostDetailDto(postDetail, keywords, isBookmarked);
@@ -165,7 +165,7 @@ public class PostQueryService {
                 .map(PostInfoDto::id)
                 .toList();
 
-        Set<Long> bookmarkedPostIds = scrabPostRepository.findBookmarkedPostIds(userId, postIds)
+        Set<Long> bookmarkedPostIds = bookmarkRepository.findBookmarkedPostIds(userId, postIds)
                 .stream()
                 .collect(Collectors.toSet());
 
