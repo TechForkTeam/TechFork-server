@@ -1,10 +1,10 @@
 package com.techfork.domain.user.repository;
 
 import com.techfork.domain.activity.entity.ReadPost;
-import com.techfork.domain.activity.entity.ScrabPost;
+import com.techfork.domain.activity.entity.Bookmark;
 import com.techfork.domain.activity.entity.SearchHistory;
 import com.techfork.domain.activity.repository.ReadPostRepository;
-import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.repository.BookmarkRepository;
 import com.techfork.domain.activity.repository.SearchHistoryRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
@@ -42,7 +42,7 @@ class UserRepositoryTest {
     private ReadPostRepository readPostRepository;
 
     @Autowired
-    private ScrabPostRepository scrabPostRepository;
+    private BookmarkRepository bookmarkRepository;
 
     @Autowired
     private SearchHistoryRepository searchHistoryRepository;
@@ -131,14 +131,14 @@ class UserRepositoryTest {
     }
 
     @Test
-    @DisplayName("findActiveUsersSince - 최근 스크랩한 포스트가 있는 유저 조회")
-    void findActiveUsersSince_WithScrapPost_ReturnsActiveUsers() {
+    @DisplayName("findActiveUsersSince - 최근 북마크한 포스트가 있는 유저 조회")
+    void findActiveUsersSince_WithBookmark_ReturnsActiveUsers() {
         // Given
         LocalDateTime since = LocalDateTime.now().minusDays(7);
 
         Post post = createPost();
-        ScrabPost scrabPost = ScrabPost.create(testUser, post, LocalDateTime.now());
-        scrabPostRepository.save(scrabPost);
+        Bookmark bookmark = Bookmark.create(testUser, post, LocalDateTime.now());
+        bookmarkRepository.save(bookmark);
 
         // When
         List<User> activeUsers = userRepository.findActiveUsersSince(since);
@@ -193,11 +193,11 @@ class UserRepositoryTest {
         Post post2 = createPost();
 
         ReadPost readPost = ReadPost.create(testUser, post1, LocalDateTime.now(), 100);
-        ScrabPost scrabPost = ScrabPost.create(testUser, post2, LocalDateTime.now());
+        Bookmark bookmark = Bookmark.create(testUser, post2, LocalDateTime.now());
         SearchHistory searchHistory = SearchHistory.create(testUser, "검색", LocalDateTime.now());
 
         readPostRepository.save(readPost);
-        scrabPostRepository.save(scrabPost);
+        bookmarkRepository.save(bookmark);
         searchHistoryRepository.save(searchHistory);
 
         // When
