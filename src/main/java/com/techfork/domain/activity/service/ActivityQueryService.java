@@ -6,7 +6,7 @@ import com.techfork.domain.activity.dto.BookmarkListResponse;
 import com.techfork.domain.activity.dto.ReadPostDto;
 import com.techfork.domain.activity.dto.ReadPostListResponse;
 import com.techfork.domain.activity.repository.ReadPostRepository;
-import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.repository.BookmarkRepository;
 import com.techfork.domain.post.entity.PostKeyword;
 import com.techfork.domain.post.repository.PostKeywordRepository;
 import com.techfork.domain.user.entity.User;
@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 public class ActivityQueryService {
 
     private final UserRepository userRepository;
-    private final ScrabPostRepository scrabPostRepository;
+    private final BookmarkRepository bookmarkRepository;
     private final PostKeywordRepository postKeywordRepository;
     private final ReadPostRepository readPostRepository;
     private final ActivityConverter activityConverter;
@@ -42,7 +42,7 @@ public class ActivityQueryService {
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
         PageRequest pageRequest = PageRequest.of(0, size + 1);
-        List<BookmarkDto> bookmarks = scrabPostRepository.findBookmarksWithCursor(user, lastBookmarkId, pageRequest);
+        List<BookmarkDto> bookmarks = bookmarkRepository.findBookmarksWithCursor(user, lastBookmarkId, pageRequest);
         List<BookmarkDto> bookmarksWithKeywords = attachKeywordsToPostInfoList(bookmarks);
 
         return activityConverter.toBookmarkListResponse(bookmarksWithKeywords, size);
@@ -135,7 +135,7 @@ public class ActivityQueryService {
                 .map(ReadPostDto::postId)
                 .toList();
 
-        List<Long> bookmarkedPostIds = scrabPostRepository.findBookmarkedPostIds(userId, postIds);
+        List<Long> bookmarkedPostIds = bookmarkRepository.findBookmarkedPostIds(userId, postIds);
 
         return readPosts.stream()
                 .map(readPost -> ReadPostDto.builder()
