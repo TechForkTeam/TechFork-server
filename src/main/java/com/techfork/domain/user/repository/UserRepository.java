@@ -32,7 +32,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
             AND (EXISTS (
                 SELECT 1 FROM ReadPost rp WHERE rp.user = u AND rp.readAt >= :since
             ) OR EXISTS (
-                SELECT 1 FROM Bookmark sp WHERE sp.user = u AND sp.bookmarkedAt >= :since
+                SELECT 1 FROM Bookmark b WHERE b.user = u AND b.bookmarkedAt >= :since
             ) OR EXISTS (
                 SELECT 1 FROM SearchHistory sh WHERE sh.user = u AND sh.searchedAt >= :since
             ))
