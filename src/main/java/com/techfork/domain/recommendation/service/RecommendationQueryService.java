@@ -1,6 +1,6 @@
 package com.techfork.domain.recommendation.service;
 
-import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.repository.BookmarkRepository;
 import com.techfork.domain.recommendation.converter.RecommendationConverter;
 import com.techfork.domain.recommendation.dto.RecommendationListResponse;
 import com.techfork.domain.recommendation.dto.RecommendedPostDto;
@@ -24,7 +24,7 @@ public class RecommendationQueryService {
     private final RecommendedPostRepository recommendedPostRepository;
     private final UserRepository userRepository;
     private final RecommendationConverter recommendationConverter;
-    private final ScrabPostRepository scrabPostRepository;
+    private final BookmarkRepository bookmarkRepository;
 
     public RecommendationListResponse getRecommendations(Long userId) {
         User user = userRepository.getReferenceById(userId);
@@ -45,7 +45,7 @@ public class RecommendationQueryService {
         List<Long> postIds = response.recommendations().stream()
                 .map(RecommendedPostDto::postId)
                 .toList();
-        List<Long> bookmarkedPostIds = scrabPostRepository.findBookmarkedPostIds(userId, postIds);
+        List<Long> bookmarkedPostIds = bookmarkRepository.findBookmarkedPostIds(userId, postIds);
 
         List<RecommendedPostDto> updatedRecommendations = response.recommendations().stream()
                 .map(dto -> dto.withBookmarkStatus(bookmarkedPostIds.contains(dto.postId())))
