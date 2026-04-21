@@ -1,7 +1,7 @@
 package com.techfork.domain.activity.repository;
 
 import com.techfork.domain.activity.dto.BookmarkDto;
-import com.techfork.domain.activity.entity.ScrabPost;
+import com.techfork.domain.activity.entity.Bookmark;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;
@@ -25,10 +25,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @ActiveProfiles("test")
-class ScrabPostRepositoryTest {
+class BookmarkRepositoryTest {
 
     @Autowired
-    private ScrabPostRepository scrabPostRepository;
+    private BookmarkRepository bookmarkRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -97,7 +97,7 @@ class ScrabPostRepositoryTest {
 
     @AfterEach
     void tearDown() {
-        scrabPostRepository.deleteAll();
+        bookmarkRepository.deleteAll();
         postRepository.deleteAll();
         techBlogRepository.deleteAll();
         userRepository.deleteAll();
@@ -107,17 +107,17 @@ class ScrabPostRepositoryTest {
     @DisplayName("북마크 목록 조회 - 커서 기반 페이징")
     void findBookmarksWithCursor() {
         // Given
-        ScrabPost scrab1 = ScrabPost.create(testUser, testPost1, LocalDateTime.now().minusHours(3));
-        ScrabPost scrab2 = ScrabPost.create(testUser, testPost2, LocalDateTime.now().minusHours(2));
-        ScrabPost scrab3 = ScrabPost.create(testUser, testPost3, LocalDateTime.now().minusHours(1));
-        scrab1 = scrabPostRepository.save(scrab1);
-        scrab2 = scrabPostRepository.save(scrab2);
-        scrab3 = scrabPostRepository.save(scrab3);
+        Bookmark bookmark1 = Bookmark.create(testUser, testPost1, LocalDateTime.now().minusHours(3));
+        Bookmark bookmark2 = Bookmark.create(testUser, testPost2, LocalDateTime.now().minusHours(2));
+        Bookmark bookmark3 = Bookmark.create(testUser, testPost3, LocalDateTime.now().minusHours(1));
+        bookmark1 = bookmarkRepository.save(bookmark1);
+        bookmark2 = bookmarkRepository.save(bookmark2);
+        bookmark3 = bookmarkRepository.save(bookmark3);
 
         PageRequest pageRequest = PageRequest.of(0, 10);
 
         // When - 커서 없이 첫 페이지
-        List<BookmarkDto> firstPage = scrabPostRepository.findBookmarksWithCursor(testUser, null, pageRequest);
+        List<BookmarkDto> firstPage = bookmarkRepository.findBookmarksWithCursor(testUser, null, pageRequest);
 
         // Then
         assertThat(firstPage).hasSize(3);
@@ -126,8 +126,8 @@ class ScrabPostRepositoryTest {
         assertThat(firstPage.get(2).postId()).isEqualTo(testPost1.getId());
 
         // When - 커서를 사용한 다음 페이지
-        Long lastBookmarkId = scrab3.getId();
-        List<BookmarkDto> nextPage = scrabPostRepository.findBookmarksWithCursor(testUser, lastBookmarkId, pageRequest);
+        Long lastBookmarkId = bookmark3.getId();
+        List<BookmarkDto> nextPage = bookmarkRepository.findBookmarksWithCursor(testUser, lastBookmarkId, pageRequest);
 
         // Then
         assertThat(nextPage).hasSize(2);
@@ -139,15 +139,15 @@ class ScrabPostRepositoryTest {
     @DisplayName("북마크된 게시글 ID 목록 조회")
     void findBookmarkedPostIds() {
         // Given
-        ScrabPost scrab1 = ScrabPost.create(testUser, testPost1, LocalDateTime.now());
-        ScrabPost scrab3 = ScrabPost.create(testUser, testPost3, LocalDateTime.now());
-        scrabPostRepository.save(scrab1);
-        scrabPostRepository.save(scrab3);
+        Bookmark bookmark1 = Bookmark.create(testUser, testPost1, LocalDateTime.now());
+        Bookmark bookmark3 = Bookmark.create(testUser, testPost3, LocalDateTime.now());
+        bookmarkRepository.save(bookmark1);
+        bookmarkRepository.save(bookmark3);
 
         List<Long> postIds = List.of(testPost1.getId(), testPost2.getId(), testPost3.getId());
 
         // When
-        List<Long> bookmarkedPostIds = scrabPostRepository.findBookmarkedPostIds(testUser.getId(), postIds);
+        List<Long> bookmarkedPostIds = bookmarkRepository.findBookmarkedPostIds(testUser.getId(), postIds);
 
         // Then
         assertThat(bookmarkedPostIds).hasSize(2);
@@ -162,7 +162,7 @@ class ScrabPostRepositoryTest {
         List<Long> postIds = List.of(testPost1.getId(), testPost2.getId(), testPost3.getId());
 
         // When
-        List<Long> bookmarkedPostIds = scrabPostRepository.findBookmarkedPostIds(testUser.getId(), postIds);
+        List<Long> bookmarkedPostIds = bookmarkRepository.findBookmarkedPostIds(testUser.getId(), postIds);
 
         // Then
         assertThat(bookmarkedPostIds).isEmpty();
@@ -175,15 +175,15 @@ class ScrabPostRepositoryTest {
         User anotherUser = User.createSocialUser(SocialType.KAKAO, "anotherSocialId", "another@example.com", "another.jpg");
         anotherUser = userRepository.save(anotherUser);
 
-        ScrabPost scrab1 = ScrabPost.create(testUser, testPost1, LocalDateTime.now());
-        ScrabPost scrab2 = ScrabPost.create(anotherUser, testPost2, LocalDateTime.now());
-        scrabPostRepository.save(scrab1);
-        scrabPostRepository.save(scrab2);
+        Bookmark bookmark1 = Bookmark.create(testUser, testPost1, LocalDateTime.now());
+        Bookmark bookmark2 = Bookmark.create(anotherUser, testPost2, LocalDateTime.now());
+        bookmarkRepository.save(bookmark1);
+        bookmarkRepository.save(bookmark2);
 
         List<Long> postIds = List.of(testPost1.getId(), testPost2.getId());
 
         // When
-        List<Long> bookmarkedPostIds = scrabPostRepository.findBookmarkedPostIds(testUser.getId(), postIds);
+        List<Long> bookmarkedPostIds = bookmarkRepository.findBookmarkedPostIds(testUser.getId(), postIds);
 
         // Then
         assertThat(bookmarkedPostIds).hasSize(1);

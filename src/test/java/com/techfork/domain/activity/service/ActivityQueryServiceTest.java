@@ -6,7 +6,7 @@ import com.techfork.domain.activity.dto.BookmarkListResponse;
 import com.techfork.domain.activity.dto.ReadPostDto;
 import com.techfork.domain.activity.dto.ReadPostListResponse;
 import com.techfork.domain.activity.repository.ReadPostRepository;
-import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.repository.BookmarkRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.entity.PostKeyword;
 import com.techfork.domain.post.repository.PostKeywordRepository;
@@ -45,7 +45,7 @@ class ActivityQueryServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private ScrabPostRepository scrabPostRepository;
+    private BookmarkRepository bookmarkRepository;
 
     @Mock
     private ReadPostRepository readPostRepository;
@@ -163,7 +163,7 @@ class ActivityQueryServiceTest {
         int size = 20;
 
         given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
-        given(scrabPostRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
+        given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
                 .willReturn(mockBookmarksFirstPage);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
 
@@ -180,7 +180,7 @@ class ActivityQueryServiceTest {
         assertThat(response.hasNext()).isTrue();
 
         verify(userRepository, times(1)).findById(userId);
-        verify(scrabPostRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
+        verify(bookmarkRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
         verify(activityConverter, times(1)).toBookmarkListResponse(mockBookmarksFirstPage, size);
     }
 
@@ -193,7 +193,7 @@ class ActivityQueryServiceTest {
         int size = 20;
 
         given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
-        given(scrabPostRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
+        given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
                 .willReturn(mockBookmarksSecondPage);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
 
@@ -209,7 +209,7 @@ class ActivityQueryServiceTest {
         assertThat(response.lastBookmarkId()).isNull();
         assertThat(response.hasNext()).isFalse();
 
-        verify(scrabPostRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
+        verify(bookmarkRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
     }
 
     @Test
@@ -228,7 +228,7 @@ class ActivityQueryServiceTest {
                 .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
 
         verify(userRepository, times(1)).findById(userId);
-        verify(scrabPostRepository, never()).findBookmarksWithCursor(any(), any(), any());
+        verify(bookmarkRepository, never()).findBookmarksWithCursor(any(), any(), any());
     }
 
     @Test
@@ -242,7 +242,7 @@ class ActivityQueryServiceTest {
         given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
 
         List<BookmarkDto> emptyBookmarks = List.of();
-        given(scrabPostRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
+        given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
                 .willReturn(emptyBookmarks);
 
         BookmarkListResponse expectedResponse = new BookmarkListResponse(emptyBookmarks, null, false);
@@ -257,7 +257,7 @@ class ActivityQueryServiceTest {
         assertThat(response.lastBookmarkId()).isNull();
         assertThat(response.hasNext()).isFalse();
 
-        verify(scrabPostRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
+        verify(bookmarkRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
     }
 
     @Test
@@ -269,7 +269,7 @@ class ActivityQueryServiceTest {
         int size = 20;
 
         given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
-        given(scrabPostRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
+        given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
                 .willReturn(mockBookmarksFirstPage);
 
         // PostKeyword 목 객체 생성
@@ -354,7 +354,7 @@ class ActivityQueryServiceTest {
         assertThat(response.bookmarks().get(2).keywords()).isEmpty();
 
         verify(userRepository, times(1)).findById(userId);
-        verify(scrabPostRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
+        verify(bookmarkRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
         verify(postKeywordRepository, times(1)).findByPostIdIn(any());
         verify(activityConverter, times(1)).toBookmarkListResponse(any(), eq(size));
     }
@@ -406,7 +406,7 @@ class ActivityQueryServiceTest {
         given(readPostRepository.findReadPostsWithCursor(eq(userId), eq(lastReadPostId), any(PageRequest.class)))
                 .willReturn(mockReadPosts);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
-        given(scrabPostRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(List.of());
+        given(bookmarkRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(List.of());
 
         ReadPostListResponse expectedResponse = new ReadPostListResponse(mockReadPosts, 2L, false);
         given(activityConverter.toReadPostListResponse(any(), eq(size))).willReturn(expectedResponse);
@@ -422,7 +422,7 @@ class ActivityQueryServiceTest {
 
         verify(readPostRepository, times(1)).findReadPostsWithCursor(eq(userId), eq(lastReadPostId), any(PageRequest.class));
         verify(postKeywordRepository, times(1)).findByPostIdIn(any());
-        verify(scrabPostRepository, times(1)).findBookmarkedPostIds(eq(userId), any());
+        verify(bookmarkRepository, times(1)).findBookmarkedPostIds(eq(userId), any());
         verify(activityConverter, times(1)).toReadPostListResponse(any(), eq(size));
     }
 
@@ -487,7 +487,7 @@ class ActivityQueryServiceTest {
                 .willReturn(List.of(keyword1, keyword2));
 
         // 103L 게시글만 북마크됨
-        given(scrabPostRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(List.of(103L));
+        given(bookmarkRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(List.of(103L));
 
         List<ReadPostDto> expectedReadPostsWithMetadata = Arrays.asList(
                 ReadPostDto.builder()
@@ -538,7 +538,7 @@ class ActivityQueryServiceTest {
 
         verify(readPostRepository, times(1)).findReadPostsWithCursor(eq(userId), eq(lastReadPostId), any(PageRequest.class));
         verify(postKeywordRepository, times(1)).findByPostIdIn(any());
-        verify(scrabPostRepository, times(1)).findBookmarkedPostIds(eq(userId), any());
+        verify(bookmarkRepository, times(1)).findBookmarkedPostIds(eq(userId), any());
     }
 
     @Test
@@ -567,6 +567,6 @@ class ActivityQueryServiceTest {
 
         verify(readPostRepository, times(1)).findReadPostsWithCursor(eq(userId), eq(lastReadPostId), any(PageRequest.class));
         verify(postKeywordRepository, never()).findByPostIdIn(any());
-        verify(scrabPostRepository, never()).findBookmarkedPostIds(any(), any());
+        verify(bookmarkRepository, never()).findBookmarkedPostIds(any(), any());
     }
 }

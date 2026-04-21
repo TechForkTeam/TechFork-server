@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.repository.BookmarkRepository;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.search.dto.SearchResult;
 import com.techfork.domain.search.config.GeneralSearchProperties;
@@ -50,7 +50,7 @@ public abstract class SearchEvaluationTestBase {
     @Autowired protected EmbeddingClient embeddingClient;
     @Autowired protected UserProfileDocumentRepository userProfileDocumentRepository;
     @Autowired protected PostRepository postRepository;
-    @Autowired protected ScrabPostRepository scrabPostRepository;
+    @Autowired protected BookmarkRepository bookmarkRepository;
     @Autowired @Qualifier("searchAsyncExecutor") protected Executor searchAsyncExecutor;
     @Autowired protected ObjectMapper objectMapper;
 
@@ -110,7 +110,7 @@ public abstract class SearchEvaluationTestBase {
             SearchService svc = new SearchServiceImpl(
                     elasticsearchClient, embeddingClient, props,
                     userProfileDocumentRepository, postRepository,
-                    scrabPostRepository, searchAsyncExecutor, thumbnailOptimizer);
+                    bookmarkRepository, searchAsyncExecutor, thumbnailOptimizer);
 
             // index: [nDCG@4, nDCG@8, nDCG@20, Recall@4, Recall@8, Recall@20, latency]
             double[] sums = new double[7];

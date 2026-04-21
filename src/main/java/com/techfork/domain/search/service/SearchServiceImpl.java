@@ -6,7 +6,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
-import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.repository.BookmarkRepository;
 import com.techfork.domain.post.document.PostDocument;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
@@ -54,7 +54,7 @@ public class SearchServiceImpl implements SearchService {
     private final GeneralSearchProperties generalSearchProperties;
     private final UserProfileDocumentRepository userProfileDocumentRepository;
     private final PostRepository postRepository;
-    private final ScrabPostRepository scrabPostRepository;
+    private final BookmarkRepository bookmarkRepository;
     private final Executor searchAsyncExecutor;
     private final CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
 
@@ -391,7 +391,7 @@ public class SearchServiceImpl implements SearchService {
 
         // Fetch bookmark status if userId is provided
         List<Long> bookmarkedPostIds = userId != null
-                ? scrabPostRepository.findBookmarkedPostIds(userId, postIds)
+                ? bookmarkRepository.findBookmarkedPostIds(userId, postIds)
                 : List.of();
 
         // Attach metadata to results

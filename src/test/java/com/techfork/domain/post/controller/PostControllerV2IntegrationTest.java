@@ -1,7 +1,7 @@
 package com.techfork.domain.post.controller;
 
-import com.techfork.domain.activity.entity.ScrabPost;
-import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.entity.Bookmark;
+import com.techfork.domain.activity.repository.BookmarkRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;
@@ -45,7 +45,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
     private TechBlogRepository techBlogRepository;
 
     @Autowired
-    private ScrabPostRepository scrabPostRepository;
+    private BookmarkRepository bookmarkRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -120,14 +120,14 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
         postRepository.save(oldPost);
 
         // testUser가 todayPost를 북마크
-        ScrabPost scrabPost = ScrabPost.create(testUser, todayPost, LocalDateTime.now());
-        scrabPostRepository.save(scrabPost);
+        Bookmark bookmark = Bookmark.create(testUser, todayPost, LocalDateTime.now());
+        bookmarkRepository.save(bookmark);
     }
 
     @AfterEach
     void tearDown() {
         // 테스트 데이터 정리 (외래키 제약조건 순서 고려)
-        scrabPostRepository.deleteAll();
+        bookmarkRepository.deleteAll();
         postRepository.deleteAll();
         techBlogRepository.deleteAll();
         userRepository.deleteAll();
@@ -154,7 +154,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
     @DisplayName("GET /api/v2/posts/companies - 게시글이 없는 경우 빈 배열 반환")
     void getCompanies_EmptyWhenNoPosts() throws Exception {
         // Given: 모든 게시글 삭제
-        scrabPostRepository.deleteAll();
+        bookmarkRepository.deleteAll();
         postRepository.deleteAll();
 
         // When & Then: 빈 배열 반환 확인
@@ -499,7 +499,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
     @DisplayName("GET /api/v2/posts/recent - 게시글이 없으면 빈 배열 반환")
     void getRecentPosts_EmptyWhenNoPosts() throws Exception {
         // Given: 모든 게시글 삭제
-        scrabPostRepository.deleteAll();
+        bookmarkRepository.deleteAll();
         postRepository.deleteAll();
 
         // When & Then: 빈 배열 반환

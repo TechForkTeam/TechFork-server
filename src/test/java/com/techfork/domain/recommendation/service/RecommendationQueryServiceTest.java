@@ -1,6 +1,6 @@
 package com.techfork.domain.recommendation.service;
 
-import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.repository.BookmarkRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.recommendation.converter.RecommendationConverter;
 import com.techfork.domain.recommendation.dto.RecommendationListResponse;
@@ -43,7 +43,7 @@ class RecommendationQueryServiceTest {
     private RecommendationConverter recommendationConverter;
 
     @Mock
-    private ScrabPostRepository scrabPostRepository;
+    private BookmarkRepository bookmarkRepository;
 
     @InjectMocks
     private RecommendationQueryService recommendationQueryService;
@@ -133,7 +133,7 @@ class RecommendationQueryServiceTest {
         given(userRepository.getReferenceById(userId)).willReturn(testUser);
         given(recommendedPostRepository.findByUserOrderByRankAsc(testUser)).willReturn(recommendedPosts);
         given(recommendationConverter.toRecommendationListResponse(recommendedPosts)).willReturn(initialResponse);
-        given(scrabPostRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(List.of());
+        given(bookmarkRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(List.of());
 
         // when
         RecommendationListResponse response = recommendationQueryService.getRecommendations(userId);
@@ -147,7 +147,7 @@ class RecommendationQueryServiceTest {
         verify(userRepository).getReferenceById(userId);
         verify(recommendedPostRepository).findByUserOrderByRankAsc(testUser);
         verify(recommendationConverter).toRecommendationListResponse(recommendedPosts);
-        verify(scrabPostRepository).findBookmarkedPostIds(eq(userId), any());
+        verify(bookmarkRepository).findBookmarkedPostIds(eq(userId), any());
     }
 
     @Test
@@ -174,7 +174,7 @@ class RecommendationQueryServiceTest {
         given(userRepository.getReferenceById(userId)).willReturn(testUser);
         given(recommendedPostRepository.findByUserOrderByRankAsc(testUser)).willReturn(recommendedPosts);
         given(recommendationConverter.toRecommendationListResponse(recommendedPosts)).willReturn(initialResponse);
-        given(scrabPostRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
+        given(bookmarkRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
 
         // when
         RecommendationListResponse response = recommendationQueryService.getRecommendations(userId);
@@ -215,7 +215,7 @@ class RecommendationQueryServiceTest {
         verify(userRepository).getReferenceById(userId);
         verify(recommendedPostRepository).findByUserOrderByRankAsc(testUser);
         verify(recommendationConverter).toRecommendationListResponse(emptyList);
-        verify(scrabPostRepository, never()).findBookmarkedPostIds(any(), any());
+        verify(bookmarkRepository, never()).findBookmarkedPostIds(any(), any());
     }
 
     private RecommendedPostDto createRecommendedPostDto(

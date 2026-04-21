@@ -14,16 +14,17 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(
-        name = "scrap_posts",
+        name = "bookmarks",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"user_id", "post_id"})
+                @UniqueConstraint(name = "uk_bookmarks_user_post", columnNames = {"user_id", "post_id"})
         }
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ScrabPost extends BaseEntity {
+public class Bookmark extends BaseEntity {
 
-    private LocalDateTime scrappedAt;
+    @Column(name = "bookmarked_at")
+    private LocalDateTime bookmarkedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -35,17 +36,17 @@ public class ScrabPost extends BaseEntity {
 
     @PersistenceCreator
     @Builder
-    ScrabPost(User user, Post post, LocalDateTime scrappedAt) {
+    Bookmark(User user, Post post, LocalDateTime bookmarkedAt) {
         this.user = user;
         this.post = post;
-        this.scrappedAt = scrappedAt;
+        this.bookmarkedAt = bookmarkedAt;
     }
 
-    public static ScrabPost create(User user, Post post, LocalDateTime scrappedAt) {
-        return ScrabPost.builder()
+    public static Bookmark create(User user, Post post, LocalDateTime bookmarkedAt) {
+        return Bookmark.builder()
                 .user(user)
                 .post(post)
-                .scrappedAt(scrappedAt)
+                .bookmarkedAt(bookmarkedAt)
                 .build();
     }
 }

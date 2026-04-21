@@ -110,10 +110,10 @@ public class TestDataGenerator {
         log.info("읽은 글 구성: 공통 {} 개 + 개인화 {} 개 = 총 {} 개",
                 sharedReadPosts.size(), actualPersonalCount, readPosts.size());
 
-        // 4. 스크랩한 글 생성 (읽은 글 중 25% 정도를 스크랩)
-        int scrapCount = Math.max(5, readPosts.size() / 4); // 최소 5개
-        userTestDataBuilder.createScrapPosts(user, readPosts, scrapCount);
-        log.info("스크랩한 글: {} 개 생성", scrapCount);
+        // 4. 북마크한 글 생성 (읽은 글 중 25% 정도를 북마크)
+        int bookmarkCount = Math.max(5, readPosts.size() / 4); // 최소 5개
+        userTestDataBuilder.createBookmarks(user, readPosts, bookmarkCount);
+        log.info("북마크한 글: {} 개 생성", bookmarkCount);
 
         // 5. 검색 기록 생성 (관심사 키워드 기반)
         List<String> searchKeywords = generateSearchKeywords(interestCategories);

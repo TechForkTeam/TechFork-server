@@ -1,10 +1,10 @@
 package com.techfork.evaluation.recommendation.setup.components;
 
 import com.techfork.domain.activity.entity.ReadPost;
-import com.techfork.domain.activity.entity.ScrabPost;
+import com.techfork.domain.activity.entity.Bookmark;
 import com.techfork.domain.activity.entity.SearchHistory;
 import com.techfork.domain.activity.repository.ReadPostRepository;
-import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.repository.BookmarkRepository;
 import com.techfork.domain.activity.repository.SearchHistoryRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.user.entity.User;
@@ -31,7 +31,7 @@ public class UserTestDataBuilder {
     private final UserRepository userRepository;
     private final UserInterestCategoryRepository userInterestCategoryRepository;
     private final ReadPostRepository readPostRepository;
-    private final ScrabPostRepository scrabPostRepository;
+    private final BookmarkRepository bookmarkRepository;
     private final SearchHistoryRepository searchHistoryRepository;
 
     public User createUserWithInterests(List<EInterestCategory> interestCategories) {
@@ -93,29 +93,29 @@ public class UserTestDataBuilder {
     }
 
 
-    public void createScrapPosts(User user, List<Post> readPosts, int scrapCount) {
+    public void createBookmarks(User user, List<Post> readPosts, int bookmarkCount) {
         LocalDateTime now = LocalDateTime.now();
 
-        List<Post> postsToScrap = readPosts.stream()
+        List<Post> postsToBookmark = readPosts.stream()
                 .distinct()
                 .collect(Collectors.toList());
-        Collections.shuffle(postsToScrap);
+        Collections.shuffle(postsToBookmark);
 
-        int actualScrapCount = Math.min(scrapCount, postsToScrap.size());
+        int actualBookmarkCount = Math.min(bookmarkCount, postsToBookmark.size());
 
-        List<ScrabPost> scrabPosts = new ArrayList<>();
-        for (int i = 0; i < actualScrapCount; i++) {
-            Post post = postsToScrap.get(i);
-            ScrabPost scrabPost = ScrabPost.create(
+        List<Bookmark> bookmarks = new ArrayList<>();
+        for (int i = 0; i < actualBookmarkCount; i++) {
+            Post post = postsToBookmark.get(i);
+            Bookmark bookmark = Bookmark.create(
                     user,
                     post,
-                    now.minusDays(readPosts.size() - i - 5) // 읽은 시점보다 약간 후에 스크랩
+                    now.minusDays(readPosts.size() - i - 5) // 읽은 시점보다 약간 후에 북마크
             );
-            scrabPosts.add(scrabPost);
+            bookmarks.add(bookmark);
         }
 
-        scrabPostRepository.saveAll(scrabPosts);
-        log.debug("스크랩한 글 {} 개 생성 완료", actualScrapCount);
+        bookmarkRepository.saveAll(bookmarks);
+        log.debug("북마크한 글 {} 개 생성 완료", actualBookmarkCount);
     }
 
     public void createSearchHistories(User user, List<String> searchKeywords, int searchHistoryCount) {

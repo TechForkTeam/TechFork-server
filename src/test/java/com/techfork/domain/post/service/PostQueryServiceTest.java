@@ -1,6 +1,6 @@
 package com.techfork.domain.post.service;
 
-import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.repository.BookmarkRepository;
 import com.techfork.domain.post.converter.PostConverter;
 import com.techfork.domain.post.dto.*;
 import com.techfork.domain.post.entity.PostKeyword;
@@ -45,7 +45,7 @@ class PostQueryServiceTest {
     private PostKeywordRepository postKeywordRepository;
 
     @Mock
-    private ScrabPostRepository scrabPostRepository;
+    private BookmarkRepository bookmarkRepository;
 
     @Mock
     private PostConverter postConverter;
@@ -189,7 +189,7 @@ class PostQueryServiceTest {
         verify(postRepository, times(1)).findByIdWithTechBlog(postId);
         verify(postKeywordRepository, times(1)).findByPostIdIn(List.of(postId));
         verify(postConverter, times(1)).toPostDetailDto(mockPostDetail, keywordStrings, null);
-        verify(scrabPostRepository, never()).findBookmarkedPostIds(any(), any());
+        verify(bookmarkRepository, never()).findBookmarkedPostIds(any(), any());
     }
 
     @Test
@@ -232,7 +232,7 @@ class PostQueryServiceTest {
 
         given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.of(mockPostDetail));
         given(postKeywordRepository.findByPostIdIn(List.of(postId))).willReturn(mockKeywords);
-        given(scrabPostRepository.findBookmarkedPostIds(userId, List.of(postId))).willReturn(List.of(postId));
+        given(bookmarkRepository.findBookmarkedPostIds(userId, List.of(postId))).willReturn(List.of(postId));
         given(postConverter.toPostDetailDto(mockPostDetail, keywordStrings, true)).willReturn(expectedResponse);
 
         // When
@@ -245,7 +245,7 @@ class PostQueryServiceTest {
 
         verify(postRepository, times(1)).findByIdWithTechBlog(postId);
         verify(postKeywordRepository, times(1)).findByPostIdIn(List.of(postId));
-        verify(scrabPostRepository, times(1)).findBookmarkedPostIds(userId, List.of(postId));
+        verify(bookmarkRepository, times(1)).findBookmarkedPostIds(userId, List.of(postId));
         verify(postConverter, times(1)).toPostDetailDto(mockPostDetail, keywordStrings, true);
     }
 
@@ -289,7 +289,7 @@ class PostQueryServiceTest {
 
         given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.of(mockPostDetail));
         given(postKeywordRepository.findByPostIdIn(List.of(postId))).willReturn(mockKeywords);
-        given(scrabPostRepository.findBookmarkedPostIds(userId, List.of(postId))).willReturn(List.of());
+        given(bookmarkRepository.findBookmarkedPostIds(userId, List.of(postId))).willReturn(List.of());
         given(postConverter.toPostDetailDto(mockPostDetail, keywordStrings, false)).willReturn(expectedResponse);
 
         // When
@@ -302,7 +302,7 @@ class PostQueryServiceTest {
 
         verify(postRepository, times(1)).findByIdWithTechBlog(postId);
         verify(postKeywordRepository, times(1)).findByPostIdIn(List.of(postId));
-        verify(scrabPostRepository, times(1)).findBookmarkedPostIds(userId, List.of(postId));
+        verify(bookmarkRepository, times(1)).findBookmarkedPostIds(userId, List.of(postId));
         verify(postConverter, times(1)).toPostDetailDto(mockPostDetail, keywordStrings, false);
     }
 
@@ -910,7 +910,7 @@ class PostQueryServiceTest {
         given(postRepository.findByCompanyWithCursor(eq(company), eq(lastPostId), any(PageRequest.class)))
                 .willReturn(mockPosts);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
-        given(scrabPostRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
+        given(bookmarkRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
         // When
@@ -923,7 +923,7 @@ class PostQueryServiceTest {
         assertThat(result.posts().get(1).isBookmarked()).isFalse();
 
         verify(postRepository, times(1)).findByCompanyWithCursor(eq(company), eq(lastPostId), any(PageRequest.class));
-        verify(scrabPostRepository, times(1)).findBookmarkedPostIds(eq(userId), any());
+        verify(bookmarkRepository, times(1)).findBookmarkedPostIds(eq(userId), any());
     }
 
     @Test
@@ -969,7 +969,7 @@ class PostQueryServiceTest {
         assertThat(result.posts().get(0).isBookmarked()).isNull();
 
         verify(postRepository, times(1)).findByCompanyWithCursor(eq(company), eq(lastPostId), any(PageRequest.class));
-        verify(scrabPostRepository, never()).findBookmarkedPostIds(any(), any());
+        verify(bookmarkRepository, never()).findBookmarkedPostIds(any(), any());
     }
 
     @Test
@@ -1020,7 +1020,7 @@ class PostQueryServiceTest {
         given(postRepository.findRecentPostsWithCursor(eq(lastPostId), any(PageRequest.class)))
                 .willReturn(mockPosts);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
-        given(scrabPostRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
+        given(bookmarkRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
         // When
@@ -1033,7 +1033,7 @@ class PostQueryServiceTest {
         assertThat(result.posts().get(1).isBookmarked()).isTrue();
 
         verify(postRepository, times(1)).findRecentPostsWithCursor(eq(lastPostId), any(PageRequest.class));
-        verify(scrabPostRepository, times(1)).findBookmarkedPostIds(eq(userId), any());
+        verify(bookmarkRepository, times(1)).findBookmarkedPostIds(eq(userId), any());
     }
 
     @Test
@@ -1086,7 +1086,7 @@ class PostQueryServiceTest {
         given(postRepository.findByCompanyNamesWithCursor(eq(companies), eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class)))
                 .willReturn(mockPosts);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
-        given(scrabPostRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
+        given(bookmarkRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
         // When
@@ -1099,7 +1099,7 @@ class PostQueryServiceTest {
         assertThat(result.posts().get(1).isBookmarked()).isTrue();
 
         verify(postRepository, times(1)).findByCompanyNamesWithCursor(eq(companies), eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class));
-        verify(scrabPostRepository, times(1)).findBookmarkedPostIds(eq(userId), any());
+        verify(bookmarkRepository, times(1)).findBookmarkedPostIds(eq(userId), any());
     }
 
     @Test
@@ -1141,7 +1141,7 @@ class PostQueryServiceTest {
         given(postRepository.findPopularPostsWithCursorV2(eq(lastViewCount), eq(lastPostId), any(PageRequest.class)))
                 .willReturn(mockPosts);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
-        given(scrabPostRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
+        given(bookmarkRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
         // When
@@ -1153,6 +1153,6 @@ class PostQueryServiceTest {
         assertThat(result.posts().get(0).isBookmarked()).isFalse();
 
         verify(postRepository, times(1)).findPopularPostsWithCursorV2(eq(lastViewCount), eq(lastPostId), any(PageRequest.class));
-        verify(scrabPostRepository, times(1)).findBookmarkedPostIds(eq(userId), any());
+        verify(bookmarkRepository, times(1)).findBookmarkedPostIds(eq(userId), any());
     }
 }

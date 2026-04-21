@@ -5,10 +5,10 @@ import com.techfork.domain.activity.dto.BookmarkRequest;
 import com.techfork.domain.activity.dto.ReadPostRequest;
 import com.techfork.domain.activity.dto.SearchHistoryRequest;
 import com.techfork.domain.activity.entity.ReadPost;
-import com.techfork.domain.activity.entity.ScrabPost;
+import com.techfork.domain.activity.entity.Bookmark;
 import com.techfork.domain.activity.entity.SearchHistory;
 import com.techfork.domain.activity.repository.ReadPostRepository;
-import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.repository.BookmarkRepository;
 import com.techfork.domain.activity.repository.SearchHistoryRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
@@ -62,7 +62,7 @@ class ActivityControllerIntegrationTest extends IntegrationTestBase {
     private SearchHistoryRepository searchHistoryRepository;
 
     @Autowired
-    private ScrabPostRepository scrabPostRepository;
+    private BookmarkRepository bookmarkRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -134,7 +134,7 @@ class ActivityControllerIntegrationTest extends IntegrationTestBase {
     void tearDown() {
         readPostRepository.deleteAll();
         searchHistoryRepository.deleteAll();
-        scrabPostRepository.deleteAll();
+        bookmarkRepository.deleteAll();
         postRepository.deleteAll();
         techBlogRepository.deleteAll();
         userRepository.deleteAll();
@@ -302,7 +302,7 @@ class ActivityControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.isSuccess").value(true));
 
         // DB 검증
-        List<ScrabPost> bookmarks = scrabPostRepository.findAll();
+        List<Bookmark> bookmarks = bookmarkRepository.findAll();
         assertThat(bookmarks).hasSize(1);
         assertThat(bookmarks.get(0).getUser().getId()).isEqualTo(testUser.getId());
         assertThat(bookmarks.get(0).getPost().getId()).isEqualTo(testPost1.getId());
@@ -312,8 +312,8 @@ class ActivityControllerIntegrationTest extends IntegrationTestBase {
     @DisplayName("북마크 추가 실패 - 이미 북마크한 게시글")
     void addBookmark_Fail_AlreadyExists() throws Exception {
         // Given - 이미 북마크 생성
-        ScrabPost existingBookmark = ScrabPost.create(testUser, testPost1, LocalDateTime.now());
-        scrabPostRepository.save(existingBookmark);
+        Bookmark existingBookmark = Bookmark.create(testUser, testPost1, LocalDateTime.now());
+        bookmarkRepository.save(existingBookmark);
 
         BookmarkRequest request = new BookmarkRequest(testPost1.getId());
 
@@ -350,8 +350,8 @@ class ActivityControllerIntegrationTest extends IntegrationTestBase {
     @DisplayName("북마크 삭제 성공")
     void deleteBookmark_Success() throws Exception {
         // Given - 북마크 생성
-        ScrabPost bookmark = ScrabPost.create(testUser, testPost1, LocalDateTime.now());
-        scrabPostRepository.save(bookmark);
+        Bookmark bookmark = Bookmark.create(testUser, testPost1, LocalDateTime.now());
+        bookmarkRepository.save(bookmark);
 
         BookmarkRequest request = new BookmarkRequest(testPost1.getId());
 
@@ -365,7 +365,7 @@ class ActivityControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.isSuccess").value(true));
 
         // DB 검증 - 삭제되었는지 확인
-        List<ScrabPost> bookmarks = scrabPostRepository.findAll();
+        List<Bookmark> bookmarks = bookmarkRepository.findAll();
         assertThat(bookmarks).isEmpty();
     }
 
@@ -407,10 +407,10 @@ class ActivityControllerIntegrationTest extends IntegrationTestBase {
     @DisplayName("북마크 목록 조회 성공 - 여러 개")
     void getBookmarks_Success_Multiple() throws Exception {
         // Given - 여러 개의 북마크 생성
-        ScrabPost bookmark1 = ScrabPost.create(testUser, testPost1, LocalDateTime.now().minusHours(1));
-        ScrabPost bookmark2 = ScrabPost.create(testUser, testPost2, LocalDateTime.now());
-        scrabPostRepository.save(bookmark1);
-        scrabPostRepository.save(bookmark2);
+        Bookmark bookmark1 = Bookmark.create(testUser, testPost1, LocalDateTime.now().minusHours(1));
+        Bookmark bookmark2 = Bookmark.create(testUser, testPost2, LocalDateTime.now());
+        bookmarkRepository.save(bookmark1);
+        bookmarkRepository.save(bookmark2);
 
         // When & Then
         mockMvc.perform(get("/api/v1/activities/bookmarks")
@@ -441,10 +441,10 @@ class ActivityControllerIntegrationTest extends IntegrationTestBase {
     @DisplayName("북마크 목록 조회 성공 - 커서 기반 페이징")
     void getBookmarks_Success_WithCursor() throws Exception {
         // Given - 여러 개의 북마크 생성
-        ScrabPost bookmark1 = ScrabPost.create(testUser, testPost1, LocalDateTime.now().minusHours(2));
-        ScrabPost bookmark2 = ScrabPost.create(testUser, testPost2, LocalDateTime.now().minusHours(1));
-        scrabPostRepository.save(bookmark1);
-        scrabPostRepository.save(bookmark2);
+        Bookmark bookmark1 = Bookmark.create(testUser, testPost1, LocalDateTime.now().minusHours(2));
+        Bookmark bookmark2 = Bookmark.create(testUser, testPost2, LocalDateTime.now().minusHours(1));
+        bookmarkRepository.save(bookmark1);
+        bookmarkRepository.save(bookmark2);
 
         // When & Then - 첫 페이지 조회
         mockMvc.perform(get("/api/v1/activities/bookmarks")
@@ -543,8 +543,8 @@ class ActivityControllerIntegrationTest extends IntegrationTestBase {
         readPostRepository.save(readPost2);
 
         // Given - testPost2만 북마크 (readPost2가 먼저 조회됨)
-        ScrabPost bookmark = ScrabPost.create(testUser, testPost2, LocalDateTime.now());
-        scrabPostRepository.save(bookmark);
+        Bookmark bookmark = Bookmark.create(testUser, testPost2, LocalDateTime.now());
+        bookmarkRepository.save(bookmark);
 
         // When & Then
         mockMvc.perform(get("/api/v1/activities/read-posts")

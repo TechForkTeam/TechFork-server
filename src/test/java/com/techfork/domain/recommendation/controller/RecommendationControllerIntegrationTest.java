@@ -1,8 +1,8 @@
 package com.techfork.domain.recommendation.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.techfork.domain.activity.entity.ScrabPost;
-import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.entity.Bookmark;
+import com.techfork.domain.activity.repository.BookmarkRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.recommendation.entity.RecommendedPost;
@@ -54,7 +54,7 @@ class RecommendationControllerIntegrationTest extends IntegrationTestBase {
     private RecommendedPostRepository recommendedPostRepository;
 
     @Autowired
-    private ScrabPostRepository scrabPostRepository;
+    private BookmarkRepository bookmarkRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -147,7 +147,7 @@ class RecommendationControllerIntegrationTest extends IntegrationTestBase {
     @AfterEach
     void tearDown() {
         recommendedPostRepository.deleteAll();
-        scrabPostRepository.deleteAll();
+        bookmarkRepository.deleteAll();
         postRepository.deleteAll();
         techBlogRepository.deleteAll();
         userRepository.deleteAll();
@@ -247,8 +247,8 @@ class RecommendationControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data.recommendations[0].isBookmarked").value(false));
 
         // 3. 북마크 추가
-        ScrabPost bookmark = ScrabPost.create(testUser, testPost1, LocalDateTime.now());
-        scrabPostRepository.save(bookmark);
+        Bookmark bookmark = Bookmark.create(testUser, testPost1, LocalDateTime.now());
+        bookmarkRepository.save(bookmark);
 
         // 4. 다시 조회 - 북마크됨
         mockMvc.perform(get("/api/v1/recommendations")

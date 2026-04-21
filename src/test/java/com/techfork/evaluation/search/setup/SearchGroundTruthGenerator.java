@@ -2,7 +2,7 @@ package com.techfork.evaluation.search.setup;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
-import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.repository.BookmarkRepository;
 import com.techfork.domain.post.document.PostDocument;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.search.dto.SearchResult;
@@ -108,7 +108,7 @@ class SearchGroundTruthGenerator {
     private PostRepository postRepository;
 
     @Autowired
-    private ScrabPostRepository scrabPostRepository;
+    private BookmarkRepository bookmarkRepository;
 
     @Autowired
     @Qualifier("searchAsyncExecutor")
@@ -145,7 +145,7 @@ class SearchGroundTruthGenerator {
         );
         SearchServiceImpl searchService = new SearchServiceImpl(
                 elasticsearchClient, embeddingClient, generalSearchProperties,
-                userProfileDocumentRepository, postRepository, scrabPostRepository, searchAsyncExecutor, thumbnailOptimizer);
+                userProfileDocumentRepository, postRepository, bookmarkRepository, searchAsyncExecutor, thumbnailOptimizer);
 
         List<GroundTruthItem> groundTruthItems = scoreAllQueries(uniqueQueryMap, searchService);
         log.info("최종 ground-truth 항목 수: {}", groundTruthItems.size());
