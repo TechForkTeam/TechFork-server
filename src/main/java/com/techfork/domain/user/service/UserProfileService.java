@@ -1,10 +1,10 @@
 package com.techfork.domain.user.service;
 
 import com.techfork.domain.activity.entity.ReadPost;
-import com.techfork.domain.activity.entity.ScrabPost;
+import com.techfork.domain.activity.entity.Bookmark;
 import com.techfork.domain.activity.entity.SearchHistory;
 import com.techfork.domain.activity.repository.ReadPostRepository;
-import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.repository.BookmarkRepository;
 import com.techfork.domain.activity.repository.SearchHistoryRepository;
 import com.techfork.domain.post.entity.PostKeyword;
 import com.techfork.domain.recommendation.service.RecommendationService;
@@ -36,7 +36,7 @@ public class UserProfileService {
 
     private final UserInterestCategoryRepository userInterestCategoryRepository;
     private final ReadPostRepository readPostRepository;
-    private final ScrabPostRepository scrabPostRepository;
+    private final BookmarkRepository bookmarkRepository;
     private final SearchHistoryRepository searchHistoryRepository;
     private final UserProfileDocumentRepository userProfileDocumentRepository;
     private final UserRepository userRepository;
@@ -120,8 +120,8 @@ public class UserProfileService {
                 ))
                 .toList();
 
-        List<ScrabPost> scrapPosts = scrabPostRepository.findRecentScrapPostsByUserId(userId, PageRequest.of(0, 20));
-        List<PostData> scrapPostData = scrapPosts.stream()
+        List<Bookmark> bookmarks = bookmarkRepository.findRecentBookmarksByUserId(userId, PageRequest.of(0, 20));
+        List<PostData> bookmarkedPostData = bookmarks.stream()
                 .map(sp -> new PostData(
                         sp.getPost().getTitle(),
                         sp.getPost().getKeywords().stream()
@@ -136,7 +136,7 @@ public class UserProfileService {
                 .map(SearchHistory::getSearchWord)
                 .toList();
 
-        return new UserActivityData(interests, readPostData, scrapPostData, searchWords);
+        return new UserActivityData(interests, readPostData, bookmarkedPostData, searchWords);
     }
 
     private String generateProfileTextWithLLM(UserActivityData data) {
@@ -193,7 +193,7 @@ public class UserProfileService {
                 """,
                 formatList(data.interests),
                 formatPostDataList(data.readPostData),
-                formatPostDataList(data.scrapPostData),
+                formatPostDataList(data.bookmarkedPostData),
                 formatList(data.searchWords)
         );
     }
@@ -292,7 +292,7 @@ public class UserProfileService {
     private record UserActivityData(
             List<String> interests,
             List<PostData> readPostData,
-            List<PostData> scrapPostData,
+            List<PostData> bookmarkedPostData,
             List<String> searchWords
     ) {}
 
