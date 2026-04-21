@@ -4,11 +4,11 @@ import com.techfork.domain.activity.dto.BookmarkRequest;
 import com.techfork.domain.activity.dto.ReadPostRequest;
 import com.techfork.domain.activity.dto.SearchHistoryRequest;
 import com.techfork.domain.activity.entity.ReadPost;
-import com.techfork.domain.activity.entity.ScrabPost;
+import com.techfork.domain.activity.entity.Bookmark;
 import com.techfork.domain.activity.entity.SearchHistory;
 import com.techfork.domain.activity.exception.ActivityErrorCode;
 import com.techfork.domain.activity.repository.ReadPostRepository;
-import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.repository.BookmarkRepository;
 import com.techfork.domain.activity.repository.SearchHistoryRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.exception.PostErrorCode;
@@ -33,7 +33,7 @@ public class ActivityCommandService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final SearchHistoryRepository searchHistoryRepository;
-    private final ScrabPostRepository scrabPostRepository;
+    private final BookmarkRepository bookmarkRepository;
 
     @Transactional
     public void saveReadPost(Long userId, ReadPostRequest request) {
@@ -83,12 +83,12 @@ public class ActivityCommandService {
         Post post = postRepository.findById(request.postId())
                 .orElseThrow(() -> new GeneralException(PostErrorCode.POST_NOT_FOUND));
 
-        if (scrabPostRepository.existsByUserAndPost(user, post)) {
+        if (bookmarkRepository.existsByUserAndPost(user, post)) {
             throw new GeneralException(ActivityErrorCode.BOOKMARK_ALREADY_EXISTS);
         }
 
-        ScrabPost scrabPost = ScrabPost.create(user, post, LocalDateTime.now());
-        scrabPostRepository.save(scrabPost);
+        Bookmark bookmark = Bookmark.create(user, post, LocalDateTime.now());
+        bookmarkRepository.save(bookmark);
 
         log.info("Saved bookmark for user {} and post {}", userId, request.postId());
     }
@@ -101,10 +101,10 @@ public class ActivityCommandService {
         Post post = postRepository.findById(request.postId())
                 .orElseThrow(() -> new GeneralException(PostErrorCode.POST_NOT_FOUND));
 
-        ScrabPost scrabPost = scrabPostRepository.findByUserAndPost(user, post)
+        Bookmark bookmark = bookmarkRepository.findByUserAndPost(user, post)
                 .orElseThrow(() -> new GeneralException(ActivityErrorCode.BOOKMARK_NOT_FOUND));
 
-        scrabPostRepository.delete(scrabPost);
+        bookmarkRepository.delete(bookmark);
         log.info("Deleted bookmark for user {} and post {}", userId, request.postId());
     }
 

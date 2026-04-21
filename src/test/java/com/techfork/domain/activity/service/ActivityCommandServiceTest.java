@@ -4,11 +4,11 @@ import com.techfork.domain.activity.dto.BookmarkRequest;
 import com.techfork.domain.activity.dto.ReadPostRequest;
 import com.techfork.domain.activity.dto.SearchHistoryRequest;
 import com.techfork.domain.activity.entity.ReadPost;
-import com.techfork.domain.activity.entity.ScrabPost;
+import com.techfork.domain.activity.entity.Bookmark;
 import com.techfork.domain.activity.entity.SearchHistory;
 import com.techfork.domain.activity.exception.ActivityErrorCode;
 import com.techfork.domain.activity.repository.ReadPostRepository;
-import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.repository.BookmarkRepository;
 import com.techfork.domain.activity.repository.SearchHistoryRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.exception.PostErrorCode;
@@ -47,7 +47,7 @@ class ActivityCommandServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private ScrabPostRepository scrabPostRepository;
+    private BookmarkRepository bookmarkRepository;
 
     @Mock
     private SearchHistoryRepository searchHistoryRepository;
@@ -182,8 +182,8 @@ class ActivityCommandServiceTest {
 
         given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
         given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
-        given(scrabPostRepository.existsByUserAndPost(mockUser, mockPost)).willReturn(false);
-        given(scrabPostRepository.save(any(ScrabPost.class))).willReturn(mock(ScrabPost.class));
+        given(bookmarkRepository.existsByUserAndPost(mockUser, mockPost)).willReturn(false);
+        given(bookmarkRepository.save(any(Bookmark.class))).willReturn(mock(Bookmark.class));
 
         // When
         activityCommandService.addBookmark(userId, request);
@@ -191,8 +191,8 @@ class ActivityCommandServiceTest {
         // Then
         verify(userRepository, times(1)).findById(userId);
         verify(postRepository, times(1)).findById(postId);
-        verify(scrabPostRepository, times(1)).existsByUserAndPost(mockUser, mockPost);
-        verify(scrabPostRepository, times(1)).save(any(ScrabPost.class));
+        verify(bookmarkRepository, times(1)).existsByUserAndPost(mockUser, mockPost);
+        verify(bookmarkRepository, times(1)).save(any(Bookmark.class));
     }
 
     @Test
@@ -208,14 +208,14 @@ class ActivityCommandServiceTest {
 
         given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
         given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
-        given(scrabPostRepository.existsByUserAndPost(mockUser, mockPost)).willReturn(true);
+        given(bookmarkRepository.existsByUserAndPost(mockUser, mockPost)).willReturn(true);
 
         // When & Then
         assertThatThrownBy(() -> activityCommandService.addBookmark(userId, request))
                 .isInstanceOf(GeneralException.class)
                 .hasFieldOrPropertyWithValue("code", ActivityErrorCode.BOOKMARK_ALREADY_EXISTS);
 
-        verify(scrabPostRepository, never()).save(any());
+        verify(bookmarkRepository, never()).save(any());
     }
 
     @Test
@@ -235,7 +235,7 @@ class ActivityCommandServiceTest {
                 .isInstanceOf(GeneralException.class)
                 .hasFieldOrPropertyWithValue("code", PostErrorCode.POST_NOT_FOUND);
 
-        verify(scrabPostRepository, never()).save(any());
+        verify(bookmarkRepository, never()).save(any());
     }
 
     // ===== 북마크 삭제 테스트 =====
@@ -250,11 +250,11 @@ class ActivityCommandServiceTest {
 
         User mockUser = mock(User.class);
         Post mockPost = mock(Post.class);
-        ScrabPost mockScrabPost = mock(ScrabPost.class);
+        Bookmark mockBookmark = mock(Bookmark.class);
 
         given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
         given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
-        given(scrabPostRepository.findByUserAndPost(mockUser, mockPost)).willReturn(Optional.of(mockScrabPost));
+        given(bookmarkRepository.findByUserAndPost(mockUser, mockPost)).willReturn(Optional.of(mockBookmark));
 
         // When
         activityCommandService.deleteBookmark(userId, request);
@@ -262,8 +262,8 @@ class ActivityCommandServiceTest {
         // Then
         verify(userRepository, times(1)).findById(userId);
         verify(postRepository, times(1)).findById(postId);
-        verify(scrabPostRepository, times(1)).findByUserAndPost(mockUser, mockPost);
-        verify(scrabPostRepository, times(1)).delete(mockScrabPost);
+        verify(bookmarkRepository, times(1)).findByUserAndPost(mockUser, mockPost);
+        verify(bookmarkRepository, times(1)).delete(mockBookmark);
     }
 
     @Test
@@ -279,14 +279,14 @@ class ActivityCommandServiceTest {
 
         given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
         given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
-        given(scrabPostRepository.findByUserAndPost(mockUser, mockPost)).willReturn(Optional.empty());
+        given(bookmarkRepository.findByUserAndPost(mockUser, mockPost)).willReturn(Optional.empty());
 
         // When & Then
         assertThatThrownBy(() -> activityCommandService.deleteBookmark(userId, request))
                 .isInstanceOf(GeneralException.class)
                 .hasFieldOrPropertyWithValue("code", ActivityErrorCode.BOOKMARK_NOT_FOUND);
 
-        verify(scrabPostRepository, never()).delete(any());
+        verify(bookmarkRepository, never()).delete(any());
     }
 
     @Test
@@ -304,7 +304,7 @@ class ActivityCommandServiceTest {
                 .isInstanceOf(GeneralException.class)
                 .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
 
-        verify(scrabPostRepository, never()).delete(any());
+        verify(bookmarkRepository, never()).delete(any());
     }
 
     @Test
