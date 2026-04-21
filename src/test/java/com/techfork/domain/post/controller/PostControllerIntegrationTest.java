@@ -1,7 +1,7 @@
 package com.techfork.domain.post.controller;
 
-import com.techfork.domain.activity.entity.ScrabPost;
-import com.techfork.domain.activity.repository.ScrabPostRepository;
+import com.techfork.domain.activity.entity.Bookmark;
+import com.techfork.domain.activity.repository.BookmarkRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.entity.PostKeyword;
 import com.techfork.domain.post.repository.PostKeywordRepository;
@@ -48,7 +48,7 @@ class PostControllerIntegrationTest extends IntegrationTestBase {
     private TechBlogRepository techBlogRepository;
 
     @Autowired
-    private ScrabPostRepository scrabPostRepository;
+    private BookmarkRepository bookmarkRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -123,14 +123,14 @@ class PostControllerIntegrationTest extends IntegrationTestBase {
         accessToken = jwtUtil.generateTokens(testUser.getId(), Role.USER).accessToken();
 
         // testUser가 testPost1을 북마크
-        ScrabPost scrabPost = ScrabPost.create(testUser, testPost1, LocalDateTime.now());
-        scrabPostRepository.save(scrabPost);
+        Bookmark bookmark = Bookmark.create(testUser, testPost1, LocalDateTime.now());
+        bookmarkRepository.save(bookmark);
     }
 
     @AfterEach
     void tearDown() {
         // 테스트 데이터 정리 (외래키 제약조건 순서 고려)
-        scrabPostRepository.deleteAll();
+        bookmarkRepository.deleteAll();
         postKeywordRepository.deleteAll();
         postRepository.deleteAll();
         techBlogRepository.deleteAll();
