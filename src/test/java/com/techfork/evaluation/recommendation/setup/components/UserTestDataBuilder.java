@@ -123,10 +123,10 @@ public class UserTestDataBuilder {
         List<SearchHistory> searchHistories = new ArrayList<>();
 
         for (int i = 0; i < searchHistoryCount; i++) {
-            String searchWord = searchKeywords.get(i % searchKeywords.size());
+            String query = searchKeywords.get(i % searchKeywords.size());
             SearchHistory searchHistory = SearchHistory.create(
                     user,
-                    searchWord,
+                    query,
                     now.minusDays(searchHistoryCount - i * 2) // 읽기 활동 사이사이에 검색
             );
             searchHistories.add(searchHistory);
