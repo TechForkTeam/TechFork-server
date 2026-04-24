@@ -21,6 +21,7 @@ import com.techfork.global.exception.GeneralException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -355,9 +356,9 @@ class ActivityCommandServiceTest {
     void saveSearchHistory_Success() {
         // Given
         Long userId = 1L;
-        String searchWord = "Spring Boot";
+        String query = "Spring Boot";
         LocalDateTime searchedAt = LocalDateTime.now();
-        SearchHistoryRequest request = new SearchHistoryRequest(searchWord, searchedAt);
+        SearchHistoryRequest request = new SearchHistoryRequest(query, searchedAt);
 
         User mockUser = mock(User.class);
         given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
@@ -368,7 +369,9 @@ class ActivityCommandServiceTest {
 
         // Then
         verify(userRepository, times(1)).findById(userId);
-        verify(searchHistoryRepository, times(1)).save(any(SearchHistory.class));
+        ArgumentCaptor<SearchHistory> searchHistoryCaptor = ArgumentCaptor.forClass(SearchHistory.class);
+        verify(searchHistoryRepository, times(1)).save(searchHistoryCaptor.capture());
+        assertThat(searchHistoryCaptor.getValue().getQuery()).isEqualTo(query);
     }
 
     @Test
