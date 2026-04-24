@@ -58,8 +58,8 @@ class SearchHistoryRepositoryTest {
 
         // Then
         assertThat(result).hasSize(3);
-        assertThat(result.get(0).getSearchWord()).isEqualTo("Kotlin");
-        assertThat(result.get(1).getSearchWord()).isEqualTo("Java");
-        assertThat(result.get(2).getSearchWord()).isEqualTo("Spring Boot");
+        assertThat(result.get(0).getQuery()).isEqualTo("Kotlin");
+        assertThat(result.get(1).getQuery()).isEqualTo("Java");
+        assertThat(result.get(2).getQuery()).isEqualTo("Spring Boot");
     }
 }
