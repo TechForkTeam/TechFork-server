@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 public class SearchHistory extends BaseEntity {
 
     @Column(nullable = false, length = 200)
-    private String searchWord;
+    private String query;
 
     private LocalDateTime searchedAt;
 
@@ -28,16 +28,16 @@ public class SearchHistory extends BaseEntity {
 
     @PersistenceCreator
     @Builder
-    SearchHistory(User user, String searchWord, LocalDateTime searchedAt) {
+    SearchHistory(User user, String query, LocalDateTime searchedAt) {
         this.user = user;
-        this.searchWord = searchWord;
+        this.query = query;
         this.searchedAt = searchedAt;
     }
 
-    public static SearchHistory create(User user, String searchWord, LocalDateTime searchedAt) {
+    public static SearchHistory create(User user, String query, LocalDateTime searchedAt) {
         return SearchHistory.builder()
                 .user(user)
-                .searchWord(searchWord)
+                .query(query)
                 .searchedAt(searchedAt)
                 .build();
     }

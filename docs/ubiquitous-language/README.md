@@ -43,7 +43,7 @@
 
 | 표준 용어 | 현재 코드상 표현 | 의미 | 기준 문서 |
 |---|---|---|---|
-| 검색어 / SearchQuery | `query`, `searchWord` | 사용자가 직접 입력한 검색 문자열 | [`search.md`](./search.md), [`activity.md`](./activity.md) |
+| 검색어 / SearchQuery | `query` (legacy alias: `searchWord`) | 사용자가 직접 입력한 검색 문자열 | [`search.md`](./search.md), [`activity.md`](./activity.md) |
 | 핵심 키워드 / KeyKeyword | `keyKeywords` | 개인화 프로필에서 추출한 대표 관심 키워드 | [`personalization-profile.md`](./personalization-profile.md) |
 | 게시글 키워드 / PostKeyword | `PostKeyword.keyword` | 기술 게시글 요약 과정에서 추출된 대표 키워드 | [`post-content.md`](./post-content.md) |
 
@@ -67,7 +67,7 @@
 | 결정사항 | 기준 문서 | 코드 반영 여부 | 남은 작업 |
 |---|---|---|---|
 | `ScrabPost → Bookmark` 통일 | [`activity.md`](./activity.md) | 부분 반영 | Entity/Repository/Table rename |
-| `searchWord → query` 통일 | [`activity.md`](./activity.md), [`search.md`](./search.md) | 미반영 | 필드/컬럼 rename 마이그레이션 |
+| `searchWord → query` 통일 | [`activity.md`](./activity.md), [`search.md`](./search.md) | 반영 | legacy JSON alias 정리 여부 결정 |
 | `RecommendationSet` 표준 용어 확정 | [`recommendation.md`](./recommendation.md) | 미반영 | 현재 추천 목록 aggregate 정리 |
 | `markAsisClicked → markAsClicked` 오타 수정 | [`recommendation.md`](./recommendation.md) | 미반영 | 메서드명/호출부 수정 |
 | `TechBlog.markCrawled()` 추가 | [`source-ingestion.md`](./source-ingestion.md) | 미반영 | 도메인 메서드 추가 + 호출부 연결 |

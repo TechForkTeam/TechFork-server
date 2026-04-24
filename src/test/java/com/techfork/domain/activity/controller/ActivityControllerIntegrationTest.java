@@ -249,7 +249,33 @@ class ActivityControllerIntegrationTest extends IntegrationTestBase {
         List<SearchHistory> searchHistories = searchHistoryRepository.findAll();
         assertThat(searchHistories).hasSize(1);
         assertThat(searchHistories.get(0).getUser().getId()).isEqualTo(testUser.getId());
-        assertThat(searchHistories.get(0).getSearchWord()).isEqualTo("Spring Boot");
+        assertThat(searchHistories.get(0).getQuery()).isEqualTo("Spring Boot");
+    }
+
+    @Test
+    @DisplayName("검색 히스토리 저장 성공 - legacy searchWord alias 허용")
+    void saveSearchHistory_Success_WithLegacyAlias() throws Exception {
+        // Given
+        LocalDateTime searchedAt = LocalDateTime.now();
+        String requestJson = """
+                {
+                  "searchWord": "Spring Boot",
+                  "searchedAt": "%s"
+                }
+                """.formatted(searchedAt);
+
+        // When & Then
+        mockMvc.perform(post("/api/v1/activities/searches")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestJson))
+                .andDo(print())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.isSuccess").value(true));
+
+        List<SearchHistory> searchHistories = searchHistoryRepository.findAll();
+        assertThat(searchHistories).hasSize(1);
+        assertThat(searchHistories.get(0).getQuery()).isEqualTo("Spring Boot");
     }
 
     @Test

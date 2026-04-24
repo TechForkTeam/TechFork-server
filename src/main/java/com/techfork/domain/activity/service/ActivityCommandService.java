@@ -67,12 +67,12 @@ public class ActivityCommandService {
 
         SearchHistory searchHistory = SearchHistory.create(
                 user,
-                request.searchWord(),
+                request.query(),
                 request.searchedAt()
         );
 
         searchHistoryRepository.save(searchHistory);
-        log.info("Saved search history for user {} with keyword: {}", userId, request.searchWord());
+        log.info("Saved search history for user {} with query: {}", userId, request.query());
     }
 
     @Transactional
