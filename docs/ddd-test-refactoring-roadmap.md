@@ -253,7 +253,7 @@ PostKeyword
 1. SearchHistory 동작 테스트 작성
 2. DTO/API 파라미터 문서에서 검색어/SearchQuery로 표현 통일
 3. 코드 내부 변수명 query/searchQuery 정리
-4. DB 컬럼 search_word rename은 후순위로 분리
+4. 운영 중이면 DB 컬럼 rename은 후순위로 분리하고, 초기 정리 단계라면 함께 처리 가능
 ```
 
 ---

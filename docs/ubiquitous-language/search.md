@@ -11,7 +11,7 @@
 
 | 용어 | 코드상 표현 | 정의 |
 |---|---|---|
-| 검색어 / SearchQuery | `query`, 현재 `searchWord` | 사용자가 찾고 싶은 기술 주제/키워드 |
+| 검색어 / SearchQuery | `query` (Activity legacy alias: `searchWord`) | 사용자가 찾고 싶은 기술 주제/키워드 |
 | BM25 검색 / 어휘 검색 | `searchOnlyBm25`, `performLexicalSearch` | 제목/요약/본문 청크 텍스트 기반 검색 |
 | 시맨틱 검색 | `searchOnlySemantic`, `performSemanticSearch` | 검색어 임베딩과 기술 게시글 임베딩의 k-NN 기반 검색 |
 | 하이브리드 검색 | `performHybridSearch` | BM25 검색과 시맨틱 검색을 병렬 실행한 뒤 결합하는 검색 |

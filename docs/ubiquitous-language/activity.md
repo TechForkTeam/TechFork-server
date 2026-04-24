@@ -15,7 +15,7 @@
 | 읽기 몰입도 | `convertReadingDurationToNaturalLanguage` | 읽은 시간을 `가볍게 훑어봄`, `빠르게 읽음`, `읽음`, `정독함`, `깊게 읽음`으로 해석한 값 |
 | 첫 읽기 | `isFirstRead` | 특정 기술 게시글을 처음 읽은 경우 |
 | 검색 기록 | `SearchHistory` | 사용자가 입력한 검색어와 검색 시각 |
-| 검색어 | `SearchQuery`, 현재 `searchWord` | 검색 기록에 저장되는 사용자 입력 |
+| 검색어 | `query` (legacy alias: `searchWord`) | 검색 기록에 저장되는 사용자 입력 |
 | 북마크 | `Bookmark`, 현재 `ScrabPost` | 사용자가 기술 게시글을 저장하는 행위 |
 | 북마크 여부 | `isBookmarked` | 목록/검색/추천 응답에 붙는 사용자별 저장 여부 |
 
@@ -23,7 +23,7 @@
 
 - 제품/API/문서 언어 기준으로 **북마크**로 통일한다.
 - 레거시 이름 `ScrabPost`, `scrap_posts`는 코드/DB 잔존 용어로만 취급한다.
-- `SearchHistory.searchWord`는 장기적으로 `searchQuery` 또는 `query`로 변경한다.
+- `SearchHistory`의 코드/DB 필드명은 `query`로 맞춘다.
 
 ## 내부 glossary
 
@@ -46,7 +46,7 @@
 | 금지/비권장 표현 | 권장 표현 | 이유 |
 |---|---|---|
 | 스크랩 | 북마크 | 제품/API 언어와 맞추기 위해 |
-| searchWord | 검색어 / SearchQuery | 코드 레거시 필드명보다 표준 용어를 우선한다 |
+| searchWord | 검색어 / SearchQuery, 코드에서는 `query` | 문서에는 표준 용어를, 코드에는 canonical name을 사용한다 |
 | 읽은 포스트 | 읽은 게시글 | Post 컨텍스트 표준 용어와 맞춘다 |
 | bookmarked 필드 | 북마크 여부 | 응답 조합값이라는 의미를 더 분명히 한다 |
 
