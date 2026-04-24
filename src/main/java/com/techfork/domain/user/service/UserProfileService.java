@@ -132,11 +132,11 @@ public class UserProfileService {
                 .toList();
 
         List<SearchHistory> searchHistories = searchHistoryRepository.findRecentSearchHistoriesByUserId(userId, PageRequest.of(0, 30));
-        List<String> searchWords = searchHistories.stream()
-                .map(SearchHistory::getSearchWord)
+        List<String> searchQueries = searchHistories.stream()
+                .map(SearchHistory::getQuery)
                 .toList();
 
-        return new UserActivityData(interests, readPostData, bookmarkedPostData, searchWords);
+        return new UserActivityData(interests, readPostData, bookmarkedPostData, searchQueries);
     }
 
     private String generateProfileTextWithLLM(UserActivityData data) {
@@ -194,7 +194,7 @@ public class UserProfileService {
                 formatList(data.interests),
                 formatPostDataList(data.readPostData),
                 formatPostDataList(data.bookmarkedPostData),
-                formatList(data.searchWords)
+                formatList(data.searchQueries)
         );
     }
 
@@ -293,7 +293,7 @@ public class UserProfileService {
             List<String> interests,
             List<PostData> readPostData,
             List<PostData> bookmarkedPostData,
-            List<String> searchWords
+            List<String> searchQueries
     ) {}
 
     private record PostData(
