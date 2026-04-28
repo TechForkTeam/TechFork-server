@@ -17,9 +17,9 @@ import com.techfork.domain.recommendation.service.MmrService;
 import com.techfork.domain.recommendation.service.MmrService.MmrCandidate;
 import com.techfork.domain.recommendation.service.MmrService.MmrResult;
 import com.techfork.global.util.RrfScorer;
-import com.techfork.domain.user.document.UserProfileDocument;
+import com.techfork.domain.user.document.PersonalizationProfileDocument;
 import com.techfork.domain.user.entity.User;
-import com.techfork.domain.user.repository.UserProfileDocumentRepository;
+import com.techfork.domain.user.repository.PersonalizationProfileDocumentRepository;
 import com.techfork.global.elasticsearch.query.VectorQueryBuilder;
 import com.techfork.global.util.TimeDecayStrategy;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +39,7 @@ import java.util.concurrent.Executors;
 @Service
 public class RecommendationEvaluationService extends LlmRecommendationService {
 
-    private final UserProfileDocumentRepository userProfileDocumentRepository;
+    private final PersonalizationProfileDocumentRepository personalizationProfileDocumentRepository;
     private final VectorQueryBuilder vectorQueryBuilder;
     private final ElasticsearchClient elasticsearchClient;
 
@@ -50,7 +50,7 @@ public class RecommendationEvaluationService extends LlmRecommendationService {
 
     public RecommendationEvaluationService(
             ElasticsearchClient elasticsearchClient,
-            UserProfileDocumentRepository userProfileDocumentRepository,
+            PersonalizationProfileDocumentRepository personalizationProfileDocumentRepository,
             RecommendedPostRepository recommendedPostRepository,
             RecommendationHistoryRepository recommendationHistoryRepository,
             ReadPostRepository readPostRepository,
@@ -60,12 +60,12 @@ public class RecommendationEvaluationService extends LlmRecommendationService {
             RecommendationProperties properties,
             VectorQueryBuilder vectorQueryBuilder
     ) {
-        super(elasticsearchClient, userProfileDocumentRepository, recommendedPostRepository,
+        super(elasticsearchClient, personalizationProfileDocumentRepository, recommendedPostRepository,
                 recommendationHistoryRepository, readPostRepository, postRepository,
                 mmrService, timeDecayStrategy, properties, vectorQueryBuilder,
                 Executors.newSingleThreadExecutor());
         this.elasticsearchClient = elasticsearchClient;
-        this.userProfileDocumentRepository = userProfileDocumentRepository;
+        this.personalizationProfileDocumentRepository = personalizationProfileDocumentRepository;
         this.vectorQueryBuilder = vectorQueryBuilder;
     }
 
@@ -75,12 +75,12 @@ public class RecommendationEvaluationService extends LlmRecommendationService {
     public List<Long> generateRecommendationsForEvaluation(User user, Set<Long> trainPostIds, RecommendationProperties properties) {
         long totalStartTime = System.currentTimeMillis();
 
-        Optional<UserProfileDocument> profileOpt = userProfileDocumentRepository.findByUserId(user.getId());
+        Optional<PersonalizationProfileDocument> profileOpt = personalizationProfileDocumentRepository.findByUserId(user.getId());
         if (profileOpt.isEmpty() || profileOpt.get().getProfileVector() == null) {
             return Collections.emptyList();
         }
 
-        UserProfileDocument profile = profileOpt.get();
+        PersonalizationProfileDocument profile = profileOpt.get();
         float[] userProfileVector = profile.getProfileVector();
         List<String> keyKeywords = profile.getKeyKeywords();
 
@@ -117,12 +117,12 @@ public class RecommendationEvaluationService extends LlmRecommendationService {
      * 1차 후보군만 반환 (MMR bypass) - RRF 결과를 similarityScore 내림차순으로 반환
      */
     public List<Long> generateCandidatesOnly(User user, Set<Long> trainPostIds, RecommendationProperties properties) {
-        Optional<UserProfileDocument> profileOpt = userProfileDocumentRepository.findByUserId(user.getId());
+        Optional<PersonalizationProfileDocument> profileOpt = personalizationProfileDocumentRepository.findByUserId(user.getId());
         if (profileOpt.isEmpty() || profileOpt.get().getProfileVector() == null) {
             return Collections.emptyList();
         }
 
-        UserProfileDocument profile = profileOpt.get();
+        PersonalizationProfileDocument profile = profileOpt.get();
         float[] userProfileVector = profile.getProfileVector();
         List<String> keyKeywords = profile.getKeyKeywords();
 

@@ -24,7 +24,7 @@ import java.util.List;
 public class InterestCommandService {
 
     private final UserRepository userRepository;
-    private final UserProfileService userProfileService;
+    private final PersonalizationProfileService personalizationProfileService;
 
     public void updateUserInterests(Long userId, SaveInterestRequest request) {
         User user = userRepository.findByIdWithInterestCategories(userId)
@@ -40,7 +40,7 @@ public class InterestCommandService {
 
         log.info("Saved {} interest categories for user {}", categories.size(), user.getId());
 
-        userProfileService.generateUserProfile(user.getId());
+        personalizationProfileService.generatePersonalizationProfile(user.getId());
     }
 
     private List<UserInterestCategory> createCategoriesFromRequest(User user, SaveInterestRequest request) {

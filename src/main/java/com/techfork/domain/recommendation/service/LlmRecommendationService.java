@@ -17,9 +17,9 @@ import com.techfork.domain.recommendation.repository.RecommendedPostRepository;
 import com.techfork.domain.recommendation.repository.RecommendationHistoryRepository;
 import com.techfork.domain.recommendation.service.MmrService.MmrCandidate;
 import com.techfork.domain.recommendation.service.MmrService.MmrResult;
-import com.techfork.domain.user.document.UserProfileDocument;
+import com.techfork.domain.user.document.PersonalizationProfileDocument;
 import com.techfork.domain.user.entity.User;
-import com.techfork.domain.user.repository.UserProfileDocumentRepository;
+import com.techfork.domain.user.repository.PersonalizationProfileDocumentRepository;
 import com.techfork.global.util.RrfScorer;
 import com.techfork.global.util.TimeDecayStrategy;
 import com.techfork.global.util.VectorUtil;
@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 public class LlmRecommendationService implements RecommendationService {
 
     private final ElasticsearchClient elasticsearchClient;
-    private final UserProfileDocumentRepository userProfileDocumentRepository;
+    private final PersonalizationProfileDocumentRepository personalizationProfileDocumentRepository;
     private final RecommendedPostRepository recommendedPostRepository;
     private final RecommendationHistoryRepository recommendationHistoryRepository;
     private final ReadPostRepository readPostRepository;
@@ -69,18 +69,19 @@ public class LlmRecommendationService implements RecommendationService {
     public int generateRecommendationsForUser(User user) {
         log.info("사용자 {} 추천 생성 시작", user.getId());
 
-        Optional<UserProfileDocument> profileOpt = userProfileDocumentRepository.findByUserId(user.getId());
-        if (profileOpt.isEmpty() || profileOpt.get().getProfileVector() == null) {
-            log.warn("사용자 {}의 프로필 또는 벡터를 찾을 수 없음. 추천 생성 스킵.", user.getId());
+        Optional<PersonalizationProfileDocument> personalizationProfileOpt =
+                personalizationProfileDocumentRepository.findByUserId(user.getId());
+        if (personalizationProfileOpt.isEmpty() || personalizationProfileOpt.get().getProfileVector() == null) {
+            log.warn("사용자 {}의 개인화 프로필 또는 벡터를 찾을 수 없음. 추천 생성 스킵.", user.getId());
             return 0;
         }
 
-        UserProfileDocument profile = profileOpt.get();
-        float[] userProfileVector = profile.getProfileVector();
+        PersonalizationProfileDocument personalizationProfile = personalizationProfileOpt.get();
+        float[] personalizationProfileVector = personalizationProfile.getProfileVector();
 
         try {
             // 2. k-NN 검색으로 초기 후보군 가져오기
-            List<MmrCandidate> candidates = searchCandidates(userProfileVector, user);
+            List<MmrCandidate> candidates = searchCandidates(personalizationProfileVector, user);
 
             if (candidates.isEmpty()) {
                 log.info("사용자 {}의 추천 후보군을 찾을 수 없음", user.getId());
@@ -118,14 +119,17 @@ public class LlmRecommendationService implements RecommendationService {
         }
     }
 
-    private List<MmrCandidate> searchCandidates(float[] userProfileVector, User user) throws IOException {
+    private List<MmrCandidate> searchCandidates(float[] personalizationProfileVector, User user) throws IOException {
         Set<Long> readPostIds = readPostRepository.findRecentReadPostsByUserIdWithMinDuration(user.getId(), PageRequest.of(0, 1000))
                 .stream()
                 .map(readPost -> readPost.getPost().getId())
                 .collect(Collectors.toSet());
 
-        Optional<UserProfileDocument> profileOpt = userProfileDocumentRepository.findByUserId(user.getId());
-        List<String> keyKeywords = profileOpt.map(UserProfileDocument::getKeyKeywords).orElse(List.of());
+        Optional<PersonalizationProfileDocument> personalizationProfileOpt =
+                personalizationProfileDocumentRepository.findByUserId(user.getId());
+        List<String> keyKeywords = personalizationProfileOpt
+                .map(PersonalizationProfileDocument::getKeyKeywords)
+                .orElse(List.of());
 
         RecommendationProperties.EmbeddingWeights weights = properties.getEmbeddingWeights();
         Query filterQuery = vectorQueryBuilder.createExcludeFilter(readPostIds);
@@ -133,7 +137,7 @@ public class LlmRecommendationService implements RecommendationService {
         // 1. kNN 검색 쿼리 준비
         List<KnnSearch> knnSearches = vectorQueryBuilder.createKnnSearches(
                 TITLE_EMBEDDING_FIELD, SUMMARY_EMBEDDING_FIELD, CONTENT_CHUNKS_EMBEDDING_FIELD,
-                userProfileVector, weights.getTitle(), weights.getSummary(), weights.getContent(),
+                personalizationProfileVector, weights.getTitle(), weights.getSummary(), weights.getContent(),
                 properties.getKnnSearchSize(), properties.getNumCandidates(), filterQuery
         );
 

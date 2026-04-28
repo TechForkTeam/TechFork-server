@@ -34,7 +34,7 @@ class InterestCommandServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private UserProfileService userProfileService;
+    private PersonalizationProfileService personalizationProfileService;
 
     @InjectMocks
     private InterestCommandService interestCommandService;
@@ -61,7 +61,7 @@ class InterestCommandServiceTest {
         assertThat(user.getInterestCategories()).hasSize(1);
         assertThat(user.getInterestCategories().get(0).getKeywords()).hasSize(2);
 
-        verify(userProfileService, times(1)).generateUserProfile(user.getId());
+        verify(personalizationProfileService, times(1)).generatePersonalizationProfile(user.getId());
     }
 
     @Test
@@ -86,7 +86,7 @@ class InterestCommandServiceTest {
         assertThat(user.getInterestCategories()).hasSize(1);
         assertThat(user.getInterestCategories().get(0).getKeywords()).isEmpty();
 
-        verify(userProfileService, times(1)).generateUserProfile(user.getId());
+        verify(personalizationProfileService, times(1)).generatePersonalizationProfile(user.getId());
     }
 
     @Test
@@ -121,7 +121,7 @@ class InterestCommandServiceTest {
         assertThat(user.getInterestCategories().get(1).getKeywords()).hasSize(2);
         assertThat(user.getInterestCategories().get(2).getKeywords()).hasSize(3);
 
-        verify(userProfileService, times(1)).generateUserProfile(user.getId());
+        verify(personalizationProfileService, times(1)).generatePersonalizationProfile(user.getId());
     }
 
     @Test
@@ -150,7 +150,7 @@ class InterestCommandServiceTest {
         // Then
         assertThat(user.getInterestCategories()).hasSize(1);
 
-        verify(userProfileService, times(1)).generateUserProfile(user.getId());
+        verify(personalizationProfileService, times(1)).generatePersonalizationProfile(user.getId());
     }
 
     @Test
@@ -174,7 +174,7 @@ class InterestCommandServiceTest {
                 .isInstanceOf(GeneralException.class)
                 .hasFieldOrPropertyWithValue("code", UserErrorCode.INVALID_INTEREST_KEYWORD);
 
-        verify(userProfileService, never()).generateUserProfile(any());
+        verify(personalizationProfileService, never()).generatePersonalizationProfile(any());
     }
 
     @Test
@@ -204,7 +204,7 @@ class InterestCommandServiceTest {
         assertThat(mockUser.getInterestCategories()).hasSize(1);
 
         verify(userRepository, times(1)).findByIdWithInterestCategories(userId);
-        verify(userProfileService, times(1)).generateUserProfile(userId);
+        verify(personalizationProfileService, times(1)).generatePersonalizationProfile(userId);
     }
 
     @Test
@@ -229,6 +229,6 @@ class InterestCommandServiceTest {
                 .isInstanceOf(GeneralException.class)
                 .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
 
-        verify(userProfileService, never()).generateUserProfile(any());
+        verify(personalizationProfileService, never()).generatePersonalizationProfile(any());
     }
 }

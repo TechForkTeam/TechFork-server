@@ -7,10 +7,10 @@ import com.techfork.evaluation.recommendation.setup.components.FileExporter;
 import com.techfork.evaluation.recommendation.setup.components.TestDataGenerator;
 import com.techfork.evaluation.recommendation.setup.components.TestDataGenerator.UserCreationResult;
 import com.techfork.evaluation.recommendation.util.EvaluationFixtureLoader;
-import com.techfork.domain.user.document.UserProfileDocument;
+import com.techfork.domain.user.document.PersonalizationProfileDocument;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.enums.EInterestCategory;
-import com.techfork.domain.user.repository.UserProfileDocumentRepository;
+import com.techfork.domain.user.repository.PersonalizationProfileDocumentRepository;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.common.IntegrationTestBase;
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +44,7 @@ public class UserDataSetupAndExporter extends IntegrationTestBase {
     private ReadPostRepository readPostRepository;
 
     @Autowired
-    private UserProfileDocumentRepository userProfileDocumentRepository;
+    private PersonalizationProfileDocumentRepository personalizationProfileDocumentRepository;
 
     @Autowired
     private TestDataGenerator testDataGenerator;
@@ -141,7 +141,7 @@ public class UserDataSetupAndExporter extends IntegrationTestBase {
         log.info("총 생성된 사용자: {} 명", users.size());
 
         long profileCount = users.stream()
-                .filter(u -> userProfileDocumentRepository.findByUserId(u.getId()).isPresent())
+                .filter(u -> personalizationProfileDocumentRepository.findByUserId(u.getId()).isPresent())
                 .count();
         log.info("UserProfile(임베딩) 생성된 사용자: {} 명", profileCount);
 
@@ -179,8 +179,8 @@ public class UserDataSetupAndExporter extends IntegrationTestBase {
         List<ReadPost> readPosts = exportReadPosts(users);
         log.info("✓ 읽은 글 이력 {} 개 export 완료", readPosts.size());
 
-        List<UserProfileDocument> userProfiles = exportUserProfiles(users);
-        log.info("✓ UserProfileDocument {} 개 export 완료 (임베딩 포함)", userProfiles.size());
+        List<PersonalizationProfileDocument> userProfiles = exportUserProfiles(users);
+        log.info("✓ PersonalizationProfileDocument {} 개 export 완료 (임베딩 포함)", userProfiles.size());
 
         log.info("===== STEP 3 완료 =====");
         log.info("출력 위치: {}", fileExporter.getOutputDir());
@@ -225,24 +225,24 @@ public class UserDataSetupAndExporter extends IntegrationTestBase {
         return allReadPosts;
     }
 
-    private List<UserProfileDocument> exportUserProfiles(List<User> users) throws IOException {
-        List<UserProfileDocument> profiles = new ArrayList<>();
+    private List<PersonalizationProfileDocument> exportUserProfiles(List<User> users) throws IOException {
+        List<PersonalizationProfileDocument> profiles = new ArrayList<>();
         int notFoundCount = 0;
 
         for (User user : users) {
-            Optional<UserProfileDocument> profileOpt =
-                    userProfileDocumentRepository.findByUserId(user.getId());
+            Optional<PersonalizationProfileDocument> profileOpt =
+                    personalizationProfileDocumentRepository.findByUserId(user.getId());
 
             if (profileOpt.isPresent()) {
                 profiles.add(profileOpt.get());
             } else {
                 notFoundCount++;
-                log.warn("UserProfileDocument not found for userId: {}", user.getId());
+                log.warn("PersonalizationProfileDocument not found for userId: {}", user.getId());
             }
         }
 
         if (notFoundCount > 0) {
-            log.warn("총 {} 명의 UserProfileDocument를 찾지 못했습니다.", notFoundCount);
+            log.warn("총 {} 명의 PersonalizationProfileDocument를 찾지 못했습니다.", notFoundCount);
         }
 
         // DTO 변환 (profileVector는 float[]이므로 List로 변환)
@@ -254,7 +254,7 @@ public class UserDataSetupAndExporter extends IntegrationTestBase {
 
         // 임베딩 차원 검증
         if (!profiles.isEmpty()) {
-            UserProfileDocument sample = profiles.get(0);
+            PersonalizationProfileDocument sample = profiles.get(0);
             log.info("임베딩 차원 검증:");
             log.info("  - profileVector: {} 차원",
                     sample.getProfileVector() != null ? sample.getProfileVector().length : "null");
@@ -311,7 +311,7 @@ public class UserDataSetupAndExporter extends IntegrationTestBase {
         return dto;
     }
 
-    private Map<String, Object> convertUserProfileToDto(UserProfileDocument profile) {
+    private Map<String, Object> convertUserProfileToDto(PersonalizationProfileDocument profile) {
         Map<String, Object> dto = new HashMap<>();
         dto.put("id", profile.getId());
         dto.put("userId", profile.getUserId());

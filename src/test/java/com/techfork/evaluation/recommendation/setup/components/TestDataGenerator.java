@@ -2,11 +2,11 @@ package com.techfork.evaluation.recommendation.setup.components;
 
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
-import com.techfork.domain.user.document.UserProfileDocument;
+import com.techfork.domain.user.document.PersonalizationProfileDocument;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.enums.EInterestCategory;
-import com.techfork.domain.user.repository.UserProfileDocumentRepository;
-import com.techfork.domain.user.service.UserProfileService;
+import com.techfork.domain.user.repository.PersonalizationProfileDocumentRepository;
+import com.techfork.domain.user.service.PersonalizationProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Disabled;
@@ -33,8 +33,8 @@ public class TestDataGenerator {
     ) {}
 
     private final PostRepository postRepository;
-    private final UserProfileService userProfileService;
-    private final UserProfileDocumentRepository userProfileDocumentRepository;
+    private final PersonalizationProfileService personalizationProfileService;
+    private final PersonalizationProfileDocumentRepository personalizationProfileDocumentRepository;
     private final org.springframework.data.elasticsearch.core.ElasticsearchOperations elasticsearchOperations;
 
     // 분리된 컴포넌트
@@ -123,14 +123,14 @@ public class TestDataGenerator {
 
         // UserProfile 생성 (임베딩 포함) - 동기 버전 사용
         // Ground Truth 점수 계산 전에 프로필 벡터가 필요함
-        UserProfileDocument userProfile = null;
+        PersonalizationProfileDocument userProfile = null;
         try {
-            userProfileService.generateUserProfileSync(user.getId());
+            personalizationProfileService.generatePersonalizationProfileSync(user.getId());
 
             // Elasticsearch Refresh: 저장이 검색 가능해지도록 강제 갱신
-            elasticsearchOperations.indexOps(UserProfileDocument.class).refresh();
+            elasticsearchOperations.indexOps(PersonalizationProfileDocument.class).refresh();
 
-            Optional<UserProfileDocument> userProfileOpt = userProfileDocumentRepository.findByUserId(user.getId());
+            Optional<PersonalizationProfileDocument> userProfileOpt = personalizationProfileDocumentRepository.findByUserId(user.getId());
             if (userProfileOpt.isPresent()) {
                 userProfile = userProfileOpt.get();
                 log.info("사용자 프로필 및 임베딩 생성 완료: userId={}", user.getId());

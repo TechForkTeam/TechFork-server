@@ -12,7 +12,7 @@ import com.techfork.domain.post.repository.PostDocumentRepository;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.repository.TechBlogRepository;
-import com.techfork.domain.user.document.UserProfileDocument;
+import com.techfork.domain.user.document.PersonalizationProfileDocument;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.entity.UserInterestCategory;
 import com.techfork.domain.user.entity.UserInterestKeyword;
@@ -20,7 +20,7 @@ import com.techfork.domain.user.enums.EInterestCategory;
 import com.techfork.domain.user.enums.EInterestKeyword;
 import com.techfork.domain.user.enums.Role;
 import com.techfork.domain.user.enums.SocialType;
-import com.techfork.domain.user.repository.UserProfileDocumentRepository;
+import com.techfork.domain.user.repository.PersonalizationProfileDocumentRepository;
 import com.techfork.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +47,7 @@ public class EvaluationFixtureLoader {
     private final PostRepository postRepository;
     private final ReadPostRepository readPostRepository;
     private final PostDocumentRepository postDocumentRepository;
-    private final UserProfileDocumentRepository userProfileDocumentRepository;
+    private final PersonalizationProfileDocumentRepository personalizationProfileDocumentRepository;
     private final TechBlogRepository techBlogRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper()
@@ -73,7 +73,7 @@ public class EvaluationFixtureLoader {
             log.info("✓ PostDocument {} 개 로드 완료 (임베딩 포함)", postDocCount);
 
             int userProfileCount = loadUserProfiles(userMap);
-            log.info("✓ UserProfileDocument {} 개 로드 완료 (임베딩 포함)", userProfileCount);
+            log.info("✓ PersonalizationProfileDocument {} 개 로드 완료 (임베딩 포함)", userProfileCount);
 
             Map<Long, Map<Long, Integer>> groundTruth = loadGroundTruth(userMap, postMap);
             log.info("✓ Ground Truth {} 명 사용자 로드 완료", groundTruth.size());
@@ -355,7 +355,7 @@ public class EvaluationFixtureLoader {
                 }
             }
 
-            UserProfileDocument profile = UserProfileDocument.builder()
+            PersonalizationProfileDocument profile = PersonalizationProfileDocument.builder()
                     .userId(actualUserId)
                     .profileText(profileText)
                     .profileVector(profileVector)
@@ -363,7 +363,7 @@ public class EvaluationFixtureLoader {
                     .keyKeywords(keyKeywords)
                     .build();
 
-            userProfileDocumentRepository.save(profile);
+            personalizationProfileDocumentRepository.save(profile);
             count++;
         }
 

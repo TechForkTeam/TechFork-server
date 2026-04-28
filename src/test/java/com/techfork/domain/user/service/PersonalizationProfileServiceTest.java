@@ -9,7 +9,7 @@ import com.techfork.domain.activity.repository.SearchHistoryRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.entity.PostKeyword;
 import com.techfork.domain.recommendation.service.RecommendationService;
-import com.techfork.domain.user.document.UserProfileDocument;
+import com.techfork.domain.user.document.PersonalizationProfileDocument;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.entity.UserInterestCategory;
 import com.techfork.domain.user.entity.UserInterestKeyword;
@@ -17,7 +17,7 @@ import com.techfork.domain.user.enums.EInterestCategory;
 import com.techfork.domain.user.enums.EInterestKeyword;
 import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.repository.UserInterestCategoryRepository;
-import com.techfork.domain.user.repository.UserProfileDocumentRepository;
+import com.techfork.domain.user.repository.PersonalizationProfileDocumentRepository;
 import com.techfork.domain.user.repository.UserRepository;
 import com.techfork.global.llm.EmbeddingClient;
 import com.techfork.global.llm.LlmClient;
@@ -43,7 +43,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class UserProfileServiceTest {
+class PersonalizationProfileServiceTest {
 
     @Mock
     private UserInterestCategoryRepository userInterestCategoryRepository;
@@ -58,7 +58,7 @@ class UserProfileServiceTest {
     private SearchHistoryRepository searchHistoryRepository;
 
     @Mock
-    private UserProfileDocumentRepository userProfileDocumentRepository;
+    private PersonalizationProfileDocumentRepository personalizationProfileDocumentRepository;
 
     @Mock
     private UserRepository userRepository;
@@ -73,11 +73,11 @@ class UserProfileServiceTest {
     private EmbeddingClient embeddingClient;
 
     @InjectMocks
-    private UserProfileService userProfileService;
+    private PersonalizationProfileService personalizationProfileService;
 
     @Test
     @DisplayName("사용자 활동 데이터를 모아 개인화 프로필을 생성하고 저장한다")
-    void generateUserProfileSync_CollectsActivityDataParsesAndSavesProfile() {
+    void generatePersonalizationProfileSync_CollectsActivityDataParsesAndSavesProfile() {
         Long userId = 1L;
         User user = createUser(userId);
         List<ReadPost> readPosts = List.of(
@@ -115,12 +115,12 @@ class UserProfileServiceTest {
                         Java, Spring, Docker, Elasticsearch, Batch
                         """);
         given(embeddingClient.embed(anyString())).willReturn(List.of(0.1f, 0.2f, 0.3f));
-        given(userProfileDocumentRepository.save(any(UserProfileDocument.class)))
+        given(personalizationProfileDocumentRepository.save(any(PersonalizationProfileDocument.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(recommendationService.generateRecommendationsForUser(user)).willReturn(5);
 
-        userProfileService.generateUserProfileSync(userId);
+        personalizationProfileService.generatePersonalizationProfileSync(userId);
 
         ArgumentCaptor<String> promptCaptor = ArgumentCaptor.forClass(String.class);
         verify(llmClient).call(anyString(), promptCaptor.capture());
@@ -145,10 +145,10 @@ class UserProfileServiceTest {
                 .contains("정독함")
                 .contains("깊게 읽음");
 
-        ArgumentCaptor<UserProfileDocument> documentCaptor = ArgumentCaptor.forClass(UserProfileDocument.class);
-        verify(userProfileDocumentRepository).save(documentCaptor.capture());
+        ArgumentCaptor<PersonalizationProfileDocument> documentCaptor = ArgumentCaptor.forClass(PersonalizationProfileDocument.class);
+        verify(personalizationProfileDocumentRepository).save(documentCaptor.capture());
 
-        UserProfileDocument savedDocument = documentCaptor.getValue();
+        PersonalizationProfileDocument savedDocument = documentCaptor.getValue();
         assertThat(savedDocument.getUserId()).isEqualTo(userId);
         assertThat(savedDocument.getProfileText())
                 .isEqualTo("Java와 Spring 기반 백엔드, Docker 중심 운영 자동화, Elasticsearch 검색 최적화에 집중하는 사용자");
@@ -163,7 +163,7 @@ class UserProfileServiceTest {
 
     @Test
     @DisplayName("LLM 응답을 파싱하지 못하면 전체 텍스트를 프로필로 fallback 저장한다")
-    void generateUserProfileSync_FallsBackToFullTextWhenSectionsAreMissing() {
+    void generatePersonalizationProfileSync_FallsBackToFullTextWhenSectionsAreMissing() {
         Long userId = 2L;
         User user = createUser(userId);
         String llmResponse = "섹션 없이도 전체 응답을 개인화 프로필로 저장해야 한다";
@@ -174,16 +174,16 @@ class UserProfileServiceTest {
         given(searchHistoryRepository.findRecentSearchHistoriesByUserId(anyLong(), any())).willReturn(List.of());
         given(llmClient.call(anyString(), anyString())).willReturn(llmResponse);
         given(embeddingClient.embed(llmResponse)).willReturn(List.of(1.0f, 2.0f));
-        given(userProfileDocumentRepository.save(any(UserProfileDocument.class)))
+        given(personalizationProfileDocumentRepository.save(any(PersonalizationProfileDocument.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
 
-        userProfileService.generateUserProfileSync(userId);
+        personalizationProfileService.generatePersonalizationProfileSync(userId);
 
-        ArgumentCaptor<UserProfileDocument> documentCaptor = ArgumentCaptor.forClass(UserProfileDocument.class);
-        verify(userProfileDocumentRepository).save(documentCaptor.capture());
+        ArgumentCaptor<PersonalizationProfileDocument> documentCaptor = ArgumentCaptor.forClass(PersonalizationProfileDocument.class);
+        verify(personalizationProfileDocumentRepository).save(documentCaptor.capture());
 
-        UserProfileDocument savedDocument = documentCaptor.getValue();
+        PersonalizationProfileDocument savedDocument = documentCaptor.getValue();
         assertThat(savedDocument.getProfileText()).isEqualTo(llmResponse);
         assertThat(savedDocument.getKeyKeywords()).isEmpty();
         assertThat(savedDocument.getProfileVector()).containsExactly(1.0f, 2.0f);
@@ -191,7 +191,7 @@ class UserProfileServiceTest {
 
     @Test
     @DisplayName("추천 생성이 실패해도 개인화 프로필 저장은 유지된다")
-    void generateUserProfileSync_RecommendationFailureDoesNotBreakProfileSave() {
+    void generatePersonalizationProfileSync_RecommendationFailureDoesNotBreakProfileSave() {
         Long userId = 3L;
         User user = createUser(userId);
 
@@ -208,16 +208,16 @@ class UserProfileServiceTest {
                         테스트, 회귀
                         """);
         given(embeddingClient.embed(anyString())).willReturn(List.of(9.0f, 8.0f));
-        given(userProfileDocumentRepository.save(any(UserProfileDocument.class)))
+        given(personalizationProfileDocumentRepository.save(any(PersonalizationProfileDocument.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(recommendationService.generateRecommendationsForUser(user))
                 .willThrow(new RuntimeException("recommendation failure"));
 
-        assertThatCode(() -> userProfileService.generateUserProfileSync(userId))
+        assertThatCode(() -> personalizationProfileService.generatePersonalizationProfileSync(userId))
                 .doesNotThrowAnyException();
 
-        verify(userProfileDocumentRepository).save(any(UserProfileDocument.class));
+        verify(personalizationProfileDocumentRepository).save(any(PersonalizationProfileDocument.class));
         verify(recommendationService).generateRecommendationsForUser(user);
     }
 

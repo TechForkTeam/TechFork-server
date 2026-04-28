@@ -6,7 +6,7 @@ import com.techfork.domain.user.enums.EInterestCategory;
 import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.repository.UserInterestCategoryRepository;
 import com.techfork.domain.user.repository.UserRepository;
-import com.techfork.domain.user.service.UserProfileService;
+import com.techfork.domain.user.service.PersonalizationProfileService;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -25,7 +25,7 @@ import static com.techfork.domain.user.enums.EInterestCategory.*;
 @Tag("evaluation-setup")
 @Disabled("데이터 셋업용 - CI 제외")
 @SpringBootTest
-class UserProfileServiceTest {
+class PersonalizationProfileServiceTest {
 
     @Autowired
     private UserRepository userRepository;
@@ -34,7 +34,7 @@ class UserProfileServiceTest {
     private UserInterestCategoryRepository userInterestCategoryRepository;
 
     @Autowired
-    private UserProfileService userProfileService;
+    private PersonalizationProfileService personalizationProfileService;
 
     @Test
     @DisplayName("10명의 각기 다른 관심사를 가진 테스트 사용자를 생성하고 프로필 벡터를 생성한다.")
@@ -68,7 +68,7 @@ class UserProfileServiceTest {
             userInterestCategoryRepository.saveAll(interestCategories);
 
             System.out.println("Generating profile for user: " + user.getId());
-            userProfileService.generateUserProfile(user.getId());
+            personalizationProfileService.generatePersonalizationProfile(user.getId());
             System.out.println("Profile generated for user: " + user.getId());
         });
     }

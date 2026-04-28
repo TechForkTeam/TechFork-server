@@ -3,7 +3,7 @@ package com.techfork.evaluation.recommendation.setup.components;
 import com.techfork.domain.post.document.PostDocument;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostDocumentRepository;
-import com.techfork.domain.user.document.UserProfileDocument;
+import com.techfork.domain.user.document.PersonalizationProfileDocument;
 import com.techfork.global.llm.LlmClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +37,7 @@ public class GroundTruthGenerator {
      */
     public Map<Long, Integer> calculateGroundTruth(
             List<Post> posts,
-            UserProfileDocument userProfile) {
+            PersonalizationProfileDocument userProfile) {
 
         Map<Long, Integer> groundTruthScores = new HashMap<>();
         int count = 0;
@@ -62,7 +62,7 @@ public class GroundTruthGenerator {
     /**
      * LLM을 사용하여 게시글의 관련도 점수 평가 (1~5점)
      */
-    private int calculateRelevanceScoreWithLLM(Post post, UserProfileDocument userProfile) {
+    private int calculateRelevanceScoreWithLLM(Post post, PersonalizationProfileDocument userProfile) {
         // PostDocument에서 더 풍부한 정보 가져오기 (요약문, 본문 청크 등)
         Optional<PostDocument> postDocOpt = postDocumentRepository.findByPostId(post.getId());
 
