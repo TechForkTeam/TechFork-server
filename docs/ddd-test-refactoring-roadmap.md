@@ -98,7 +98,7 @@ DDD 목표 지도 작성
 - 프로필 대표어는 **핵심 키워드/KeyKeyword**로 부른다.
 - 게시글 대표어는 **게시글 키워드/PostKeyword**로 부른다.
 - 전략 문서와 glossary에서는 **`User Account`** 와 **`Personalization Profile`** 을 분리한다.
-- `EDifficultyLevel`은 현재 제거 후보로 본다.
+- `EDifficultyLevel`은 실제 사용처가 없어 제거 완료된 상태로 본다.
 
 ---
 
@@ -280,13 +280,13 @@ PostKeyword
 
 ### 3.4 4순위: `EDifficultyLevel` 제거
 
-현재 핵심 흐름에서 사용처가 약하다.
+2026-04-28 기준 실제 사용처가 없음을 확인했고, enum 삭제를 완료했다.
 
-권장 순서:
+처리 결과:
 
 ```text
-1. 실제 사용처가 없는지 확인
-2. 삭제
+1. 실제 사용처 없음 확인
+2. `src/main/java/com/techfork/domain/post/enums/EDifficultyLevel.java` 삭제 완료
 3. 난이도 기능이 필요해질 때 정책과 함께 재도입
 ```
 

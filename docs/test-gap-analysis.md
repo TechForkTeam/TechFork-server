@@ -588,7 +588,7 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 
 작업 2: Post 애그리거트 테스트
 - PostTest 추가
-- EDifficultyLevel 제거 전 사용처 확인
+- EDifficultyLevel 제거 후 문서 정리 및 회귀 확인
 
 작업 3: Personalization Profile 테스트
 - PersonalizationProfileServiceTest 추가

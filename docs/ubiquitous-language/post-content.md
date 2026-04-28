@@ -31,7 +31,7 @@
 - 도메인/기획 문서에서는 `Post`를 **기술 게시글**로 부른다.
 - `PostDocument`, `ContentChunk`는 aggregate가 아니라 **검색/추천용 projection**이다.
 - `Post.company`는 Source 컨텍스트의 출처명을 복사한 조회용 스냅샷이다.
-- `EDifficultyLevel`은 현재 핵심 흐름에서 역할이 약하므로 제거 후보로 본다.
+- `EDifficultyLevel`은 실제 사용처가 없어 제거되었다. 필요해지면 정책과 함께 재도입한다.
 
 ## 내부 glossary
 
