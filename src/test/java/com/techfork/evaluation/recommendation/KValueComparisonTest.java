@@ -1,7 +1,7 @@
 package com.techfork.evaluation.recommendation;
 
 import com.techfork.domain.recommendation.config.RecommendationProperties;
-import com.techfork.domain.user.entity.User;
+import com.techfork.domain.useraccount.entity.User;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;

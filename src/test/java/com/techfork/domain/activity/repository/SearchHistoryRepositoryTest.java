@@ -1,9 +1,9 @@
 package com.techfork.domain.activity.repository;
 
 import com.techfork.domain.activity.entity.SearchHistory;
-import com.techfork.domain.user.entity.User;
-import com.techfork.domain.user.enums.SocialType;
-import com.techfork.domain.user.repository.UserRepository;
+import com.techfork.domain.useraccount.entity.User;
+import com.techfork.domain.useraccount.enums.SocialType;
+import com.techfork.domain.useraccount.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

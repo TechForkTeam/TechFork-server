@@ -13,8 +13,8 @@ import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.search.config.GeneralSearchProperties;
 import com.techfork.domain.search.dto.SearchResult;
 
-import com.techfork.domain.user.document.UserProfileDocument;
-import com.techfork.domain.user.repository.UserProfileDocumentRepository;
+import com.techfork.domain.personalization.document.PersonalizationProfileDocument;
+import com.techfork.domain.personalization.repository.PersonalizationProfileDocumentRepository;
 import com.techfork.global.llm.EmbeddingClient;
 import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import com.techfork.global.util.RrfScorer;
@@ -52,7 +52,7 @@ public class SearchServiceImpl implements SearchService {
     private final ElasticsearchClient elasticsearchClient;
     private final EmbeddingClient embeddingClient;
     private final GeneralSearchProperties generalSearchProperties;
-    private final UserProfileDocumentRepository userProfileDocumentRepository;
+    private final PersonalizationProfileDocumentRepository personalizationProfileDocumentRepository;
     private final PostRepository postRepository;
     private final BookmarkRepository bookmarkRepository;
     private final Executor searchAsyncExecutor;
@@ -90,8 +90,10 @@ public class SearchServiceImpl implements SearchService {
         log.debug("Personalized search started for userId: {} with query: '{}'", userId, query);
         long startTime = System.currentTimeMillis();
 
-        Optional<UserProfileDocument> userProfileOpt = userProfileDocumentRepository.findByUserId(userId);
-        boolean hasProfile = userProfileOpt.isPresent() && userProfileOpt.get().getProfileVector() != null;
+        Optional<PersonalizationProfileDocument> personalizationProfileOpt =
+                personalizationProfileDocumentRepository.findByUserId(userId);
+        boolean hasProfile = personalizationProfileOpt.isPresent()
+                && personalizationProfileOpt.get().getProfileVector() != null;
 
         int candidateSize = hasProfile
                 ? generalSearchProperties.getRRF_WINDOW_SIZE()
@@ -107,8 +109,8 @@ public class SearchServiceImpl implements SearchService {
             log.info("Personalized Search [FALLBACK]. UserID={}, Query='{}', Results={}, Time={}ms (Reason: No Profile)",
                     userId, query, finalResults.size(), duration);
         } else {
-            float[] userProfileVector = userProfileOpt.get().getProfileVector();
-            finalResults = personalReranking(initialResults, userProfileVector);
+            float[] personalizationProfileVector = personalizationProfileOpt.get().getProfileVector();
+            finalResults = personalReranking(initialResults, personalizationProfileVector);
             long duration = System.currentTimeMillis() - startTime;
             log.info("Personalized Search [RERANKED]. UserID={}, Query='{}', Results={}, Time={}ms",
                     userId, query, finalResults.size(), duration);

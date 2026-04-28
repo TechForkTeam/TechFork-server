@@ -6,4 +6,5 @@
 - [User Account](./user-account.md)
 - [Personalization Profile](./personalization-profile.md)
 
-현재 구현 패키지는 여전히 `src/main/java/com/techfork/domain/user`로 함께 묶여 있습니다.
+현재 구현은 `src/main/java/com/techfork/domain/useraccount`와
+`src/main/java/com/techfork/domain/personalization`로 분리되어 있습니다.

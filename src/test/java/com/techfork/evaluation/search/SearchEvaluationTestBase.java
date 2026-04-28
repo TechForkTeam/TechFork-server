@@ -11,7 +11,7 @@ import com.techfork.domain.search.dto.SearchResult;
 import com.techfork.domain.search.config.GeneralSearchProperties;
 import com.techfork.domain.search.service.SearchService;
 import com.techfork.domain.search.service.SearchServiceImpl;
-import com.techfork.domain.user.repository.UserProfileDocumentRepository;
+import com.techfork.domain.personalization.repository.PersonalizationProfileDocumentRepository;
 import com.techfork.evaluation.search.util.GroundTruthItem;
 import com.techfork.evaluation.search.util.SearchQualityService;
 import com.techfork.global.config.CloudflareThirdPartyThumbnailOptimizationProperties;
@@ -48,7 +48,7 @@ public abstract class SearchEvaluationTestBase {
 
     @Autowired protected ElasticsearchClient elasticsearchClient;
     @Autowired protected EmbeddingClient embeddingClient;
-    @Autowired protected UserProfileDocumentRepository userProfileDocumentRepository;
+    @Autowired protected PersonalizationProfileDocumentRepository personalizationProfileDocumentRepository;
     @Autowired protected PostRepository postRepository;
     @Autowired protected BookmarkRepository bookmarkRepository;
     @Autowired @Qualifier("searchAsyncExecutor") protected Executor searchAsyncExecutor;
@@ -109,7 +109,7 @@ public abstract class SearchEvaluationTestBase {
 
             SearchService svc = new SearchServiceImpl(
                     elasticsearchClient, embeddingClient, props,
-                    userProfileDocumentRepository, postRepository,
+                    personalizationProfileDocumentRepository, postRepository,
                     bookmarkRepository, searchAsyncExecutor, thumbnailOptimizer);
 
             // index: [nDCG@4, nDCG@8, nDCG@20, Recall@4, Recall@8, Recall@20, latency]

@@ -9,7 +9,7 @@
 
 - **기준 단위는 패키지가 아니라 바운디드 컨텍스트다.** 다만 각 문서에 현재 owning package를 함께 적어 코드 탐색 경로를 명확히 한다.
 - **유비쿼터스 언어 문서는 도메인 전략과 왕복한다.** 새 용어가 나오면 먼저 이 문서를 고치고, 경계가 바뀌면 `domain-strategy.md`를 함께 조정한다.
-- **전략 문서에서는 `User Account`와 `Personalization Profile`을 별도 컨텍스트로 본다.** 다만 현재 구현 패키지는 `domain/user` 아래에 함께 존재한다.
+- **전략 문서에서는 `User Account`와 `Personalization Profile`을 별도 컨텍스트로 본다.** 현재 구현도 `domain/useraccount`와 `domain/personalization`으로 물리 분리되어 있다.
 - 레거시 코드명(`ScrabPost`, `searchWord`, `markAsisClicked`)은 허용하되, 문서/PR/API에서는 표준 용어를 우선 사용한다.
 - 각 컨텍스트 문서는 가능하면 아래 다섯 블록을 유지한다.
   1. 표준 용어
@@ -26,8 +26,8 @@
 |---|---|---|---|
 | Source / Ingestion | [`source-ingestion.md`](./source-ingestion.md) | `src/main/java/com/techfork/domain/source` | RSS 수집, 소스 블로그, 파이프라인 시작점 |
 | Post / Content | [`post-content.md`](./post-content.md) | `src/main/java/com/techfork/domain/post` | 기술 게시글 본문, 요약, 키워드, 검색 projection |
-| User Account | [`user-account.md`](./user-account.md) | `src/main/java/com/techfork/domain/user` | 계정, 온보딩, 관심사, 계정 프로필 |
-| Personalization Profile | [`personalization-profile.md`](./personalization-profile.md) | `src/main/java/com/techfork/domain/user` | 개인화 프로필 생성, 벡터, 핵심 키워드, 재생성 |
+| User Account | [`user-account.md`](./user-account.md) | `src/main/java/com/techfork/domain/useraccount` | 계정, 온보딩, 관심사, 계정 프로필 |
+| Personalization Profile | [`personalization-profile.md`](./personalization-profile.md) | `src/main/java/com/techfork/domain/personalization` | 개인화 프로필 생성, 벡터, 핵심 키워드, 재생성 |
 | Activity | [`activity.md`](./activity.md) | `src/main/java/com/techfork/domain/activity` | 읽기/검색/북마크 행동 기록 |
 | Search | [`search.md`](./search.md) | `src/main/java/com/techfork/domain/search` | query service / read model 중심 컨텍스트 |
 | Recommendation | [`recommendation.md`](./recommendation.md) | `src/main/java/com/techfork/domain/recommendation` | 추천 후보 탐색, 랭킹, 현재 추천 목록 |
@@ -52,13 +52,13 @@
 | 표준 용어 | 현재 코드상 표현 | 의미 |
 |---|---|---|
 | 계정 프로필 | `User.nickName`, `User.description`, `User.profileImage` | 사용자에게 보이는 기본 프로필 정보 |
-| 개인화 프로필 | `UserProfileDocument.profileText`, `profileVector` | 검색 리랭킹/추천용 활동 기반 프로필 |
+| 개인화 프로필 | `PersonalizationProfileDocument.profileText`, `profileVector` | 검색 리랭킹/추천용 활동 기반 프로필 |
 
 규칙:
 
 - 문서/PR/API에서 **“프로필” 단독 표현은 지양**한다.
 - UI/설정 화면은 `계정 프로필 수정`, 추천/검색 준비 상태는 `개인화 프로필 생성/재생성`으로 쓴다.
-- `UserProfileDocument`는 현재 `domain/user` 패키지에 있으나, 개념상으로는 `Personalization Profile` language zone의 read model이다.
+- `PersonalizationProfileDocument`는 `domain/personalization` 패키지의 read model/projection이다.
 
 ---
 
@@ -82,7 +82,7 @@
 1. `domain-strategy.md`의 명칭과 glossary 문서명을 맞춘다. (`Auth` → `Auth / Security`)
 2. `docs/ubiquitous-language.md`는 호환용 인덱스로 축소하고, 상세 용어는 이 디렉터리 문서에 모은다.
 3. 전략 문서와 glossary는 `User Account` / `Personalization Profile`로 분리 유지한다.
-4. 추후 실제 패키지 분리가 필요해지면 그 시점에 `domain/user` 하위 구조와 문서 구조를 다시 정렬한다.
+4. 패키지 분리 이후에도 glossary와 전략 문서의 현재 상태 설명이 stale하지 않도록 함께 유지한다.
 
 ## 6. 내부 glossary를 채우는 기준
 

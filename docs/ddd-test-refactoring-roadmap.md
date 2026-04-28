@@ -47,7 +47,7 @@ DDD 목표 지도 작성
   - 예: `ScrabPost`, `scrap_posts`, `Bookmark`
   - 예: `searchWord`, `query`, `keyKeywords`, `PostKeyword`
   - 예: 계정 프로필과 개인화 프로필
-- Search, Recommendation, Personalization Profile(`UserProfileService`) 쪽은 여러 컨텍스트와 외부 인프라가 얽혀 있어 리팩터링 위험이 크다.
+- Search, Recommendation, Personalization Profile(`PersonalizationProfileService`) 쪽은 여러 컨텍스트와 외부 인프라가 얽혀 있어 리팩터링 위험이 크다.
 
 따라서 안전한 전환 전략은 다음이다.
 
@@ -265,14 +265,14 @@ PostKeyword
 | 표준 용어 | 코드상 표현 | 의미 |
 |---|---|---|
 | 계정 프로필 | `User.nickName`, `description`, `profileImage` | 사용자에게 보이는 기본 프로필 |
-| 개인화 프로필 | `UserProfileDocument.profileText`, `profileVector` | 검색/추천에 쓰이는 활동 기반 LLM/임베딩 프로필 |
+| 개인화 프로필 | `PersonalizationProfileDocument.profileText`, `profileVector` | 검색/추천에 쓰이는 활동 기반 LLM/임베딩 프로필 |
 
 권장 순서:
 
 ```text
 1. 문서/API 설명에서 `User Account`와 `Personalization Profile` 경계를 고정
-2. UserProfileService 테스트 작성
-3. UserProfileDocument의 역할을 Personalization Profile projection으로 명확히 함
+2. PersonalizationProfileService 테스트 작성
+3. PersonalizationProfileDocument의 역할을 Personalization Profile projection으로 명확히 함
 4. 필요하면 패키지/이벤트/포트 분리를 후속 단계에서 진행
 ```
 
@@ -458,14 +458,14 @@ InterestCommandServiceTest
 
 ```text
 Personalization Profile
-- UserProfileDocument (개인화 검색/추천용 read model projection)
-- UserProfileService (Personalization Profile 생성 서비스로 위치 재정의)
+- PersonalizationProfileDocument (개인화 검색/추천용 read model projection)
+- PersonalizationProfileService (Personalization Profile 생성 서비스로 위치 재정의)
 ```
 
 ##### 먼저 작성할 테스트
 
 ```text
-UserProfileServiceTest
+PersonalizationProfileServiceTest
 - 관심사, 읽은 게시글, 북마크, 검색 기록을 모아 활동 데이터를 구성한다.
 - LLM 응답에서 프로필 텍스트와 핵심 키워드를 파싱한다.
 - 파싱 실패 시 fallback 정책을 따른다.
@@ -479,7 +479,7 @@ UserProfileServiceTest
 현재 Personalization Profile 생성 서비스 의존:
 
 ```text
-UserProfileService
+PersonalizationProfileService
 - User 관심사
 - ReadPost
 - Bookmark
@@ -492,8 +492,8 @@ UserProfileService
 
 정리 방향:
 
-- `UserProfileDocument`를 Personalization Profile projection으로 명확히 한다.
-- `UserProfileService`를 User Account 서비스가 아닌 Personalization Profile 생성 서비스로 위치를 재정의한다.
+- `PersonalizationProfileDocument`를 Personalization Profile projection으로 명확히 한다.
+- `PersonalizationProfileService`를 User Account 서비스가 아닌 Personalization Profile 생성 서비스로 위치를 재정의한다.
 - 관심사 변경/온보딩 완료는 장기적으로 `UserInterestsChanged`, `OnboardingCompleted` 이벤트로 분리한다.
 
 분리 후보 (점진적으로 적용):
@@ -514,7 +514,7 @@ PersonalizedProfileRepository
 ##### 왜 네 번째인가
 
 - 복잡도가 높다.
-- Elasticsearch, Personalization Profile(`UserProfileDocument`), Activity, Post에 모두 의존한다.
+- Elasticsearch, Personalization Profile(`PersonalizationProfileDocument`), Activity, Post에 모두 의존한다.
 - 테스트 없이 건드리면 위험하다.
 
 ##### 목표 모델
@@ -587,7 +587,7 @@ SearchServiceImplTest
 
 - Elasticsearch 호출을 adapter로 감싸기
 - `PostDocument`를 검색 read model로 명시
-- `UserProfileDocument`를 Personalization Profile read model로 명시
+- `PersonalizationProfileDocument`를 Personalization Profile read model로 명시
 - Activity의 북마크 여부 조회를 query composition으로 유지하되 포트 도입 검토
 
 ---
@@ -651,7 +651,7 @@ src/test/java/com/techfork/domain
   user
     UserTest
     InterestCommandServiceTest
-    UserProfileServiceTest
+    PersonalizationProfileServiceTest
 
   recommendation
     MmrServiceTest
@@ -686,7 +686,7 @@ src/test/java/com/techfork/domain
 
 ```text
 [ ] P0 테스트가 모두 존재하고 ./gradlew test -PexcludeIntegration 통과
-[ ] UserProfileServiceTest로 Personalization Profile 생성 흐름 보호
+[ ] PersonalizationProfileServiceTest로 Personalization Profile 생성 흐름 보호
 [ ] MmrServiceTest + LlmRecommendationServiceTest로 추천 생성 핵심 흐름 보호
 [ ] SearchServiceImplTest로 일반/개인화 검색 회귀 보호
 [ ] User Account aggregate 책임과 Personalization Profile 생성 책임이
@@ -737,7 +737,7 @@ TechnicalPostIndexed
 4. Post 도메인 테스트 작성
 5. Post를 “기술 게시글” 기준으로 정리
 6. User 관심사/온보딩 테스트 작성
-7. UserProfileService 테스트 작성
+7. PersonalizationProfileService 테스트 작성
 8. Personalization Profile 책임 분리
 9. Recommendation 테스트 작성
 10. PersonalizedProfileGenerated 이벤트 도입
@@ -802,8 +802,8 @@ TechnicalPostIndexed
 - 핵심 키워드 파싱
 
 리팩터링:
-- UserProfileDocument를 Personalization Profile projection으로 명확히 함
-- UserProfileService 책임 분리
+- PersonalizationProfileDocument를 Personalization Profile projection으로 명확히 함
+- PersonalizationProfileService 책임 분리
 - PersonalizedProfileGenerated 이벤트 도입 준비
 ```
 
@@ -866,19 +866,19 @@ TechnicalPostIndexed
 
 ```text
 목표:
-- UserProfileService를 Personalization Profile 생성 서비스로 테스트로 고정한다.
+- PersonalizationProfileService를 Personalization Profile 생성 서비스로 테스트로 고정한다.
 
 선행 테스트:
 - 관심사, 읽은 게시글, 북마크, 검색 기록을 활동 데이터로 수집한다.
 - LLM 응답에서 profileText와 keyKeywords를 파싱한다.
 - 파싱 실패 시 fallback 정책을 따른다.
-- profileText를 임베딩하여 UserProfileDocument를 저장한다.
+- profileText를 임베딩하여 PersonalizationProfileDocument를 저장한다.
 - 개인화 프로필 생성 후 추천 생성을 호출한다.
 - 추천 생성 실패가 개인화 프로필 저장을 깨뜨리지 않는다.
 
 리팩터링:
-- UserProfileDocument를 Personalization Profile projection으로 명확히 함
-- UserProfileService 책임 분리 (PersonalizedProfileGenerated 이벤트 도입 준비)
+- PersonalizationProfileDocument를 Personalization Profile projection으로 명확히 함
+- PersonalizationProfileService 책임 분리 (PersonalizedProfileGenerated 이벤트 도입 준비)
 ```
 
 ### 5.8 작업 단위 8: 1차 이벤트 도입
@@ -893,11 +893,11 @@ TechnicalPostIndexed
 
 도입 순서:
 1. UserInterestsChanged
-   - InterestCommandService가 UserProfileService를 직접 호출하는 대신 이벤트 발행
+   - InterestCommandService가 PersonalizationProfileService를 직접 호출하는 대신 이벤트 발행
    - 리스너: @TransactionalEventListener(AFTER_COMMIT) + @Async
 
 2. PersonalizedProfileGenerated
-   - UserProfileService가 LlmRecommendationService를 직접 호출하는 대신 이벤트 발행
+   - PersonalizationProfileService가 LlmRecommendationService를 직접 호출하는 대신 이벤트 발행
    - 리스너: 추천 생성 트리거
 
 3. TechnicalPostIndexed

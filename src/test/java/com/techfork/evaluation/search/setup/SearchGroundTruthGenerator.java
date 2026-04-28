@@ -8,7 +8,7 @@ import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.search.dto.SearchResult;
 import com.techfork.domain.search.config.GeneralSearchProperties;
 import com.techfork.domain.search.service.SearchServiceImpl;
-import com.techfork.domain.user.repository.UserProfileDocumentRepository;
+import com.techfork.domain.personalization.repository.PersonalizationProfileDocumentRepository;
 import com.techfork.evaluation.recommendation.setup.components.FileExporter;
 import com.techfork.evaluation.search.util.GroundTruthItem;
 import com.techfork.global.config.CloudflareThirdPartyThumbnailOptimizationProperties;
@@ -102,7 +102,7 @@ class SearchGroundTruthGenerator {
     private GeneralSearchProperties generalSearchProperties;
 
     @Autowired
-    private UserProfileDocumentRepository userProfileDocumentRepository;
+    private PersonalizationProfileDocumentRepository personalizationProfileDocumentRepository;
 
     @Autowired
     private PostRepository postRepository;
@@ -145,7 +145,7 @@ class SearchGroundTruthGenerator {
         );
         SearchServiceImpl searchService = new SearchServiceImpl(
                 elasticsearchClient, embeddingClient, generalSearchProperties,
-                userProfileDocumentRepository, postRepository, bookmarkRepository, searchAsyncExecutor, thumbnailOptimizer);
+                personalizationProfileDocumentRepository, postRepository, bookmarkRepository, searchAsyncExecutor, thumbnailOptimizer);
 
         List<GroundTruthItem> groundTruthItems = scoreAllQueries(uniqueQueryMap, searchService);
         log.info("최종 ground-truth 항목 수: {}", groundTruthItems.size());
