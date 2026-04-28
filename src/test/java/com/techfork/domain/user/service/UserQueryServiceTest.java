@@ -1,7 +1,7 @@
 package com.techfork.domain.user.service;
 
 import com.techfork.domain.user.converter.UserConverter;
-import com.techfork.domain.user.dto.UserProfileResponse;
+import com.techfork.domain.user.dto.AccountProfileResponse;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.enums.SocialType;
 import com.techfork.domain.user.exception.UserErrorCode;
@@ -47,10 +47,10 @@ class UserQueryServiceTest {
     }
 
     @Test
-    @DisplayName("프로필 조회 성공")
-    void getUserProfile_Success() {
+    @DisplayName("계정 프로필 조회 성공")
+    void getAccountProfile_Success() {
         // Given
-        UserProfileResponse expectedResponse = UserProfileResponse.builder()
+        AccountProfileResponse expectedResponse = AccountProfileResponse.builder()
                 .profileImage("profile.jpg")
                 .nickName("테스트유저")
                 .email("test@example.com")
@@ -58,10 +58,10 @@ class UserQueryServiceTest {
                 .build();
 
         given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
-        given(userConverter.toUserProfileResponse(testUser)).willReturn(expectedResponse);
+        given(userConverter.toAccountProfileResponse(testUser)).willReturn(expectedResponse);
 
         // When
-        UserProfileResponse result = userQueryService.getUserProfile(userId);
+        AccountProfileResponse result = userQueryService.getAccountProfile(userId);
 
         // Then
         assertThat(result).isNotNull();
@@ -71,17 +71,17 @@ class UserQueryServiceTest {
         assertThat(result.description()).isEqualTo("백엔드 개발자입니다.");
 
         verify(userRepository).findById(userId);
-        verify(userConverter).toUserProfileResponse(testUser);
+        verify(userConverter).toAccountProfileResponse(testUser);
     }
 
     @Test
-    @DisplayName("프로필 조회 실패 - 사용자를 찾을 수 없음")
-    void getUserProfile_Fail_UserNotFound() {
+    @DisplayName("계정 프로필 조회 실패 - 사용자를 찾을 수 없음")
+    void getAccountProfile_Fail_UserNotFound() {
         // Given
         given(userRepository.findById(userId)).willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> userQueryService.getUserProfile(userId))
+        assertThatThrownBy(() -> userQueryService.getAccountProfile(userId))
                 .isInstanceOf(GeneralException.class)
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(UserErrorCode.USER_NOT_FOUND);

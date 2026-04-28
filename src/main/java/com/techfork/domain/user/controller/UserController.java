@@ -1,9 +1,9 @@
 package com.techfork.domain.user.controller;
 
 import com.techfork.domain.user.dto.SaveInterestRequest;
-import com.techfork.domain.user.dto.UpdateUserProfileRequest;
+import com.techfork.domain.user.dto.UpdateAccountProfileRequest;
 import com.techfork.domain.user.dto.UserInterestResponse;
-import com.techfork.domain.user.dto.UserProfileResponse;
+import com.techfork.domain.user.dto.AccountProfileResponse;
 import com.techfork.domain.user.service.InterestCommandService;
 import com.techfork.domain.user.service.InterestQueryService;
 import com.techfork.domain.user.service.UserCommandService;
@@ -58,33 +58,33 @@ public class UserController {
     }
 
     @Operation(
-            summary = "내 프로필 수정",
-            description = "현재 로그인한 사용자의 프로필 정보를 수정합니다. 닉네임과 자기소개를 선택적으로 수정할 수 있습니다."
+            summary = "내 계정 프로필 수정",
+            description = "현재 로그인한 사용자의 계정 프로필 정보를 수정합니다. 닉네임과 자기소개를 선택적으로 수정할 수 있습니다."
     )
     @PatchMapping("/me/profile")
-    public ResponseEntity<BaseResponse<Void>> updateMyProfile(
+    public ResponseEntity<BaseResponse<Void>> updateMyAccountProfile(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
-            @RequestBody UpdateUserProfileRequest request
+            @RequestBody UpdateAccountProfileRequest request
     ) {
-        userCommandService.updateUserProfile(userPrincipal.getId(), request);
+        userCommandService.updateAccountProfile(userPrincipal.getId(), request);
         return BaseResponse.of(SuccessCode.OK);
     }
 
     @Operation(
-            summary = "내 프로필 조회",
-            description = "현재 로그인한 사용자의 프로필 정보를 조회합니다. (프로필 이미지, 닉네임, 이메일, 자기소개)"
+            summary = "내 계정 프로필 조회",
+            description = "현재 로그인한 사용자의 계정 프로필 정보를 조회합니다. (프로필 이미지, 닉네임, 이메일, 자기소개)"
     )
     @GetMapping("/me/profile")
-    public ResponseEntity<BaseResponse<UserProfileResponse>> getMyProfile(
+    public ResponseEntity<BaseResponse<AccountProfileResponse>> getMyAccountProfile(
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        UserProfileResponse response = userQueryService.getUserProfile(userPrincipal.getId());
+        AccountProfileResponse response = userQueryService.getAccountProfile(userPrincipal.getId());
         return BaseResponse.of(SuccessCode.OK, response);
     }
 
     @Operation(
             summary = "회원 탈퇴",
-            description = "현재 로그인한 사용자의 계정을 탈퇴 처리합니다. 개인정보는 즉시 익명화되며, 활동 기록은 통계 목적으로 유지됩니다. 탈퇴 후 동일한 소셜 계정으로 재가입 시 새로운 회원으로 온보딩부터 다시 시작합니다."
+            description = "현재 로그인한 사용자의 계정을 탈퇴 처리합니다. 계정 프로필 개인정보는 즉시 익명화되며, 활동 기록은 통계 목적으로 유지됩니다. 탈퇴 후 동일한 소셜 계정으로 재가입 시 새로운 회원으로 온보딩부터 다시 시작합니다."
     )
     @PatchMapping("/me/withdrawal")
     public ResponseEntity<BaseResponse<Void>> withdrawUser(

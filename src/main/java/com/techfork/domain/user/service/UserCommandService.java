@@ -2,7 +2,7 @@ package com.techfork.domain.user.service;
 
 import com.techfork.domain.user.dto.OnboardingRequest;
 import com.techfork.domain.user.dto.SaveInterestRequest;
-import com.techfork.domain.user.dto.UpdateUserProfileRequest;
+import com.techfork.domain.user.dto.UpdateAccountProfileRequest;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.exception.UserErrorCode;
 import com.techfork.domain.user.repository.UserRepository;
@@ -35,13 +35,13 @@ public class UserCommandService {
         userAuthCacheService.evict(userId);
     }
 
-    public void updateUserProfile(Long userId, UpdateUserProfileRequest request) {
+    public void updateAccountProfile(Long userId, UpdateAccountProfileRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
         user.updateProfile(request.nickName(), request.description());
 
-        log.info("User profile updated for userId: {} - nickName: {}, description: {}",
+        log.info("Account profile updated for userId: {} - nickName: {}, description: {}",
                 userId,
                 request.nickName() != null ? "updated" : "unchanged",
                 request.description() != null ? "updated" : "unchanged");

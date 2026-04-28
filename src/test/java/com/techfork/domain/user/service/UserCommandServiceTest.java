@@ -2,7 +2,7 @@ package com.techfork.domain.user.service;
 
 import com.techfork.domain.user.dto.OnboardingRequest;
 import com.techfork.domain.user.dto.SaveInterestRequest;
-import com.techfork.domain.user.dto.UpdateUserProfileRequest;
+import com.techfork.domain.user.dto.UpdateAccountProfileRequest;
 import com.techfork.domain.user.dto.UserInterestDto;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.enums.SocialType;
@@ -205,14 +205,14 @@ class UserCommandServiceTest {
     }
 
     @Test
-    @DisplayName("프로필 수정 성공 - 닉네임만 수정")
-    void updateUserProfile_Success_OnlyNickName() {
+    @DisplayName("계정 프로필 수정 성공 - 닉네임만 수정")
+    void updateAccountProfile_Success_OnlyNickName() {
         // Given
-        UpdateUserProfileRequest request = new UpdateUserProfileRequest("새로운닉네임", null);
+        UpdateAccountProfileRequest request = new UpdateAccountProfileRequest("새로운닉네임", null);
         given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
 
         // When
-        userCommandService.updateUserProfile(userId, request);
+        userCommandService.updateAccountProfile(userId, request);
 
         // Then
         assertThat(testUser.getNickName()).isEqualTo("새로운닉네임");
@@ -222,14 +222,14 @@ class UserCommandServiceTest {
     }
 
     @Test
-    @DisplayName("프로필 수정 성공 - 자기소개만 수정")
-    void updateUserProfile_Success_OnlyDescription() {
+    @DisplayName("계정 프로필 수정 성공 - 자기소개만 수정")
+    void updateAccountProfile_Success_OnlyDescription() {
         // Given
-        UpdateUserProfileRequest request = new UpdateUserProfileRequest(null, "새로운 자기소개");
+        UpdateAccountProfileRequest request = new UpdateAccountProfileRequest(null, "새로운 자기소개");
         given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
 
         // When
-        userCommandService.updateUserProfile(userId, request);
+        userCommandService.updateAccountProfile(userId, request);
 
         // Then
         assertThat(testUser.getNickName()).isEqualTo("테스트유저"); // 변경되지 않음
@@ -239,14 +239,14 @@ class UserCommandServiceTest {
     }
 
     @Test
-    @DisplayName("프로필 수정 성공 - 닉네임과 자기소개 모두 수정")
-    void updateUserProfile_Success_BothFields() {
+    @DisplayName("계정 프로필 수정 성공 - 닉네임과 자기소개 모두 수정")
+    void updateAccountProfile_Success_BothFields() {
         // Given
-        UpdateUserProfileRequest request = new UpdateUserProfileRequest("새닉네임", "새 자기소개");
+        UpdateAccountProfileRequest request = new UpdateAccountProfileRequest("새닉네임", "새 자기소개");
         given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
 
         // When
-        userCommandService.updateUserProfile(userId, request);
+        userCommandService.updateAccountProfile(userId, request);
 
         // Then
         assertThat(testUser.getNickName()).isEqualTo("새닉네임");
@@ -256,14 +256,14 @@ class UserCommandServiceTest {
     }
 
     @Test
-    @DisplayName("프로필 수정 성공 - 아무것도 수정하지 않음")
-    void updateUserProfile_Success_NoChanges() {
+    @DisplayName("계정 프로필 수정 성공 - 아무것도 수정하지 않음")
+    void updateAccountProfile_Success_NoChanges() {
         // Given
-        UpdateUserProfileRequest request = new UpdateUserProfileRequest(null, null);
+        UpdateAccountProfileRequest request = new UpdateAccountProfileRequest(null, null);
         given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
 
         // When
-        userCommandService.updateUserProfile(userId, request);
+        userCommandService.updateAccountProfile(userId, request);
 
         // Then
         assertThat(testUser.getNickName()).isEqualTo("테스트유저"); // 변경되지 않음
@@ -273,14 +273,14 @@ class UserCommandServiceTest {
     }
 
     @Test
-    @DisplayName("프로필 수정 실패 - 사용자를 찾을 수 없음")
-    void updateUserProfile_Fail_UserNotFound() {
+    @DisplayName("계정 프로필 수정 실패 - 사용자를 찾을 수 없음")
+    void updateAccountProfile_Fail_UserNotFound() {
         // Given
-        UpdateUserProfileRequest request = new UpdateUserProfileRequest("새닉네임", "새 자기소개");
+        UpdateAccountProfileRequest request = new UpdateAccountProfileRequest("새닉네임", "새 자기소개");
         given(userRepository.findById(userId)).willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> userCommandService.updateUserProfile(userId, request))
+        assertThatThrownBy(() -> userCommandService.updateAccountProfile(userId, request))
                 .isInstanceOf(GeneralException.class)
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(UserErrorCode.USER_NOT_FOUND);

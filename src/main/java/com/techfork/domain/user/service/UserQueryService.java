@@ -1,7 +1,7 @@
 package com.techfork.domain.user.service;
 
 import com.techfork.domain.user.converter.UserConverter;
-import com.techfork.domain.user.dto.UserProfileResponse;
+import com.techfork.domain.user.dto.AccountProfileResponse;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.exception.UserErrorCode;
 import com.techfork.domain.user.repository.UserRepository;
@@ -20,12 +20,12 @@ public class UserQueryService {
     private final UserRepository userRepository;
     private final UserConverter userConverter;
 
-    public UserProfileResponse getUserProfile(Long userId) {
+    public AccountProfileResponse getAccountProfile(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
-        log.info("User profile retrieved for userId: {}", userId);
+        log.info("Account profile retrieved for userId: {}", userId);
 
-        return userConverter.toUserProfileResponse(user);
+        return userConverter.toAccountProfileResponse(user);
     }
 }

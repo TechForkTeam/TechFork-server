@@ -1,7 +1,7 @@
 package com.techfork.domain.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.techfork.domain.user.dto.UpdateUserProfileRequest;
+import com.techfork.domain.user.dto.UpdateAccountProfileRequest;
 import com.techfork.domain.user.entity.User;
 import com.techfork.domain.user.enums.Role;
 import com.techfork.domain.user.enums.SocialType;
@@ -65,7 +65,7 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
     // ===== 프로필 조회 테스트 =====
 
     @Test
-    @DisplayName("내 프로필 조회 성공")
+    @DisplayName("내 계정 프로필 조회 성공")
     void getMyProfile_Success() throws Exception {
         // When & Then
         mockMvc.perform(get("/api/v1/users/me/profile")
@@ -82,10 +82,10 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
     // ===== 프로필 수정 테스트 =====
 
     @Test
-    @DisplayName("내 프로필 수정 성공 - 닉네임만 수정")
+    @DisplayName("내 계정 프로필 수정 성공 - 닉네임만 수정")
     void updateMyProfile_Success_OnlyNickName() throws Exception {
         // Given
-        UpdateUserProfileRequest request = new UpdateUserProfileRequest("새로운닉네임", null);
+        UpdateAccountProfileRequest request = new UpdateAccountProfileRequest("새로운닉네임", null);
 
         // When & Then
         mockMvc.perform(patch("/api/v1/users/me/profile")
@@ -103,10 +103,10 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    @DisplayName("내 프로필 수정 성공 - 자기소개만 수정")
+    @DisplayName("내 계정 프로필 수정 성공 - 자기소개만 수정")
     void updateMyProfile_Success_OnlyDescription() throws Exception {
         // Given
-        UpdateUserProfileRequest request = new UpdateUserProfileRequest(null, "프론트엔드 개발자로 전향했습니다.");
+        UpdateAccountProfileRequest request = new UpdateAccountProfileRequest(null, "프론트엔드 개발자로 전향했습니다.");
 
         // When & Then
         mockMvc.perform(patch("/api/v1/users/me/profile")
@@ -124,10 +124,10 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    @DisplayName("내 프로필 수정 성공 - 닉네임과 자기소개 모두 수정")
+    @DisplayName("내 계정 프로필 수정 성공 - 닉네임과 자기소개 모두 수정")
     void updateMyProfile_Success_BothFields() throws Exception {
         // Given
-        UpdateUserProfileRequest request = new UpdateUserProfileRequest("풀스택개발자", "백엔드와 프론트엔드 모두 합니다.");
+        UpdateAccountProfileRequest request = new UpdateAccountProfileRequest("풀스택개발자", "백엔드와 프론트엔드 모두 합니다.");
 
         // When & Then
         mockMvc.perform(patch("/api/v1/users/me/profile")
@@ -145,10 +145,10 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    @DisplayName("내 프로필 수정 성공 - 빈 요청 (아무것도 수정하지 않음)")
+    @DisplayName("내 계정 프로필 수정 성공 - 빈 요청 (아무것도 수정하지 않음)")
     void updateMyProfile_Success_EmptyRequest() throws Exception {
         // Given
-        UpdateUserProfileRequest request = new UpdateUserProfileRequest(null, null);
+        UpdateAccountProfileRequest request = new UpdateAccountProfileRequest(null, null);
 
         // When & Then
         mockMvc.perform(patch("/api/v1/users/me/profile")
@@ -166,10 +166,10 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    @DisplayName("프로필 수정 후 조회 - 변경사항 반영 확인")
+    @DisplayName("계정 프로필 수정 후 조회 - 변경사항 반영 확인")
     void updateAndGetProfile_Success() throws Exception {
         // Given
-        UpdateUserProfileRequest updateRequest = new UpdateUserProfileRequest("변경된닉네임", "변경된 자기소개");
+        UpdateAccountProfileRequest updateRequest = new UpdateAccountProfileRequest("변경된닉네임", "변경된 자기소개");
 
         // When - 프로필 수정
         mockMvc.perform(patch("/api/v1/users/me/profile")

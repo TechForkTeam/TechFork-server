@@ -2,8 +2,8 @@ package com.techfork.domain.user.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "사용자 프로필 수정 요청")
-public record UpdateUserProfileRequest(
+@Schema(description = "계정 프로필 수정 요청")
+public record UpdateAccountProfileRequest(
         @Schema(description = "닉네임 (선택적)", example = "테크러버")
         String nickName,
 
