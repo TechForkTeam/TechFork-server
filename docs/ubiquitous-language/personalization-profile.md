@@ -1,12 +1,12 @@
 # Personalization Profile
 
 > 활동 데이터와 관심사를 바탕으로 개인화 프로필을 생성하고, 검색/추천 입력 모델을 제공하는 개념적 바운디드 컨텍스트입니다.  
-> 현재 구현 패키지는 `domain/user`에 함께 존재하지만, 전략 문서에서는 `User Account`와 분리해서 봅니다.
+> 현재 구현은 `domain/personalization`으로 분리되어 있으며, `User Account`와 물리적으로도 구분됩니다.
 
 ## Owning packages
 
-- `src/main/java/com/techfork/domain/user`
-- 관련 read model: `src/main/java/com/techfork/domain/user/document`
+- `src/main/java/com/techfork/domain/personalization`
+- 관련 read model: `src/main/java/com/techfork/domain/personalization/document`
 
 ## 표준 용어
 
@@ -17,7 +17,7 @@
 | 프로필 벡터 | `profileVector` | `profileText`를 임베딩한 벡터 |
 | 핵심 키워드 | `keyKeywords` | LLM이 사용자 활동에서 추출한 3~5개 대표 관심 키워드 |
 | 활동 데이터 | `UserActivityData` | 관심사, 최근 읽은 기술 게시글, 북마크한 기술 게시글, 검색 기록을 합친 사용자 분석 입력 |
-| 프로필 재생성 | `generateUserProfile`, `generateUserProfileSync` | 활동 변화 후 개인화 프로필을 다시 만드는 행위 |
+| 프로필 재생성 | `generatePersonalizationProfile`, `generatePersonalizationProfileSync` | 활동 변화 후 개인화 프로필을 다시 만드는 행위 |
 
 ## 내부 glossary
 
@@ -46,6 +46,6 @@
 
 ## 주요 근거 파일
 
-- `src/main/java/com/techfork/domain/user/service/PersonalizationProfileService.java`
-- `src/main/java/com/techfork/domain/user/document/PersonalizationProfileDocument.java`
-- `src/main/java/com/techfork/domain/user/scheduler/PersonalizationProfileScheduler.java`
+- `src/main/java/com/techfork/domain/personalization/service/PersonalizationProfileService.java`
+- `src/main/java/com/techfork/domain/personalization/document/PersonalizationProfileDocument.java`
+- `src/main/java/com/techfork/domain/personalization/scheduler/PersonalizationProfileScheduler.java`

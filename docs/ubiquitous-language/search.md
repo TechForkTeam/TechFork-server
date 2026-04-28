@@ -5,7 +5,7 @@
 ## Owning packages
 
 - `src/main/java/com/techfork/domain/search`
-- 관련 read model: `src/main/java/com/techfork/domain/post/document`, `src/main/java/com/techfork/domain/user/document`
+- 관련 read model: `src/main/java/com/techfork/domain/post/document`, `src/main/java/com/techfork/domain/personalization/document`
 
 ## 표준 용어
 

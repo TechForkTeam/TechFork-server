@@ -76,7 +76,7 @@
 | domain/post | 4 | 72 | Controller/repository/query service 중심 |
 | domain/recommendation | 3 | 8 | 조회/컨버터 중심, 생성 로직 부족 |
 | domain/source | 10 | 38 | RSS/배치/스케줄러/락/웹훅 커버 좋음 |
-| domain/user | 7 | 58 | User Account 중심. Personalization Profile 일반 테스트는 별도 안전망 부족 |
+| domain/useraccount + domain/personalization | 8 | 61 | User Account service/controller/repository 커버 + Personalization Profile 기본 unit 안전망 확보 |
 | global | 6 | 33 | Security, cache, util, integration base |
 | evaluation | 27 | 18 | 검색/추천 품질 평가 및 fixture setup |
 
@@ -258,19 +258,19 @@ ContentChunkerServiceTest
 | `InterestCommandServiceTest` | unit/mock | 관심사 저장, 기존 관심사 clear, invalid keyword category |
 | `UserCommandServiceTest` | unit/mock | 온보딩, 계정 프로필 수정, 탈퇴 |
 | `UserQueryServiceTest` | unit/mock | 계정 프로필 조회 |
-| `evaluation/search/setup/PersonalizationProfileServiceTest` | evaluation-setup | 테스트 사용자 프로필 생성용 setup |
+| `evaluation/search/setup/PersonalizationProfileServiceTest` | evaluation-setup | 테스트 사용자 개인화 프로필 생성용 setup |
 
 #### 평가
 
 - **User Account 쪽**은 온보딩, 관심사, 계정 프로필, 탈퇴 흐름이 비교적 잘 보호되어 있다.
-- 반면 **Personalization Profile 쪽**은 일반 테스트 lane에 `PersonalizationProfileService` 안전망이 거의 없다.
-- 현재 있는 `PersonalizationProfileServiceTest`는 evaluation setup 용도라서, 개인화 프로필 리팩터링 안전망으로 보기 어렵다.
+- 기존에는 **Personalization Profile 쪽** 일반 테스트 lane이 비어 있었지만, 이제 `PersonalizationProfileServiceTest` 기본 안전망이 추가되었다.
+- evaluation setup용 `PersonalizationProfileServiceTest`는 여전히 별도 목적이므로, 일반 unit test lane과 구분해서 본다.
 
 #### 남은 갭
 
 | 우선순위 | 갭 | 이유 |
 |---|---|---|
-| P0 | `PersonalizationProfileServiceTest` 일반 단위 테스트 | Personalization Profile 생성은 추천/검색 개인화의 핵심이며 결합도가 높음 |
+| 완료 | `PersonalizationProfileServiceTest` 일반 단위 테스트 | 활동 데이터 수집, 파싱, fallback, 저장, 추천 실패 격리 기본 흐름 보호 완료 |
 | P0 | LLM 응답 parsing 테스트 | `### PROFILE`, `### KEYWORDS` parsing 실패 시 품질/장애 영향 |
 | P0 | 관심사 변경 후 개인화 프로필 생성 트리거 검증 | `UserInterestsChanged` 이벤트 도입 전 현재 동작 보호 |
 | P1 | `UserTest` | User Account aggregate의 소셜 사용자 생성, 온보딩 ACTIVE, 탈퇴 anonymization, reactivate 규칙 보호 |

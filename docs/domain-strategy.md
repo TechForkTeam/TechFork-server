@@ -87,7 +87,7 @@ TechFork의 비즈니스 도메인은 다음으로 정의할 수 있다.
   - 다만 Auth / Security, Activity, Notification이 기대는 사용자 정체성 경계를 제공한다.
 - `Personalization Profile` 컨텍스트는 핵심 하위 도메인에 가깝다.  
   - 개인화 프로필 생성, 프로필 벡터, 핵심 키워드, 재생성 정책은 검색/추천 품질의 중심이다.
-  - 현재 구현에서는 `PersonalizationProfileDocument`가 독립 aggregate보다 read model/projection 성격이 강하고, 생성 책임도 `domain/user` 아래 서비스에 함께 묶여 있다.
+  - 현재 구현에서는 `PersonalizationProfileDocument`가 독립 aggregate보다 read model/projection 성격이 강하고, 생성 책임은 `domain/personalization` 서비스가 담당한다.
 - `Post / Content` 컨텍스트 전체가 핵심은 아니다.  
   - 단순 목록/상세 조회는 지원 하위 도메인이다.
   - 요약, 키워드 추출, 청크, 임베딩, 검색 문서화는 핵심 하위 도메인에 가깝다.
@@ -119,26 +119,26 @@ TechFork의 비즈니스 도메인은 다음으로 정의할 수 있다.
 현재 문서 기준 결론은 다음과 같다.
 
 - **전략 문서와 glossary에서는 `User Account`와 `Personalization Profile`을 별도 컨텍스트로 본다.**
-- 다만 **현재 구현 패키지는 아직 `domain/user` 아래에 함께 존재한다.**
+- 현재 구현은 `domain/useraccount`와 `domain/personalization`으로 물리 분리되어 있다.
 
 의미:
 
 1. `User` aggregate는 당분간 `User Account` 컨텍스트의 핵심 루트로 본다.
 2. `PersonalizationProfileDocument`는 `Personalization Profile` 컨텍스트의 핵심 projection/read model로 본다.
 3. Search/Recommendation과의 관계 해석은 `User Account`와 `Personalization Profile`을 분리해서 본다.
-4. 패키지 분리, 포트 분리, 이벤트 분리는 후속 리팩터링 과제로 남긴다.
+4. 패키지 분리는 완료되었고, 포트 분리와 이벤트 분리는 후속 리팩터링 과제로 남긴다.
 
-현재 패키지를 유지하는 이유:
+현재 상태 메모:
 
-1. `domain/user` 내부에서 계정/온보딩/관심사/개인화 프로필 생성이 아직 함께 구현되어 있다.
-2. `PersonalizationProfileService`는 Activity/Post/Recommendation을 조합하는 애플리케이션 서비스 성격이 강하지만, 이를 뒷받침하는 독립 패키지/포트/이벤트 경계는 아직 없다.
+1. 패키지는 분리되었지만, `InterestCommandService` → `PersonalizationProfileService` 직접 호출은 아직 유지된다.
+2. `PersonalizationProfileService`는 Activity/Post/Recommendation을 조합하는 애플리케이션 서비스 성격이 강하지만, 이를 뒷받침하는 독립 포트/이벤트 경계는 아직 없다.
 3. `PersonalizationProfileDocument`는 독립 write aggregate보다 검색·추천용 read model에 가깝다.
 
 향후 아래 조건이 충족되면 실제 패키지/구현도 둘로 나누는 것을 다시 검토한다.
 
 1. `OnboardingCompleted`, `UserInterestsChanged`, `PersonalizedProfileGenerated` 같은 이벤트 흐름이 정착될 때
 2. Search/Recommendation이 개인화 프로필을 전용 포트/Published Language로 소비할 때
-3. `domain/user` 내부가 계정/온보딩과 개인화 프로필 생성으로 패키지 수준에서 분리될 때
+3. 패키지 분리 이후 `useraccount` ↔ `personalization` direct dependency를 포트/이벤트로 치환할 때
 4. 개인화 프로필이 독립 수명주기, 재생성 정책, 실패 복구 정책을 가진 모델로 커질 때
 
 ---

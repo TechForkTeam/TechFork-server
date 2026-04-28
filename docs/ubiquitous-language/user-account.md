@@ -1,11 +1,11 @@
 # User Account
 
 > 사용자 계정, 온보딩, 관심사, 계정 프로필을 다루는 개념적 바운디드 컨텍스트입니다.  
-> 현재 구현 패키지는 `domain/user`에 함께 존재하지만, 전략 문서에서는 `Personalization Profile`과 분리해서 봅니다.
+> 현재 구현은 `domain/useraccount`로 분리되어 있으며, `Personalization Profile`과 물리적으로도 구분됩니다.
 
 ## Owning packages
 
-- `src/main/java/com/techfork/domain/user`
+- `src/main/java/com/techfork/domain/useraccount`
 
 ## 표준 용어
 
@@ -30,7 +30,7 @@
 | 사용자 루트 | `User` | 계정/상태/기본 프로필/관심사를 소유하는 aggregate root |
 | 온보딩 완료 커맨드 | `UserCommandService.completeOnboarding` | 계정 정보 저장 + 관심사 저장 + 활성화 흐름 |
 | 관심사 교체 커맨드 | `InterestCommandService.updateUserInterests` | 관심사 전체를 갈아끼우는 흐름 |
-| 계정 프로필 수정 | `UserCommandService.updateUserProfile` | 닉네임/자기소개 수정 흐름 |
+| 계정 프로필 수정 | `UserCommandService.updateAccountProfile` | 닉네임/자기소개 수정 흐름 |
 | 탈퇴 처리 | `User.withdraw()` | 개인정보 익명화와 상태 변경을 수행하는 도메인 동작 |
 
 ## 혼동 금지
@@ -50,11 +50,11 @@
 
 ## 주요 근거 파일
 
-- `src/main/java/com/techfork/domain/user/entity/User.java`
-- `src/main/java/com/techfork/domain/user/enums/UserStatus.java`
-- `src/main/java/com/techfork/domain/user/enums/EInterestCategory.java`
-- `src/main/java/com/techfork/domain/user/enums/EInterestKeyword.java`
-- `src/main/java/com/techfork/domain/user/service/UserCommandService.java`
-- `src/main/java/com/techfork/domain/user/service/InterestCommandService.java`
-- `src/main/java/com/techfork/domain/user/controller/OnboardingController.java`
-- `src/main/java/com/techfork/domain/user/controller/UserController.java`
+- `src/main/java/com/techfork/domain/useraccount/entity/User.java`
+- `src/main/java/com/techfork/domain/useraccount/enums/UserStatus.java`
+- `src/main/java/com/techfork/domain/useraccount/enums/EInterestCategory.java`
+- `src/main/java/com/techfork/domain/useraccount/enums/EInterestKeyword.java`
+- `src/main/java/com/techfork/domain/useraccount/service/UserCommandService.java`
+- `src/main/java/com/techfork/domain/useraccount/service/InterestCommandService.java`
+- `src/main/java/com/techfork/domain/useraccount/controller/OnboardingController.java`
+- `src/main/java/com/techfork/domain/useraccount/controller/UserController.java`
