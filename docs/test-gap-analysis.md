@@ -17,7 +17,7 @@
 | Source / Ingestion | RSS reader, processor, writer, scheduler, crawling service 테스트가 잘 있음 | 파이프라인 보호 수준 좋음 |
 | Post / Content | 조회 API/repository는 강함. 도메인 엔티티/요약/임베딩 테스트는 부족 | `Post = 기술 게시글` 애그리거트 테스트 필요 |
 | User Account | 온보딩/관심사/계정 프로필은 강함 | 사용자 계정 애그리거트와 온보딩 흐름은 비교적 잘 보호되어 있다 |
-| Personalization Profile | 일반 테스트 안전망이 약함 | `UserProfileService`/`UserProfileDocument` 중심 개인화 흐름 보호가 필요하다 |
+| Personalization Profile | 일반 테스트 안전망이 약함 | `PersonalizationProfileService`/`PersonalizationProfileDocument` 중심 개인화 흐름 보호가 필요하다 |
 | Recommendation | 조회 쪽은 일부 있음. 추천 생성/후보 탐색/MMR/이력화 테스트는 부족 | DDD 전환 전 가장 큰 리스크 중 하나 |
 | Search | 일반 실행 테스트가 거의 없음. evaluation suite만 존재 | 일반 회귀 테스트 부재가 큼 |
 | Auth / Security | 토큰/필터/컨트롤러 테스트는 비교적 강함 | OAuth handler/OIDC 일부 보강 여지 |
@@ -28,7 +28,7 @@
 
 1. **SearchServiceImpl 일반 회귀 테스트 부재**
 2. **LlmRecommendationService / MmrService 테스트 부재**
-3. **Personalization Profile(`UserProfileService`) 일반 테스트 부재**
+3. **Personalization Profile(`PersonalizationProfileService`) 일반 테스트 부재**
 4. **Post 애그리거트 단위 테스트 부재**
 5. **Post embedding pipeline 테스트 부재**
 
@@ -258,35 +258,35 @@ ContentChunkerServiceTest
 | `InterestCommandServiceTest` | unit/mock | 관심사 저장, 기존 관심사 clear, invalid keyword category |
 | `UserCommandServiceTest` | unit/mock | 온보딩, 계정 프로필 수정, 탈퇴 |
 | `UserQueryServiceTest` | unit/mock | 계정 프로필 조회 |
-| `evaluation/search/setup/UserProfileServiceTest` | evaluation-setup | 테스트 사용자 프로필 생성용 setup |
+| `evaluation/search/setup/PersonalizationProfileServiceTest` | evaluation-setup | 테스트 사용자 프로필 생성용 setup |
 
 #### 평가
 
 - **User Account 쪽**은 온보딩, 관심사, 계정 프로필, 탈퇴 흐름이 비교적 잘 보호되어 있다.
-- 반면 **Personalization Profile 쪽**은 일반 테스트 lane에 `UserProfileService` 안전망이 거의 없다.
-- 현재 있는 `UserProfileServiceTest`는 evaluation setup 용도라서, 개인화 프로필 리팩터링 안전망으로 보기 어렵다.
+- 반면 **Personalization Profile 쪽**은 일반 테스트 lane에 `PersonalizationProfileService` 안전망이 거의 없다.
+- 현재 있는 `PersonalizationProfileServiceTest`는 evaluation setup 용도라서, 개인화 프로필 리팩터링 안전망으로 보기 어렵다.
 
 #### 남은 갭
 
 | 우선순위 | 갭 | 이유 |
 |---|---|---|
-| P0 | `UserProfileServiceTest` 일반 단위 테스트 | Personalization Profile 생성은 추천/검색 개인화의 핵심이며 결합도가 높음 |
+| P0 | `PersonalizationProfileServiceTest` 일반 단위 테스트 | Personalization Profile 생성은 추천/검색 개인화의 핵심이며 결합도가 높음 |
 | P0 | LLM 응답 parsing 테스트 | `### PROFILE`, `### KEYWORDS` parsing 실패 시 품질/장애 영향 |
 | P0 | 관심사 변경 후 개인화 프로필 생성 트리거 검증 | `UserInterestsChanged` 이벤트 도입 전 현재 동작 보호 |
 | P1 | `UserTest` | User Account aggregate의 소셜 사용자 생성, 온보딩 ACTIVE, 탈퇴 anonymization, reactivate 규칙 보호 |
 | P1 | `UserInterestCategory/UserInterestKeyword` 도메인 테스트 | 관심 키워드가 카테고리에 속해야 한다는 규칙 명시 |
-| P1 | `UserProfileSchedulerTest` | 매일 06:00 KST active user personalization profile regeneration 보호 |
+| P1 | `PersonalizationProfileSchedulerTest` | 매일 06:00 KST active user personalization profile regeneration 보호 |
 | P2 | `InterestQueryServiceTest` | 관심사 조회 변환 로직 보호 |
 
 #### 추천 추가 테스트
 
 ```text
-UserProfileServiceTest
+PersonalizationProfileServiceTest
 - 관심사, 읽은 게시글, 북마크, 검색 기록을 활동 데이터로 수집한다.
 - 읽은 시간은 읽기 몰입도 자연어로 변환된다.
 - LLM 응답에서 profileText와 keyKeywords를 파싱한다.
 - 파싱 실패 시 fallback 정책을 따른다.
-- profileText를 임베딩하여 UserProfileDocument를 저장한다.
+- profileText를 임베딩하여 PersonalizationProfileDocument를 저장한다.
 - 개인화 프로필 생성 후 추천 생성을 호출한다.
 - 추천 생성 실패가 개인화 프로필 저장을 깨뜨리지 않는지 정책을 검증한다.
 ```
@@ -316,7 +316,7 @@ UserTest
 #### 평가
 
 조회 쪽은 일부 보호되어 있지만, 핵심인 **추천 생성 로직이 거의 비어 있다.**  
-`LlmRecommendationService`는 Personalization Profile(`UserProfileDocument`), Elasticsearch, Post, Activity, RRF, MMR, time decay, history 저장을 모두 다루므로 DDD 리팩터링 전 반드시 테스트가 필요하다.
+`LlmRecommendationService`는 Personalization Profile(`PersonalizationProfileDocument`), Elasticsearch, Post, Activity, RRF, MMR, time decay, history 저장을 모두 다루므로 DDD 리팩터링 전 반드시 테스트가 필요하다.
 
 #### 남은 갭
 
@@ -387,7 +387,7 @@ evaluation suite는 무겁고 runtime/profile/fixture 의존이 강하므로 DDD
 |---|---|---|
 | P0 | `SearchServiceImplTest` 일반 단위 테스트 | 일반 검색/개인화 검색 핵심 흐름 보호 필요 |
 | P0 | RRF 결합 테스트 | 검색 결과 순위 품질과 직접 연결 |
-| P0 | 개인화 fallback/reranking 테스트 | Personalization Profile(`UserProfileDocument`) 경계 정리 전 필요 |
+| P0 | 개인화 fallback/reranking 테스트 | Personalization Profile(`PersonalizationProfileDocument`) 경계 정리 전 필요 |
 | P1 | BM25 query builder 구조 테스트 | dis_max/exact/fuzzy/chunk 구조 회귀 방지 |
 | P1 | Semantic KNN field/boost 테스트 | title/summary/chunk embedding field 회귀 방지 |
 | P1 | metadata attachment 테스트 | viewCount, isBookmarked 조합 보호 |
@@ -501,7 +501,7 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 | `PostKeyword` | 직접 테스트 없음 | `Post` 내부 엔티티로 테스트하면 충분 |
 | `User` | `UserCommandServiceTest` 중심 | User Account aggregate 관점의 직접 `UserTest` 필요 |
 | `UserInterestCategory/Keyword` | repository/service 중심 | User Account 도메인 규칙 테스트 보강 필요 |
-| `UserProfileDocument` | evaluation setup 중심 | Personalization Profile projection 생성/파싱 일반 테스트 필요 |
+| `PersonalizationProfileDocument` | evaluation setup 중심 | Personalization Profile projection 생성/파싱 일반 테스트 필요 |
 | `ReadPost` | service/repository 중심 | record aggregate 단위 테스트는 선택 |
 | `Bookmark` | 현재 `ScrabPost` service/repository 중심 | rename 후 `Bookmark` 단위 테스트 필요 |
 | `SearchHistory` | repository/service 중심 | record aggregate 단위 테스트는 선택 |
@@ -518,7 +518,7 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 | 테스트 | 목적 | 선행/연결 작업 |
 |---|---|---|
 | `PostTest` | `Post = 기술 게시글` 애그리거트 보호 | Post 용어 정리, EDifficultyLevel 제거 |
-| `UserProfileServiceTest` | Personalization Profile 생성 흐름 보호 | User Account / Personalization Profile 경계 정리 |
+| `PersonalizationProfileServiceTest` | Personalization Profile 생성 흐름 보호 | User Account / Personalization Profile 경계 정리 |
 | `MmrServiceTest` | 추천 알고리즘 핵심 보호 | Recommendation DDD 전환 |
 | `LlmRecommendationServiceTest` | 추천 생성/이력화/읽은 글 제외 보호 | `PersonalizedProfileGenerated` 이벤트 도입 전 |
 | `SearchServiceImplTest` | 검색 일반 회귀 안전망 | Search read model/adapter 분리 전 |
@@ -537,7 +537,7 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 | `RecommendationSchedulerTest` | 일일 추천 생성 스케줄 보호 |
 | `RecommendedPostRepositoryTest` | rank order/delete/unique 보호 |
 | `RecommendationHistoryTest` | 이력화/click 기록 보호 |
-| `UserProfileSchedulerTest` | 일일 개인화 프로필 재생성 보호 |
+| `PersonalizationProfileSchedulerTest` | 일일 개인화 프로필 재생성 보호 |
 | `SearchControllerIntegrationTest` | 검색 API contract 보호 |
 | `PostKeywordRepositoryTest` | 키워드 조회 조합 보호 |
 
@@ -570,7 +570,7 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 2. ScrabPost → Bookmark rename 전후 테스트 안정화
 3. PostTest 작성
 4. Post embedding pipeline 테스트 작성
-5. UserProfileServiceTest 작성
+5. PersonalizationProfileServiceTest 작성
 6. MmrServiceTest 작성
 7. LlmRecommendationServiceTest 작성
 8. SearchServiceImplTest 작성
@@ -591,7 +591,7 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 - EDifficultyLevel 제거 전 사용처 확인
 
 작업 3: Personalization Profile 테스트
-- UserProfileServiceTest 추가
+- PersonalizationProfileServiceTest 추가
 - LLM/Embedding/RecommendationService는 mock 처리
 
 작업 4: 추천 생성 테스트
@@ -646,9 +646,9 @@ src/test/java/com/techfork/domain
     service
       UserCommandServiceTest
       InterestCommandServiceTest
-      UserProfileServiceTest
+      PersonalizationProfileServiceTest
     scheduler
-      UserProfileSchedulerTest
+      PersonalizationProfileSchedulerTest
 
   recommendation
     entity
@@ -685,7 +685,7 @@ P0 테스트가 모두 존재한다.
 ./gradlew test -PexcludeIntegration 통과.
 Activity/Bookmark rename 후 기존 Activity 테스트 통과.
 PostTest로 기술 게시글 애그리거트 기본 규칙 보호.
-UserProfileServiceTest로 Personalization Profile 생성 흐름 보호.
+PersonalizationProfileServiceTest로 Personalization Profile 생성 흐름 보호.
 MmrServiceTest와 LlmRecommendationServiceTest로 추천 생성 핵심 흐름 보호.
 SearchServiceImplTest로 일반/개인화 검색 회귀 보호.
 ```

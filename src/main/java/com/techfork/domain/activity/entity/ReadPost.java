@@ -1,7 +1,7 @@
 package com.techfork.domain.activity.entity;
 
 import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.user.entity.User;
+import com.techfork.domain.useraccount.entity.User;
 import com.techfork.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

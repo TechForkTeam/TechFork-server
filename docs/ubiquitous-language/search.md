@@ -45,7 +45,7 @@
 ## 혼동 금지
 
 - `검색 결과`는 저장되는 aggregate가 아니라 계산된 응답이다.
-- Search가 `PostDocument`, `UserProfileDocument`를 읽는다고 해서 Post/User aggregate를 소유하는 것은 아니다.
+- Search가 `PostDocument`, `PersonalizationProfileDocument`를 읽는다고 해서 Post/User aggregate를 소유하는 것은 아니다.
 - `검색어(SearchQuery)`와 추천의 `keyKeywords`는 둘 다 문자열이지만 생성 주체가 다르다.
 
 ## 금지 표현 / 권장 표현

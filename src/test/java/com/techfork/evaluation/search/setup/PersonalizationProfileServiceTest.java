@@ -1,12 +1,12 @@
 package com.techfork.evaluation.search.setup;
 
-import com.techfork.domain.user.entity.User;
-import com.techfork.domain.user.entity.UserInterestCategory;
-import com.techfork.domain.user.enums.EInterestCategory;
-import com.techfork.domain.user.enums.SocialType;
-import com.techfork.domain.user.repository.UserInterestCategoryRepository;
-import com.techfork.domain.user.repository.UserRepository;
-import com.techfork.domain.user.service.PersonalizationProfileService;
+import com.techfork.domain.useraccount.entity.User;
+import com.techfork.domain.useraccount.entity.UserInterestCategory;
+import com.techfork.domain.useraccount.enums.EInterestCategory;
+import com.techfork.domain.useraccount.enums.SocialType;
+import com.techfork.domain.useraccount.repository.UserInterestCategoryRepository;
+import com.techfork.domain.useraccount.repository.UserRepository;
+import com.techfork.domain.personalization.service.PersonalizationProfileService;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.techfork.domain.user.enums.EInterestCategory.*;
+import static com.techfork.domain.useraccount.enums.EInterestCategory.*;
 
 @Tag("evaluation-setup")
 @Disabled("데이터 셋업용 - CI 제외")

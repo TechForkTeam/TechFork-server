@@ -52,13 +52,13 @@
 | 표준 용어 | 현재 코드상 표현 | 의미 |
 |---|---|---|
 | 계정 프로필 | `User.nickName`, `User.description`, `User.profileImage` | 사용자에게 보이는 기본 프로필 정보 |
-| 개인화 프로필 | `UserProfileDocument.profileText`, `profileVector` | 검색 리랭킹/추천용 활동 기반 프로필 |
+| 개인화 프로필 | `PersonalizationProfileDocument.profileText`, `profileVector` | 검색 리랭킹/추천용 활동 기반 프로필 |
 
 규칙:
 
 - 문서/PR/API에서 **“프로필” 단독 표현은 지양**한다.
 - UI/설정 화면은 `계정 프로필 수정`, 추천/검색 준비 상태는 `개인화 프로필 생성/재생성`으로 쓴다.
-- `UserProfileDocument`는 현재 `domain/user` 패키지에 있으나, 개념상으로는 `Personalization Profile` language zone의 read model이다.
+- `PersonalizationProfileDocument`는 현재 `domain/user` 패키지에 있으나, 개념상으로는 `Personalization Profile` language zone의 read model이다.
 
 ---
 

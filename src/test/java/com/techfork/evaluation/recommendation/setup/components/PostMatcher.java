@@ -2,7 +2,7 @@ package com.techfork.evaluation.recommendation.setup.components;
 
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
-import com.techfork.domain.user.enums.EInterestCategory;
+import com.techfork.domain.useraccount.enums.EInterestCategory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

@@ -2,7 +2,7 @@ package com.techfork.domain.auth.converter;
 
 import com.techfork.domain.auth.dto.DeveloperTokenResponse;
 import com.techfork.domain.auth.dto.KakaoLoginResponse;
-import com.techfork.domain.user.entity.User;
+import com.techfork.domain.useraccount.entity.User;
 import org.springframework.stereotype.Component;
 
 @Component

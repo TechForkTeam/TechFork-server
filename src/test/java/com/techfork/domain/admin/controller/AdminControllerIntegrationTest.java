@@ -2,10 +2,10 @@ package com.techfork.domain.admin.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techfork.domain.auth.exception.AuthErrorCode;
-import com.techfork.domain.user.entity.User;
-import com.techfork.domain.user.enums.Role;
-import com.techfork.domain.user.enums.SocialType;
-import com.techfork.domain.user.repository.UserRepository;
+import com.techfork.domain.useraccount.entity.User;
+import com.techfork.domain.useraccount.enums.Role;
+import com.techfork.domain.useraccount.enums.SocialType;
+import com.techfork.domain.useraccount.repository.UserRepository;
 import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.global.security.jwt.JwtDTO;
 import com.techfork.global.security.jwt.JwtUtil;

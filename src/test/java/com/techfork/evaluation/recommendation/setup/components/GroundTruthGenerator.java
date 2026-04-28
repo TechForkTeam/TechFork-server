@@ -3,7 +3,7 @@ package com.techfork.evaluation.recommendation.setup.components;
 import com.techfork.domain.post.document.PostDocument;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostDocumentRepository;
-import com.techfork.domain.user.document.PersonalizationProfileDocument;
+import com.techfork.domain.personalization.document.PersonalizationProfileDocument;
 import com.techfork.global.llm.LlmClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

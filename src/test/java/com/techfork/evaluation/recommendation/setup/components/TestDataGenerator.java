@@ -2,11 +2,11 @@ package com.techfork.evaluation.recommendation.setup.components;
 
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
-import com.techfork.domain.user.document.PersonalizationProfileDocument;
-import com.techfork.domain.user.entity.User;
-import com.techfork.domain.user.enums.EInterestCategory;
-import com.techfork.domain.user.repository.PersonalizationProfileDocumentRepository;
-import com.techfork.domain.user.service.PersonalizationProfileService;
+import com.techfork.domain.personalization.document.PersonalizationProfileDocument;
+import com.techfork.domain.useraccount.entity.User;
+import com.techfork.domain.useraccount.enums.EInterestCategory;
+import com.techfork.domain.personalization.repository.PersonalizationProfileDocumentRepository;
+import com.techfork.domain.personalization.service.PersonalizationProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Disabled;

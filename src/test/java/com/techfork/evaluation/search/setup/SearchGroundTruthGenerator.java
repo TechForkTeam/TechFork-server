@@ -8,7 +8,7 @@ import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.search.dto.SearchResult;
 import com.techfork.domain.search.config.GeneralSearchProperties;
 import com.techfork.domain.search.service.SearchServiceImpl;
-import com.techfork.domain.user.repository.PersonalizationProfileDocumentRepository;
+import com.techfork.domain.personalization.repository.PersonalizationProfileDocumentRepository;
 import com.techfork.evaluation.recommendation.setup.components.FileExporter;
 import com.techfork.evaluation.search.util.GroundTruthItem;
 import com.techfork.global.config.CloudflareThirdPartyThumbnailOptimizationProperties;
