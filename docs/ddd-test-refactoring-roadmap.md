@@ -1,7 +1,8 @@
 # DDD 전환과 테스트 개선 로드맵
 
 > 목적: TechFork 서버를 DDD 관점으로 점진적으로 개선하면서, 아직 부족한 테스트 코드를 어떤 순서로 작성·개선할지 정리한다.  
-> 관련 문서: [`docs/ubiquitous-language/README.md`](./ubiquitous-language/README.md)
+> 관련 문서: [`docs/ubiquitous-language/README.md`](./ubiquitous-language/README.md)  
+> 기준 시점: **2026-04-28 working tree**
 
 ## 1. 결론
 
@@ -34,6 +35,18 @@ DDD 목표 지도 작성
   → 다음 영역으로 이동
 ```
 
+2026-04-28 현재 상태를 요약하면 다음과 같다.
+
+```text
+[완료] Phase 0: DDD 기준선 문서화
+[완료] Phase 1: 테스트 갭 분석 문서화
+[부분 진행] Phase 2: Activity 핵심 테스트, PersonalizationProfileServiceTest,
+                    PostSummary* 테스트 등 기본 안전망 반영
+[부분 진행] Phase 3: Bookmark / SearchQuery 용어 정리, EDifficultyLevel 제거 반영
+[다음] Activity 4.1을 Bookmark → ReadPost → SearchHistory slice로 정리
+[다음] Post aggregate / embedding pipeline 테스트 보강
+```
+
 ---
 
 ## 2. 왜 이 순서가 필요한가
@@ -43,9 +56,9 @@ DDD 목표 지도 작성
 - 기능은 이미 여러 도메인으로 나뉘어 있다.
 - 하지만 코드상 컨텍스트 간 직접 의존이 많다.
 - 테스트 커버리지가 아직 충분하지 않다.
-- 용어가 일부 혼재되어 있다.
-  - 예: `ScrabPost`, `scrap_posts`, `Bookmark`
-  - 예: `searchWord`, `query`, `keyKeywords`, `PostKeyword`
+- 용어가 완전히 정리되진 않았고, **문서/코드/마이그레이션 간 드리프트**가 일부 남아 있다.
+  - 예: 문서에 남은 `ScrabPost` 흔적 vs 현재 코드의 `Bookmark`
+  - 예: legacy request alias `searchWord` vs canonical field `query`
   - 예: 계정 프로필과 개인화 프로필
 - Search, Recommendation, Personalization Profile(`PersonalizationProfileService`) 쪽은 여러 컨텍스트와 외부 인프라가 얽혀 있어 리팩터링 위험이 크다.
 
@@ -112,6 +125,8 @@ DDD 리팩터링에 들어가기 전에 테스트 현황을 먼저 파악한다.
 docs/test-gap-analysis.md
 ```
 
+2026-04-28 현재 `docs/test-gap-analysis.md`는 이미 존재하며, 이후 로드맵 업데이트와 함께 같이 최신화하는 것을 기본 원칙으로 둔다.
+
 분석 항목:
 
 ```text
@@ -147,6 +162,20 @@ docs/test-gap-analysis.md
 
 이 테스트들은 처음부터 완벽한 DDD 테스트일 필요는 없다.  
 서비스 메서드 중심 테스트라도 괜찮다.
+
+현재 기준 이미 반영된 대표 안전망은 다음과 같다.
+
+- `ActivityCommandServiceTest`
+- `ActivityQueryServiceTest`
+- `BookmarkRepositoryTest`
+- `ReadPostRepositoryTest`
+- `SearchHistoryRepositoryTest`
+- `ActivityControllerIntegrationTest`
+- `SearchHistoryRequestTest`
+- `PersonalizationProfileServiceTest`
+- `PostSummaryProcessorTest`
+- `PostSummaryReaderTest`
+- `PostSummaryWriterTest`
 
 ### 2.1 P0 테스트 후보
 
@@ -185,12 +214,13 @@ DDD 전환의 첫 코드 변경은 대규모 구조 변경보다 **용어 정리
 
 ### 3.1 1순위: `ScrabPost` 계열을 북마크로 통일
 
-현재 혼재:
+2026-04-28 현재 상태:
 
 ```text
-ScrabPost       // 엔티티
-scrap_posts     // DB 테이블
-Bookmark        // API/DTO/제품 용어
+Bookmark                                  // entity/repository/service/test 용어 반영
+bookmarks                                 // JPA table name 반영
+bookmarkedAt                              // 필드/컬럼명 반영
+V3__rename_scrap_posts_to_bookmarks.sql   // Flyway rename migration 존재
 ```
 
 결정:
@@ -199,44 +229,31 @@ Bookmark        // API/DTO/제품 용어
 표준 용어 = 북마크 / Bookmark
 ```
 
-권장 순서:
+정리 결과:
 
 ```text
-1. 현재 북마크 동작 테스트 작성
-2. ScrabPostRepository 테스트 작성
-3. 엔티티/리포지토리/서비스 코드 용어를 Bookmark로 변경
-4. API 응답과 기존 동작 유지
-5. DB 테이블 rename은 별도 마이그레이션으로 분리하거나 legacy table로 유지
+1. Activity 코드와 테스트의 주 용어는 Bookmark로 정렬되었다.
+2. DB rename은 별도 검토 단계가 아니라 Flyway V3로 이미 반영되었다.
+3. 남은 작업은 legacy 문서/주석/fixture 흔적 정리와 회귀 검증이다.
 ```
 
-운영 리스크를 줄이려면 1차로는 다음처럼 갈 수 있다.
+남은 확인 사항:
 
-```java
-@Entity
-@Table(name = "scrap_posts") // legacy table name
-public class Bookmark {
-    ...
-}
-```
-
-즉:
-
-- 코드 용어: `Bookmark`
-- 문서 용어: 북마크
-- API 용어: 북마크
-- DB 테이블: 당장은 `scrap_posts` 유지 가능
+- 문서와 분석 리포트에 남은 `ScrabPost` 표현 정리
+- 운영 환경에서 V3 migration 적용 여부 확인
+- `BookmarkTest` 등 aggregate 관점 테스트 보강 여부 결정
 
 ---
 
 ### 3.2 2순위: 검색어 용어 정리
 
-현재 혼재:
+2026-04-28 현재 상태:
 
 ```text
-SearchHistory.searchWord
-SearchService.searchGeneral(String query)
-keyKeywords
-PostKeyword
+SearchHistory.query                                        // entity canonical field
+SearchHistoryRequest.query + @JsonAlias("searchWord")     // request 역호환 유지
+V4__rename_search_histories_search_word_to_query.sql      // Flyway rename migration 존재
+keyKeywords / PostKeyword                                 // 서로 다른 도메인 용어로 유지
 ```
 
 표준 구분:
@@ -247,14 +264,19 @@ PostKeyword
 | 핵심 키워드 / KeyKeyword | 개인화 프로필에서 추출한 대표 관심 키워드 |
 | 게시글 키워드 / PostKeyword | 기술 게시글 요약 과정에서 추출된 대표 키워드 |
 
-권장 순서:
+정리 결과:
 
 ```text
-1. SearchHistory 동작 테스트 작성
-2. DTO/API 파라미터 문서에서 검색어/SearchQuery로 표현 통일
-3. 코드 내부 변수명 query/searchQuery 정리
-4. 운영 중이면 DB 컬럼 rename은 후순위로 분리하고, 초기 정리 단계라면 함께 처리 가능
+1. SearchHistory의 canonical 필드는 `query`로 정렬되었다.
+2. legacy API 입력 호환성은 `@JsonAlias("searchWord")`로 유지한다.
+3. DB 컬럼 rename도 별도 TODO가 아니라 Flyway V4로 이미 반영되었다.
 ```
+
+남은 확인 사항:
+
+- DTO/API 문서에서 `SearchQuery` / `query` 표현을 일관되게 유지
+- `searchWord` alias를 언제 제거할지 별도 호환성 정책 결정
+- Search/Personalization 문서에서 `keyKeywords`, `PostKeyword`, `query`의 경계 계속 명시
 
 ---
 
@@ -267,13 +289,19 @@ PostKeyword
 | 계정 프로필 | `User.nickName`, `description`, `profileImage` | 사용자에게 보이는 기본 프로필 |
 | 개인화 프로필 | `PersonalizationProfileDocument.profileText`, `profileVector` | 검색/추천에 쓰이는 활동 기반 LLM/임베딩 프로필 |
 
+2026-04-28 현재 상태:
+
+- `domain/useraccount`와 `domain/personalization` 패키지는 이미 분리되어 있다.
+- `PersonalizationProfileServiceTest` 일반 테스트 lane이 존재한다.
+- 다만 `InterestCommandService`가 `PersonalizationProfileService`를 직접 호출하는 결합은 남아 있다.
+
 권장 순서:
 
 ```text
 1. 문서/API 설명에서 `User Account`와 `Personalization Profile` 경계를 고정
-2. PersonalizationProfileService 테스트 작성
-3. PersonalizationProfileDocument의 역할을 Personalization Profile projection으로 명확히 함
-4. 필요하면 패키지/이벤트/포트 분리를 후속 단계에서 진행
+2. 기존 `PersonalizationProfileServiceTest`를 기준 안전망으로 유지한다.
+3. `PersonalizationProfileDocument`의 역할을 Personalization Profile projection으로 계속 명확히 한다.
+4. `InterestCommandService -> PersonalizationProfileService` 직접 호출을 이벤트/포트 후보로 관리한다.
 ```
 
 ---
@@ -315,9 +343,10 @@ PostKeyword
 ##### 왜 먼저 하는가
 
 - 크기가 상대적으로 작다.
-- 용어 부채가 명확하다.
-- `ScrabPost → Bookmark` 전환으로 즉시 효과가 있다.
-- 테스트 작성이 쉽다.
+- 용어 부채가 어떤 slice에 남아 있는지 명확하다.
+- 현재 코드 기준 Bookmark 용어 정리는 거의 끝났고, 남은 작업을 작은 단위로 쪼개기 쉽다.
+- service/repository/controller 테스트 안전망이 이미 있다.
+- `Bookmark`, `ReadPost`, `SearchHistory`가 독립 record aggregate처럼 동작해 PR 분할이 쉽다.
 
 ##### 목표 모델
 
@@ -328,7 +357,27 @@ Activity
 - SearchHistory
 ```
 
-##### 먼저 작성할 테스트
+##### 현재 상태
+
+```text
+이미 존재하는 핵심 테스트
+- ActivityCommandServiceTest
+- ActivityQueryServiceTest
+- BookmarkRepositoryTest
+- ReadPostRepositoryTest
+- SearchHistoryRepositoryTest
+- ActivityControllerIntegrationTest
+- SearchHistoryRequestTest
+```
+
+```text
+이미 반영된 용어 정리
+- Bookmark entity/repository/service/test 명칭
+- bookmarks table / bookmarkedAt column
+- SearchHistory.query + legacy searchWord alias 허용
+```
+
+##### 먼저 확인하거나 보강할 테스트
 
 ```text
 ActivityCommandServiceTest
@@ -345,12 +394,24 @@ BookmarkTest
 - 같은 사용자와 기술 게시글 조합은 한 번만 북마크 가능하다.
 ```
 
+```text
+ReadPostTest (선택)
+- 읽기 시각과 읽기 시간을 그대로 보존한다.
+```
+
+```text
+SearchHistoryRequestTest / SearchHistoryTest
+- `query`를 canonical field로 사용한다.
+- legacy `searchWord` alias를 역호환으로 허용한다.
+```
+
 ##### 리팩터링 후보
 
-- `ScrabPost` → `Bookmark`
-- `ScrabPostRepository` → `BookmarkRepository`
-- `scrappedAt` → `bookmarkedAt`
-- Activity 서비스 내부 용어 통일
+- Activity 컨텍스트 범위는 유지하되, 구현 단위는 `Bookmark → ReadPost → SearchHistory` slice로 분리
+- `BookmarkTest` 추가 여부를 결정해 aggregate 불변식을 문서화
+- `ReadPost`의 “첫 읽기만 조회수 증가” 규칙을 테스트/문서로 더 명확히 고정
+- `SearchHistory`의 canonical `query`와 legacy alias 지원 범위를 명확히 기록
+- 마지막에 Activity 전체 회귀 테스트를 다시 실행
 
 ---
 
@@ -452,7 +513,7 @@ InterestCommandServiceTest
 
 - Personalization Profile은 Recommendation, Search와 강하게 얽혀 있다.
 - User Account(4.3)가 먼저 정리되어야 `UserInterestsChanged` 이벤트 흐름이 자연스럽게 정착된다.
-- `domain/user` 안에 User Account 책임과 Personalization Profile 책임이 함께 있어, User Account 정리 직후 분리한다.
+- 현재는 `domain/personalization` 패키지로 분리돼 있지만, User Account 서비스에서 직접 호출 결합이 남아 있어 후속 분리가 필요하다.
 
 ##### 목표 모델
 
@@ -511,7 +572,7 @@ PersonalizedProfileRepository
 
 #### 4.5 Recommendation 컨텍스트
 
-##### 왜 네 번째인가
+##### 왜 다섯 번째인가
 
 - 복잡도가 높다.
 - Elasticsearch, Personalization Profile(`PersonalizationProfileDocument`), Activity, Post에 모두 의존한다.
@@ -728,47 +789,48 @@ TechnicalPostIndexed
 
 ## 4. 실제 실행 순서 제안
 
-지금 당장 시작한다면 다음 순서를 추천한다.
+지금 기준 다음 순서를 추천한다.
 
 ```text
-1. 테스트 갭 분석 문서 작성
-2. Activity 테스트 작성
-3. ScrabPost → Bookmark 리팩터링
-4. Post 도메인 테스트 작성
-5. Post를 “기술 게시글” 기준으로 정리
-6. User 관심사/온보딩 테스트 작성
-7. PersonalizationProfileService 테스트 작성
-8. Personalization Profile 책임 분리
-9. Recommendation 테스트 작성
-10. PersonalizedProfileGenerated 이벤트 도입
-11. Search 테스트 작성
-12. Source/Ingestion 테스트 작성
-13. TechnicalPostIndexed 이벤트 도입
+[완료] 1. DDD 기준선 문서 정리
+[완료] 2. 테스트 갭 분석 문서 작성
+[완료] 3. Bookmark / SearchQuery 용어 리팩터링 기본 반영 + EDifficultyLevel 제거
+[완료] 4. Activity 핵심 테스트 / PersonalizationProfileServiceTest / PostSummary* 기본 안전망 반영
+[다음] 5. Activity 4.1 후속 정리
+       - Bookmark → ReadPost → SearchHistory slice로 이슈/PR 분리
+[다음] 6. Post aggregate 테스트 작성
+       - PostTest, PostEmbeddingProcessorTest, PostEmbeddingWriterTest
+[다음] 7. User aggregate 관심사 불변식 정리
+[다음] 8. Recommendation 생성 테스트 작성
+       - MmrServiceTest, LlmRecommendationServiceTest
+[다음] 9. SearchServiceImpl 테스트 작성
+[다음] 10. Phase 6 진입 조건 충족 후 이벤트/포트 분리 시작
 ```
 
 ---
 
 ## 5. 작업 단위 예시
 
-### 5.1 작업 단위 1: 북마크 용어 통일
+### 5.1 작업 단위 1: Activity / Bookmark 정합성 마무리
 
 ```text
 목표:
-- ScrabPost 계열을 Bookmark로 통일한다.
+- 이미 반영된 Bookmark 용어 정리를 문서/테스트/마이그레이션 관점에서 마무리한다.
 
 선행 테스트:
 - 북마크 추가
 - 중복 북마크 방지
 - 북마크 삭제
 - 북마크 목록 조회
+- Activity 전체 회귀 확인
 
 리팩터링:
-- ScrabPost → Bookmark
-- ScrabPostRepository → BookmarkRepository
-- scrappedAt → bookmarkedAt
+- Bookmark aggregate/entity 테스트 보강 여부 결정
+- 문서와 분석 리포트에 남은 legacy `ScrabPost` 표현 정리
+- 운영 환경 migration 적용 여부 확인
 
 주의:
-- DB 테이블 rename은 별도 결정
+- 이미 추가된 V3 migration과 현재 스키마/JPA 매핑이 충돌하지 않도록 유지
 ```
 
 ### 5.2 작업 단위 2: Post 도메인 보호
@@ -786,7 +848,7 @@ TechnicalPostIndexed
 리팩터링:
 - 문서/주석에서 기술 게시글 용어 사용
 - PostKeyword를 Post 내부 엔티티로 명확히 관리
-- EDifficultyLevel 제거
+- EDifficultyLevel 제거 후 남은 문서/회귀 정리
 ```
 
 ### 5.3 작업 단위 3: Personalization Profile 경계 정리
@@ -862,11 +924,11 @@ TechnicalPostIndexed
 - evaluation suite(evaluation 태그)는 이 테스트와 분리 유지
 ```
 
-### 5.7 작업 단위 7: Personalization Profile 경계 테스트
+### 5.7 작업 단위 7: Personalization Profile 경계 테스트 보강
 
 ```text
 목표:
-- PersonalizationProfileService를 Personalization Profile 생성 서비스로 테스트로 고정한다.
+- 기존 PersonalizationProfileServiceTest를 기준 안전망으로 유지하고, 경계 분리 리팩터링을 안전하게 진행한다.
 
 선행 테스트:
 - 관심사, 읽은 게시글, 북마크, 검색 기록을 활동 데이터로 수집한다.

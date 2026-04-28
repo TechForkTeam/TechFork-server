@@ -16,13 +16,13 @@
 | 첫 읽기 | `isFirstRead` | 특정 기술 게시글을 처음 읽은 경우 |
 | 검색 기록 | `SearchHistory` | 사용자가 입력한 검색어와 검색 시각 |
 | 검색어 | `query` (legacy alias: `searchWord`) | 검색 기록에 저장되는 사용자 입력 |
-| 북마크 | `Bookmark`, 현재 `ScrabPost` | 사용자가 기술 게시글을 저장하는 행위 |
+| 북마크 | `Bookmark` (legacy alias: `ScrabPost`) | 사용자가 기술 게시글을 저장하는 행위 |
 | 북마크 여부 | `isBookmarked` | 목록/검색/추천 응답에 붙는 사용자별 저장 여부 |
 
 ## 용어 정합성 결정
 
 - 제품/API/문서 언어 기준으로 **북마크**로 통일한다.
-- 레거시 이름 `ScrabPost`, `scrap_posts`는 코드/DB 잔존 용어로만 취급한다.
+- 레거시 이름 `ScrabPost`, `scrap_posts`는 과거 코드/DB 또는 migration 문맥에서만 취급한다.
 - `SearchHistory`의 코드/DB 필드명은 `query`로 맞춘다.
 
 ## 내부 glossary
@@ -31,7 +31,7 @@
 |---|---|---|
 | 읽기 기록 | `ReadPost` | 사용자와 기술 게시글의 읽기 이벤트 레코드 |
 | 최초 읽기 판별 | `isFirstRead` | 조회수 증가 여부를 결정하는 플래그 |
-| 북마크 레코드 | `ScrabPost` | 현재 코드상 북마크 저장 레코드의 legacy 이름 |
+| 북마크 레코드 | `Bookmark` (legacy name: `ScrabPost`) | 북마크 저장 레코드의 현재 표준 이름과 과거 이름을 함께 설명한다 |
 | 검색 기록 레코드 | `SearchHistory` | 사용자 검색어를 시간순으로 남기는 레코드 |
 | 북마크 여부 조합값 | `isBookmarked` | Search/Post/Recommendation 응답 조립 시 붙는 파생 값 |
 
@@ -54,6 +54,7 @@
 
 - `src/main/java/com/techfork/domain/activity/entity/ReadPost.java`
 - `src/main/java/com/techfork/domain/activity/entity/SearchHistory.java`
-- `src/main/java/com/techfork/domain/activity/entity/ScrabPost.java`
+- `src/main/java/com/techfork/domain/activity/entity/Bookmark.java`
+- `src/main/java/com/techfork/domain/activity/dto/SearchHistoryRequest.java`
 - `src/main/java/com/techfork/domain/activity/service/ActivityCommandService.java`
 - `src/main/java/com/techfork/domain/activity/service/ActivityQueryService.java`

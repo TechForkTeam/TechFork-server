@@ -66,7 +66,7 @@
 
 | 결정사항 | 기준 문서 | 코드 반영 여부 | 남은 작업 |
 |---|---|---|---|
-| `ScrabPost → Bookmark` 통일 | [`activity.md`](./activity.md) | 부분 반영 | Entity/Repository/Table rename |
+| `ScrabPost → Bookmark` 통일 | [`activity.md`](./activity.md) | 반영 | legacy 문서 표현 정리, 운영 migration 적용 확인 |
 | `searchWord → query` 통일 | [`activity.md`](./activity.md), [`search.md`](./search.md) | 반영 | legacy JSON alias 정리 여부 결정 |
 | `RecommendationSet` 표준 용어 확정 | [`recommendation.md`](./recommendation.md) | 미반영 | 현재 추천 목록 aggregate 정리 |
 | `markAsisClicked → markAsClicked` 오타 수정 | [`recommendation.md`](./recommendation.md) | 미반영 | 메서드명/호출부 수정 |
