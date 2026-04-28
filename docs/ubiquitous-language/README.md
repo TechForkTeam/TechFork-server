@@ -73,7 +73,7 @@
 | `TechBlog.markCrawled()` 추가 | [`source-ingestion.md`](./source-ingestion.md) | 미반영 | 도메인 메서드 추가 + 호출부 연결 |
 | `User.replaceInterests()` 추가 | [`user-account.md`](./user-account.md) | 미반영 | aggregate 불변식 검증을 도메인 메서드로 이동 |
 | `Post.incrementViewCount()` SQL atomic UPDATE | [`post-content.md`](./post-content.md) | 미반영 | Repository atomic update 도입 |
-| `EDifficultyLevel` 제거 여부 결정 | [`post-content.md`](./post-content.md) | 미반영 | 사용처 조사 후 제거 또는 재정의 |
+| `EDifficultyLevel` 제거 | [`post-content.md`](./post-content.md) | 반영 | 필요 시 정책과 함께 재도입 검토 |
 
 ---
 
