@@ -1,4 +1,4 @@
-package com.techfork.activity.bookmark.presentation;
+package com.techfork.activity.bookmark.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techfork.activity.bookmark.domain.Bookmark;
