@@ -30,7 +30,7 @@ public class BookmarkConverter {
                 .thumbnailUrl(bookmark.thumbnailUrl())
                 .viewCount(bookmark.viewCount())
                 .keywords(bookmark.keywords())
-                .isBookmarked(bookmark.isBookmarked())
+                .isBookmarked(true)
                 .build();
     }
 }

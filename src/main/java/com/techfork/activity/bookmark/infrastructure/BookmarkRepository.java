@@ -16,7 +16,7 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
     @Query("""
             SELECT new com.techfork.activity.bookmark.infrastructure.BookmarkQueryRow(
                 b.id, p.id, p.title, p.shortSummary, p.url, t.companyName, t.logoUrl,
-                            p.publishedAt, p.thumbnailUrl, p.viewCount, true
+                            p.publishedAt, p.thumbnailUrl, p.viewCount
             )
             FROM Bookmark b
             JOIN b.post p

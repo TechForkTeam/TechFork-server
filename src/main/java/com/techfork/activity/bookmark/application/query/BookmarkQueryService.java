@@ -68,7 +68,6 @@ public class BookmarkQueryService {
                         .thumbnailUrl(thumbnailOptimizer.optimize(row.thumbnailUrl()))
                         .viewCount(row.viewCount())
                         .keywords(keywordMap.getOrDefault(row.postId(), List.of()))
-                        .isBookmarked(row.isBookmarked())
                         .build())
                 .toList();
     }

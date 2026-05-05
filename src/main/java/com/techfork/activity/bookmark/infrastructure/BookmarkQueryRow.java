@@ -12,7 +12,6 @@ public record BookmarkQueryRow(
         String logoUrl,
         LocalDateTime publishedAt,
         String thumbnailUrl,
-        Long viewCount,
-        Boolean isBookmarked
+        Long viewCount
 ) {
 }

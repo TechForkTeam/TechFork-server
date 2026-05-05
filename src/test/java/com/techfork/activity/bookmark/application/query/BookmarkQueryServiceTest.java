@@ -65,18 +65,18 @@ class BookmarkQueryServiceTest {
 
         mockBookmarkRowsFirstPage = Arrays.asList(
                 new BookmarkQueryRow(3L, 103L, "게시글3", "요약3", "https://test.com/3", "회사A", "logo.png",
-                        LocalDateTime.now(), "thumb3.png", 100L, true),
+                        LocalDateTime.now(), "thumb3.png", 100L),
                 new BookmarkQueryRow(2L, 102L, "게시글2", "요약2", "https://test.com/2", "회사B", "logo.png",
-                        LocalDateTime.now(), "thumb2.png", 200L, true),
+                        LocalDateTime.now(), "thumb2.png", 200L),
                 new BookmarkQueryRow(1L, 101L, "게시글1", "요약1", "https://test.com/1", "회사C", "logo.png",
-                        LocalDateTime.now(), "thumb1.png", 300L, true)
+                        LocalDateTime.now(), "thumb1.png", 300L)
         );
 
         mockBookmarkRowsSecondPage = Arrays.asList(
                 new BookmarkQueryRow(9L, 109L, "게시글9", "요약9", "https://test.com/9", "회사A", "logo.png",
-                        LocalDateTime.now(), "thumb9.png", 150L, true),
+                        LocalDateTime.now(), "thumb9.png", 150L),
                 new BookmarkQueryRow(8L, 108L, "게시글8", "요약8", "https://test.com/8", "회사B", "logo.png",
-                        LocalDateTime.now(), "thumb8.png", 250L, true)
+                        LocalDateTime.now(), "thumb8.png", 250L)
         );
     }
 

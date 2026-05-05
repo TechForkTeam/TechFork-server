@@ -17,7 +17,6 @@ public record BookmarkItem(
         LocalDateTime publishedAt,
         String thumbnailUrl,
         Long viewCount,
-        List<String> keywords,
-        Boolean isBookmarked
+        List<String> keywords
 ) {
 }
