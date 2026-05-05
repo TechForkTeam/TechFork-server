@@ -186,14 +186,27 @@ class ActivityCommandServiceTest {
         given(bookmarkRepository.existsByUserAndPost(mockUser, mockPost)).willReturn(false);
         given(bookmarkRepository.save(any(Bookmark.class))).willReturn(mock(Bookmark.class));
 
+        LocalDateTime beforeInvocation = LocalDateTime.now();
+
         // When
         activityCommandService.addBookmark(userId, request);
 
+        LocalDateTime afterInvocation = LocalDateTime.now();
+
         // Then
+        ArgumentCaptor<Bookmark> bookmarkCaptor = ArgumentCaptor.forClass(Bookmark.class);
+
         verify(userRepository, times(1)).findById(userId);
         verify(postRepository, times(1)).findById(postId);
         verify(bookmarkRepository, times(1)).existsByUserAndPost(mockUser, mockPost);
-        verify(bookmarkRepository, times(1)).save(any(Bookmark.class));
+        verify(bookmarkRepository, times(1)).save(bookmarkCaptor.capture());
+
+        Bookmark savedBookmark = bookmarkCaptor.getValue();
+        assertThat(savedBookmark.getUser()).isSameAs(mockUser);
+        assertThat(savedBookmark.getPost()).isSameAs(mockPost);
+        assertThat(savedBookmark.getBookmarkedAt())
+                .isNotNull()
+                .isBetween(beforeInvocation, afterInvocation);
     }
 
     @Test

@@ -16,11 +16,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.dao.DataIntegrityViolationException;
+import jakarta.persistence.EntityManager;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
@@ -38,6 +41,9 @@ class BookmarkRepositoryTest {
 
     @Autowired
     private TechBlogRepository techBlogRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     private User testUser;
     private Post testPost1;
@@ -188,5 +194,21 @@ class BookmarkRepositoryTest {
         // Then
         assertThat(bookmarkedPostIds).hasSize(1);
         assertThat(bookmarkedPostIds).containsExactly(testPost1.getId());
+    }
+
+    @Test
+    @DisplayName("같은 사용자와 게시글 조합은 한 번만 북마크할 수 있다")
+    void save_duplicateUserAndPostCombination_ThrowsException() {
+        // Given
+        Bookmark firstBookmark = Bookmark.create(testUser, testPost1, LocalDateTime.now().minusMinutes(1));
+        Bookmark duplicateBookmark = Bookmark.create(testUser, testPost1, LocalDateTime.now());
+
+        bookmarkRepository.saveAndFlush(firstBookmark);
+
+        // When & Then
+        assertThatThrownBy(() -> bookmarkRepository.saveAndFlush(duplicateBookmark))
+                .isInstanceOf(DataIntegrityViolationException.class);
+
+        entityManager.clear();
     }
 }
