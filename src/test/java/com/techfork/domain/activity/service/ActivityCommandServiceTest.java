@@ -1,14 +1,10 @@
 package com.techfork.domain.activity.service;
 
-import com.techfork.domain.activity.dto.BookmarkRequest;
 import com.techfork.domain.activity.dto.ReadPostRequest;
 import com.techfork.domain.activity.dto.SearchHistoryRequest;
 import com.techfork.domain.activity.entity.ReadPost;
-import com.techfork.domain.activity.entity.Bookmark;
 import com.techfork.domain.activity.entity.SearchHistory;
-import com.techfork.domain.activity.exception.ActivityErrorCode;
 import com.techfork.domain.activity.repository.ReadPostRepository;
-import com.techfork.domain.activity.repository.BookmarkRepository;
 import com.techfork.domain.activity.repository.SearchHistoryRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.exception.PostErrorCode;
@@ -46,9 +42,6 @@ class ActivityCommandServiceTest {
 
     @Mock
     private UserRepository userRepository;
-
-    @Mock
-    private BookmarkRepository bookmarkRepository;
 
     @Mock
     private SearchHistoryRepository searchHistoryRepository;
@@ -151,174 +144,6 @@ class ActivityCommandServiceTest {
 
         // 하지만 ReadPost는 저장됨 (읽은 기록은 매번 저장)
         verify(readPostRepository, times(1)).save(any(ReadPost.class));
-    }
-
-    // ===== 북마크 추가 테스트 =====
-
-    @Test
-    @DisplayName("북마크 추가 성공")
-    void addBookmark_Success() {
-        // Given
-        Long userId = 1L;
-        Long postId = 100L;
-        BookmarkRequest request = new BookmarkRequest(postId);
-
-        User mockUser = mock(User.class);
-        TechBlog mockTechBlog = TechBlog.builder()
-                .companyName("테스트회사")
-                .blogUrl("https://test.com")
-                .rssUrl("https://test.com/rss")
-                .build();
-
-        Post mockPost = Post.builder()
-                .title("테스트 제목")
-                .fullContent("내용")
-                .plainContent("내용")
-                .company("테스트회사")
-                .url("https://test.com/post/1")
-                .publishedAt(LocalDateTime.now())
-                .crawledAt(LocalDateTime.now())
-                .techBlog(mockTechBlog)
-                .build();
-
-        given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
-        given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
-        given(bookmarkRepository.existsByUserAndPost(mockUser, mockPost)).willReturn(false);
-        given(bookmarkRepository.save(any(Bookmark.class))).willReturn(mock(Bookmark.class));
-
-        LocalDateTime beforeInvocation = LocalDateTime.now();
-
-        // When
-        activityCommandService.addBookmark(userId, request);
-
-        LocalDateTime afterInvocation = LocalDateTime.now();
-
-        // Then
-        ArgumentCaptor<Bookmark> bookmarkCaptor = ArgumentCaptor.forClass(Bookmark.class);
-
-        verify(userRepository, times(1)).findById(userId);
-        verify(postRepository, times(1)).findById(postId);
-        verify(bookmarkRepository, times(1)).existsByUserAndPost(mockUser, mockPost);
-        verify(bookmarkRepository, times(1)).save(bookmarkCaptor.capture());
-
-        Bookmark savedBookmark = bookmarkCaptor.getValue();
-        assertThat(savedBookmark.getUser()).isSameAs(mockUser);
-        assertThat(savedBookmark.getPost()).isSameAs(mockPost);
-        assertThat(savedBookmark.getBookmarkedAt())
-                .isNotNull()
-                .isBetween(beforeInvocation, afterInvocation);
-    }
-
-    @Test
-    @DisplayName("북마크 추가 실패 - 이미 북마크한 게시글")
-    void addBookmark_Fail_AlreadyExists() {
-        // Given
-        Long userId = 1L;
-        Long postId = 100L;
-        BookmarkRequest request = new BookmarkRequest(postId);
-
-        User mockUser = mock(User.class);
-        Post mockPost = mock(Post.class);
-
-        given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
-        given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
-        given(bookmarkRepository.existsByUserAndPost(mockUser, mockPost)).willReturn(true);
-
-        // When & Then
-        assertThatThrownBy(() -> activityCommandService.addBookmark(userId, request))
-                .isInstanceOf(GeneralException.class)
-                .hasFieldOrPropertyWithValue("code", ActivityErrorCode.BOOKMARK_ALREADY_EXISTS);
-
-        verify(bookmarkRepository, never()).save(any());
-    }
-
-    @Test
-    @DisplayName("북마크 추가 실패 - 존재하지 않는 게시글")
-    void addBookmark_Fail_PostNotFound() {
-        // Given
-        Long userId = 1L;
-        Long postId = 999L;
-        BookmarkRequest request = new BookmarkRequest(postId);
-
-        User mockUser = mock(User.class);
-        given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
-        given(postRepository.findById(postId)).willReturn(Optional.empty());
-
-        // When & Then
-        assertThatThrownBy(() -> activityCommandService.addBookmark(userId, request))
-                .isInstanceOf(GeneralException.class)
-                .hasFieldOrPropertyWithValue("code", PostErrorCode.POST_NOT_FOUND);
-
-        verify(bookmarkRepository, never()).save(any());
-    }
-
-    // ===== 북마크 삭제 테스트 =====
-
-    @Test
-    @DisplayName("북마크 삭제 성공")
-    void deleteBookmark_Success() {
-        // Given
-        Long userId = 1L;
-        Long postId = 100L;
-        BookmarkRequest request = new BookmarkRequest(postId);
-
-        User mockUser = mock(User.class);
-        Post mockPost = mock(Post.class);
-        Bookmark mockBookmark = mock(Bookmark.class);
-
-        given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
-        given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
-        given(bookmarkRepository.findByUserAndPost(mockUser, mockPost)).willReturn(Optional.of(mockBookmark));
-
-        // When
-        activityCommandService.deleteBookmark(userId, request);
-
-        // Then
-        verify(userRepository, times(1)).findById(userId);
-        verify(postRepository, times(1)).findById(postId);
-        verify(bookmarkRepository, times(1)).findByUserAndPost(mockUser, mockPost);
-        verify(bookmarkRepository, times(1)).delete(mockBookmark);
-    }
-
-    @Test
-    @DisplayName("북마크 삭제 실패 - 북마크가 존재하지 않음")
-    void deleteBookmark_Fail_NotFound() {
-        // Given
-        Long userId = 1L;
-        Long postId = 100L;
-        BookmarkRequest request = new BookmarkRequest(postId);
-
-        User mockUser = mock(User.class);
-        Post mockPost = mock(Post.class);
-
-        given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
-        given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
-        given(bookmarkRepository.findByUserAndPost(mockUser, mockPost)).willReturn(Optional.empty());
-
-        // When & Then
-        assertThatThrownBy(() -> activityCommandService.deleteBookmark(userId, request))
-                .isInstanceOf(GeneralException.class)
-                .hasFieldOrPropertyWithValue("code", ActivityErrorCode.BOOKMARK_NOT_FOUND);
-
-        verify(bookmarkRepository, never()).delete(any());
-    }
-
-    @Test
-    @DisplayName("북마크 삭제 실패 - 존재하지 않는 사용자")
-    void deleteBookmark_Fail_UserNotFound() {
-        // Given
-        Long userId = 999L;
-        Long postId = 100L;
-        BookmarkRequest request = new BookmarkRequest(postId);
-
-        given(userRepository.findById(userId)).willReturn(Optional.empty());
-
-        // When & Then
-        assertThatThrownBy(() -> activityCommandService.deleteBookmark(userId, request))
-                .isInstanceOf(GeneralException.class)
-                .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
-
-        verify(bookmarkRepository, never()).delete(any());
     }
 
     @Test

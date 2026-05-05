@@ -1,5 +1,7 @@
 package com.techfork.domain.activity.controller;
 
+import com.techfork.domain.activity.bookmark.service.BookmarkCommandService;
+import com.techfork.domain.activity.bookmark.service.BookmarkQueryService;
 import com.techfork.domain.activity.dto.BookmarkListResponse;
 import com.techfork.domain.activity.dto.BookmarkRequest;
 import com.techfork.domain.activity.dto.ReadPostListResponse;
@@ -29,6 +31,8 @@ public class ActivityController {
 
     private final ActivityCommandService activityCommandService;
     private final ActivityQueryService activityQueryService;
+    private final BookmarkCommandService bookmarkCommandService;
+    private final BookmarkQueryService bookmarkQueryService;
     
     @Operation(
             summary = "읽은 게시글 목록 조회",
@@ -84,7 +88,7 @@ public class ActivityController {
             @Parameter(description = "페이지 크기 (기본값: 20)")
             @RequestParam(defaultValue = "20") int size
     ) {
-        BookmarkListResponse response = activityQueryService.getBookmarks(userPrincipal.getId(), lastBookmarkId, size);
+        BookmarkListResponse response = bookmarkQueryService.getBookmarks(userPrincipal.getId(), lastBookmarkId, size);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 
@@ -97,7 +101,7 @@ public class ActivityController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody BookmarkRequest request
     ) {
-        activityCommandService.addBookmark(userPrincipal.getId(), request);
+        bookmarkCommandService.addBookmark(userPrincipal.getId(), request);
         return BaseResponse.of(SuccessCode.CREATED);
     }
 
@@ -110,7 +114,7 @@ public class ActivityController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody BookmarkRequest request
     ) {
-        activityCommandService.deleteBookmark(userPrincipal.getId(), request);
+        bookmarkCommandService.deleteBookmark(userPrincipal.getId(), request);
         return BaseResponse.of(SuccessCode.OK);
     }
 }
