@@ -7,6 +7,7 @@ import com.techfork.domain.useraccount.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -42,24 +43,31 @@ class SearchHistoryRepositoryTest {
         userRepository.deleteAll();
     }
 
-    @Test
-    @DisplayName("최근 검색 히스토리 조회 - 최근 순 정렬")
-    void findRecentSearchHistoriesByUserId() {
-        // Given
-        SearchHistory history1 = SearchHistory.create(testUser, "Spring Boot", LocalDateTime.now().minusHours(3));
-        SearchHistory history2 = SearchHistory.create(testUser, "Java", LocalDateTime.now().minusHours(2));
-        SearchHistory history3 = SearchHistory.create(testUser, "Kotlin", LocalDateTime.now().minusHours(1));
-        searchHistoryRepository.saveAll(List.of(history1, history2, history3));
+    @Nested
+    @DisplayName("최근 검색 히스토리 조회")
+    class FindRecentSearchHistoriesByUserId {
 
-        PageRequest pageRequest = PageRequest.of(0, 10);
+        @Nested
+        @DisplayName("Success")
+        class Success {
 
-        // When
-        List<SearchHistory> result = searchHistoryRepository.findRecentSearchHistoriesByUserId(testUser.getId(), pageRequest);
+            @Test
+            @DisplayName("최근 순으로 정렬된다")
+            void findRecentSearchHistoriesByUserId_Success() {
+                SearchHistory history1 = SearchHistory.create(testUser, "Spring Boot", LocalDateTime.now().minusHours(3));
+                SearchHistory history2 = SearchHistory.create(testUser, "Java", LocalDateTime.now().minusHours(2));
+                SearchHistory history3 = SearchHistory.create(testUser, "Kotlin", LocalDateTime.now().minusHours(1));
+                searchHistoryRepository.saveAll(List.of(history1, history2, history3));
 
-        // Then
-        assertThat(result).hasSize(3);
-        assertThat(result.get(0).getQuery()).isEqualTo("Kotlin");
-        assertThat(result.get(1).getQuery()).isEqualTo("Java");
-        assertThat(result.get(2).getQuery()).isEqualTo("Spring Boot");
+                PageRequest pageRequest = PageRequest.of(0, 10);
+
+                List<SearchHistory> result = searchHistoryRepository.findRecentSearchHistoriesByUserId(testUser.getId(), pageRequest);
+
+                assertThat(result).hasSize(3);
+                assertThat(result.get(0).getQuery()).isEqualTo("Kotlin");
+                assertThat(result.get(1).getQuery()).isEqualTo("Java");
+                assertThat(result.get(2).getQuery()).isEqualTo("Spring Boot");
+            }
+        }
     }
 }
