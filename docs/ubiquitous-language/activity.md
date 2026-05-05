@@ -5,6 +5,7 @@
 ## Owning packages
 
 - `src/main/java/com/techfork/domain/activity`
+- `src/main/java/com/techfork/domain/activity/bookmark`
 
 ## 표준 용어
 
@@ -54,7 +55,11 @@
 
 - `src/main/java/com/techfork/domain/activity/entity/ReadPost.java`
 - `src/main/java/com/techfork/domain/activity/entity/SearchHistory.java`
-- `src/main/java/com/techfork/domain/activity/entity/Bookmark.java`
+- `src/main/java/com/techfork/domain/activity/bookmark/entity/Bookmark.java`
+- `src/main/java/com/techfork/domain/activity/bookmark/repository/BookmarkRepository.java`
+- `src/main/java/com/techfork/domain/activity/bookmark/service/BookmarkCommandService.java`
+- `src/main/java/com/techfork/domain/activity/bookmark/service/BookmarkQueryService.java`
+- `src/main/java/com/techfork/domain/activity/bookmark/converter/BookmarkConverter.java`
 - `src/main/java/com/techfork/domain/activity/dto/SearchHistoryRequest.java`
 - `src/main/java/com/techfork/domain/activity/service/ActivityCommandService.java`
 - `src/main/java/com/techfork/domain/activity/service/ActivityQueryService.java`

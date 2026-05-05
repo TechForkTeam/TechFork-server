@@ -115,10 +115,13 @@ PostSummaryWriterTest.java
 
 | 테스트 | 성격 | 주요 커버 |
 |---|---|---|
-| `ActivityCommandServiceTest` | unit/mock | 읽기 저장, 첫 읽기 조회수 증가, 검색 기록 저장, 북마크 추가/삭제, 예외 |
-| `ActivityQueryServiceTest` | unit/mock | 북마크 목록, 읽은 게시글 목록, 키워드/북마크 여부 조합 |
+| `ActivityCommandServiceTest` | unit/mock | 읽기 저장, 첫 읽기 조회수 증가, 검색 기록 저장, 예외 |
+| `ActivityQueryServiceTest` | unit/mock | 읽은 게시글 목록, 키워드/북마크 여부 조합 |
+| `BookmarkCommandServiceTest` | unit/mock | 북마크 추가/중복 방지/삭제, 예외 |
+| `BookmarkQueryServiceTest` | unit/mock | 북마크 목록, 커서 페이징, 키워드 조합 |
+| `BookmarkTest` | unit | 북마크 생성 시 상태 보존 |
 | `ReadPostRepositoryTest` | JPA | 최근 읽은 글, 중복 읽기 저장, 커서 조회/중복 제거 |
-| `BookmarkRepositoryTest` | JPA | 북마크 커서 조회, 북마크된 postId 조회 |
+| `BookmarkRepositoryTest` | JPA | 북마크 커서 조회, 북마크된 postId 조회, user+post 유일성 |
 | `SearchHistoryRepositoryTest` | JPA | 최근 검색 기록 조회 |
 | `SearchHistoryRequestTest` | unit | `query` canonical field + legacy `searchWord` alias 역직렬화 |
 | `ActivityControllerIntegrationTest` | integration | Activity API 전체 흐름 |
@@ -507,7 +510,7 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 | `UserInterestCategory/Keyword` | repository/service 중심 | User Account 도메인 규칙 테스트 보강 필요 |
 | `PersonalizationProfileDocument` | `PersonalizationProfileServiceTest` + evaluation setup | projection 자체 직접 테스트/세부 parsing 검증은 더 보강 가능 |
 | `ReadPost` | service/repository 중심 | record aggregate 단위 테스트는 선택 |
-| `Bookmark` | `BookmarkRepositoryTest`, `ActivityCommandServiceTest`, `ActivityControllerIntegrationTest` 중심 | aggregate 직접 테스트는 보강 가능 |
+| `Bookmark` | `BookmarkTest`, `BookmarkRepositoryTest`, `BookmarkCommandServiceTest`, `BookmarkQueryServiceTest`, `ActivityControllerIntegrationTest` 중심 | 패키지 slice 분리 이후에도 ID reference 전환 같은 aggregate 경계 재설계는 별도 이슈로 다루는 편이 안전 |
 | `SearchHistory` | repository/service 중심 | record aggregate 단위 테스트는 선택 |
 | `RecommendedPost` | query/controller 중심 | 생성/순위/unique 정책 보강 필요 |
 | `RecommendationHistory` | 없음 | 이력화/fromRecommendedPost/click 테스트 필요 |
@@ -586,7 +589,7 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 
 ```text
 작업 1: Activity/Bookmark 리팩터링 안전망
-- 기존 ActivityCommandServiceTest 확인
+- 기존 BookmarkCommandServiceTest / BookmarkQueryServiceTest 확인
 - 기존 ActivityControllerIntegrationTest 확인
 - Bookmark aggregate 테스트 보강 여부 결정
 - SearchHistory query/searchWord 호환 범위 기록
@@ -617,14 +620,20 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 ```text
 src/test/java/com/techfork/domain
   activity
+    bookmark
+      entity
+        BookmarkTest
+      repository
+        BookmarkRepositoryTest
+      service
+        BookmarkCommandServiceTest
+        BookmarkQueryServiceTest
     entity 또는 model
-      BookmarkTest
       ReadPostTest
     service
       ActivityCommandServiceTest
       ActivityQueryServiceTest
     repository
-      BookmarkRepositoryTest
       ReadPostRepositoryTest
       SearchHistoryRepositoryTest
     controller

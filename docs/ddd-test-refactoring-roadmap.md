@@ -167,7 +167,10 @@ docs/test-gap-analysis.md
 
 - `ActivityCommandServiceTest`
 - `ActivityQueryServiceTest`
+- `BookmarkCommandServiceTest`
+- `BookmarkQueryServiceTest`
 - `BookmarkRepositoryTest`
+- `BookmarkTest`
 - `ReadPostRepositoryTest`
 - `SearchHistoryRepositoryTest`
 - `ActivityControllerIntegrationTest`
@@ -363,6 +366,9 @@ Activity
 이미 존재하는 핵심 테스트
 - ActivityCommandServiceTest
 - ActivityQueryServiceTest
+- BookmarkCommandServiceTest
+- BookmarkQueryServiceTest
+- BookmarkTest
 - BookmarkRepositoryTest
 - ReadPostRepositoryTest
 - SearchHistoryRepositoryTest
@@ -373,6 +379,7 @@ Activity
 ```text
 이미 반영된 용어 정리
 - Bookmark entity/repository/service/test 명칭
+- Bookmark slice package (`domain/activity/bookmark/...`)
 - bookmarks table / bookmarkedAt column
 - SearchHistory.query + legacy searchWord alias 허용
 ```
@@ -383,14 +390,25 @@ Activity
 ActivityCommandServiceTest
 - 사용자가 기술 게시글을 처음 읽으면 조회수가 증가한다.
 - 이미 읽은 기술 게시글을 다시 읽으면 조회수는 증가하지 않는다.
-- 북마크를 추가할 수 있다.
-- 이미 북마크한 기술 게시글은 다시 북마크할 수 없다.
-- 북마크를 삭제할 수 있다.
 - 검색 기록을 저장할 수 있다.
 ```
 
 ```text
-BookmarkTest
+BookmarkCommandServiceTest
+- 북마크를 추가할 수 있다.
+- 이미 북마크한 기술 게시글은 다시 북마크할 수 없다.
+- 북마크를 삭제할 수 있다.
+```
+
+```text
+BookmarkQueryServiceTest
+- 북마크 목록을 조회할 수 있다.
+- 커서 기반 페이징이 동작한다.
+- 키워드가 함께 조합된다.
+```
+
+```text
+BookmarkTest / BookmarkRepositoryTest
 - 같은 사용자와 기술 게시글 조합은 한 번만 북마크 가능하다.
 ```
 
@@ -700,9 +718,17 @@ RssToPostProcessorTest
 ```text
 src/test/java/com/techfork/domain
   activity
-    BookmarkTest
-    ReadPostTest
-    ActivityCommandServiceTest
+    bookmark
+      entity
+        BookmarkTest
+      repository
+        BookmarkRepositoryTest
+      service
+        BookmarkCommandServiceTest
+        BookmarkQueryServiceTest
+    service
+      ActivityCommandServiceTest
+      ActivityQueryServiceTest
 
   post
     PostTest
