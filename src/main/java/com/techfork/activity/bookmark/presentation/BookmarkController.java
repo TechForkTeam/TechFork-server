@@ -3,10 +3,9 @@ package com.techfork.activity.bookmark.presentation;
 import com.techfork.activity.bookmark.application.command.AddBookmarkCommand;
 import com.techfork.activity.bookmark.application.command.BookmarkCommandService;
 import com.techfork.activity.bookmark.application.command.DeleteBookmarkCommand;
+import com.techfork.activity.bookmark.application.query.GetBookmarksResult;
 import com.techfork.activity.bookmark.application.query.BookmarkQueryService;
 import com.techfork.activity.bookmark.application.query.GetBookmarksQuery;
-import com.techfork.activity.bookmark.presentation.BookmarkRequest;
-import com.techfork.activity.bookmark.presentation.BookmarkListResponse;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import com.techfork.global.security.oauth.UserPrincipal;
@@ -33,6 +32,7 @@ public class BookmarkController {
 
     private final BookmarkCommandService bookmarkCommandService;
     private final BookmarkQueryService bookmarkQueryService;
+    private final BookmarkConverter bookmarkConverter;
 
     @Operation(
             summary = "북마크 목록 조회",
@@ -47,7 +47,8 @@ public class BookmarkController {
             @RequestParam(defaultValue = "20") int size
     ) {
         GetBookmarksQuery query = new GetBookmarksQuery(userPrincipal.getId(), lastBookmarkId, size);
-        BookmarkListResponse response = bookmarkQueryService.getBookmarks(query);
+        GetBookmarksResult result = bookmarkQueryService.getBookmarks(query);
+        BookmarkListResponse response = bookmarkConverter.toBookmarkListResponse(result);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 

@@ -1,8 +1,6 @@
 package com.techfork.activity.bookmark.application.query;
 
-import com.techfork.activity.bookmark.presentation.BookmarkConverter;
-import com.techfork.activity.bookmark.application.query.BookmarkDto;
-import com.techfork.activity.bookmark.presentation.BookmarkListResponse;
+import com.techfork.activity.bookmark.infrastructure.BookmarkQueryRow;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.entity.PostKeyword;
@@ -51,97 +49,34 @@ class BookmarkQueryServiceTest {
     private PostKeywordRepository postKeywordRepository;
 
     @Mock
-    private BookmarkConverter bookmarkConverter;
-
-    @Mock
     private CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
 
     @InjectMocks
     private BookmarkQueryService bookmarkQueryService;
 
     private User mockUser;
-    private List<BookmarkDto> mockBookmarksFirstPage;
-    private List<BookmarkDto> mockBookmarksSecondPage;
+    private List<BookmarkQueryRow> mockBookmarkRowsFirstPage;
+    private List<BookmarkQueryRow> mockBookmarkRowsSecondPage;
 
     @BeforeEach
     void setUp() {
         lenient().when(thumbnailOptimizer.optimize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
         mockUser = mock(User.class);
 
-        mockBookmarksFirstPage = Arrays.asList(
-                BookmarkDto.builder()
-                        .bookmarkId(3L)
-                        .postId(103L)
-                        .title("게시글3")
-                        .shortSummary("요약3")
-                        .url("https://test.com/3")
-                        .companyName("회사A")
-                        .logoUrl("logo.png")
-                        .publishedAt(LocalDateTime.now())
-                        .thumbnailUrl("thumb3.png")
-                        .viewCount(100L)
-                        .keywords(List.of())
-                        .isBookmarked(true)
-                        .build(),
-                BookmarkDto.builder()
-                        .bookmarkId(2L)
-                        .postId(102L)
-                        .title("게시글2")
-                        .shortSummary("요약2")
-                        .url("https://test.com/2")
-                        .companyName("회사B")
-                        .logoUrl("logo.png")
-                        .publishedAt(LocalDateTime.now())
-                        .thumbnailUrl("thumb2.png")
-                        .viewCount(200L)
-                        .keywords(List.of())
-                        .isBookmarked(true)
-                        .build(),
-                BookmarkDto.builder()
-                        .bookmarkId(1L)
-                        .postId(101L)
-                        .title("게시글1")
-                        .shortSummary("요약1")
-                        .url("https://test.com/1")
-                        .companyName("회사C")
-                        .logoUrl("logo.png")
-                        .publishedAt(LocalDateTime.now())
-                        .thumbnailUrl("thumb1.png")
-                        .viewCount(300L)
-                        .keywords(List.of())
-                        .isBookmarked(true)
-                        .build()
+        mockBookmarkRowsFirstPage = Arrays.asList(
+                new BookmarkQueryRow(3L, 103L, "게시글3", "요약3", "https://test.com/3", "회사A", "logo.png",
+                        LocalDateTime.now(), "thumb3.png", 100L, true),
+                new BookmarkQueryRow(2L, 102L, "게시글2", "요약2", "https://test.com/2", "회사B", "logo.png",
+                        LocalDateTime.now(), "thumb2.png", 200L, true),
+                new BookmarkQueryRow(1L, 101L, "게시글1", "요약1", "https://test.com/1", "회사C", "logo.png",
+                        LocalDateTime.now(), "thumb1.png", 300L, true)
         );
 
-        mockBookmarksSecondPage = Arrays.asList(
-                BookmarkDto.builder()
-                        .bookmarkId(9L)
-                        .postId(109L)
-                        .title("게시글9")
-                        .shortSummary("요약9")
-                        .url("https://test.com/9")
-                        .companyName("회사A")
-                        .logoUrl("logo.png")
-                        .publishedAt(LocalDateTime.now())
-                        .thumbnailUrl("thumb9.png")
-                        .viewCount(150L)
-                        .keywords(List.of())
-                        .isBookmarked(true)
-                        .build(),
-                BookmarkDto.builder()
-                        .bookmarkId(8L)
-                        .postId(108L)
-                        .title("게시글8")
-                        .shortSummary("요약8")
-                        .url("https://test.com/8")
-                        .companyName("회사B")
-                        .logoUrl("logo.png")
-                        .publishedAt(LocalDateTime.now())
-                        .thumbnailUrl("thumb8.png")
-                        .viewCount(250L)
-                        .keywords(List.of())
-                        .isBookmarked(true)
-                        .build()
+        mockBookmarkRowsSecondPage = Arrays.asList(
+                new BookmarkQueryRow(9L, 109L, "게시글9", "요약9", "https://test.com/9", "회사A", "logo.png",
+                        LocalDateTime.now(), "thumb9.png", 150L, true),
+                new BookmarkQueryRow(8L, 108L, "게시글8", "요약8", "https://test.com/8", "회사B", "logo.png",
+                        LocalDateTime.now(), "thumb8.png", 250L, true)
         );
     }
 
@@ -163,22 +98,19 @@ class BookmarkQueryServiceTest {
 
                 given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
                 given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
-                        .willReturn(mockBookmarksFirstPage);
+                        .willReturn(mockBookmarkRowsFirstPage);
                 given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
 
-                BookmarkListResponse expectedResponse = new BookmarkListResponse(mockBookmarksFirstPage, 2L, true);
-                given(bookmarkConverter.toBookmarkListResponse(any(), eq(size))).willReturn(expectedResponse);
-
-                BookmarkListResponse response = bookmarkQueryService.getBookmarks(query);
+                GetBookmarksResult response = bookmarkQueryService.getBookmarks(query);
 
                 assertThat(response).isNotNull();
                 assertThat(response.bookmarks()).hasSize(3);
-                assertThat(response.lastBookmarkId()).isEqualTo(2L);
-                assertThat(response.hasNext()).isTrue();
+                assertThat(response.lastBookmarkId()).isEqualTo(1L);
+                assertThat(response.hasNext()).isFalse();
+                assertThat(response.bookmarks().get(0).bookmarkId()).isEqualTo(3L);
 
                 verify(userRepository, times(1)).findById(userId);
                 verify(bookmarkRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
-                verify(bookmarkConverter, times(1)).toBookmarkListResponse(mockBookmarksFirstPage, size);
             }
 
             @Test
@@ -191,17 +123,14 @@ class BookmarkQueryServiceTest {
 
                 given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
                 given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
-                        .willReturn(mockBookmarksSecondPage);
+                        .willReturn(mockBookmarkRowsSecondPage);
                 given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
 
-                BookmarkListResponse expectedResponse = new BookmarkListResponse(mockBookmarksSecondPage, null, false);
-                given(bookmarkConverter.toBookmarkListResponse(any(), eq(size))).willReturn(expectedResponse);
-
-                BookmarkListResponse response = bookmarkQueryService.getBookmarks(query);
+                GetBookmarksResult response = bookmarkQueryService.getBookmarks(query);
 
                 assertThat(response).isNotNull();
                 assertThat(response.bookmarks()).hasSize(2);
-                assertThat(response.lastBookmarkId()).isNull();
+                assertThat(response.lastBookmarkId()).isEqualTo(8L);
                 assertThat(response.hasNext()).isFalse();
 
                 verify(bookmarkRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
@@ -217,14 +146,11 @@ class BookmarkQueryServiceTest {
 
                 given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
 
-                List<BookmarkDto> emptyBookmarks = List.of();
+                List<BookmarkQueryRow> emptyBookmarks = List.of();
                 given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
                         .willReturn(emptyBookmarks);
 
-                BookmarkListResponse expectedResponse = new BookmarkListResponse(emptyBookmarks, null, false);
-                given(bookmarkConverter.toBookmarkListResponse(emptyBookmarks, size)).willReturn(expectedResponse);
-
-                BookmarkListResponse response = bookmarkQueryService.getBookmarks(query);
+                GetBookmarksResult response = bookmarkQueryService.getBookmarks(query);
 
                 assertThat(response).isNotNull();
                 assertThat(response.bookmarks()).isEmpty();
@@ -244,7 +170,7 @@ class BookmarkQueryServiceTest {
 
                 given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
                 given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
-                        .willReturn(mockBookmarksFirstPage);
+                        .willReturn(mockBookmarkRowsFirstPage);
 
                 Post mockPost1 = mock(Post.class);
                 Post mockPost2 = mock(Post.class);
@@ -268,55 +194,7 @@ class BookmarkQueryServiceTest {
                 given(postKeywordRepository.findByPostIdIn(any()))
                         .willReturn(List.of(keyword1, keyword2, keyword3));
 
-                List<BookmarkDto> expectedBookmarksWithKeywords = Arrays.asList(
-                        BookmarkDto.builder()
-                                .bookmarkId(3L)
-                                .postId(103L)
-                                .title("게시글3")
-                                .shortSummary("요약3")
-                                .url("https://test.com/3")
-                                .companyName("회사A")
-                                .logoUrl("logo.png")
-                                .publishedAt(mockBookmarksFirstPage.get(0).publishedAt())
-                                .thumbnailUrl("thumb3.png")
-                                .viewCount(100L)
-                                .keywords(List.of("Java", "Spring"))
-                                .isBookmarked(true)
-                                .build(),
-                        BookmarkDto.builder()
-                                .bookmarkId(2L)
-                                .postId(102L)
-                                .title("게시글2")
-                                .shortSummary("요약2")
-                                .url("https://test.com/2")
-                                .companyName("회사B")
-                                .logoUrl("logo.png")
-                                .publishedAt(mockBookmarksFirstPage.get(1).publishedAt())
-                                .thumbnailUrl("thumb2.png")
-                                .viewCount(200L)
-                                .keywords(List.of("Kotlin"))
-                                .isBookmarked(true)
-                                .build(),
-                        BookmarkDto.builder()
-                                .bookmarkId(1L)
-                                .postId(101L)
-                                .title("게시글1")
-                                .shortSummary("요약1")
-                                .url("https://test.com/1")
-                                .companyName("회사C")
-                                .logoUrl("logo.png")
-                                .publishedAt(mockBookmarksFirstPage.get(2).publishedAt())
-                                .thumbnailUrl("thumb1.png")
-                                .viewCount(300L)
-                                .keywords(List.of())
-                                .isBookmarked(true)
-                                .build()
-                );
-
-                BookmarkListResponse expectedResponse = new BookmarkListResponse(expectedBookmarksWithKeywords, 2L, true);
-                given(bookmarkConverter.toBookmarkListResponse(any(), eq(size))).willReturn(expectedResponse);
-
-                BookmarkListResponse response = bookmarkQueryService.getBookmarks(query);
+                GetBookmarksResult response = bookmarkQueryService.getBookmarks(query);
 
                 assertThat(response).isNotNull();
                 assertThat(response.bookmarks()).hasSize(3);
@@ -327,7 +205,6 @@ class BookmarkQueryServiceTest {
                 verify(userRepository, times(1)).findById(userId);
                 verify(bookmarkRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
                 verify(postKeywordRepository, times(1)).findByPostIdIn(any());
-                verify(bookmarkConverter, times(1)).toBookmarkListResponse(any(), eq(size));
             }
         }
 

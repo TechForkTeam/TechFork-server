@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Builder
-public record BookmarkDto(
+public record BookmarkItem(
         Long bookmarkId,
         Long postId,
         String title,

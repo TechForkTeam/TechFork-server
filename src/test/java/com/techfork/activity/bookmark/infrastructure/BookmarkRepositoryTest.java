@@ -1,6 +1,5 @@
 package com.techfork.activity.bookmark.infrastructure;
 
-import com.techfork.activity.bookmark.application.query.BookmarkDto;
 import com.techfork.activity.bookmark.domain.Bookmark;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
@@ -126,7 +125,7 @@ class BookmarkRepositoryTest {
 
             PageRequest pageRequest = PageRequest.of(0, 10);
 
-            List<BookmarkDto> firstPage = bookmarkRepository.findBookmarksWithCursor(testUser, null, pageRequest);
+            List<BookmarkQueryRow> firstPage = bookmarkRepository.findBookmarksWithCursor(testUser, null, pageRequest);
 
             assertThat(firstPage).hasSize(3);
             assertThat(firstPage.get(0).postId()).isEqualTo(testPost3.getId());
@@ -134,7 +133,7 @@ class BookmarkRepositoryTest {
             assertThat(firstPage.get(2).postId()).isEqualTo(testPost1.getId());
 
             Long lastBookmarkId = bookmark3.getId();
-            List<BookmarkDto> nextPage = bookmarkRepository.findBookmarksWithCursor(testUser, lastBookmarkId, pageRequest);
+            List<BookmarkQueryRow> nextPage = bookmarkRepository.findBookmarksWithCursor(testUser, lastBookmarkId, pageRequest);
 
             assertThat(nextPage).hasSize(2);
             assertThat(nextPage.get(0).postId()).isEqualTo(testPost2.getId());

@@ -1,7 +1,6 @@
 package com.techfork.activity.bookmark.application.query;
 
-import com.techfork.activity.bookmark.presentation.BookmarkConverter;
-import com.techfork.activity.bookmark.presentation.BookmarkListResponse;
+import com.techfork.activity.bookmark.infrastructure.BookmarkQueryRow;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.domain.post.entity.PostKeyword;
 import com.techfork.domain.post.repository.PostKeywordRepository;
@@ -28,27 +27,25 @@ public class BookmarkQueryService {
     private final UserRepository userRepository;
     private final BookmarkRepository bookmarkRepository;
     private final PostKeywordRepository postKeywordRepository;
-    private final BookmarkConverter bookmarkConverter;
     private final CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
 
-    public BookmarkListResponse getBookmarks(GetBookmarksQuery query) {
+    public GetBookmarksResult getBookmarks(GetBookmarksQuery query) {
         User user = userRepository.findById(query.userId())
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
         PageRequest pageRequest = PageRequest.of(0, query.size() + 1);
-        List<BookmarkDto> bookmarks = bookmarkRepository.findBookmarksWithCursor(user, query.lastBookmarkId(), pageRequest);
-        List<BookmarkDto> bookmarksWithKeywords = attachKeywordsToPostInfoList(bookmarks);
-
-        return bookmarkConverter.toBookmarkListResponse(bookmarksWithKeywords, query.size());
+        List<BookmarkQueryRow> rows = bookmarkRepository.findBookmarksWithCursor(user, query.lastBookmarkId(), pageRequest);
+        List<BookmarkItem> bookmarksWithKeywords = attachKeywordsToBookmarks(rows);
+        return toGetBookmarksResult(bookmarksWithKeywords, query.size());
     }
 
-    private List<BookmarkDto> attachKeywordsToPostInfoList(List<BookmarkDto> bookmarks) {
-        if (bookmarks.isEmpty()) {
-            return bookmarks;
+    private List<BookmarkItem> attachKeywordsToBookmarks(List<BookmarkQueryRow> rows) {
+        if (rows.isEmpty()) {
+            return List.of();
         }
 
-        List<Long> postIds = bookmarks.stream()
-                .map(BookmarkDto::postId)
+        List<Long> postIds = rows.stream()
+                .map(BookmarkQueryRow::postId)
                 .toList();
 
         Map<Long, List<String>> keywordMap = postKeywordRepository.findByPostIdIn(postIds)
@@ -58,21 +55,28 @@ public class BookmarkQueryService {
                         Collectors.mapping(PostKeyword::getKeyword, Collectors.toList())
                 ));
 
-        return bookmarks.stream()
-                .map(post -> BookmarkDto.builder()
-                        .bookmarkId(post.bookmarkId())
-                        .postId(post.postId())
-                        .title(post.title())
-                        .shortSummary(post.shortSummary())
-                        .url(post.url())
-                        .companyName(post.companyName())
-                        .logoUrl(post.logoUrl())
-                        .publishedAt(post.publishedAt())
-                        .thumbnailUrl(thumbnailOptimizer.optimize(post.thumbnailUrl()))
-                        .viewCount(post.viewCount())
-                        .keywords(keywordMap.getOrDefault(post.postId(), List.of()))
-                        .isBookmarked(post.isBookmarked())
+        return rows.stream()
+                .map(row -> BookmarkItem.builder()
+                        .bookmarkId(row.bookmarkId())
+                        .postId(row.postId())
+                        .title(row.title())
+                        .shortSummary(row.shortSummary())
+                        .url(row.url())
+                        .companyName(row.companyName())
+                        .logoUrl(row.logoUrl())
+                        .publishedAt(row.publishedAt())
+                        .thumbnailUrl(thumbnailOptimizer.optimize(row.thumbnailUrl()))
+                        .viewCount(row.viewCount())
+                        .keywords(keywordMap.getOrDefault(row.postId(), List.of()))
+                        .isBookmarked(row.isBookmarked())
                         .build())
                 .toList();
+    }
+
+    private GetBookmarksResult toGetBookmarksResult(List<BookmarkItem> bookmarks, int requestedSize) {
+        boolean hasNext = bookmarks.size() > requestedSize;
+        List<BookmarkItem> content = hasNext ? bookmarks.subList(0, requestedSize) : bookmarks;
+        Long lastBookmarkId = content.isEmpty() ? null : content.get(content.size() - 1).bookmarkId();
+        return new GetBookmarksResult(content, lastBookmarkId, hasNext);
     }
 }

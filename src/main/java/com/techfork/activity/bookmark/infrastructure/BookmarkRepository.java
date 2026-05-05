@@ -1,6 +1,5 @@
 package com.techfork.activity.bookmark.infrastructure;
 
-import com.techfork.activity.bookmark.application.query.BookmarkDto;
 import com.techfork.activity.bookmark.domain.Bookmark;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.useraccount.entity.User;
@@ -15,9 +14,9 @@ import java.util.Optional;
 public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
 
     @Query("""
-            SELECT new com.techfork.activity.bookmark.application.query.BookmarkDto(
+            SELECT new com.techfork.activity.bookmark.infrastructure.BookmarkQueryRow(
                 b.id, p.id, p.title, p.shortSummary, p.url, t.companyName, t.logoUrl,
-                            p.publishedAt, p.thumbnailUrl, p.viewCount, null, true
+                            p.publishedAt, p.thumbnailUrl, p.viewCount, true
             )
             FROM Bookmark b
             JOIN b.post p
@@ -26,7 +25,7 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
             AND (:lastBookmarkId IS NULL OR b.id < :lastBookmarkId)
             ORDER BY b.id DESC
             """)
-    List<BookmarkDto> findBookmarksWithCursor(
+    List<BookmarkQueryRow> findBookmarksWithCursor(
             @Param("user") User user,
             @Param("lastBookmarkId") Long lastBookmarkId,
             Pageable pageable
