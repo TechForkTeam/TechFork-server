@@ -1,9 +1,9 @@
 package com.techfork.domain.activity.bookmark.service;
 
-import com.techfork.domain.activity.dto.BookmarkRequest;
-import com.techfork.domain.activity.entity.Bookmark;
+import com.techfork.domain.activity.bookmark.dto.BookmarkRequest;
+import com.techfork.domain.activity.bookmark.entity.Bookmark;
 import com.techfork.domain.activity.exception.ActivityErrorCode;
-import com.techfork.domain.activity.repository.BookmarkRepository;
+import com.techfork.domain.activity.bookmark.repository.BookmarkRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.exception.PostErrorCode;
 import com.techfork.domain.post.repository.PostRepository;

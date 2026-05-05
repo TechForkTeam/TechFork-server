@@ -3,7 +3,7 @@ package com.techfork.domain.activity.service;
 import com.techfork.domain.activity.converter.ActivityConverter;
 import com.techfork.domain.activity.dto.ReadPostDto;
 import com.techfork.domain.activity.dto.ReadPostListResponse;
-import com.techfork.domain.activity.repository.BookmarkRepository;
+import com.techfork.domain.activity.bookmark.repository.BookmarkRepository;
 import com.techfork.domain.activity.repository.ReadPostRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.entity.PostKeyword;

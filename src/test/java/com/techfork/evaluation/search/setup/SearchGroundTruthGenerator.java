@@ -2,7 +2,7 @@ package com.techfork.evaluation.search.setup;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
-import com.techfork.domain.activity.repository.BookmarkRepository;
+import com.techfork.domain.activity.bookmark.repository.BookmarkRepository;
 import com.techfork.domain.post.document.PostDocument;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.search.dto.SearchResult;

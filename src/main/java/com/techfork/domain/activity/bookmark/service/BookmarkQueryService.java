@@ -1,9 +1,9 @@
 package com.techfork.domain.activity.bookmark.service;
 
-import com.techfork.domain.activity.converter.ActivityConverter;
-import com.techfork.domain.activity.dto.BookmarkDto;
-import com.techfork.domain.activity.dto.BookmarkListResponse;
-import com.techfork.domain.activity.repository.BookmarkRepository;
+import com.techfork.domain.activity.bookmark.converter.BookmarkConverter;
+import com.techfork.domain.activity.bookmark.dto.BookmarkDto;
+import com.techfork.domain.activity.bookmark.dto.BookmarkListResponse;
+import com.techfork.domain.activity.bookmark.repository.BookmarkRepository;
 import com.techfork.domain.post.entity.PostKeyword;
 import com.techfork.domain.post.repository.PostKeywordRepository;
 import com.techfork.domain.useraccount.entity.User;
@@ -29,7 +29,7 @@ public class BookmarkQueryService {
     private final UserRepository userRepository;
     private final BookmarkRepository bookmarkRepository;
     private final PostKeywordRepository postKeywordRepository;
-    private final ActivityConverter activityConverter;
+    private final BookmarkConverter bookmarkConverter;
     private final CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
 
     public BookmarkListResponse getBookmarks(Long userId, Long lastBookmarkId, int size) {
@@ -40,7 +40,7 @@ public class BookmarkQueryService {
         List<BookmarkDto> bookmarks = bookmarkRepository.findBookmarksWithCursor(user, lastBookmarkId, pageRequest);
         List<BookmarkDto> bookmarksWithKeywords = attachKeywordsToPostInfoList(bookmarks);
 
-        return activityConverter.toBookmarkListResponse(bookmarksWithKeywords, size);
+        return bookmarkConverter.toBookmarkListResponse(bookmarksWithKeywords, size);
     }
 
     private List<BookmarkDto> attachKeywordsToPostInfoList(List<BookmarkDto> bookmarks) {

@@ -1,7 +1,7 @@
-package com.techfork.domain.activity.repository;
+package com.techfork.domain.activity.bookmark.repository;
 
-import com.techfork.domain.activity.dto.BookmarkDto;
-import com.techfork.domain.activity.entity.Bookmark;
+import com.techfork.domain.activity.bookmark.dto.BookmarkDto;
+import com.techfork.domain.activity.bookmark.entity.Bookmark;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;

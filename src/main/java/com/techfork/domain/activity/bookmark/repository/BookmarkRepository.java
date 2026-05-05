@@ -1,7 +1,7 @@
-package com.techfork.domain.activity.repository;
+package com.techfork.domain.activity.bookmark.repository;
 
-import com.techfork.domain.activity.dto.BookmarkDto;
-import com.techfork.domain.activity.entity.Bookmark;
+import com.techfork.domain.activity.bookmark.dto.BookmarkDto;
+import com.techfork.domain.activity.bookmark.entity.Bookmark;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.useraccount.entity.User;
 import org.springframework.data.domain.Pageable;
@@ -15,7 +15,7 @@ import java.util.Optional;
 public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
 
     @Query("""
-            SELECT new com.techfork.domain.activity.dto.BookmarkDto(
+            SELECT new com.techfork.domain.activity.bookmark.dto.BookmarkDto(
                 b.id, p.id, p.title, p.shortSummary, p.url, t.companyName, t.logoUrl,
                             p.publishedAt, p.thumbnailUrl, p.viewCount, null, true
             )

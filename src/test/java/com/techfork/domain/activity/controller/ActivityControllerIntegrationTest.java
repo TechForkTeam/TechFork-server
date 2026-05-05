@@ -1,14 +1,14 @@
 package com.techfork.domain.activity.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.techfork.domain.activity.dto.BookmarkRequest;
+import com.techfork.domain.activity.bookmark.dto.BookmarkRequest;
 import com.techfork.domain.activity.dto.ReadPostRequest;
 import com.techfork.domain.activity.dto.SearchHistoryRequest;
 import com.techfork.domain.activity.entity.ReadPost;
-import com.techfork.domain.activity.entity.Bookmark;
+import com.techfork.domain.activity.bookmark.entity.Bookmark;
 import com.techfork.domain.activity.entity.SearchHistory;
 import com.techfork.domain.activity.repository.ReadPostRepository;
-import com.techfork.domain.activity.repository.BookmarkRepository;
+import com.techfork.domain.activity.bookmark.repository.BookmarkRepository;
 import com.techfork.domain.activity.repository.SearchHistoryRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;

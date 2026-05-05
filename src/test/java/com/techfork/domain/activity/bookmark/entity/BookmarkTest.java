@@ -1,4 +1,4 @@
-package com.techfork.domain.activity.entity;
+package com.techfork.domain.activity.bookmark.entity;
 
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.useraccount.entity.User;

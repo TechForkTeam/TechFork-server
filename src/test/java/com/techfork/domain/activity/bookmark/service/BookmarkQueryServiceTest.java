@@ -1,9 +1,9 @@
 package com.techfork.domain.activity.bookmark.service;
 
-import com.techfork.domain.activity.converter.ActivityConverter;
-import com.techfork.domain.activity.dto.BookmarkDto;
-import com.techfork.domain.activity.dto.BookmarkListResponse;
-import com.techfork.domain.activity.repository.BookmarkRepository;
+import com.techfork.domain.activity.bookmark.converter.BookmarkConverter;
+import com.techfork.domain.activity.bookmark.dto.BookmarkDto;
+import com.techfork.domain.activity.bookmark.dto.BookmarkListResponse;
+import com.techfork.domain.activity.bookmark.repository.BookmarkRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.entity.PostKeyword;
 import com.techfork.domain.post.repository.PostKeywordRepository;
@@ -50,7 +50,7 @@ class BookmarkQueryServiceTest {
     private PostKeywordRepository postKeywordRepository;
 
     @Mock
-    private ActivityConverter activityConverter;
+    private BookmarkConverter bookmarkConverter;
 
     @Mock
     private CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
@@ -157,7 +157,7 @@ class BookmarkQueryServiceTest {
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
 
         BookmarkListResponse expectedResponse = new BookmarkListResponse(mockBookmarksFirstPage, 2L, true);
-        given(activityConverter.toBookmarkListResponse(any(), eq(size))).willReturn(expectedResponse);
+        given(bookmarkConverter.toBookmarkListResponse(any(), eq(size))).willReturn(expectedResponse);
 
         BookmarkListResponse response = bookmarkQueryService.getBookmarks(userId, lastBookmarkId, size);
 
@@ -168,7 +168,7 @@ class BookmarkQueryServiceTest {
 
         verify(userRepository, times(1)).findById(userId);
         verify(bookmarkRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
-        verify(activityConverter, times(1)).toBookmarkListResponse(mockBookmarksFirstPage, size);
+        verify(bookmarkConverter, times(1)).toBookmarkListResponse(mockBookmarksFirstPage, size);
     }
 
     @Test
@@ -184,7 +184,7 @@ class BookmarkQueryServiceTest {
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
 
         BookmarkListResponse expectedResponse = new BookmarkListResponse(mockBookmarksSecondPage, null, false);
-        given(activityConverter.toBookmarkListResponse(any(), eq(size))).willReturn(expectedResponse);
+        given(bookmarkConverter.toBookmarkListResponse(any(), eq(size))).willReturn(expectedResponse);
 
         BookmarkListResponse response = bookmarkQueryService.getBookmarks(userId, lastBookmarkId, size);
 
@@ -227,7 +227,7 @@ class BookmarkQueryServiceTest {
                 .willReturn(emptyBookmarks);
 
         BookmarkListResponse expectedResponse = new BookmarkListResponse(emptyBookmarks, null, false);
-        given(activityConverter.toBookmarkListResponse(emptyBookmarks, size)).willReturn(expectedResponse);
+        given(bookmarkConverter.toBookmarkListResponse(emptyBookmarks, size)).willReturn(expectedResponse);
 
         BookmarkListResponse response = bookmarkQueryService.getBookmarks(userId, lastBookmarkId, size);
 
@@ -318,7 +318,7 @@ class BookmarkQueryServiceTest {
         );
 
         BookmarkListResponse expectedResponse = new BookmarkListResponse(expectedBookmarksWithKeywords, 2L, true);
-        given(activityConverter.toBookmarkListResponse(any(), eq(size))).willReturn(expectedResponse);
+        given(bookmarkConverter.toBookmarkListResponse(any(), eq(size))).willReturn(expectedResponse);
 
         BookmarkListResponse response = bookmarkQueryService.getBookmarks(userId, lastBookmarkId, size);
 
@@ -331,6 +331,6 @@ class BookmarkQueryServiceTest {
         verify(userRepository, times(1)).findById(userId);
         verify(bookmarkRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
         verify(postKeywordRepository, times(1)).findByPostIdIn(any());
-        verify(activityConverter, times(1)).toBookmarkListResponse(any(), eq(size));
+        verify(bookmarkConverter, times(1)).toBookmarkListResponse(any(), eq(size));
     }
 }
