@@ -1,4 +1,4 @@
-package com.techfork.domain.activity.dto;
+package com.techfork.domain.activity.readhistory.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;

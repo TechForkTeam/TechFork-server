@@ -1,4 +1,4 @@
-package com.techfork.domain.activity.dto;
+package com.techfork.domain.activity.readhistory.dto;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;

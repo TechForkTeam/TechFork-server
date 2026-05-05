@@ -1,8 +1,8 @@
-package com.techfork.domain.activity.service;
+package com.techfork.domain.activity.readhistory.service;
 
-import com.techfork.domain.activity.dto.SearchHistoryRequest;
-import com.techfork.domain.activity.entity.SearchHistory;
-import com.techfork.domain.activity.repository.SearchHistoryRepository;
+import com.techfork.domain.activity.readhistory.dto.SearchHistoryRequest;
+import com.techfork.domain.activity.readhistory.entity.SearchHistory;
+import com.techfork.domain.activity.readhistory.repository.SearchHistoryRepository;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.exception.UserErrorCode;
 import com.techfork.domain.useraccount.repository.UserRepository;
@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ActivityCommandService {
+public class ReadHistoryCommandService {
 
     private final UserRepository userRepository;
     private final SearchHistoryRepository searchHistoryRepository;

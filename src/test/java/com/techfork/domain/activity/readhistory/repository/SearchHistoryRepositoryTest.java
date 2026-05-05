@@ -1,6 +1,6 @@
-package com.techfork.domain.activity.repository;
+package com.techfork.domain.activity.readhistory.repository;
 
-import com.techfork.domain.activity.entity.SearchHistory;
+import com.techfork.domain.activity.readhistory.entity.SearchHistory;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.enums.SocialType;
 import com.techfork.domain.useraccount.repository.UserRepository;

@@ -1,9 +1,9 @@
 package com.techfork.domain.activity.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.techfork.domain.activity.dto.SearchHistoryRequest;
-import com.techfork.domain.activity.entity.SearchHistory;
-import com.techfork.domain.activity.repository.SearchHistoryRepository;
+import com.techfork.domain.activity.readhistory.dto.SearchHistoryRequest;
+import com.techfork.domain.activity.readhistory.entity.SearchHistory;
+import com.techfork.domain.activity.readhistory.repository.SearchHistoryRepository;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.enums.Role;
 import com.techfork.domain.useraccount.enums.SocialType;

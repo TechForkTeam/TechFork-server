@@ -4,12 +4,12 @@ import com.techfork.domain.activity.bookmark.dto.BookmarkListResponse;
 import com.techfork.domain.activity.bookmark.dto.BookmarkRequest;
 import com.techfork.domain.activity.bookmark.service.BookmarkCommandService;
 import com.techfork.domain.activity.bookmark.service.BookmarkQueryService;
-import com.techfork.domain.activity.dto.SearchHistoryRequest;
+import com.techfork.domain.activity.readhistory.dto.SearchHistoryRequest;
+import com.techfork.domain.activity.readhistory.service.ReadHistoryCommandService;
 import com.techfork.domain.activity.readpost.dto.ReadPostListResponse;
 import com.techfork.domain.activity.readpost.dto.ReadPostRequest;
 import com.techfork.domain.activity.readpost.service.ReadPostCommandService;
 import com.techfork.domain.activity.readpost.service.ReadPostQueryService;
-import com.techfork.domain.activity.service.ActivityCommandService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import com.techfork.global.security.oauth.UserPrincipal;
@@ -36,7 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class ActivityController {
 
-    private final ActivityCommandService activityCommandService;
+    private final ReadHistoryCommandService readHistoryCommandService;
     private final ReadPostCommandService readPostCommandService;
     private final ReadPostQueryService readPostQueryService;
     private final BookmarkCommandService bookmarkCommandService;
@@ -80,7 +80,7 @@ public class ActivityController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody SearchHistoryRequest request
     ) {
-        activityCommandService.saveSearchHistory(userPrincipal.getId(), request);
+        readHistoryCommandService.saveSearchHistory(userPrincipal.getId(), request);
         return BaseResponse.of(SuccessCode.CREATED);
     }
 
