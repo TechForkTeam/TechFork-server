@@ -1,4 +1,4 @@
-package com.techfork.activity.bookmark.dto;
+package com.techfork.activity.bookmark.application;
 
 import lombok.Builder;
 

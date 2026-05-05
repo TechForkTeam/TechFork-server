@@ -1,9 +1,8 @@
-package com.techfork.activity.bookmark.service;
+package com.techfork.activity.bookmark.application;
 
-import com.techfork.activity.bookmark.converter.BookmarkConverter;
-import com.techfork.activity.bookmark.dto.BookmarkDto;
-import com.techfork.activity.bookmark.dto.BookmarkListResponse;
-import com.techfork.activity.bookmark.repository.BookmarkRepository;
+import com.techfork.activity.bookmark.presentation.BookmarkConverter;
+import com.techfork.activity.bookmark.presentation.BookmarkListResponse;
+import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.domain.post.entity.PostKeyword;
 import com.techfork.domain.post.repository.PostKeywordRepository;
 import com.techfork.domain.useraccount.entity.User;

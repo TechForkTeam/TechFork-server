@@ -1,4 +1,4 @@
-package com.techfork.activity.bookmark.exception;
+package com.techfork.activity.bookmark.domain;
 
 import com.techfork.global.common.code.BaseCode;
 import com.techfork.global.response.ReasonDTO;

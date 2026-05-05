@@ -1,6 +1,6 @@
 package com.techfork.activity.readpost.service;
 
-import com.techfork.activity.bookmark.repository.BookmarkRepository;
+import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.activity.readpost.converter.ReadPostConverter;
 import com.techfork.activity.readpost.dto.ReadPostDto;
 import com.techfork.activity.readpost.dto.ReadPostListResponse;

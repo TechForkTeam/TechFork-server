@@ -1,9 +1,7 @@
-package com.techfork.activity.bookmark.controller;
+package com.techfork.activity.bookmark.presentation;
 
-import com.techfork.activity.bookmark.dto.BookmarkListResponse;
-import com.techfork.activity.bookmark.dto.BookmarkRequest;
-import com.techfork.activity.bookmark.service.BookmarkCommandService;
-import com.techfork.activity.bookmark.service.BookmarkQueryService;
+import com.techfork.activity.bookmark.application.BookmarkCommandService;
+import com.techfork.activity.bookmark.application.BookmarkQueryService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import com.techfork.global.security.oauth.UserPrincipal;

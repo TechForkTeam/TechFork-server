@@ -1,6 +1,6 @@
 package com.techfork.domain.recommendation.service;
 
-import com.techfork.activity.bookmark.repository.BookmarkRepository;
+import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.recommendation.converter.RecommendationConverter;
 import com.techfork.domain.recommendation.dto.RecommendationListResponse;

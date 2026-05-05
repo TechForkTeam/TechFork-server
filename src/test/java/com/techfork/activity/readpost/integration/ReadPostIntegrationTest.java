@@ -1,8 +1,8 @@
 package com.techfork.activity.readpost.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.techfork.activity.bookmark.entity.Bookmark;
-import com.techfork.activity.bookmark.repository.BookmarkRepository;
+import com.techfork.activity.bookmark.domain.Bookmark;
+import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.activity.readpost.dto.ReadPostRequest;
 import com.techfork.activity.readpost.entity.ReadPost;
 import com.techfork.activity.readpost.repository.ReadPostRepository;

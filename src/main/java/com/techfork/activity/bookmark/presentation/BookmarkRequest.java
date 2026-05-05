@@ -1,4 +1,4 @@
-package com.techfork.activity.bookmark.dto;
+package com.techfork.activity.bookmark.presentation;
 
 import jakarta.validation.constraints.NotNull;
 

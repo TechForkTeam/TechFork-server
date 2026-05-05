@@ -1,7 +1,7 @@
 package com.techfork.domain.personalization.service;
 
-import com.techfork.activity.bookmark.entity.Bookmark;
-import com.techfork.activity.bookmark.repository.BookmarkRepository;
+import com.techfork.activity.bookmark.domain.Bookmark;
+import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.activity.readhistory.entity.SearchHistory;
 import com.techfork.activity.readhistory.repository.SearchHistoryRepository;
 import com.techfork.activity.readpost.entity.ReadPost;
