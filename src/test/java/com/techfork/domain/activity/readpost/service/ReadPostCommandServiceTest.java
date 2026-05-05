@@ -1,5 +1,6 @@
 package com.techfork.domain.activity.readpost.service;
 
+import com.techfork.domain.activity.readpost.domain.ReadPostFirstReadPolicy;
 import com.techfork.domain.activity.readpost.dto.ReadPostRequest;
 import com.techfork.domain.activity.readpost.entity.ReadPost;
 import com.techfork.domain.activity.readpost.repository.ReadPostRepository;
@@ -44,6 +45,9 @@ class ReadPostCommandServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private ReadPostFirstReadPolicy readPostFirstReadPolicy;
+
     @InjectMocks
     private ReadPostCommandService readPostCommandService;
 
@@ -83,7 +87,7 @@ class ReadPostCommandServiceTest {
 
                 given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
                 given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
-                given(readPostRepository.existsByUserAndPost(mockUser, mockPost)).willReturn(false);
+                given(readPostFirstReadPolicy.isFirstRead(mockUser, mockPost)).willReturn(true);
                 given(readPostRepository.save(any(ReadPost.class))).willReturn(mock(ReadPost.class));
 
                 Long beforeViewCount = mockPost.getViewCount();
@@ -91,6 +95,7 @@ class ReadPostCommandServiceTest {
                 readPostCommandService.saveReadPost(userId, request);
 
                 ArgumentCaptor<ReadPost> readPostCaptor = ArgumentCaptor.forClass(ReadPost.class);
+                verify(readPostFirstReadPolicy, times(1)).isFirstRead(mockUser, mockPost);
                 verify(readPostRepository, times(1)).save(readPostCaptor.capture());
                 ReadPost savedReadPost = readPostCaptor.getValue();
 
@@ -129,7 +134,7 @@ class ReadPostCommandServiceTest {
 
                 given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
                 given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
-                given(readPostRepository.existsByUserAndPost(mockUser, mockPost)).willReturn(true);
+                given(readPostFirstReadPolicy.isFirstRead(mockUser, mockPost)).willReturn(false);
                 given(readPostRepository.save(any(ReadPost.class))).willReturn(mock(ReadPost.class));
 
                 Long beforeViewCount = mockPost.getViewCount();
@@ -137,6 +142,7 @@ class ReadPostCommandServiceTest {
                 readPostCommandService.saveReadPost(userId, request);
 
                 ArgumentCaptor<ReadPost> readPostCaptor = ArgumentCaptor.forClass(ReadPost.class);
+                verify(readPostFirstReadPolicy, times(1)).isFirstRead(mockUser, mockPost);
                 verify(readPostRepository, times(1)).save(readPostCaptor.capture());
 
                 assertThat(mockPost.getViewCount()).isEqualTo(beforeViewCount);
@@ -161,6 +167,7 @@ class ReadPostCommandServiceTest {
                         .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
 
                 verify(postRepository, never()).findById(any());
+                verify(readPostFirstReadPolicy, never()).isFirstRead(any(), any());
                 verify(readPostRepository, never()).save(any());
             }
 
@@ -179,6 +186,7 @@ class ReadPostCommandServiceTest {
                         .isInstanceOf(GeneralException.class)
                         .hasFieldOrPropertyWithValue("code", PostErrorCode.POST_NOT_FOUND);
 
+                verify(readPostFirstReadPolicy, never()).isFirstRead(any(), any());
                 verify(readPostRepository, never()).save(any());
             }
         }

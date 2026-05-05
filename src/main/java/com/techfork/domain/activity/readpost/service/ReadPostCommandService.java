@@ -1,5 +1,6 @@
 package com.techfork.domain.activity.readpost.service;
 
+import com.techfork.domain.activity.readpost.domain.ReadPostFirstReadPolicy;
 import com.techfork.domain.activity.readpost.dto.ReadPostRequest;
 import com.techfork.domain.activity.readpost.entity.ReadPost;
 import com.techfork.domain.activity.readpost.repository.ReadPostRepository;
@@ -24,6 +25,7 @@ public class ReadPostCommandService {
     private final ReadPostRepository readPostRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final ReadPostFirstReadPolicy readPostFirstReadPolicy;
 
     public void saveReadPost(Long userId, ReadPostRequest request) {
         User user = userRepository.findById(userId)
@@ -32,7 +34,7 @@ public class ReadPostCommandService {
         Post post = postRepository.findById(request.postId())
                 .orElseThrow(() -> new GeneralException(PostErrorCode.POST_NOT_FOUND));
 
-        boolean isFirstRead = !readPostRepository.existsByUserAndPost(user, post);
+        boolean isFirstRead = readPostFirstReadPolicy.isFirstRead(user, post);
         if (isFirstRead) {
             post.incrementViewCount();
         }
