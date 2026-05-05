@@ -2,7 +2,7 @@ package com.techfork.domain.activity.bookmark.service;
 
 import com.techfork.domain.activity.bookmark.dto.BookmarkRequest;
 import com.techfork.domain.activity.bookmark.entity.Bookmark;
-import com.techfork.domain.activity.exception.ActivityErrorCode;
+import com.techfork.domain.activity.bookmark.exception.BookmarkErrorCode;
 import com.techfork.domain.activity.bookmark.repository.BookmarkRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.exception.PostErrorCode;
@@ -113,7 +113,7 @@ class BookmarkCommandServiceTest {
 
         assertThatThrownBy(() -> bookmarkCommandService.addBookmark(userId, request))
                 .isInstanceOf(GeneralException.class)
-                .hasFieldOrPropertyWithValue("code", ActivityErrorCode.BOOKMARK_ALREADY_EXISTS);
+                .hasFieldOrPropertyWithValue("code", BookmarkErrorCode.BOOKMARK_ALREADY_EXISTS);
 
         verify(bookmarkRepository, never()).save(any());
     }
@@ -175,7 +175,7 @@ class BookmarkCommandServiceTest {
 
         assertThatThrownBy(() -> bookmarkCommandService.deleteBookmark(userId, request))
                 .isInstanceOf(GeneralException.class)
-                .hasFieldOrPropertyWithValue("code", ActivityErrorCode.BOOKMARK_NOT_FOUND);
+                .hasFieldOrPropertyWithValue("code", BookmarkErrorCode.BOOKMARK_NOT_FOUND);
 
         verify(bookmarkRepository, never()).delete(any());
     }

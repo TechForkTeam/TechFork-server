@@ -2,7 +2,7 @@ package com.techfork.domain.activity.bookmark.service;
 
 import com.techfork.domain.activity.bookmark.dto.BookmarkRequest;
 import com.techfork.domain.activity.bookmark.entity.Bookmark;
-import com.techfork.domain.activity.exception.ActivityErrorCode;
+import com.techfork.domain.activity.bookmark.exception.BookmarkErrorCode;
 import com.techfork.domain.activity.bookmark.repository.BookmarkRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.exception.PostErrorCode;
@@ -35,7 +35,7 @@ public class BookmarkCommandService {
                 .orElseThrow(() -> new GeneralException(PostErrorCode.POST_NOT_FOUND));
 
         if (bookmarkRepository.existsByUserAndPost(user, post)) {
-            throw new GeneralException(ActivityErrorCode.BOOKMARK_ALREADY_EXISTS);
+            throw new GeneralException(BookmarkErrorCode.BOOKMARK_ALREADY_EXISTS);
         }
 
         Bookmark bookmark = Bookmark.create(user, post, LocalDateTime.now());
@@ -52,7 +52,7 @@ public class BookmarkCommandService {
                 .orElseThrow(() -> new GeneralException(PostErrorCode.POST_NOT_FOUND));
 
         Bookmark bookmark = bookmarkRepository.findByUserAndPost(user, post)
-                .orElseThrow(() -> new GeneralException(ActivityErrorCode.BOOKMARK_NOT_FOUND));
+                .orElseThrow(() -> new GeneralException(BookmarkErrorCode.BOOKMARK_NOT_FOUND));
 
         bookmarkRepository.delete(bookmark);
         log.info("Deleted bookmark for user {} and post {}", userId, request.postId());

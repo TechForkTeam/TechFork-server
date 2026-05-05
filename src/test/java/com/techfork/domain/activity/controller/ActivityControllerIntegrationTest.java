@@ -351,7 +351,7 @@ class ActivityControllerIntegrationTest extends IntegrationTestBase {
                 .andDo(print())
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.isSuccess").value(false))
-                .andExpect(jsonPath("$.code").value("ACTIVITY409_1"));
+                .andExpect(jsonPath("$.code").value("BOOKMARK409_1"));
     }
 
     @Test
@@ -409,7 +409,7 @@ class ActivityControllerIntegrationTest extends IntegrationTestBase {
                 .andDo(print())
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.isSuccess").value(false))
-                .andExpect(jsonPath("$.code").value("ACTIVITY404_1"));
+                .andExpect(jsonPath("$.code").value("BOOKMARK404_1"));
     }
 
     // ===== 북마크 목록 조회 테스트 =====
