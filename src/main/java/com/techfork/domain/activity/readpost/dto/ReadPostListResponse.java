@@ -1,4 +1,4 @@
-package com.techfork.domain.activity.dto;
+package com.techfork.domain.activity.readpost.dto;
 
 import lombok.Builder;
 

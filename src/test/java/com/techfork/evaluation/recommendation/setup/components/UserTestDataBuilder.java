@@ -1,9 +1,9 @@
 package com.techfork.evaluation.recommendation.setup.components;
 
-import com.techfork.domain.activity.entity.ReadPost;
+import com.techfork.domain.activity.readpost.entity.ReadPost;
 import com.techfork.domain.activity.bookmark.entity.Bookmark;
 import com.techfork.domain.activity.entity.SearchHistory;
-import com.techfork.domain.activity.repository.ReadPostRepository;
+import com.techfork.domain.activity.readpost.repository.ReadPostRepository;
 import com.techfork.domain.activity.bookmark.repository.BookmarkRepository;
 import com.techfork.domain.activity.repository.SearchHistoryRepository;
 import com.techfork.domain.post.entity.Post;

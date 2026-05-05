@@ -1,7 +1,7 @@
-package com.techfork.domain.activity.repository;
+package com.techfork.domain.activity.readpost.repository;
 
-import com.techfork.domain.activity.dto.ReadPostDto;
-import com.techfork.domain.activity.entity.ReadPost;
+import com.techfork.domain.activity.readpost.dto.ReadPostDto;
+import com.techfork.domain.activity.readpost.entity.ReadPost;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.useraccount.entity.User;
 import org.springframework.data.domain.Pageable;
@@ -25,7 +25,7 @@ public interface ReadPostRepository extends JpaRepository<ReadPost, Long> {
     List<ReadPost> findRecentReadPostsByUserIdWithMinDuration(@Param("userId") Long userId, Pageable pageable);
 
     @Query("""
-            SELECT new com.techfork.domain.activity.dto.ReadPostDto(
+            SELECT new com.techfork.domain.activity.readpost.dto.ReadPostDto(
                 rp.id, p.id, p.title, p.shortSummary, p.url, t.companyName, t.logoUrl,
                 p.publishedAt, p.thumbnailUrl, p.viewCount, null, null, rp.readAt
             )
