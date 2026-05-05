@@ -6,6 +6,7 @@
 
 - `src/main/java/com/techfork/domain/activity`
 - `src/main/java/com/techfork/domain/activity/bookmark`
+- `src/main/java/com/techfork/domain/activity/readpost`
 
 ## 표준 용어
 
@@ -14,7 +15,7 @@
 | 읽은 게시글 | `ReadPost` | 사용자가 기술 게시글을 읽은 기록 |
 | 읽은 시간 | `readDurationSeconds` | 사용자가 기술 게시글을 읽은 지속 시간 |
 | 읽기 몰입도 | `convertReadingDurationToNaturalLanguage` | 읽은 시간을 `가볍게 훑어봄`, `빠르게 읽음`, `읽음`, `정독함`, `깊게 읽음`으로 해석한 값 |
-| 첫 읽기 | `isFirstRead` | 특정 기술 게시글을 처음 읽은 경우 |
+| 첫 읽기 | `ReadPostFirstReadPolicy.isFirstRead` | 특정 기술 게시글을 처음 읽은 경우 |
 | 검색 기록 | `SearchHistory` | 사용자가 입력한 검색어와 검색 시각 |
 | 검색어 | `query` (legacy alias: `searchWord`) | 검색 기록에 저장되는 사용자 입력 |
 | 북마크 | `Bookmark` (legacy alias: `ScrabPost`) | 사용자가 기술 게시글을 저장하는 행위 |
@@ -31,7 +32,7 @@
 | 내부 용어 | 코드상 표현 | 설명 |
 |---|---|---|
 | 읽기 기록 | `ReadPost` | 사용자와 기술 게시글의 읽기 이벤트 레코드 |
-| 최초 읽기 판별 | `isFirstRead` | 조회수 증가 여부를 결정하는 플래그 |
+| 최초 읽기 판별 | `ReadPostFirstReadPolicy.isFirstRead` | 조회수 증가 여부를 결정하는 정책 |
 | 북마크 레코드 | `Bookmark` (legacy name: `ScrabPost`) | 북마크 저장 레코드의 현재 표준 이름과 과거 이름을 함께 설명한다 |
 | 검색 기록 레코드 | `SearchHistory` | 사용자 검색어를 시간순으로 남기는 레코드 |
 | 북마크 여부 조합값 | `isBookmarked` | Search/Post/Recommendation 응답 조립 시 붙는 파생 값 |
@@ -53,7 +54,11 @@
 
 ## 주요 근거 파일
 
-- `src/main/java/com/techfork/domain/activity/entity/ReadPost.java`
+- `src/main/java/com/techfork/domain/activity/readpost/entity/ReadPost.java`
+- `src/main/java/com/techfork/domain/activity/readpost/domain/ReadPostFirstReadPolicy.java`
+- `src/main/java/com/techfork/domain/activity/readpost/service/ReadPostCommandService.java`
+- `src/main/java/com/techfork/domain/activity/readpost/service/ReadPostQueryService.java`
+- `src/main/java/com/techfork/domain/activity/readpost/converter/ReadPostConverter.java`
 - `src/main/java/com/techfork/domain/activity/entity/SearchHistory.java`
 - `src/main/java/com/techfork/domain/activity/bookmark/entity/Bookmark.java`
 - `src/main/java/com/techfork/domain/activity/bookmark/repository/BookmarkRepository.java`
@@ -62,4 +67,3 @@
 - `src/main/java/com/techfork/domain/activity/bookmark/converter/BookmarkConverter.java`
 - `src/main/java/com/techfork/domain/activity/dto/SearchHistoryRequest.java`
 - `src/main/java/com/techfork/domain/activity/service/ActivityCommandService.java`
-- `src/main/java/com/techfork/domain/activity/service/ActivityQueryService.java`

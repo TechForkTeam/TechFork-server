@@ -115,28 +115,33 @@ PostSummaryWriterTest.java
 
 | 테스트 | 성격 | 주요 커버 |
 |---|---|---|
-| `ActivityCommandServiceTest` | unit/mock | 읽기 저장, 첫 읽기 조회수 증가, 검색 기록 저장, 예외 |
-| `ActivityQueryServiceTest` | unit/mock | 읽은 게시글 목록, 키워드/북마크 여부 조합 |
+| `ActivityCommandServiceTest` | unit/mock | 검색 기록 저장, 예외 |
 | `BookmarkCommandServiceTest` | unit/mock | 북마크 추가/중복 방지/삭제, 예외 |
 | `BookmarkQueryServiceTest` | unit/mock | 북마크 목록, 커서 페이징, 키워드 조합 |
 | `BookmarkTest` | unit | 북마크 생성 시 상태 보존 |
+| `BookmarkIntegrationTest` | integration | 북마크 API 저장/조회/삭제 흐름 |
+| `ReadPostCommandServiceTest` | unit/mock | 읽기 저장, 첫 읽기 조회수 증가, 예외 |
+| `ReadPostQueryServiceTest` | unit/mock | 읽은 게시글 목록, 키워드/북마크 여부 조합 |
+| `ReadPostFirstReadPolicyTest` | unit/mock | 첫 읽기 판별 규칙 |
+| `ReadPostTest` | unit | 읽기 기록 생성 시 상태 보존 |
 | `ReadPostRepositoryTest` | JPA | 최근 읽은 글, 중복 읽기 저장, 커서 조회/중복 제거 |
+| `ReadPostIntegrationTest` | integration | ReadPost API 저장/조회 흐름 |
 | `BookmarkRepositoryTest` | JPA | 북마크 커서 조회, 북마크된 postId 조회, user+post 유일성 |
 | `SearchHistoryRepositoryTest` | JPA | 최근 검색 기록 조회 |
 | `SearchHistoryRequestTest` | unit | `query` canonical field + legacy `searchWord` alias 역직렬화 |
-| `ActivityControllerIntegrationTest` | integration | Activity API 전체 흐름 |
+| `ActivityControllerIntegrationTest` | integration | SearchHistory API 흐름 |
 
 #### 평가
 
 Activity는 현재 가장 보호가 잘 된 영역 중 하나다.  
-`Bookmark` 용어와 `query` canonical field는 이미 코드/테스트에 반영되어 있고, 4.1의 남은 작업을 `Bookmark → ReadPost → SearchHistory` slice로 나눠 진행하기에 비교적 안전하다.
+`Bookmark` 용어, `ReadPost` slice 분리, `query` canonical field는 이미 코드/테스트에 반영되어 있고, 4.1의 남은 작업은 사실상 `SearchHistory` slice 쪽으로 좁혀졌다.
 
 #### 남은 갭
 
 | 우선순위 | 갭 | 이유 |
 |---|---|---|
 | P1 | `BookmarkTest` | 같은 사용자 + 같은 게시글 조합 유일성 같은 aggregate 관점 의도를 더 직접적으로 표현 가능 |
-| P1 | `ReadPost`, `Bookmark`, `SearchHistory` 도메인 엔티티 단위 테스트 | 애그리거트/record aggregate 관점의 테스트 명확화 |
+| P1 | `SearchHistory` 도메인 엔티티 단위 테스트 | 애그리거트/record aggregate 관점의 테스트 명확화 |
 | P1 | SearchHistory canonical `query` / legacy `searchWord` 호환 범위 문서화 | API 역호환 정책을 언제까지 유지할지 명확화 필요 |
 | P2 | 북마크 migration 적용 검증 메모 | `bookmarks` / `bookmarked_at` rename이 운영 환경에 모두 반영됐는지 확인 필요 |
 
@@ -145,8 +150,8 @@ Activity는 현재 가장 보호가 잘 된 영역 중 하나다.
 ```text
 1. Activity 기존 테스트 전체 통과 확인
 2. Bookmark aggregate/entity 테스트 보강 여부 결정
-3. ReadPost 규칙과 SearchHistory alias 정책을 별도 slice로 정리
-4. Bookmark → ReadPost → SearchHistory 순서로 4.1 후속 작업 진행
+3. SearchHistory alias 정책과 기록 slice를 별도 작업으로 정리
+4. Bookmark → ReadPost 완료 후 SearchHistory 순서로 4.1 후속 작업 진행
 5. 기존 Activity 테스트가 전부 통과하는지 확인
 ```
 
@@ -509,7 +514,7 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 | `User` | `UserCommandServiceTest` 중심 | User Account aggregate 관점의 직접 `UserTest` 필요 |
 | `UserInterestCategory/Keyword` | repository/service 중심 | User Account 도메인 규칙 테스트 보강 필요 |
 | `PersonalizationProfileDocument` | `PersonalizationProfileServiceTest` + evaluation setup | projection 자체 직접 테스트/세부 parsing 검증은 더 보강 가능 |
-| `ReadPost` | service/repository 중심 | record aggregate 단위 테스트는 선택 |
+| `ReadPost` | `ReadPostTest`, `ReadPostFirstReadPolicyTest`, `ReadPostCommandServiceTest`, `ReadPostQueryServiceTest`, `ReadPostRepositoryTest`, `ReadPostIntegrationTest` | 패키지 slice와 첫 읽기 정책까지 분리되었고, 이후 관심사는 동시성/ID reference 같은 별도 이슈다 |
 | `Bookmark` | `BookmarkTest`, `BookmarkRepositoryTest`, `BookmarkCommandServiceTest`, `BookmarkQueryServiceTest`, `ActivityControllerIntegrationTest` 중심 | 패키지 slice 분리 이후에도 ID reference 전환 같은 aggregate 경계 재설계는 별도 이슈로 다루는 편이 안전 |
 | `SearchHistory` | repository/service 중심 | record aggregate 단위 테스트는 선택 |
 | `RecommendedPost` | query/controller 중심 | 생성/순위/unique 정책 보강 필요 |
@@ -590,6 +595,7 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 ```text
 작업 1: Activity/Bookmark 리팩터링 안전망
 - 기존 BookmarkCommandServiceTest / BookmarkQueryServiceTest 확인
+- ReadPostCommandServiceTest / ReadPostQueryServiceTest / ReadPostIntegrationTest 확인
 - 기존 ActivityControllerIntegrationTest 확인
 - Bookmark aggregate 테스트 보강 여부 결정
 - SearchHistory query/searchWord 호환 범위 기록
@@ -628,13 +634,23 @@ src/test/java/com/techfork/domain
       service
         BookmarkCommandServiceTest
         BookmarkQueryServiceTest
-    entity 또는 model
-      ReadPostTest
+      integration
+        BookmarkIntegrationTest
+    readpost
+      domain
+        ReadPostFirstReadPolicyTest
+      entity
+        ReadPostTest
+      service
+        ReadPostCommandServiceTest
+        ReadPostQueryServiceTest
+      repository
+        ReadPostRepositoryTest
+      integration
+        ReadPostIntegrationTest
     service
       ActivityCommandServiceTest
-      ActivityQueryServiceTest
     repository
-      ReadPostRepositoryTest
       SearchHistoryRepositoryTest
     controller
       ActivityControllerIntegrationTest
