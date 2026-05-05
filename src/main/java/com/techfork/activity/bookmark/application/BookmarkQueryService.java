@@ -31,15 +31,15 @@ public class BookmarkQueryService {
     private final BookmarkConverter bookmarkConverter;
     private final CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
 
-    public BookmarkListResponse getBookmarks(Long userId, Long lastBookmarkId, int size) {
-        User user = userRepository.findById(userId)
+    public BookmarkListResponse getBookmarks(GetBookmarksQuery query) {
+        User user = userRepository.findById(query.userId())
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
-        PageRequest pageRequest = PageRequest.of(0, size + 1);
-        List<BookmarkDto> bookmarks = bookmarkRepository.findBookmarksWithCursor(user, lastBookmarkId, pageRequest);
+        PageRequest pageRequest = PageRequest.of(0, query.size() + 1);
+        List<BookmarkDto> bookmarks = bookmarkRepository.findBookmarksWithCursor(user, query.lastBookmarkId(), pageRequest);
         List<BookmarkDto> bookmarksWithKeywords = attachKeywordsToPostInfoList(bookmarks);
 
-        return bookmarkConverter.toBookmarkListResponse(bookmarksWithKeywords, size);
+        return bookmarkConverter.toBookmarkListResponse(bookmarksWithKeywords, query.size());
     }
 
     private List<BookmarkDto> attachKeywordsToPostInfoList(List<BookmarkDto> bookmarks) {

@@ -159,6 +159,7 @@ class BookmarkQueryServiceTest {
                 Long userId = 1L;
                 Long lastBookmarkId = null;
                 int size = 20;
+                GetBookmarksQuery query = new GetBookmarksQuery(userId, lastBookmarkId, size);
 
                 given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
                 given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
@@ -168,7 +169,7 @@ class BookmarkQueryServiceTest {
                 BookmarkListResponse expectedResponse = new BookmarkListResponse(mockBookmarksFirstPage, 2L, true);
                 given(bookmarkConverter.toBookmarkListResponse(any(), eq(size))).willReturn(expectedResponse);
 
-                BookmarkListResponse response = bookmarkQueryService.getBookmarks(userId, lastBookmarkId, size);
+                BookmarkListResponse response = bookmarkQueryService.getBookmarks(query);
 
                 assertThat(response).isNotNull();
                 assertThat(response.bookmarks()).hasSize(3);
@@ -186,6 +187,7 @@ class BookmarkQueryServiceTest {
                 Long userId = 1L;
                 Long lastBookmarkId = 10L;
                 int size = 20;
+                GetBookmarksQuery query = new GetBookmarksQuery(userId, lastBookmarkId, size);
 
                 given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
                 given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
@@ -195,7 +197,7 @@ class BookmarkQueryServiceTest {
                 BookmarkListResponse expectedResponse = new BookmarkListResponse(mockBookmarksSecondPage, null, false);
                 given(bookmarkConverter.toBookmarkListResponse(any(), eq(size))).willReturn(expectedResponse);
 
-                BookmarkListResponse response = bookmarkQueryService.getBookmarks(userId, lastBookmarkId, size);
+                BookmarkListResponse response = bookmarkQueryService.getBookmarks(query);
 
                 assertThat(response).isNotNull();
                 assertThat(response.bookmarks()).hasSize(2);
@@ -211,6 +213,7 @@ class BookmarkQueryServiceTest {
                 Long userId = 1L;
                 Long lastBookmarkId = null;
                 int size = 20;
+                GetBookmarksQuery query = new GetBookmarksQuery(userId, lastBookmarkId, size);
 
                 given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
 
@@ -221,7 +224,7 @@ class BookmarkQueryServiceTest {
                 BookmarkListResponse expectedResponse = new BookmarkListResponse(emptyBookmarks, null, false);
                 given(bookmarkConverter.toBookmarkListResponse(emptyBookmarks, size)).willReturn(expectedResponse);
 
-                BookmarkListResponse response = bookmarkQueryService.getBookmarks(userId, lastBookmarkId, size);
+                BookmarkListResponse response = bookmarkQueryService.getBookmarks(query);
 
                 assertThat(response).isNotNull();
                 assertThat(response.bookmarks()).isEmpty();
@@ -237,6 +240,7 @@ class BookmarkQueryServiceTest {
                 Long userId = 1L;
                 Long lastBookmarkId = null;
                 int size = 20;
+                GetBookmarksQuery query = new GetBookmarksQuery(userId, lastBookmarkId, size);
 
                 given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
                 given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
@@ -312,7 +316,7 @@ class BookmarkQueryServiceTest {
                 BookmarkListResponse expectedResponse = new BookmarkListResponse(expectedBookmarksWithKeywords, 2L, true);
                 given(bookmarkConverter.toBookmarkListResponse(any(), eq(size))).willReturn(expectedResponse);
 
-                BookmarkListResponse response = bookmarkQueryService.getBookmarks(userId, lastBookmarkId, size);
+                BookmarkListResponse response = bookmarkQueryService.getBookmarks(query);
 
                 assertThat(response).isNotNull();
                 assertThat(response.bookmarks()).hasSize(3);
@@ -337,10 +341,11 @@ class BookmarkQueryServiceTest {
                 Long userId = 999L;
                 Long lastBookmarkId = null;
                 int size = 20;
+                GetBookmarksQuery query = new GetBookmarksQuery(userId, lastBookmarkId, size);
 
                 given(userRepository.findById(userId)).willReturn(Optional.empty());
 
-                assertThatThrownBy(() -> bookmarkQueryService.getBookmarks(userId, lastBookmarkId, size))
+                assertThatThrownBy(() -> bookmarkQueryService.getBookmarks(query))
                         .isInstanceOf(GeneralException.class)
                         .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
 

@@ -1,6 +1,5 @@
 package com.techfork.activity.bookmark.application;
 
-import com.techfork.activity.bookmark.presentation.BookmarkRequest;
 import com.techfork.activity.bookmark.domain.Bookmark;
 import com.techfork.activity.bookmark.domain.BookmarkErrorCode;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
@@ -27,11 +26,11 @@ public class BookmarkCommandService {
     private final UserRepository userRepository;
     private final BookmarkRepository bookmarkRepository;
 
-    public void addBookmark(Long userId, BookmarkRequest request) {
-        User user = userRepository.findById(userId)
+    public void addBookmark(AddBookmarkCommand command) {
+        User user = userRepository.findById(command.userId())
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
-        Post post = postRepository.findById(request.postId())
+        Post post = postRepository.findById(command.postId())
                 .orElseThrow(() -> new GeneralException(PostErrorCode.POST_NOT_FOUND));
 
         if (bookmarkRepository.existsByUserAndPost(user, post)) {
@@ -41,20 +40,20 @@ public class BookmarkCommandService {
         Bookmark bookmark = Bookmark.create(user, post, LocalDateTime.now());
         bookmarkRepository.save(bookmark);
 
-        log.info("Saved bookmark for user {} and post {}", userId, request.postId());
+        log.info("Saved bookmark for user {} and post {}", command.userId(), command.postId());
     }
 
-    public void deleteBookmark(Long userId, BookmarkRequest request) {
-        User user = userRepository.findById(userId)
+    public void deleteBookmark(DeleteBookmarkCommand command) {
+        User user = userRepository.findById(command.userId())
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
-        Post post = postRepository.findById(request.postId())
+        Post post = postRepository.findById(command.postId())
                 .orElseThrow(() -> new GeneralException(PostErrorCode.POST_NOT_FOUND));
 
         Bookmark bookmark = bookmarkRepository.findByUserAndPost(user, post)
                 .orElseThrow(() -> new GeneralException(BookmarkErrorCode.BOOKMARK_NOT_FOUND));
 
         bookmarkRepository.delete(bookmark);
-        log.info("Deleted bookmark for user {} and post {}", userId, request.postId());
+        log.info("Deleted bookmark for user {} and post {}", command.userId(), command.postId());
     }
 }

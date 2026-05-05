@@ -1,7 +1,10 @@
 package com.techfork.activity.bookmark.presentation;
 
+import com.techfork.activity.bookmark.application.AddBookmarkCommand;
 import com.techfork.activity.bookmark.application.BookmarkCommandService;
 import com.techfork.activity.bookmark.application.BookmarkQueryService;
+import com.techfork.activity.bookmark.application.DeleteBookmarkCommand;
+import com.techfork.activity.bookmark.application.GetBookmarksQuery;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import com.techfork.global.security.oauth.UserPrincipal;
@@ -41,7 +44,8 @@ public class BookmarkController {
             @Parameter(description = "페이지 크기 (기본값: 20)")
             @RequestParam(defaultValue = "20") int size
     ) {
-        BookmarkListResponse response = bookmarkQueryService.getBookmarks(userPrincipal.getId(), lastBookmarkId, size);
+        GetBookmarksQuery query = new GetBookmarksQuery(userPrincipal.getId(), lastBookmarkId, size);
+        BookmarkListResponse response = bookmarkQueryService.getBookmarks(query);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 
@@ -54,7 +58,8 @@ public class BookmarkController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody BookmarkRequest request
     ) {
-        bookmarkCommandService.addBookmark(userPrincipal.getId(), request);
+        AddBookmarkCommand command = new AddBookmarkCommand(userPrincipal.getId(), request.postId());
+        bookmarkCommandService.addBookmark(command);
         return BaseResponse.of(SuccessCode.CREATED);
     }
 
@@ -67,7 +72,8 @@ public class BookmarkController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody BookmarkRequest request
     ) {
-        bookmarkCommandService.deleteBookmark(userPrincipal.getId(), request);
+        DeleteBookmarkCommand command = new DeleteBookmarkCommand(userPrincipal.getId(), request.postId());
+        bookmarkCommandService.deleteBookmark(command);
         return BaseResponse.of(SuccessCode.OK);
     }
 }

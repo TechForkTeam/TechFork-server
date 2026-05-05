@@ -1,6 +1,5 @@
 package com.techfork.activity.bookmark.application;
 
-import com.techfork.activity.bookmark.presentation.BookmarkRequest;
 import com.techfork.activity.bookmark.domain.Bookmark;
 import com.techfork.activity.bookmark.domain.BookmarkErrorCode;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
@@ -60,7 +59,7 @@ class BookmarkCommandServiceTest {
             void addBookmark_Success() {
                 Long userId = 1L;
                 Long postId = 100L;
-                BookmarkRequest request = new BookmarkRequest(postId);
+                AddBookmarkCommand command = new AddBookmarkCommand(userId, postId);
 
                 User mockUser = mock(User.class);
                 TechBlog mockTechBlog = TechBlog.builder()
@@ -87,7 +86,7 @@ class BookmarkCommandServiceTest {
 
                 LocalDateTime beforeInvocation = LocalDateTime.now();
 
-                bookmarkCommandService.addBookmark(userId, request);
+                bookmarkCommandService.addBookmark(command);
 
                 LocalDateTime afterInvocation = LocalDateTime.now();
 
@@ -116,7 +115,7 @@ class BookmarkCommandServiceTest {
             void addBookmark_Fail_AlreadyExists() {
                 Long userId = 1L;
                 Long postId = 100L;
-                BookmarkRequest request = new BookmarkRequest(postId);
+                AddBookmarkCommand command = new AddBookmarkCommand(userId, postId);
 
                 User mockUser = mock(User.class);
                 Post mockPost = mock(Post.class);
@@ -125,7 +124,7 @@ class BookmarkCommandServiceTest {
                 given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
                 given(bookmarkRepository.existsByUserAndPost(mockUser, mockPost)).willReturn(true);
 
-                assertThatThrownBy(() -> bookmarkCommandService.addBookmark(userId, request))
+                assertThatThrownBy(() -> bookmarkCommandService.addBookmark(command))
                         .isInstanceOf(GeneralException.class)
                         .hasFieldOrPropertyWithValue("code", BookmarkErrorCode.BOOKMARK_ALREADY_EXISTS);
 
@@ -137,13 +136,13 @@ class BookmarkCommandServiceTest {
             void addBookmark_Fail_PostNotFound() {
                 Long userId = 1L;
                 Long postId = 999L;
-                BookmarkRequest request = new BookmarkRequest(postId);
+                AddBookmarkCommand command = new AddBookmarkCommand(userId, postId);
 
                 User mockUser = mock(User.class);
                 given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
                 given(postRepository.findById(postId)).willReturn(Optional.empty());
 
-                assertThatThrownBy(() -> bookmarkCommandService.addBookmark(userId, request))
+                assertThatThrownBy(() -> bookmarkCommandService.addBookmark(command))
                         .isInstanceOf(GeneralException.class)
                         .hasFieldOrPropertyWithValue("code", PostErrorCode.POST_NOT_FOUND);
 
@@ -165,7 +164,7 @@ class BookmarkCommandServiceTest {
             void deleteBookmark_Success() {
                 Long userId = 1L;
                 Long postId = 100L;
-                BookmarkRequest request = new BookmarkRequest(postId);
+                DeleteBookmarkCommand command = new DeleteBookmarkCommand(userId, postId);
 
                 User mockUser = mock(User.class);
                 Post mockPost = mock(Post.class);
@@ -175,7 +174,7 @@ class BookmarkCommandServiceTest {
                 given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
                 given(bookmarkRepository.findByUserAndPost(mockUser, mockPost)).willReturn(Optional.of(mockBookmark));
 
-                bookmarkCommandService.deleteBookmark(userId, request);
+                bookmarkCommandService.deleteBookmark(command);
 
                 verify(userRepository, times(1)).findById(userId);
                 verify(postRepository, times(1)).findById(postId);
@@ -193,7 +192,7 @@ class BookmarkCommandServiceTest {
             void deleteBookmark_Fail_NotFound() {
                 Long userId = 1L;
                 Long postId = 100L;
-                BookmarkRequest request = new BookmarkRequest(postId);
+                DeleteBookmarkCommand command = new DeleteBookmarkCommand(userId, postId);
 
                 User mockUser = mock(User.class);
                 Post mockPost = mock(Post.class);
@@ -202,7 +201,7 @@ class BookmarkCommandServiceTest {
                 given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
                 given(bookmarkRepository.findByUserAndPost(mockUser, mockPost)).willReturn(Optional.empty());
 
-                assertThatThrownBy(() -> bookmarkCommandService.deleteBookmark(userId, request))
+                assertThatThrownBy(() -> bookmarkCommandService.deleteBookmark(command))
                         .isInstanceOf(GeneralException.class)
                         .hasFieldOrPropertyWithValue("code", BookmarkErrorCode.BOOKMARK_NOT_FOUND);
 
@@ -214,11 +213,11 @@ class BookmarkCommandServiceTest {
             void deleteBookmark_Fail_UserNotFound() {
                 Long userId = 999L;
                 Long postId = 100L;
-                BookmarkRequest request = new BookmarkRequest(postId);
+                DeleteBookmarkCommand command = new DeleteBookmarkCommand(userId, postId);
 
                 given(userRepository.findById(userId)).willReturn(Optional.empty());
 
-                assertThatThrownBy(() -> bookmarkCommandService.deleteBookmark(userId, request))
+                assertThatThrownBy(() -> bookmarkCommandService.deleteBookmark(command))
                         .isInstanceOf(GeneralException.class)
                         .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
 
