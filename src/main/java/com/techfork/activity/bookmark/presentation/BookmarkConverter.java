@@ -1,6 +1,7 @@
 package com.techfork.activity.bookmark.presentation;
 
-import com.techfork.activity.bookmark.application.BookmarkDto;
+import com.techfork.activity.bookmark.application.query.BookmarkDto;
+import com.techfork.activity.bookmark.presentation.BookmarkListResponse;
 import java.util.List;
 import org.springframework.stereotype.Component;
 

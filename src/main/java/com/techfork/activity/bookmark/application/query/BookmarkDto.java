@@ -1,4 +1,4 @@
-package com.techfork.activity.bookmark.application;
+package com.techfork.activity.bookmark.application.query;
 
 import lombok.Builder;
 

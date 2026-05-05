@@ -1,6 +1,6 @@
 package com.techfork.activity.bookmark.presentation;
 
-import com.techfork.activity.bookmark.application.BookmarkDto;
+import com.techfork.activity.bookmark.application.query.BookmarkDto;
 import lombok.Builder;
 
 import java.util.List;

@@ -1,10 +1,12 @@
 package com.techfork.activity.bookmark.presentation;
 
-import com.techfork.activity.bookmark.application.AddBookmarkCommand;
-import com.techfork.activity.bookmark.application.BookmarkCommandService;
-import com.techfork.activity.bookmark.application.BookmarkQueryService;
-import com.techfork.activity.bookmark.application.DeleteBookmarkCommand;
-import com.techfork.activity.bookmark.application.GetBookmarksQuery;
+import com.techfork.activity.bookmark.application.command.AddBookmarkCommand;
+import com.techfork.activity.bookmark.application.command.BookmarkCommandService;
+import com.techfork.activity.bookmark.application.command.DeleteBookmarkCommand;
+import com.techfork.activity.bookmark.application.query.BookmarkQueryService;
+import com.techfork.activity.bookmark.application.query.GetBookmarksQuery;
+import com.techfork.activity.bookmark.presentation.BookmarkRequest;
+import com.techfork.activity.bookmark.presentation.BookmarkListResponse;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import com.techfork.global.security.oauth.UserPrincipal;

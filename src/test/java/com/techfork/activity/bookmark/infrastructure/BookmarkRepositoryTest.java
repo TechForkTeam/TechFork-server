@@ -1,6 +1,6 @@
 package com.techfork.activity.bookmark.infrastructure;
 
-import com.techfork.activity.bookmark.application.BookmarkDto;
+import com.techfork.activity.bookmark.application.query.BookmarkDto;
 import com.techfork.activity.bookmark.domain.Bookmark;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;

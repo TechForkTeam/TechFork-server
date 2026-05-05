@@ -1,4 +1,4 @@
-package com.techfork.activity.bookmark.application;
+package com.techfork.activity.bookmark.application.command;
 
 import com.techfork.activity.bookmark.domain.Bookmark;
 import com.techfork.activity.bookmark.domain.BookmarkErrorCode;
