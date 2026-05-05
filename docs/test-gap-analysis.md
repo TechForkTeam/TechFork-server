@@ -115,7 +115,7 @@ PostSummaryWriterTest.java
 
 | 테스트 | 성격 | 주요 커버 |
 |---|---|---|
-| `ActivityCommandServiceTest` | unit/mock | 검색 기록 저장, 예외 |
+| `ReadHistoryCommandServiceTest` | unit/mock | 검색 기록 저장, 예외 |
 | `BookmarkCommandServiceTest` | unit/mock | 북마크 추가/중복 방지/삭제, 예외 |
 | `BookmarkQueryServiceTest` | unit/mock | 북마크 목록, 커서 페이징, 키워드 조합 |
 | `BookmarkTest` | unit | 북마크 생성 시 상태 보존 |
@@ -129,7 +129,7 @@ PostSummaryWriterTest.java
 | `BookmarkRepositoryTest` | JPA | 북마크 커서 조회, 북마크된 postId 조회, user+post 유일성 |
 | `SearchHistoryRepositoryTest` | JPA | 최근 검색 기록 조회 |
 | `SearchHistoryRequestTest` | unit | `query` canonical field + legacy `searchWord` alias 역직렬화 |
-| `ActivityControllerIntegrationTest` | integration | SearchHistory API 흐름 |
+| `SearchHistoryIntegrationTest` | integration | SearchHistory API 흐름 |
 
 #### 평가
 
@@ -515,8 +515,8 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 | `UserInterestCategory/Keyword` | repository/service 중심 | User Account 도메인 규칙 테스트 보강 필요 |
 | `PersonalizationProfileDocument` | `PersonalizationProfileServiceTest` + evaluation setup | projection 자체 직접 테스트/세부 parsing 검증은 더 보강 가능 |
 | `ReadPost` | `ReadPostTest`, `ReadPostFirstReadPolicyTest`, `ReadPostCommandServiceTest`, `ReadPostQueryServiceTest`, `ReadPostRepositoryTest`, `ReadPostIntegrationTest` | 패키지 slice와 첫 읽기 정책까지 분리되었고, 이후 관심사는 동시성/ID reference 같은 별도 이슈다 |
-| `Bookmark` | `BookmarkTest`, `BookmarkRepositoryTest`, `BookmarkCommandServiceTest`, `BookmarkQueryServiceTest`, `ActivityControllerIntegrationTest` 중심 | 패키지 slice 분리 이후에도 ID reference 전환 같은 aggregate 경계 재설계는 별도 이슈로 다루는 편이 안전 |
-| `SearchHistory` | repository/service 중심 | record aggregate 단위 테스트는 선택 |
+| `Bookmark` | `BookmarkTest`, `BookmarkRepositoryTest`, `BookmarkCommandServiceTest`, `BookmarkQueryServiceTest`, `BookmarkIntegrationTest` 중심 | 패키지 slice 분리 이후에도 ID reference 전환 같은 aggregate 경계 재설계는 별도 이슈로 다루는 편이 안전 |
+| `SearchHistory` | `SearchHistoryRequestTest`, `SearchHistoryRepositoryTest`, `ReadHistoryCommandServiceTest`, `SearchHistoryIntegrationTest` | record aggregate 단위 테스트는 선택 |
 | `RecommendedPost` | query/controller 중심 | 생성/순위/unique 정책 보강 필요 |
 | `RecommendationHistory` | 없음 | 이력화/fromRecommendedPost/click 테스트 필요 |
 | `RecommendationSet` 개념 | 없음 | DDD 모델 도입 시 신규 테스트 필요 |
@@ -596,7 +596,7 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 작업 1: Activity/Bookmark 리팩터링 안전망
 - 기존 BookmarkCommandServiceTest / BookmarkQueryServiceTest 확인
 - ReadPostCommandServiceTest / ReadPostQueryServiceTest / ReadPostIntegrationTest 확인
-- 기존 ActivityControllerIntegrationTest 확인
+- 기존 SearchHistoryIntegrationTest 확인
 - Bookmark aggregate 테스트 보강 여부 결정
 - SearchHistory query/searchWord 호환 범위 기록
 
@@ -648,12 +648,15 @@ src/test/java/com/techfork/domain
         ReadPostRepositoryTest
       integration
         ReadPostIntegrationTest
-    service
-      ActivityCommandServiceTest
-    repository
-      SearchHistoryRepositoryTest
-    controller
-      ActivityControllerIntegrationTest
+    readhistory
+      dto
+        SearchHistoryRequestTest
+      repository
+        SearchHistoryRepositoryTest
+      service
+        ReadHistoryCommandServiceTest
+      integration
+        SearchHistoryIntegrationTest
 
   post
     entity
