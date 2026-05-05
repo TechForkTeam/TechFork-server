@@ -1,7 +1,9 @@
 package com.techfork.domain.activity.controller;
 
-import com.techfork.domain.activity.dto.BookmarkListResponse;
-import com.techfork.domain.activity.dto.BookmarkRequest;
+import com.techfork.domain.activity.bookmark.service.BookmarkCommandService;
+import com.techfork.domain.activity.bookmark.service.BookmarkQueryService;
+import com.techfork.domain.activity.bookmark.dto.BookmarkListResponse;
+import com.techfork.domain.activity.bookmark.dto.BookmarkRequest;
 import com.techfork.domain.activity.dto.ReadPostListResponse;
 import com.techfork.domain.activity.dto.ReadPostRequest;
 import com.techfork.domain.activity.dto.SearchHistoryRequest;
@@ -29,7 +31,9 @@ public class ActivityController {
 
     private final ActivityCommandService activityCommandService;
     private final ActivityQueryService activityQueryService;
-    
+    private final BookmarkCommandService bookmarkCommandService;
+    private final BookmarkQueryService bookmarkQueryService;
+
     @Operation(
             summary = "읽은 게시글 목록 조회",
             description = "사용자가 읽은 게시글 목록을 조회합니다. 최근 읽은 순서로 정렬됩니다."
@@ -45,7 +49,7 @@ public class ActivityController {
         ReadPostListResponse response = activityQueryService.getReadPosts(userPrincipal.getId(), lastReadPostId, size);
         return BaseResponse.of(SuccessCode.OK, response);
     }
-    
+
     @Operation(
             summary = "읽은 게시글 저장",
             description = "사용자가 특정 게시글을 읽은 기록을 저장합니다. 읽은 시간과 체류 시간을 기록합니다."
@@ -84,7 +88,7 @@ public class ActivityController {
             @Parameter(description = "페이지 크기 (기본값: 20)")
             @RequestParam(defaultValue = "20") int size
     ) {
-        BookmarkListResponse response = activityQueryService.getBookmarks(userPrincipal.getId(), lastBookmarkId, size);
+        BookmarkListResponse response = bookmarkQueryService.getBookmarks(userPrincipal.getId(), lastBookmarkId, size);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 
@@ -97,7 +101,7 @@ public class ActivityController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody BookmarkRequest request
     ) {
-        activityCommandService.addBookmark(userPrincipal.getId(), request);
+        bookmarkCommandService.addBookmark(userPrincipal.getId(), request);
         return BaseResponse.of(SuccessCode.CREATED);
     }
 
@@ -110,7 +114,7 @@ public class ActivityController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody BookmarkRequest request
     ) {
-        activityCommandService.deleteBookmark(userPrincipal.getId(), request);
+        bookmarkCommandService.deleteBookmark(userPrincipal.getId(), request);
         return BaseResponse.of(SuccessCode.OK);
     }
 }

@@ -1,7 +1,8 @@
 # TechFork 테스트 갭 분석
 
 > 목적: DDD 전환과 테스트 개선 로드맵을 실행하기 전에, 현재 테스트가 어떤 영역을 보호하고 있고 어떤 영역이 비어 있는지 분석한다.  
-> 관련 문서: [`docs/ubiquitous-language/README.md`](./ubiquitous-language/README.md), [`docs/ddd-test-refactoring-roadmap.md`](./ddd-test-refactoring-roadmap.md)
+> 관련 문서: [`docs/ubiquitous-language/README.md`](./ubiquitous-language/README.md), [`docs/ddd-test-refactoring-roadmap.md`](./ddd-test-refactoring-roadmap.md)  
+> 기준 시점: **2026-04-28 working tree**
 
 ## 1. 분석 요약
 
@@ -13,11 +14,11 @@
 
 | 영역 | 현재 상태 | DDD 전환 관점 평가 |
 |---|---|---|
-| Activity | 서비스, repository, controller 테스트가 충분한 편 | `ScrabPost → Bookmark` 리팩터링 전 안전망으로 좋음 |
+| Activity | 서비스, repository, controller 테스트가 충분하고 `Bookmark`/`query` 용어 정리도 대부분 반영됨 | 4.1을 `Bookmark → ReadPost → SearchHistory` slice로 나눠 진행하기 좋음 |
 | Source / Ingestion | RSS reader, processor, writer, scheduler, crawling service 테스트가 잘 있음 | 파이프라인 보호 수준 좋음 |
-| Post / Content | 조회 API/repository는 강함. 도메인 엔티티/요약/임베딩 테스트는 부족 | `Post = 기술 게시글` 애그리거트 테스트 필요 |
+| Post / Content | 조회 API/repository는 강함. 도메인 엔티티/임베딩 테스트는 부족하고 `PostSummary*`는 아직 untracked | `Post = 기술 게시글` 애그리거트 테스트 필요 |
 | User Account | 온보딩/관심사/계정 프로필은 강함 | 사용자 계정 애그리거트와 온보딩 흐름은 비교적 잘 보호되어 있다 |
-| Personalization Profile | 일반 테스트 안전망이 약함 | `PersonalizationProfileService`/`PersonalizationProfileDocument` 중심 개인화 흐름 보호가 필요하다 |
+| Personalization Profile | 기본 unit 안전망은 생겼지만 parsing edge case / trigger 검증은 더 필요 | `PersonalizationProfileService` 경계 보강 후 추천/검색 분리 리팩터링 가능 |
 | Recommendation | 조회 쪽은 일부 있음. 추천 생성/후보 탐색/MMR/이력화 테스트는 부족 | DDD 전환 전 가장 큰 리스크 중 하나 |
 | Search | 일반 실행 테스트가 거의 없음. evaluation suite만 존재 | 일반 회귀 테스트 부재가 큼 |
 | Auth / Security | 토큰/필터/컨트롤러 테스트는 비교적 강함 | OAuth handler/OIDC 일부 보강 여지 |
@@ -28,9 +29,9 @@
 
 1. **SearchServiceImpl 일반 회귀 테스트 부재**
 2. **LlmRecommendationService / MmrService 테스트 부재**
-3. **Personalization Profile(`PersonalizationProfileService`) 일반 테스트 부재**
-4. **Post 애그리거트 단위 테스트 부재**
-5. **Post embedding pipeline 테스트 부재**
+3. **Post 애그리거트 단위 테스트 부재**
+4. **Post embedding pipeline 테스트 부재**
+5. **User aggregate 직접 테스트와 Personalization Profile edge-case/trigger 테스트 부족**
 
 ---
 
@@ -70,15 +71,15 @@
 
 | 영역 | 파일 수 | `@Test`/`@ParameterizedTest` 수 | 비고 |
 |---|---:|---:|---|
-| domain/activity | 6 | 48 | Controller, service, repository 커버 좋음 |
+| domain/activity | 7 | 51 | Controller, service, repository 커버 좋음 + `SearchHistoryRequestTest` 포함 |
 | domain/admin | 1 | 6 | 개발자 토큰 중심 |
 | domain/auth | 3 | 30 | AuthService, KakaoOAuthService, AuthController integration |
-| domain/post | 4 | 72 | Controller/repository/query service 중심 |
+| domain/post | 4 | 72 | tracked 기준 controller/repository/query service 중심. batch 테스트 3개는 아직 untracked |
 | domain/recommendation | 3 | 8 | 조회/컨버터 중심, 생성 로직 부족 |
 | domain/source | 10 | 38 | RSS/배치/스케줄러/락/웹훅 커버 좋음 |
 | domain/useraccount + domain/personalization | 8 | 61 | User Account service/controller/repository 커버 + Personalization Profile 기본 unit 안전망 확보 |
-| global | 6 | 33 | Security, cache, util, integration base |
-| evaluation | 27 | 18 | 검색/추천 품질 평가 및 fixture setup |
+| global | 6 | 32 | Security, cache, util, integration base |
+| evaluation | 28 | 16 | 검색/추천 품질 평가 및 fixture setup |
 
 ### 3.2 untracked 테스트 주의사항
 
@@ -114,33 +115,39 @@ PostSummaryWriterTest.java
 
 | 테스트 | 성격 | 주요 커버 |
 |---|---|---|
-| `ActivityCommandServiceTest` | unit/mock | 읽기 저장, 첫 읽기 조회수 증가, 검색 기록 저장, 북마크 추가/삭제, 예외 |
-| `ActivityQueryServiceTest` | unit/mock | 북마크 목록, 읽은 게시글 목록, 키워드/북마크 여부 조합 |
+| `ActivityCommandServiceTest` | unit/mock | 읽기 저장, 첫 읽기 조회수 증가, 검색 기록 저장, 예외 |
+| `ActivityQueryServiceTest` | unit/mock | 읽은 게시글 목록, 키워드/북마크 여부 조합 |
+| `BookmarkCommandServiceTest` | unit/mock | 북마크 추가/중복 방지/삭제, 예외 |
+| `BookmarkQueryServiceTest` | unit/mock | 북마크 목록, 커서 페이징, 키워드 조합 |
+| `BookmarkTest` | unit | 북마크 생성 시 상태 보존 |
 | `ReadPostRepositoryTest` | JPA | 최근 읽은 글, 중복 읽기 저장, 커서 조회/중복 제거 |
-| `ScrabPostRepositoryTest` | JPA | 북마크 커서 조회, 북마크된 postId 조회 |
+| `BookmarkRepositoryTest` | JPA | 북마크 커서 조회, 북마크된 postId 조회, user+post 유일성 |
 | `SearchHistoryRepositoryTest` | JPA | 최근 검색 기록 조회 |
+| `SearchHistoryRequestTest` | unit | `query` canonical field + legacy `searchWord` alias 역직렬화 |
 | `ActivityControllerIntegrationTest` | integration | Activity API 전체 흐름 |
 
 #### 평가
 
 Activity는 현재 가장 보호가 잘 된 영역 중 하나다.  
-DDD 리팩터링 1순위인 `ScrabPost → Bookmark` 전환을 시작하기에 비교적 안전하다.
+`Bookmark` 용어와 `query` canonical field는 이미 코드/테스트에 반영되어 있고, 4.1의 남은 작업을 `Bookmark → ReadPost → SearchHistory` slice로 나눠 진행하기에 비교적 안전하다.
 
 #### 남은 갭
 
 | 우선순위 | 갭 | 이유 |
 |---|---|---|
-| P0 | `ScrabPost` 명칭을 `Bookmark`로 바꾼 뒤 동일 테스트 유지/rename | 용어 리팩터링 중 회귀 방지 |
+| P1 | `BookmarkTest` | 같은 사용자 + 같은 게시글 조합 유일성 같은 aggregate 관점 의도를 더 직접적으로 표현 가능 |
 | P1 | `ReadPost`, `Bookmark`, `SearchHistory` 도메인 엔티티 단위 테스트 | 애그리거트/record aggregate 관점의 테스트 명확화 |
-| P1 | 북마크 DB 테이블명 legacy 유지/변경 정책 테스트 | `@Table(name = "scrap_posts")` 유지 시 의도 명시 필요 |
+| P1 | SearchHistory canonical `query` / legacy `searchWord` 호환 범위 문서화 | API 역호환 정책을 언제까지 유지할지 명확화 필요 |
+| P2 | 북마크 migration 적용 검증 메모 | `bookmarks` / `bookmarked_at` rename이 운영 환경에 모두 반영됐는지 확인 필요 |
 
 #### 추천 다음 작업
 
 ```text
 1. Activity 기존 테스트 전체 통과 확인
-2. ScrabPostRepositoryTest → BookmarkRepositoryTest로 rename 계획 수립
-3. ScrabPost → Bookmark 리팩터링
-4. 기존 Activity 테스트가 전부 통과하는지 확인
+2. Bookmark aggregate/entity 테스트 보강 여부 결정
+3. ReadPost 규칙과 SearchHistory alias 정책을 별도 slice로 정리
+4. Bookmark → ReadPost → SearchHistory 순서로 4.1 후속 작업 진행
+5. 기존 Activity 테스트가 전부 통과하는지 확인
 ```
 
 ---
@@ -258,6 +265,7 @@ ContentChunkerServiceTest
 | `InterestCommandServiceTest` | unit/mock | 관심사 저장, 기존 관심사 clear, invalid keyword category |
 | `UserCommandServiceTest` | unit/mock | 온보딩, 계정 프로필 수정, 탈퇴 |
 | `UserQueryServiceTest` | unit/mock | 계정 프로필 조회 |
+| `PersonalizationProfileServiceTest` | unit/mock | 활동 데이터 수집, LLM parsing, fallback, 저장, 추천 실패 격리 |
 | `evaluation/search/setup/PersonalizationProfileServiceTest` | evaluation-setup | 테스트 사용자 개인화 프로필 생성용 setup |
 
 #### 평가
@@ -270,7 +278,6 @@ ContentChunkerServiceTest
 
 | 우선순위 | 갭 | 이유 |
 |---|---|---|
-| 완료 | `PersonalizationProfileServiceTest` 일반 단위 테스트 | 활동 데이터 수집, 파싱, fallback, 저장, 추천 실패 격리 기본 흐름 보호 완료 |
 | P0 | LLM 응답 parsing 테스트 | `### PROFILE`, `### KEYWORDS` parsing 실패 시 품질/장애 영향 |
 | P0 | 관심사 변경 후 개인화 프로필 생성 트리거 검증 | `UserInterestsChanged` 이벤트 도입 전 현재 동작 보호 |
 | P1 | `UserTest` | User Account aggregate의 소셜 사용자 생성, 온보딩 ACTIVE, 탈퇴 anonymization, reactivate 규칙 보호 |
@@ -501,9 +508,9 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 | `PostKeyword` | 직접 테스트 없음 | `Post` 내부 엔티티로 테스트하면 충분 |
 | `User` | `UserCommandServiceTest` 중심 | User Account aggregate 관점의 직접 `UserTest` 필요 |
 | `UserInterestCategory/Keyword` | repository/service 중심 | User Account 도메인 규칙 테스트 보강 필요 |
-| `PersonalizationProfileDocument` | evaluation setup 중심 | Personalization Profile projection 생성/파싱 일반 테스트 필요 |
+| `PersonalizationProfileDocument` | `PersonalizationProfileServiceTest` + evaluation setup | projection 자체 직접 테스트/세부 parsing 검증은 더 보강 가능 |
 | `ReadPost` | service/repository 중심 | record aggregate 단위 테스트는 선택 |
-| `Bookmark` | 현재 `ScrabPost` service/repository 중심 | rename 후 `Bookmark` 단위 테스트 필요 |
+| `Bookmark` | `BookmarkTest`, `BookmarkRepositoryTest`, `BookmarkCommandServiceTest`, `BookmarkQueryServiceTest`, `ActivityControllerIntegrationTest` 중심 | 패키지 slice 분리 이후에도 ID reference 전환 같은 aggregate 경계 재설계는 별도 이슈로 다루는 편이 안전 |
 | `SearchHistory` | repository/service 중심 | record aggregate 단위 테스트는 선택 |
 | `RecommendedPost` | query/controller 중심 | 생성/순위/unique 정책 보강 필요 |
 | `RecommendationHistory` | 없음 | 이력화/fromRecommendedPost/click 테스트 필요 |
@@ -518,13 +525,13 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 | 테스트 | 목적 | 선행/연결 작업 |
 |---|---|---|
 | `PostTest` | `Post = 기술 게시글` 애그리거트 보호 | Post 용어 정리, EDifficultyLevel 제거 |
-| `PersonalizationProfileServiceTest` | Personalization Profile 생성 흐름 보호 | User Account / Personalization Profile 경계 정리 |
+| `PersonalizationProfileServiceTest` edge-case 보강 | parsing/fallback/trigger 경계 강화 | User Account / Personalization Profile 경계 정리 |
 | `MmrServiceTest` | 추천 알고리즘 핵심 보호 | Recommendation DDD 전환 |
 | `LlmRecommendationServiceTest` | 추천 생성/이력화/읽은 글 제외 보호 | `PersonalizedProfileGenerated` 이벤트 도입 전 |
 | `SearchServiceImplTest` | 검색 일반 회귀 안전망 | Search read model/adapter 분리 전 |
 | `PostEmbeddingProcessorTest` | 임베딩 문서 생성 보호 | `TechnicalPostIndexed` 이벤트 도입 전 |
 | `PostEmbeddingWriterTest` | ES 색인 + embeddedAt update 보호 | embedding pipeline 리팩터링 전 |
-| `Bookmark` rename 후 Activity 테스트 유지 | 용어 리팩터링 회귀 보호 | `ScrabPost → Bookmark` |
+| Activity 4.1 후속 slice 회귀 유지 | Bookmark / ReadPost / SearchHistory 분할 리팩터링 보호 | Activity 4.1 진행 |
 
 ### P1. DDD 전환 중 보강
 
@@ -567,10 +574,10 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 
 ```text
 1. 현재 Activity 테스트 통과 확인
-2. ScrabPost → Bookmark rename 전후 테스트 안정화
+2. Activity 4.1 후속 정리 (Bookmark → ReadPost → SearchHistory)
 3. PostTest 작성
 4. Post embedding pipeline 테스트 작성
-5. PersonalizationProfileServiceTest 작성
+5. PersonalizationProfileServiceTest edge-case/trigger 보강
 6. MmrServiceTest 작성
 7. LlmRecommendationServiceTest 작성
 8. SearchServiceImplTest 작성
@@ -582,16 +589,17 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 
 ```text
 작업 1: Activity/Bookmark 리팩터링 안전망
-- 기존 ActivityCommandServiceTest 확인
+- 기존 BookmarkCommandServiceTest / BookmarkQueryServiceTest 확인
 - 기존 ActivityControllerIntegrationTest 확인
-- ScrabPostRepositoryTest를 Bookmark 기준으로 rename할 계획 수립
+- Bookmark aggregate 테스트 보강 여부 결정
+- SearchHistory query/searchWord 호환 범위 기록
 
 작업 2: Post 애그리거트 테스트
 - PostTest 추가
 - EDifficultyLevel 제거 후 문서 정리 및 회귀 확인
 
 작업 3: Personalization Profile 테스트
-- PersonalizationProfileServiceTest 추가
+- PersonalizationProfileServiceTest 보강
 - LLM/Embedding/RecommendationService는 mock 처리
 
 작업 4: 추천 생성 테스트
@@ -612,14 +620,20 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 ```text
 src/test/java/com/techfork/domain
   activity
+    bookmark
+      entity
+        BookmarkTest
+      repository
+        BookmarkRepositoryTest
+      service
+        BookmarkCommandServiceTest
+        BookmarkQueryServiceTest
     entity 또는 model
-      BookmarkTest
       ReadPostTest
     service
       ActivityCommandServiceTest
       ActivityQueryServiceTest
     repository
-      BookmarkRepositoryTest
       ReadPostRepositoryTest
       SearchHistoryRepositoryTest
     controller
@@ -639,13 +653,16 @@ src/test/java/com/techfork/domain
       SummaryExtractionServiceTest
       PostQueryServiceTest
 
-  user
+  useraccount
     entity
       UserTest
       UserInterestTest
     service
       UserCommandServiceTest
       InterestCommandServiceTest
+
+  personalization
+    service
       PersonalizationProfileServiceTest
     scheduler
       PersonalizationProfileSchedulerTest
@@ -683,7 +700,7 @@ DDD 리팩터링을 본격적으로 진행하기 전 최소 완료 기준은 다
 ```text
 P0 테스트가 모두 존재한다.
 ./gradlew test -PexcludeIntegration 통과.
-Activity/Bookmark rename 후 기존 Activity 테스트 통과.
+Activity 4.1 후속 정리 후 기존 Activity 테스트 통과.
 PostTest로 기술 게시글 애그리거트 기본 규칙 보호.
 PersonalizationProfileServiceTest로 Personalization Profile 생성 흐름 보호.
 MmrServiceTest와 LlmRecommendationServiceTest로 추천 생성 핵심 흐름 보호.
@@ -711,7 +728,7 @@ SearchServiceImplTest로 일반/개인화 검색 회귀 보호.
 
 ```text
 애그리거트 루트 테스트
-개인화 프로필 테스트
+개인화 프로필 edge-case/trigger 테스트
 추천 생성 테스트
 검색 회귀 테스트
 임베딩 pipeline 테스트
@@ -720,7 +737,7 @@ SearchServiceImplTest로 일반/개인화 검색 회귀 보호.
 따라서 다음 순서로 보강하는 것이 가장 안전하다.
 
 ```text
-Activity/Bookmark 안전망 확인
+Activity 4.1 slice 안전망 확인
 → Post 애그리거트 테스트
 → 개인화 프로필 테스트
 → 추천 생성 테스트
