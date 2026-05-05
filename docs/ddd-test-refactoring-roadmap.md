@@ -165,7 +165,7 @@ docs/test-gap-analysis.md
 
 현재 기준 이미 반영된 대표 안전망은 다음과 같다.
 
-- `ActivityCommandServiceTest`
+- `ReadHistoryCommandServiceTest`
 - `BookmarkCommandServiceTest`
 - `BookmarkQueryServiceTest`
 - `BookmarkRepositoryTest`
@@ -178,7 +178,7 @@ docs/test-gap-analysis.md
 - `ReadPostRepositoryTest`
 - `ReadPostIntegrationTest`
 - `SearchHistoryRepositoryTest`
-- `ActivityControllerIntegrationTest`
+- `SearchHistoryIntegrationTest`
 - `SearchHistoryRequestTest`
 - `PersonalizationProfileServiceTest`
 - `PostSummaryProcessorTest`
@@ -411,7 +411,7 @@ Activity
 
 ```text
 이미 존재하는 핵심 테스트
-- ActivityCommandServiceTest
+- ReadHistoryCommandServiceTest
 - BookmarkCommandServiceTest
 - BookmarkQueryServiceTest
 - BookmarkTest
@@ -424,7 +424,7 @@ Activity
 - ReadPostRepositoryTest
 - ReadPostIntegrationTest
 - SearchHistoryRepositoryTest
-- ActivityControllerIntegrationTest
+- SearchHistoryIntegrationTest
 - SearchHistoryRequestTest
 ```
 
@@ -432,7 +432,9 @@ Activity
 이미 반영된 slice / 용어 정리
 - Bookmark entity/repository/service/test 명칭
 - Bookmark slice package (`domain/activity/bookmark/...`)
+- SearchHistory slice package (`domain/activity/readhistory/...`)
 - ReadPost slice package (`domain/activity/readpost/...`)
+- slice별 controller package (`bookmark/controller`, `readhistory/controller`, `readpost/controller`)
 - `ReadPostFirstReadPolicy`로 첫 읽기 판별 규칙 분리
 - bookmarks table / bookmarkedAt column
 - SearchHistory.query + legacy searchWord alias 허용
@@ -441,7 +443,7 @@ Activity
 ##### 먼저 확인하거나 보강할 테스트
 
 ```text
-ActivityCommandServiceTest
+ReadHistoryCommandServiceTest
 - 검색 기록을 저장할 수 있다.
 ```
 
@@ -849,8 +851,15 @@ src/test/java/com/techfork/domain
         ReadPostQueryServiceTest
       integration
         ReadPostIntegrationTest
-    service
-      ActivityCommandServiceTest
+    readhistory
+      dto
+        SearchHistoryRequestTest
+      repository
+        SearchHistoryRepositoryTest
+      service
+        ReadHistoryCommandServiceTest
+      integration
+        SearchHistoryIntegrationTest
 
   post
     PostTest

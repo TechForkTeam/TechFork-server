@@ -1,4 +1,4 @@
-package com.techfork.domain.activity.entity;
+package com.techfork.domain.activity.readhistory.entity;
 
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.global.common.BaseEntity;
