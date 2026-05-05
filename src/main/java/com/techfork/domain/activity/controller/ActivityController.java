@@ -1,14 +1,15 @@
 package com.techfork.domain.activity.controller;
 
-import com.techfork.domain.activity.bookmark.service.BookmarkCommandService;
-import com.techfork.domain.activity.bookmark.service.BookmarkQueryService;
 import com.techfork.domain.activity.bookmark.dto.BookmarkListResponse;
 import com.techfork.domain.activity.bookmark.dto.BookmarkRequest;
-import com.techfork.domain.activity.dto.ReadPostListResponse;
-import com.techfork.domain.activity.dto.ReadPostRequest;
+import com.techfork.domain.activity.bookmark.service.BookmarkCommandService;
+import com.techfork.domain.activity.bookmark.service.BookmarkQueryService;
 import com.techfork.domain.activity.dto.SearchHistoryRequest;
+import com.techfork.domain.activity.readpost.dto.ReadPostListResponse;
+import com.techfork.domain.activity.readpost.dto.ReadPostRequest;
+import com.techfork.domain.activity.readpost.service.ReadPostCommandService;
+import com.techfork.domain.activity.readpost.service.ReadPostQueryService;
 import com.techfork.domain.activity.service.ActivityCommandService;
-import com.techfork.domain.activity.service.ActivityQueryService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import com.techfork.global.security.oauth.UserPrincipal;
@@ -20,7 +21,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Activity", description = "사용자 활동 API")
 @Slf4j
@@ -30,7 +37,8 @@ import org.springframework.web.bind.annotation.*;
 public class ActivityController {
 
     private final ActivityCommandService activityCommandService;
-    private final ActivityQueryService activityQueryService;
+    private final ReadPostCommandService readPostCommandService;
+    private final ReadPostQueryService readPostQueryService;
     private final BookmarkCommandService bookmarkCommandService;
     private final BookmarkQueryService bookmarkQueryService;
 
@@ -46,7 +54,7 @@ public class ActivityController {
             @Parameter(description = "페이지 크기 (기본값: 20)")
             @RequestParam(defaultValue = "20") int size
     ) {
-        ReadPostListResponse response = activityQueryService.getReadPosts(userPrincipal.getId(), lastReadPostId, size);
+        ReadPostListResponse response = readPostQueryService.getReadPosts(userPrincipal.getId(), lastReadPostId, size);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 
@@ -59,7 +67,7 @@ public class ActivityController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody ReadPostRequest request
     ) {
-        activityCommandService.saveReadPost(userPrincipal.getId(), request);
+        readPostCommandService.saveReadPost(userPrincipal.getId(), request);
         return BaseResponse.of(SuccessCode.CREATED);
     }
 

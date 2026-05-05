@@ -1,9 +1,14 @@
-package com.techfork.domain.activity.entity;
+package com.techfork.domain.activity.readpost.entity;
 
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.global.common.BaseEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;

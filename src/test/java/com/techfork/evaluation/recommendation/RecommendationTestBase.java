@@ -1,7 +1,7 @@
 package com.techfork.evaluation.recommendation;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import com.techfork.domain.activity.repository.ReadPostRepository;
+import com.techfork.domain.activity.readpost.repository.ReadPostRepository;
 import com.techfork.domain.post.repository.PostDocumentRepository;
 import com.techfork.domain.recommendation.config.RecommendationProperties;
 import com.techfork.evaluation.recommendation.util.EvaluationFixtureLoader;

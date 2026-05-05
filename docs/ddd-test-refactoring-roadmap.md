@@ -166,12 +166,17 @@ docs/test-gap-analysis.md
 현재 기준 이미 반영된 대표 안전망은 다음과 같다.
 
 - `ActivityCommandServiceTest`
-- `ActivityQueryServiceTest`
 - `BookmarkCommandServiceTest`
 - `BookmarkQueryServiceTest`
 - `BookmarkRepositoryTest`
 - `BookmarkTest`
+- `BookmarkIntegrationTest`
+- `ReadPostCommandServiceTest`
+- `ReadPostQueryServiceTest`
+- `ReadPostFirstReadPolicyTest`
+- `ReadPostTest`
 - `ReadPostRepositoryTest`
+- `ReadPostIntegrationTest`
 - `SearchHistoryRepositoryTest`
 - `ActivityControllerIntegrationTest`
 - `SearchHistoryRequestTest`
@@ -407,21 +412,28 @@ Activity
 ```text
 이미 존재하는 핵심 테스트
 - ActivityCommandServiceTest
-- ActivityQueryServiceTest
 - BookmarkCommandServiceTest
 - BookmarkQueryServiceTest
 - BookmarkTest
 - BookmarkRepositoryTest
+- BookmarkIntegrationTest
+- ReadPostCommandServiceTest
+- ReadPostQueryServiceTest
+- ReadPostFirstReadPolicyTest
+- ReadPostTest
 - ReadPostRepositoryTest
+- ReadPostIntegrationTest
 - SearchHistoryRepositoryTest
 - ActivityControllerIntegrationTest
 - SearchHistoryRequestTest
 ```
 
 ```text
-이미 반영된 용어 정리
+이미 반영된 slice / 용어 정리
 - Bookmark entity/repository/service/test 명칭
 - Bookmark slice package (`domain/activity/bookmark/...`)
+- ReadPost slice package (`domain/activity/readpost/...`)
+- `ReadPostFirstReadPolicy`로 첫 읽기 판별 규칙 분리
 - bookmarks table / bookmarkedAt column
 - SearchHistory.query + legacy searchWord alias 허용
 ```
@@ -430,8 +442,6 @@ Activity
 
 ```text
 ActivityCommandServiceTest
-- 사용자가 기술 게시글을 처음 읽으면 조회수가 증가한다.
-- 이미 읽은 기술 게시글을 다시 읽으면 조회수는 증가하지 않는다.
 - 검색 기록을 저장할 수 있다.
 ```
 
@@ -455,7 +465,15 @@ BookmarkTest / BookmarkRepositoryTest
 ```
 
 ```text
-ReadPostTest (선택)
+ReadPostCommandServiceTest / ReadPostQueryServiceTest / ReadPostFirstReadPolicyTest
+- 사용자가 기술 게시글을 처음 읽으면 조회수가 증가한다.
+- 이미 읽은 기술 게시글을 다시 읽으면 조회수는 증가하지 않는다.
+- 읽은 게시글 목록에 키워드/북마크 여부/커서가 반영된다.
+- 첫 읽기 판별 규칙이 `ReadPostFirstReadPolicy`에 고정된다.
+```
+
+```text
+ReadPostTest
 - 읽기 시각과 읽기 시간을 그대로 보존한다.
 ```
 
@@ -817,9 +835,22 @@ src/test/java/com/techfork/domain
       service
         BookmarkCommandServiceTest
         BookmarkQueryServiceTest
+      integration
+        BookmarkIntegrationTest
+    readpost
+      domain
+        ReadPostFirstReadPolicyTest
+      entity
+        ReadPostTest
+      repository
+        ReadPostRepositoryTest
+      service
+        ReadPostCommandServiceTest
+        ReadPostQueryServiceTest
+      integration
+        ReadPostIntegrationTest
     service
       ActivityCommandServiceTest
-      ActivityQueryServiceTest
 
   post
     PostTest

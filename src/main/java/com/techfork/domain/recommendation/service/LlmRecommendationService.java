@@ -5,7 +5,7 @@ import co.elastic.clients.elasticsearch._types.KnnSearch;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
-import com.techfork.domain.activity.repository.ReadPostRepository;
+import com.techfork.domain.activity.readpost.repository.ReadPostRepository;
 import com.techfork.global.elasticsearch.query.VectorQueryBuilder;
 import com.techfork.domain.post.document.PostDocument;
 import com.techfork.domain.post.entity.Post;

@@ -1,13 +1,14 @@
-package com.techfork.domain.activity.converter;
+package com.techfork.domain.activity.readpost.converter;
 
-import com.techfork.domain.activity.dto.ReadPostDto;
-import com.techfork.domain.activity.dto.ReadPostListResponse;
+import com.techfork.domain.activity.readpost.dto.ReadPostDto;
+import com.techfork.domain.activity.readpost.dto.ReadPostListResponse;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Component
-public class ActivityConverter {
+public class ReadPostConverter {
+
     public ReadPostListResponse toReadPostListResponse(List<ReadPostDto> readPosts, int requestedSize) {
         boolean hasNext = readPosts.size() > requestedSize;
         List<ReadPostDto> content = hasNext ? readPosts.subList(0, requestedSize) : readPosts;
