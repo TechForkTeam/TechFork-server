@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.techfork.domain.activity.bookmark.repository.BookmarkRepository;
+import com.techfork.activity.bookmark.repository.BookmarkRepository;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.search.dto.SearchResult;
 import com.techfork.domain.search.config.GeneralSearchProperties;

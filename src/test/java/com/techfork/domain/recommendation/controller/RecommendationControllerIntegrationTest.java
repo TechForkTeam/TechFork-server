@@ -1,8 +1,8 @@
 package com.techfork.domain.recommendation.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.techfork.domain.activity.bookmark.entity.Bookmark;
-import com.techfork.domain.activity.bookmark.repository.BookmarkRepository;
+import com.techfork.activity.bookmark.entity.Bookmark;
+import com.techfork.activity.bookmark.repository.BookmarkRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.recommendation.entity.RecommendedPost;
