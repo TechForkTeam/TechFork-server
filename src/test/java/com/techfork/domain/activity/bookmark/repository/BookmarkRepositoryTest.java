@@ -19,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.dao.DataIntegrityViolationException;
 import jakarta.persistence.EntityManager;
 import org.springframework.test.context.ActiveProfiles;
+import org.junit.jupiter.api.Nested;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -109,106 +110,110 @@ class BookmarkRepositoryTest {
         userRepository.deleteAll();
     }
 
-    @Test
-    @DisplayName("북마크 목록 조회 - 커서 기반 페이징")
-    void findBookmarksWithCursor() {
-        // Given
-        Bookmark bookmark1 = Bookmark.create(testUser, testPost1, LocalDateTime.now().minusHours(3));
-        Bookmark bookmark2 = Bookmark.create(testUser, testPost2, LocalDateTime.now().minusHours(2));
-        Bookmark bookmark3 = Bookmark.create(testUser, testPost3, LocalDateTime.now().minusHours(1));
-        bookmark1 = bookmarkRepository.save(bookmark1);
-        bookmark2 = bookmarkRepository.save(bookmark2);
-        bookmark3 = bookmarkRepository.save(bookmark3);
+    @Nested
+    @DisplayName("북마크 목록 조회")
+    class FindBookmarksWithCursor {
 
-        PageRequest pageRequest = PageRequest.of(0, 10);
+        @Test
+        @DisplayName("커서 기반 페이징")
+        void findBookmarksWithCursor() {
+            Bookmark bookmark1 = Bookmark.create(testUser, testPost1, LocalDateTime.now().minusHours(3));
+            Bookmark bookmark2 = Bookmark.create(testUser, testPost2, LocalDateTime.now().minusHours(2));
+            Bookmark bookmark3 = Bookmark.create(testUser, testPost3, LocalDateTime.now().minusHours(1));
+            bookmark1 = bookmarkRepository.save(bookmark1);
+            bookmark2 = bookmarkRepository.save(bookmark2);
+            bookmark3 = bookmarkRepository.save(bookmark3);
 
-        // When - 커서 없이 첫 페이지
-        List<BookmarkDto> firstPage = bookmarkRepository.findBookmarksWithCursor(testUser, null, pageRequest);
+            PageRequest pageRequest = PageRequest.of(0, 10);
 
-        // Then
-        assertThat(firstPage).hasSize(3);
-        assertThat(firstPage.get(0).postId()).isEqualTo(testPost3.getId());
-        assertThat(firstPage.get(1).postId()).isEqualTo(testPost2.getId());
-        assertThat(firstPage.get(2).postId()).isEqualTo(testPost1.getId());
+            List<BookmarkDto> firstPage = bookmarkRepository.findBookmarksWithCursor(testUser, null, pageRequest);
 
-        // When - 커서를 사용한 다음 페이지
-        Long lastBookmarkId = bookmark3.getId();
-        List<BookmarkDto> nextPage = bookmarkRepository.findBookmarksWithCursor(testUser, lastBookmarkId, pageRequest);
+            assertThat(firstPage).hasSize(3);
+            assertThat(firstPage.get(0).postId()).isEqualTo(testPost3.getId());
+            assertThat(firstPage.get(1).postId()).isEqualTo(testPost2.getId());
+            assertThat(firstPage.get(2).postId()).isEqualTo(testPost1.getId());
 
-        // Then
-        assertThat(nextPage).hasSize(2);
-        assertThat(nextPage.get(0).postId()).isEqualTo(testPost2.getId());
-        assertThat(nextPage.get(1).postId()).isEqualTo(testPost1.getId());
+            Long lastBookmarkId = bookmark3.getId();
+            List<BookmarkDto> nextPage = bookmarkRepository.findBookmarksWithCursor(testUser, lastBookmarkId, pageRequest);
+
+            assertThat(nextPage).hasSize(2);
+            assertThat(nextPage.get(0).postId()).isEqualTo(testPost2.getId());
+            assertThat(nextPage.get(1).postId()).isEqualTo(testPost1.getId());
+        }
     }
 
-    @Test
+    @Nested
     @DisplayName("북마크된 게시글 ID 목록 조회")
-    void findBookmarkedPostIds() {
-        // Given
-        Bookmark bookmark1 = Bookmark.create(testUser, testPost1, LocalDateTime.now());
-        Bookmark bookmark3 = Bookmark.create(testUser, testPost3, LocalDateTime.now());
-        bookmarkRepository.save(bookmark1);
-        bookmarkRepository.save(bookmark3);
+    class FindBookmarkedPostIds {
 
-        List<Long> postIds = List.of(testPost1.getId(), testPost2.getId(), testPost3.getId());
+        @Test
+        @DisplayName("북마크된 게시글 ID 목록 조회")
+        void findBookmarkedPostIds() {
+            Bookmark bookmark1 = Bookmark.create(testUser, testPost1, LocalDateTime.now());
+            Bookmark bookmark3 = Bookmark.create(testUser, testPost3, LocalDateTime.now());
+            bookmarkRepository.save(bookmark1);
+            bookmarkRepository.save(bookmark3);
 
-        // When
-        List<Long> bookmarkedPostIds = bookmarkRepository.findBookmarkedPostIds(testUser.getId(), postIds);
+            List<Long> postIds = List.of(testPost1.getId(), testPost2.getId(), testPost3.getId());
 
-        // Then
-        assertThat(bookmarkedPostIds).hasSize(2);
-        assertThat(bookmarkedPostIds).containsExactlyInAnyOrder(testPost1.getId(), testPost3.getId());
-        assertThat(bookmarkedPostIds).doesNotContain(testPost2.getId());
+            List<Long> bookmarkedPostIds = bookmarkRepository.findBookmarkedPostIds(testUser.getId(), postIds);
+
+            assertThat(bookmarkedPostIds).hasSize(2);
+            assertThat(bookmarkedPostIds).containsExactlyInAnyOrder(testPost1.getId(), testPost3.getId());
+            assertThat(bookmarkedPostIds).doesNotContain(testPost2.getId());
+        }
+
+        @Test
+        @DisplayName("북마크된 게시글이 없을 때 빈 리스트 반환")
+        void findBookmarkedPostIds_whenNoBookmarks() {
+            List<Long> postIds = List.of(testPost1.getId(), testPost2.getId(), testPost3.getId());
+
+            List<Long> bookmarkedPostIds = bookmarkRepository.findBookmarkedPostIds(testUser.getId(), postIds);
+
+            assertThat(bookmarkedPostIds).isEmpty();
+        }
+
+        @Test
+        @DisplayName("다른 사용자의 북마크는 조회되지 않음")
+        void findBookmarkedPostIds_differentUser() {
+            User anotherUser = User.createSocialUser(SocialType.KAKAO, "anotherSocialId", "another@example.com", "another.jpg");
+            anotherUser = userRepository.save(anotherUser);
+
+            Bookmark bookmark1 = Bookmark.create(testUser, testPost1, LocalDateTime.now());
+            Bookmark bookmark2 = Bookmark.create(anotherUser, testPost2, LocalDateTime.now());
+            bookmarkRepository.save(bookmark1);
+            bookmarkRepository.save(bookmark2);
+
+            List<Long> postIds = List.of(testPost1.getId(), testPost2.getId());
+
+            List<Long> bookmarkedPostIds = bookmarkRepository.findBookmarkedPostIds(testUser.getId(), postIds);
+
+            assertThat(bookmarkedPostIds).hasSize(1);
+            assertThat(bookmarkedPostIds).containsExactly(testPost1.getId());
+        }
     }
 
-    @Test
-    @DisplayName("북마크된 게시글이 없을 때 빈 리스트 반환")
-    void findBookmarkedPostIds_whenNoBookmarks() {
-        // Given
-        List<Long> postIds = List.of(testPost1.getId(), testPost2.getId(), testPost3.getId());
+    @Nested
+    @DisplayName("북마크 저장")
+    class Save {
 
-        // When
-        List<Long> bookmarkedPostIds = bookmarkRepository.findBookmarkedPostIds(testUser.getId(), postIds);
+        @Nested
+        @DisplayName("Failure")
+        class Failure {
 
-        // Then
-        assertThat(bookmarkedPostIds).isEmpty();
-    }
+            @Test
+            @DisplayName("같은 사용자와 게시글 조합은 한 번만 북마크할 수 있다")
+            void save_duplicateUserAndPostCombination_ThrowsException() {
+                Bookmark firstBookmark = Bookmark.create(testUser, testPost1, LocalDateTime.now().minusMinutes(1));
+                Bookmark duplicateBookmark = Bookmark.create(testUser, testPost1, LocalDateTime.now());
 
-    @Test
-    @DisplayName("다른 사용자의 북마크는 조회되지 않음")
-    void findBookmarkedPostIds_differentUser() {
-        // Given
-        User anotherUser = User.createSocialUser(SocialType.KAKAO, "anotherSocialId", "another@example.com", "another.jpg");
-        anotherUser = userRepository.save(anotherUser);
+                bookmarkRepository.saveAndFlush(firstBookmark);
 
-        Bookmark bookmark1 = Bookmark.create(testUser, testPost1, LocalDateTime.now());
-        Bookmark bookmark2 = Bookmark.create(anotherUser, testPost2, LocalDateTime.now());
-        bookmarkRepository.save(bookmark1);
-        bookmarkRepository.save(bookmark2);
+                assertThatThrownBy(() -> bookmarkRepository.saveAndFlush(duplicateBookmark))
+                        .isInstanceOf(DataIntegrityViolationException.class);
 
-        List<Long> postIds = List.of(testPost1.getId(), testPost2.getId());
-
-        // When
-        List<Long> bookmarkedPostIds = bookmarkRepository.findBookmarkedPostIds(testUser.getId(), postIds);
-
-        // Then
-        assertThat(bookmarkedPostIds).hasSize(1);
-        assertThat(bookmarkedPostIds).containsExactly(testPost1.getId());
-    }
-
-    @Test
-    @DisplayName("같은 사용자와 게시글 조합은 한 번만 북마크할 수 있다")
-    void save_duplicateUserAndPostCombination_ThrowsException() {
-        // Given
-        Bookmark firstBookmark = Bookmark.create(testUser, testPost1, LocalDateTime.now().minusMinutes(1));
-        Bookmark duplicateBookmark = Bookmark.create(testUser, testPost1, LocalDateTime.now());
-
-        bookmarkRepository.saveAndFlush(firstBookmark);
-
-        // When & Then
-        assertThatThrownBy(() -> bookmarkRepository.saveAndFlush(duplicateBookmark))
-                .isInstanceOf(DataIntegrityViolationException.class);
-
-        entityManager.clear();
+                entityManager.clear();
+            }
+        }
     }
 }
