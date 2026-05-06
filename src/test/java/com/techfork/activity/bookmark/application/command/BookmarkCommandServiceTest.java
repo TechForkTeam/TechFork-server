@@ -5,11 +5,11 @@ import com.techfork.activity.bookmark.domain.BookmarkErrorCode;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.exception.PostErrorCode;
-import com.techfork.domain.post.repository.PostRepository;
+import com.techfork.domain.post.service.PostLookupService;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.exception.UserErrorCode;
-import com.techfork.domain.useraccount.repository.UserRepository;
+import com.techfork.domain.useraccount.service.UserLookupService;
 import com.techfork.global.exception.GeneralException;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -35,10 +35,10 @@ import static org.mockito.Mockito.verify;
 class BookmarkCommandServiceTest {
 
     @Mock
-    private PostRepository postRepository;
+    private PostLookupService postLookupService;
 
     @Mock
-    private UserRepository userRepository;
+    private UserLookupService userLookupService;
 
     @Mock
     private BookmarkRepository bookmarkRepository;
@@ -79,8 +79,8 @@ class BookmarkCommandServiceTest {
                         .techBlog(mockTechBlog)
                         .build();
 
-                given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
-                given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
+                given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
+                given(postLookupService.getPostOrThrow(postId)).willReturn(mockPost);
                 given(bookmarkRepository.existsByUserAndPost(mockUser, mockPost)).willReturn(false);
                 given(bookmarkRepository.save(any(Bookmark.class))).willReturn(mock(Bookmark.class));
 
@@ -92,8 +92,8 @@ class BookmarkCommandServiceTest {
 
                 ArgumentCaptor<Bookmark> bookmarkCaptor = ArgumentCaptor.forClass(Bookmark.class);
 
-                verify(userRepository, times(1)).findById(userId);
-                verify(postRepository, times(1)).findById(postId);
+                verify(userLookupService, times(1)).getUserOrThrow(userId);
+                verify(postLookupService, times(1)).getPostOrThrow(postId);
                 verify(bookmarkRepository, times(1)).existsByUserAndPost(mockUser, mockPost);
                 verify(bookmarkRepository, times(1)).save(bookmarkCaptor.capture());
 
@@ -120,8 +120,8 @@ class BookmarkCommandServiceTest {
                 User mockUser = mock(User.class);
                 Post mockPost = mock(Post.class);
 
-                given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
-                given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
+                given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
+                given(postLookupService.getPostOrThrow(postId)).willReturn(mockPost);
                 given(bookmarkRepository.existsByUserAndPost(mockUser, mockPost)).willReturn(true);
 
                 assertThatThrownBy(() -> bookmarkCommandService.addBookmark(command))
@@ -139,8 +139,9 @@ class BookmarkCommandServiceTest {
                 AddBookmarkCommand command = new AddBookmarkCommand(userId, postId);
 
                 User mockUser = mock(User.class);
-                given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
-                given(postRepository.findById(postId)).willReturn(Optional.empty());
+                given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
+                given(postLookupService.getPostOrThrow(postId))
+                        .willThrow(new GeneralException(PostErrorCode.POST_NOT_FOUND));
 
                 assertThatThrownBy(() -> bookmarkCommandService.addBookmark(command))
                         .isInstanceOf(GeneralException.class)
@@ -170,14 +171,14 @@ class BookmarkCommandServiceTest {
                 Post mockPost = mock(Post.class);
                 Bookmark mockBookmark = mock(Bookmark.class);
 
-                given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
-                given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
+                given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
+                given(postLookupService.getPostOrThrow(postId)).willReturn(mockPost);
                 given(bookmarkRepository.findByUserAndPost(mockUser, mockPost)).willReturn(Optional.of(mockBookmark));
 
                 bookmarkCommandService.deleteBookmark(command);
 
-                verify(userRepository, times(1)).findById(userId);
-                verify(postRepository, times(1)).findById(postId);
+                verify(userLookupService, times(1)).getUserOrThrow(userId);
+                verify(postLookupService, times(1)).getPostOrThrow(postId);
                 verify(bookmarkRepository, times(1)).findByUserAndPost(mockUser, mockPost);
                 verify(bookmarkRepository, times(1)).delete(mockBookmark);
             }
@@ -197,8 +198,8 @@ class BookmarkCommandServiceTest {
                 User mockUser = mock(User.class);
                 Post mockPost = mock(Post.class);
 
-                given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
-                given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
+                given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
+                given(postLookupService.getPostOrThrow(postId)).willReturn(mockPost);
                 given(bookmarkRepository.findByUserAndPost(mockUser, mockPost)).willReturn(Optional.empty());
 
                 assertThatThrownBy(() -> bookmarkCommandService.deleteBookmark(command))
@@ -215,7 +216,8 @@ class BookmarkCommandServiceTest {
                 Long postId = 100L;
                 DeleteBookmarkCommand command = new DeleteBookmarkCommand(userId, postId);
 
-                given(userRepository.findById(userId)).willReturn(Optional.empty());
+                given(userLookupService.getUserOrThrow(userId))
+                        .willThrow(new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
                 assertThatThrownBy(() -> bookmarkCommandService.deleteBookmark(command))
                         .isInstanceOf(GeneralException.class)

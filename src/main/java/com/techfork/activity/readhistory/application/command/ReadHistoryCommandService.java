@@ -3,9 +3,7 @@ package com.techfork.activity.readhistory.application.command;
 import com.techfork.activity.readhistory.domain.SearchHistory;
 import com.techfork.activity.readhistory.infrastructure.SearchHistoryRepository;
 import com.techfork.domain.useraccount.entity.User;
-import com.techfork.domain.useraccount.exception.UserErrorCode;
-import com.techfork.domain.useraccount.repository.UserRepository;
-import com.techfork.global.exception.GeneralException;
+import com.techfork.domain.useraccount.service.UserLookupService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,13 +14,12 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ReadHistoryCommandService {
 
-    private final UserRepository userRepository;
+    private final UserLookupService userLookupService;
     private final SearchHistoryRepository searchHistoryRepository;
 
     @Transactional
     public void saveSearchHistory(SaveSearchHistoryCommand command) {
-        User user = userRepository.findById(command.userId())
-                .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
+        User user = userLookupService.getUserOrThrow(command.userId());
 
         SearchHistory searchHistory = SearchHistory.create(
                 user,

@@ -2,16 +2,12 @@ package com.techfork.activity.bookmark.application.query;
 
 import com.techfork.activity.bookmark.infrastructure.BookmarkQueryRow;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
-import com.techfork.domain.post.entity.PostKeyword;
-import com.techfork.domain.post.repository.PostKeywordRepository;
+import com.techfork.domain.post.service.PostKeywordLookupService;
 import com.techfork.domain.useraccount.entity.User;
-import com.techfork.domain.useraccount.exception.UserErrorCode;
-import com.techfork.domain.useraccount.repository.UserRepository;
-import com.techfork.global.exception.GeneralException;
+import com.techfork.domain.useraccount.service.UserLookupService;
 import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -24,14 +20,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class BookmarkQueryService {
 
-    private final UserRepository userRepository;
+    private final UserLookupService userLookupService;
     private final BookmarkRepository bookmarkRepository;
-    private final PostKeywordRepository postKeywordRepository;
+    private final PostKeywordLookupService postKeywordLookupService;
     private final CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
 
     public GetBookmarksResult getBookmarks(GetBookmarksQuery query) {
-        User user = userRepository.findById(query.userId())
-                .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
+        User user = userLookupService.getUserOrThrow(query.userId());
 
         PageRequest pageRequest = PageRequest.of(0, query.size() + 1);
         List<BookmarkQueryRow> rows = bookmarkRepository.findBookmarksWithCursor(user, query.lastBookmarkId(), pageRequest);
@@ -48,12 +43,7 @@ public class BookmarkQueryService {
                 .map(BookmarkQueryRow::postId)
                 .toList();
 
-        Map<Long, List<String>> keywordMap = postKeywordRepository.findByPostIdIn(postIds)
-                .stream()
-                .collect(Collectors.groupingBy(
-                        pk -> pk.getPost().getId(),
-                        Collectors.mapping(PostKeyword::getKeyword, Collectors.toList())
-                ));
+        Map<Long, List<String>> keywordMap = postKeywordLookupService.getKeywordsByPostIds(postIds);
 
         return rows.stream()
                 .map(row -> BookmarkItem.builder()

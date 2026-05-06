@@ -5,14 +5,13 @@ import com.techfork.activity.readpost.domain.ReadPostFirstReadPolicy;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.exception.PostErrorCode;
-import com.techfork.domain.post.repository.PostRepository;
+import com.techfork.domain.post.service.PostLookupService;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.exception.UserErrorCode;
-import com.techfork.domain.useraccount.repository.UserRepository;
+import com.techfork.domain.useraccount.service.UserLookupService;
 import com.techfork.global.exception.GeneralException;
 import java.time.LocalDateTime;
-import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,10 +37,10 @@ class ReadPostCommandServiceTest {
     private ReadPostRepository readPostRepository;
 
     @Mock
-    private PostRepository postRepository;
+    private PostLookupService postLookupService;
 
     @Mock
-    private UserRepository userRepository;
+    private UserLookupService userLookupService;
 
     @Mock
     private ReadPostFirstReadPolicy readPostFirstReadPolicy;
@@ -83,8 +82,8 @@ class ReadPostCommandServiceTest {
                         .build();
                 SaveReadPostCommand command = new SaveReadPostCommand(userId, postId, readAt, readDurationSeconds);
 
-                given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
-                given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
+                given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
+                given(postLookupService.getPostOrThrow(postId)).willReturn(mockPost);
                 given(readPostFirstReadPolicy.isFirstRead(mockUser, mockPost)).willReturn(true);
                 given(readPostRepository.save(any(ReadPost.class))).willReturn(mock(ReadPost.class));
 
@@ -130,8 +129,8 @@ class ReadPostCommandServiceTest {
                         .build();
                 SaveReadPostCommand command = new SaveReadPostCommand(userId, postId, readAt, readDurationSeconds);
 
-                given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
-                given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
+                given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
+                given(postLookupService.getPostOrThrow(postId)).willReturn(mockPost);
                 given(readPostFirstReadPolicy.isFirstRead(mockUser, mockPost)).willReturn(false);
                 given(readPostRepository.save(any(ReadPost.class))).willReturn(mock(ReadPost.class));
 
@@ -158,13 +157,14 @@ class ReadPostCommandServiceTest {
                 Long userId = 999L;
                 SaveReadPostCommand command = new SaveReadPostCommand(userId, 100L, LocalDateTime.now(), 300);
 
-                given(userRepository.findById(userId)).willReturn(Optional.empty());
+                given(userLookupService.getUserOrThrow(userId))
+                        .willThrow(new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
                 assertThatThrownBy(() -> readPostCommandService.saveReadPost(command))
                         .isInstanceOf(GeneralException.class)
                         .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
 
-                verify(postRepository, never()).findById(any());
+                verify(postLookupService, never()).getPostOrThrow(any());
                 verify(readPostFirstReadPolicy, never()).isFirstRead(any(), any());
                 verify(readPostRepository, never()).save(any());
             }
@@ -177,8 +177,9 @@ class ReadPostCommandServiceTest {
                 SaveReadPostCommand command = new SaveReadPostCommand(userId, postId, LocalDateTime.now(), 300);
                 User mockUser = mock(User.class);
 
-                given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
-                given(postRepository.findById(postId)).willReturn(Optional.empty());
+                given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
+                given(postLookupService.getPostOrThrow(postId))
+                        .willThrow(new GeneralException(PostErrorCode.POST_NOT_FOUND));
 
                 assertThatThrownBy(() -> readPostCommandService.saveReadPost(command))
                         .isInstanceOf(GeneralException.class)

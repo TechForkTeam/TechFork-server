@@ -4,12 +4,9 @@ import com.techfork.activity.readpost.domain.ReadPost;
 import com.techfork.activity.readpost.domain.ReadPostFirstReadPolicy;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.post.exception.PostErrorCode;
-import com.techfork.domain.post.repository.PostRepository;
+import com.techfork.domain.post.service.PostLookupService;
 import com.techfork.domain.useraccount.entity.User;
-import com.techfork.domain.useraccount.exception.UserErrorCode;
-import com.techfork.domain.useraccount.repository.UserRepository;
-import com.techfork.global.exception.GeneralException;
+import com.techfork.domain.useraccount.service.UserLookupService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,16 +19,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReadPostCommandService {
 
     private final ReadPostRepository readPostRepository;
-    private final PostRepository postRepository;
-    private final UserRepository userRepository;
+    private final PostLookupService postLookupService;
+    private final UserLookupService userLookupService;
     private final ReadPostFirstReadPolicy readPostFirstReadPolicy;
 
     public void saveReadPost(SaveReadPostCommand command) {
-        User user = userRepository.findById(command.userId())
-                .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
-
-        Post post = postRepository.findById(command.postId())
-                .orElseThrow(() -> new GeneralException(PostErrorCode.POST_NOT_FOUND));
+        User user = userLookupService.getUserOrThrow(command.userId());
+        Post post = postLookupService.getPostOrThrow(command.postId());
 
         boolean isFirstRead = readPostFirstReadPolicy.isFirstRead(user, post);
         if (isFirstRead) {

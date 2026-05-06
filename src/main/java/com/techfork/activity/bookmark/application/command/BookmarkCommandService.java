@@ -4,11 +4,9 @@ import com.techfork.activity.bookmark.domain.Bookmark;
 import com.techfork.activity.bookmark.domain.BookmarkErrorCode;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.post.exception.PostErrorCode;
-import com.techfork.domain.post.repository.PostRepository;
+import com.techfork.domain.post.service.PostLookupService;
 import com.techfork.domain.useraccount.entity.User;
-import com.techfork.domain.useraccount.exception.UserErrorCode;
-import com.techfork.domain.useraccount.repository.UserRepository;
+import com.techfork.domain.useraccount.service.UserLookupService;
 import com.techfork.global.exception.GeneralException;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
@@ -22,16 +20,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class BookmarkCommandService {
 
-    private final PostRepository postRepository;
-    private final UserRepository userRepository;
+    private final PostLookupService postLookupService;
+    private final UserLookupService userLookupService;
     private final BookmarkRepository bookmarkRepository;
 
     public void addBookmark(AddBookmarkCommand command) {
-        User user = userRepository.findById(command.userId())
-                .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
-
-        Post post = postRepository.findById(command.postId())
-                .orElseThrow(() -> new GeneralException(PostErrorCode.POST_NOT_FOUND));
+        User user = userLookupService.getUserOrThrow(command.userId());
+        Post post = postLookupService.getPostOrThrow(command.postId());
 
         if (bookmarkRepository.existsByUserAndPost(user, post)) {
             throw new GeneralException(BookmarkErrorCode.BOOKMARK_ALREADY_EXISTS);
@@ -44,11 +39,8 @@ public class BookmarkCommandService {
     }
 
     public void deleteBookmark(DeleteBookmarkCommand command) {
-        User user = userRepository.findById(command.userId())
-                .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
-
-        Post post = postRepository.findById(command.postId())
-                .orElseThrow(() -> new GeneralException(PostErrorCode.POST_NOT_FOUND));
+        User user = userLookupService.getUserOrThrow(command.userId());
+        Post post = postLookupService.getPostOrThrow(command.postId());
 
         Bookmark bookmark = bookmarkRepository.findByUserAndPost(user, post)
                 .orElseThrow(() -> new GeneralException(BookmarkErrorCode.BOOKMARK_NOT_FOUND));

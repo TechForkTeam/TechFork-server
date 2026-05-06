@@ -3,13 +3,12 @@ package com.techfork.activity.readpost.application.query;
 import com.techfork.activity.bookmark.application.query.lookup.BookmarkLookupService;
 import com.techfork.activity.readpost.infrastructure.ReadPostQueryRow;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
-import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.post.entity.PostKeyword;
-import com.techfork.domain.post.repository.PostKeywordRepository;
+import com.techfork.domain.post.service.PostKeywordLookupService;
 import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -25,7 +24,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -41,7 +39,7 @@ class ReadPostQueryServiceTest {
     private ReadPostRepository readPostRepository;
 
     @Mock
-    private PostKeywordRepository postKeywordRepository;
+    private PostKeywordLookupService postKeywordLookupService;
 
     @Mock
     private CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
@@ -73,7 +71,7 @@ class ReadPostQueryServiceTest {
 
             given(readPostRepository.findReadPostsWithCursor(eq(userId), eq(lastReadPostId), any(PageRequest.class)))
                     .willReturn(repositoryResult);
-            given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
+            given(postKeywordLookupService.getKeywordsByPostIds(any())).willReturn(Map.of());
             given(bookmarkLookupService.getBookmarkedPostIds(eq(userId), any())).willReturn(java.util.Set.of());
 
             GetReadPostsResult response = readPostQueryService.getReadPosts(query);
@@ -100,12 +98,8 @@ class ReadPostQueryServiceTest {
             given(readPostRepository.findReadPostsWithCursor(eq(userId), eq(lastReadPostId), any(PageRequest.class)))
                     .willReturn(repositoryResult);
 
-            Post mockPost = mock(Post.class);
-            given(mockPost.getId()).willReturn(103L);
-            given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of(
-                    PostKeyword.builder().keyword("Java").post(mockPost).build(),
-                    PostKeyword.builder().keyword("Spring").post(mockPost).build()
-            ));
+            given(postKeywordLookupService.getKeywordsByPostIds(any()))
+                    .willReturn(Map.of(103L, List.of("Java", "Spring")));
             given(bookmarkLookupService.getBookmarkedPostIds(eq(userId), any())).willReturn(java.util.Set.of(103L));
 
             GetReadPostsResult response = readPostQueryService.getReadPosts(query);
@@ -134,7 +128,7 @@ class ReadPostQueryServiceTest {
             assertThat(response.readPosts()).isEmpty();
             assertThat(response.lastReadPostId()).isNull();
             assertThat(response.hasNext()).isFalse();
-            verify(postKeywordRepository, never()).findByPostIdIn(any());
+            verify(postKeywordLookupService, never()).getKeywordsByPostIds(any());
             verify(bookmarkLookupService, never()).getBookmarkedPostIds(any(), any());
         }
     }

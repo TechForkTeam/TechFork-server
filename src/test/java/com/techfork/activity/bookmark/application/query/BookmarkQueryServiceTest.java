@@ -2,18 +2,16 @@ package com.techfork.activity.bookmark.application.query;
 
 import com.techfork.activity.bookmark.infrastructure.BookmarkQueryRow;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
-import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.post.entity.PostKeyword;
-import com.techfork.domain.post.repository.PostKeywordRepository;
+import com.techfork.domain.post.service.PostKeywordLookupService;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.exception.UserErrorCode;
-import com.techfork.domain.useraccount.repository.UserRepository;
+import com.techfork.domain.useraccount.service.UserLookupService;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -40,13 +38,13 @@ import static org.mockito.Mockito.lenient;
 class BookmarkQueryServiceTest {
 
     @Mock
-    private UserRepository userRepository;
+    private UserLookupService userLookupService;
 
     @Mock
     private BookmarkRepository bookmarkRepository;
 
     @Mock
-    private PostKeywordRepository postKeywordRepository;
+    private PostKeywordLookupService postKeywordLookupService;
 
     @Mock
     private CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
@@ -96,10 +94,10 @@ class BookmarkQueryServiceTest {
                 int size = 20;
                 GetBookmarksQuery query = new GetBookmarksQuery(userId, lastBookmarkId, size);
 
-                given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
+                given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
                 given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
                         .willReturn(mockBookmarkRowsFirstPage);
-                given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
+                given(postKeywordLookupService.getKeywordsByPostIds(any())).willReturn(Map.of());
 
                 GetBookmarksResult response = bookmarkQueryService.getBookmarks(query);
 
@@ -109,7 +107,7 @@ class BookmarkQueryServiceTest {
                 assertThat(response.hasNext()).isFalse();
                 assertThat(response.bookmarks().get(0).bookmarkId()).isEqualTo(3L);
 
-                verify(userRepository, times(1)).findById(userId);
+                verify(userLookupService, times(1)).getUserOrThrow(userId);
                 verify(bookmarkRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
             }
 
@@ -121,10 +119,10 @@ class BookmarkQueryServiceTest {
                 int size = 20;
                 GetBookmarksQuery query = new GetBookmarksQuery(userId, lastBookmarkId, size);
 
-                given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
+                given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
                 given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
                         .willReturn(mockBookmarkRowsSecondPage);
-                given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
+                given(postKeywordLookupService.getKeywordsByPostIds(any())).willReturn(Map.of());
 
                 GetBookmarksResult response = bookmarkQueryService.getBookmarks(query);
 
@@ -144,7 +142,7 @@ class BookmarkQueryServiceTest {
                 int size = 20;
                 GetBookmarksQuery query = new GetBookmarksQuery(userId, lastBookmarkId, size);
 
-                given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
+                given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
 
                 List<BookmarkQueryRow> emptyBookmarks = List.of();
                 given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
@@ -168,31 +166,14 @@ class BookmarkQueryServiceTest {
                 int size = 20;
                 GetBookmarksQuery query = new GetBookmarksQuery(userId, lastBookmarkId, size);
 
-                given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
+                given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
                 given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
                         .willReturn(mockBookmarkRowsFirstPage);
-
-                Post mockPost1 = mock(Post.class);
-                Post mockPost2 = mock(Post.class);
-
-                given(mockPost1.getId()).willReturn(103L);
-                given(mockPost2.getId()).willReturn(102L);
-
-                PostKeyword keyword1 = PostKeyword.builder()
-                        .keyword("Java")
-                        .post(mockPost1)
-                        .build();
-                PostKeyword keyword2 = PostKeyword.builder()
-                        .keyword("Spring")
-                        .post(mockPost1)
-                        .build();
-                PostKeyword keyword3 = PostKeyword.builder()
-                        .keyword("Kotlin")
-                        .post(mockPost2)
-                        .build();
-
-                given(postKeywordRepository.findByPostIdIn(any()))
-                        .willReturn(List.of(keyword1, keyword2, keyword3));
+                given(postKeywordLookupService.getKeywordsByPostIds(any()))
+                        .willReturn(Map.of(
+                                103L, List.of("Java", "Spring"),
+                                102L, List.of("Kotlin")
+                        ));
 
                 GetBookmarksResult response = bookmarkQueryService.getBookmarks(query);
 
@@ -202,9 +183,9 @@ class BookmarkQueryServiceTest {
                 assertThat(response.bookmarks().get(1).keywords()).containsExactly("Kotlin");
                 assertThat(response.bookmarks().get(2).keywords()).isEmpty();
 
-                verify(userRepository, times(1)).findById(userId);
+                verify(userLookupService, times(1)).getUserOrThrow(userId);
                 verify(bookmarkRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
-                verify(postKeywordRepository, times(1)).findByPostIdIn(any());
+                verify(postKeywordLookupService, times(1)).getKeywordsByPostIds(any());
             }
         }
 
@@ -220,13 +201,14 @@ class BookmarkQueryServiceTest {
                 int size = 20;
                 GetBookmarksQuery query = new GetBookmarksQuery(userId, lastBookmarkId, size);
 
-                given(userRepository.findById(userId)).willReturn(Optional.empty());
+                given(userLookupService.getUserOrThrow(userId))
+                        .willThrow(new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
                 assertThatThrownBy(() -> bookmarkQueryService.getBookmarks(query))
                         .isInstanceOf(GeneralException.class)
                         .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
 
-                verify(userRepository, times(1)).findById(userId);
+                verify(userLookupService, times(1)).getUserOrThrow(userId);
                 verify(bookmarkRepository, never()).findBookmarksWithCursor(any(), any(), any());
             }
         }
