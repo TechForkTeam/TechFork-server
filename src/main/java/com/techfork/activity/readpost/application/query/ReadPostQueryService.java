@@ -1,6 +1,6 @@
 package com.techfork.activity.readpost.application.query;
 
-import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
+import com.techfork.activity.bookmark.application.query.lookup.BookmarkLookupService;
 import com.techfork.activity.readpost.infrastructure.ReadPostQueryRow;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.domain.post.entity.PostKeyword;
@@ -8,7 +8,6 @@ import com.techfork.domain.post.repository.PostKeywordRepository;
 import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ReadPostQueryService {
 
-    private final BookmarkRepository bookmarkRepository;
+    private final BookmarkLookupService bookmarkLookupService;
     private final PostKeywordRepository postKeywordRepository;
     private final ReadPostRepository readPostRepository;
     private final CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
@@ -55,7 +54,7 @@ public class ReadPostQueryService {
                         Collectors.mapping(PostKeyword::getKeyword, Collectors.toList())
                 ));
 
-        Set<Long> bookmarkedPostIds = Set.copyOf(bookmarkRepository.findBookmarkedPostIds(userId, postIds));
+        var bookmarkedPostIds = bookmarkLookupService.getBookmarkedPostIds(userId, postIds);
 
         return rows.stream()
                 .map(row -> ReadPostItem.builder()

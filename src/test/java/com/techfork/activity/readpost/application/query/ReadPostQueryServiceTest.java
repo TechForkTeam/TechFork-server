@@ -1,6 +1,6 @@
 package com.techfork.activity.readpost.application.query;
 
-import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
+import com.techfork.activity.bookmark.application.query.lookup.BookmarkLookupService;
 import com.techfork.activity.readpost.infrastructure.ReadPostQueryRow;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.domain.post.entity.Post;
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.lenient;
 class ReadPostQueryServiceTest {
 
     @Mock
-    private BookmarkRepository bookmarkRepository;
+    private BookmarkLookupService bookmarkLookupService;
 
     @Mock
     private ReadPostRepository readPostRepository;
@@ -74,7 +74,7 @@ class ReadPostQueryServiceTest {
             given(readPostRepository.findReadPostsWithCursor(eq(userId), eq(lastReadPostId), any(PageRequest.class)))
                     .willReturn(repositoryResult);
             given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
-            given(bookmarkRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(List.of());
+            given(bookmarkLookupService.getBookmarkedPostIds(eq(userId), any())).willReturn(java.util.Set.of());
 
             GetReadPostsResult response = readPostQueryService.getReadPosts(query);
 
@@ -106,7 +106,7 @@ class ReadPostQueryServiceTest {
                     PostKeyword.builder().keyword("Java").post(mockPost).build(),
                     PostKeyword.builder().keyword("Spring").post(mockPost).build()
             ));
-            given(bookmarkRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(List.of(103L));
+            given(bookmarkLookupService.getBookmarkedPostIds(eq(userId), any())).willReturn(java.util.Set.of(103L));
 
             GetReadPostsResult response = readPostQueryService.getReadPosts(query);
 
@@ -135,7 +135,7 @@ class ReadPostQueryServiceTest {
             assertThat(response.lastReadPostId()).isNull();
             assertThat(response.hasNext()).isFalse();
             verify(postKeywordRepository, never()).findByPostIdIn(any());
-            verify(bookmarkRepository, never()).findBookmarkedPostIds(any(), any());
+            verify(bookmarkLookupService, never()).getBookmarkedPostIds(any(), any());
         }
     }
 
