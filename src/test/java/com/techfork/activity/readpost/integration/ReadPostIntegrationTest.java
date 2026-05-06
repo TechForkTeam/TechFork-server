@@ -319,6 +319,33 @@ class ReadPostIntegrationTest extends IntegrationTestBase {
                         .andExpect(jsonPath("$.data.lastReadPostId").exists());
             }
         }
+
+        @Nested
+        @DisplayName("Failure")
+        class Failure {
+
+            @Test
+            @DisplayName("size가 1 미만이면 실패한다")
+            void getReadPosts_Fail_SizeTooSmall() throws Exception {
+                mockMvc.perform(get("/api/v1/activities/read-posts")
+                                .header("Authorization", "Bearer " + accessToken)
+                                .param("size", "0"))
+                        .andDo(print())
+                        .andExpect(status().isBadRequest())
+                        .andExpect(jsonPath("$.isSuccess").value(false));
+            }
+
+            @Test
+            @DisplayName("size가 100 초과면 실패한다")
+            void getReadPosts_Fail_SizeTooLarge() throws Exception {
+                mockMvc.perform(get("/api/v1/activities/read-posts")
+                                .header("Authorization", "Bearer " + accessToken)
+                                .param("size", "101"))
+                        .andDo(print())
+                        .andExpect(status().isBadRequest())
+                        .andExpect(jsonPath("$.isSuccess").value(false));
+            }
+        }
     }
 
     @Nested

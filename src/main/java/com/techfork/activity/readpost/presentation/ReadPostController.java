@@ -12,9 +12,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Activity", description = "사용자 활동 API")
+@Validated
 @RestController
 @RequestMapping("/api/v1/activities/read-posts")
 @RequiredArgsConstructor
@@ -41,8 +45,11 @@ public class ReadPostController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Parameter(description = "마지막 읽은 게시글 ID (커서, 선택)")
             @RequestParam(required = false) Long lastReadPostId,
-            @Parameter(description = "페이지 크기 (기본값: 20)")
-            @RequestParam(defaultValue = "20") int size
+            @Parameter(description = "페이지 크기 (기본값: 20, 범위: 1~100)")
+            @RequestParam(defaultValue = "20")
+            @Min(value = 1, message = "페이지 크기는 1 이상이어야 합니다.")
+            @Max(value = 100, message = "페이지 크기는 100 이하여야 합니다.")
+            int size
     ) {
         GetReadPostsQuery query = new GetReadPostsQuery(userPrincipal.getId(), lastReadPostId, size);
         GetReadPostsResult result = readPostQueryService.getReadPosts(query);
