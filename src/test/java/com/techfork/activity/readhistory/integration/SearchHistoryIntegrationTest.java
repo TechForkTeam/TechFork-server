@@ -1,9 +1,9 @@
 package com.techfork.activity.readhistory.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.techfork.activity.readhistory.dto.SearchHistoryRequest;
-import com.techfork.activity.readhistory.entity.SearchHistory;
-import com.techfork.activity.readhistory.repository.SearchHistoryRepository;
+import com.techfork.activity.readhistory.domain.SearchHistory;
+import com.techfork.activity.readhistory.infrastructure.SearchHistoryRepository;
+import com.techfork.activity.readhistory.presentation.SearchHistoryRequest;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.enums.Role;
 import com.techfork.domain.useraccount.enums.SocialType;
@@ -11,6 +11,8 @@ import com.techfork.domain.useraccount.repository.UserRepository;
 import com.techfork.global.common.MySqlRedisIntegrationTestBase;
 import com.techfork.global.security.jwt.JwtDTO;
 import com.techfork.global.security.jwt.JwtUtil;
+import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,9 +21,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;

@@ -1,12 +1,13 @@
-package com.techfork.activity.readhistory.service;
+package com.techfork.activity.readhistory.application.command;
 
-import com.techfork.activity.readhistory.dto.SearchHistoryRequest;
-import com.techfork.activity.readhistory.entity.SearchHistory;
-import com.techfork.activity.readhistory.repository.SearchHistoryRepository;
+import com.techfork.activity.readhistory.domain.SearchHistory;
+import com.techfork.activity.readhistory.infrastructure.SearchHistoryRepository;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.exception.UserErrorCode;
 import com.techfork.domain.useraccount.repository.UserRepository;
 import com.techfork.global.exception.GeneralException;
+import java.time.LocalDateTime;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,9 +16,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.LocalDateTime;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -54,13 +52,13 @@ class ReadHistoryCommandServiceTest {
                 Long userId = 1L;
                 String query = "Spring Boot";
                 LocalDateTime searchedAt = LocalDateTime.now();
-                SearchHistoryRequest request = new SearchHistoryRequest(query, searchedAt);
+                SaveSearchHistoryCommand command = new SaveSearchHistoryCommand(userId, query, searchedAt);
 
                 User mockUser = mock(User.class);
                 given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
                 given(searchHistoryRepository.save(any(SearchHistory.class))).willReturn(mock(SearchHistory.class));
 
-                readHistoryCommandService.saveSearchHistory(userId, request);
+                readHistoryCommandService.saveSearchHistory(command);
 
                 verify(userRepository, times(1)).findById(userId);
                 ArgumentCaptor<SearchHistory> searchHistoryCaptor = ArgumentCaptor.forClass(SearchHistory.class);
@@ -77,11 +75,11 @@ class ReadHistoryCommandServiceTest {
             @DisplayName("존재하지 않는 사용자")
             void saveSearchHistory_Fail_UserNotFound() {
                 Long userId = 999L;
-                SearchHistoryRequest request = new SearchHistoryRequest("Spring Boot", LocalDateTime.now());
+                SaveSearchHistoryCommand command = new SaveSearchHistoryCommand(userId, "Spring Boot", LocalDateTime.now());
 
                 given(userRepository.findById(userId)).willReturn(Optional.empty());
 
-                assertThatThrownBy(() -> readHistoryCommandService.saveSearchHistory(userId, request))
+                assertThatThrownBy(() -> readHistoryCommandService.saveSearchHistory(command))
                         .isInstanceOf(GeneralException.class)
                         .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
 

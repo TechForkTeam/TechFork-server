@@ -1,7 +1,7 @@
-package com.techfork.activity.readhistory.controller;
+package com.techfork.activity.readhistory.presentation;
 
-import com.techfork.activity.readhistory.dto.SearchHistoryRequest;
-import com.techfork.activity.readhistory.service.ReadHistoryCommandService;
+import com.techfork.activity.readhistory.application.command.ReadHistoryCommandService;
+import com.techfork.activity.readhistory.application.command.SaveSearchHistoryCommand;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import com.techfork.global.security.oauth.UserPrincipal;
@@ -33,7 +33,12 @@ public class ReadHistoryController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody SearchHistoryRequest request
     ) {
-        readHistoryCommandService.saveSearchHistory(userPrincipal.getId(), request);
+        SaveSearchHistoryCommand command = new SaveSearchHistoryCommand(
+                userPrincipal.getId(),
+                request.query(),
+                request.searchedAt()
+        );
+        readHistoryCommandService.saveSearchHistory(command);
         return BaseResponse.of(SuccessCode.CREATED);
     }
 }

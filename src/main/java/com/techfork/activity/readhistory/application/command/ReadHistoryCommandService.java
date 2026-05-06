@@ -1,8 +1,7 @@
-package com.techfork.activity.readhistory.service;
+package com.techfork.activity.readhistory.application.command;
 
-import com.techfork.activity.readhistory.dto.SearchHistoryRequest;
-import com.techfork.activity.readhistory.entity.SearchHistory;
-import com.techfork.activity.readhistory.repository.SearchHistoryRepository;
+import com.techfork.activity.readhistory.domain.SearchHistory;
+import com.techfork.activity.readhistory.infrastructure.SearchHistoryRepository;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.exception.UserErrorCode;
 import com.techfork.domain.useraccount.repository.UserRepository;
@@ -21,17 +20,17 @@ public class ReadHistoryCommandService {
     private final SearchHistoryRepository searchHistoryRepository;
 
     @Transactional
-    public void saveSearchHistory(Long userId, SearchHistoryRequest request) {
-        User user = userRepository.findById(userId)
+    public void saveSearchHistory(SaveSearchHistoryCommand command) {
+        User user = userRepository.findById(command.userId())
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
         SearchHistory searchHistory = SearchHistory.create(
                 user,
-                request.query(),
-                request.searchedAt()
+                command.query(),
+                command.searchedAt()
         );
 
         searchHistoryRepository.save(searchHistory);
-        log.info("Saved search history for user {} with query: {}", userId, request.query());
+        log.info("Saved search history for user {} with query: {}", command.userId(), command.query());
     }
 }

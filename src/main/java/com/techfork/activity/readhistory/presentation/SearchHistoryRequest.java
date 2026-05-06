@@ -1,11 +1,10 @@
-package com.techfork.activity.readhistory.dto;
+package com.techfork.activity.readhistory.presentation;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import java.time.LocalDateTime;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-
-import java.time.LocalDateTime;
 
 public record SearchHistoryRequest(
         @JsonAlias("searchWord")

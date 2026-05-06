@@ -1,15 +1,19 @@
-package com.techfork.activity.readhistory.entity;
+package com.techfork.activity.readhistory.domain;
 
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.global.common.BaseEntity;
-import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.PersistenceCreator;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "search_histories")

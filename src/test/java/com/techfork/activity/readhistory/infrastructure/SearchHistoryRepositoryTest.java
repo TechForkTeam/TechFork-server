@@ -1,9 +1,11 @@
-package com.techfork.activity.readhistory.repository;
+package com.techfork.activity.readhistory.infrastructure;
 
-import com.techfork.activity.readhistory.entity.SearchHistory;
+import com.techfork.activity.readhistory.domain.SearchHistory;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.enums.SocialType;
 import com.techfork.domain.useraccount.repository.UserRepository;
+import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,9 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
