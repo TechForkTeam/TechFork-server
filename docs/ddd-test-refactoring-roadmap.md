@@ -429,14 +429,16 @@ Activity
 ```
 
 ```text
-이미 반영된 slice / 용어 정리
-- Bookmark entity/repository/service/test 명칭
-- Bookmark slice package (`domain/activity/bookmark/...`)
-- SearchHistory slice package (`domain/activity/readhistory/...`)
-- ReadPost slice package (`domain/activity/readpost/...`)
-- slice별 controller package (`bookmark/controller`, `readhistory/controller`, `readpost/controller`)
-- `ReadPostFirstReadPolicy`로 첫 읽기 판별 규칙 분리
-- bookmarks table / bookmarkedAt column
+현재 브랜치 기준 이미 반영된 slice / 용어 정리
+- Bookmark / ReadPost / SearchHistory가 모두 `presentation / application / domain / infrastructure` 기준으로 정리되었다.
+- Bookmark는 `application/command`, `application/query`, `application/query/lookup`, `domain`, `infrastructure`, `presentation` 구조를 사용한다.
+- Bookmark / ReadPost / SearchHistory의 application 서비스는 더 이상 `UserRepository`, `PostRepository`, `PostKeywordRepository`를 직접 참조하지 않고 `UserLookupService`, `PostLookupService`, `PostKeywordLookupService`, `BookmarkLookupService`를 통해 다른 컨텍스트 조회를 수행한다.
+- ReadPost는 `SaveReadPostCommand`, `GetReadPostsQuery`, `GetReadPostsResult`, `ReadPostItem`, `ReadPostConverter`로 command/query/response 경계를 분리했다.
+- ReadPost의 북마크 여부 조회는 `bookmark.infrastructure.BookmarkRepository` 직접 참조 대신 `bookmark.application.query.lookup.BookmarkLookupService`를 통해 조합한다.
+- ReadPost 목록 조회는 HTTP layer에서 `size`를 `1..100`으로 검증한다.
+- SearchHistory는 `SearchHistoryRequest -> SaveSearchHistoryCommand -> ReadHistoryCommandService -> SearchHistoryRepository` 흐름으로 정리했다.
+- `ReadPostFirstReadPolicy`로 첫 읽기 판별 규칙을 분리했다.
+- bookmarks table / bookmarkedAt column 반영
 - SearchHistory.query + legacy searchWord alias 허용
 ```
 
@@ -480,17 +482,18 @@ ReadPostTest
 ```
 
 ```text
-SearchHistoryRequestTest / SearchHistoryTest
+SearchHistoryRequestTest / SearchHistoryRepositoryTest / SearchHistoryIntegrationTest
 - `query`를 canonical field로 사용한다.
 - legacy `searchWord` alias를 역호환으로 허용한다.
+- 최근 검색 기록 조회와 저장 흐름을 보존한다.
 ```
 
-##### 리팩터링 후보
+##### 현재 브랜치 기준 후속 정리 예정
 
-- Activity 컨텍스트 범위는 유지하되, 구현 단위는 `Bookmark → ReadPost → SearchHistory` slice로 분리
-- `BookmarkTest` 추가 여부를 결정해 aggregate 불변식을 문서화
-- `ReadPost`의 “첫 읽기만 조회수 증가” 규칙을 테스트/문서로 더 명확히 고정
-- `SearchHistory`의 canonical `query`와 legacy alias 지원 범위를 명확히 기록
+- `BookmarkTest`, `SearchHistoryTest` 같은 aggregate/entity 테스트 추가 여부를 결정해 불변식을 더 명시적으로 문서화
+- `ReadPost`, `SearchHistory`를 포함한 Activity aggregate에 value object를 도입할지 2차 정리에서 검토
+- hexagonal architecture(포트/어댑터) 적용은 DDD slice 정리 완료 후 Phase 6에서 검토/적용
+- `ManyToOne -> ID reference` 전환은 전술 모델 2차 정리에서 별도 이슈로 검토
 - 마지막에 Activity 전체 회귀 테스트를 다시 실행
 
 ---
@@ -827,37 +830,43 @@ Source / Ingestion
 하지만 DDD 전환이 진행되면 테스트 구조도 다음처럼 바꾸는 것이 좋다.
 
 ```text
-src/test/java/com/techfork/domain
+src/test/java/com/techfork
   activity
     bookmark
-      entity
+      domain
         BookmarkTest
-      repository
+      infrastructure
         BookmarkRepositoryTest
-      service
-        BookmarkCommandServiceTest
-        BookmarkQueryServiceTest
+      application
+        command
+          BookmarkCommandServiceTest
+        query
+          BookmarkQueryServiceTest
+          lookup
+            BookmarkLookupServiceTest
       integration
         BookmarkIntegrationTest
     readpost
       domain
         ReadPostFirstReadPolicyTest
-      entity
         ReadPostTest
-      repository
+      infrastructure
         ReadPostRepositoryTest
-      service
-        ReadPostCommandServiceTest
-        ReadPostQueryServiceTest
+      application
+        command
+          ReadPostCommandServiceTest
+        query
+          ReadPostQueryServiceTest
       integration
         ReadPostIntegrationTest
     readhistory
-      dto
+      presentation
         SearchHistoryRequestTest
-      repository
+      infrastructure
         SearchHistoryRepositoryTest
-      service
-        ReadHistoryCommandServiceTest
+      application
+        command
+          ReadHistoryCommandServiceTest
       integration
         SearchHistoryIntegrationTest
 
@@ -953,8 +962,10 @@ TechnicalPostIndexed
 [완료] 2. 테스트 갭 분석 문서 작성
 [완료] 3. Bookmark / SearchQuery 용어 리팩터링 기본 반영 + EDifficultyLevel 제거
 [완료] 4. Activity 핵심 테스트 / PersonalizationProfileServiceTest / PostSummary* 기본 안전망 반영
-[다음] 5. Activity 4.1 후속 정리
-       - Bookmark → ReadPost → SearchHistory slice로 이슈/PR 분리
+[완료] 5. Activity 4.1 1차 정리
+       - Bookmark / ReadPost / SearchHistory slice를 `presentation / application / domain / infrastructure` 기준으로 정리
+[완료] 5-1. Activity 4.1 2차 정리
+       - application 서비스의 direct cross-context repository 접근을 application 간 의존으로 전환
 [다음] 6. Post aggregate 테스트 작성
        - PostTest, PostEmbeddingProcessorTest, PostEmbeddingWriterTest
 [다음] 7. User aggregate 관심사 불변식 정리
@@ -962,8 +973,9 @@ TechnicalPostIndexed
        - MmrServiceTest, LlmRecommendationServiceTest
 [다음] 9. SearchServiceImpl 테스트 작성
 [다음] 10. 컨텍스트 1차 정리 후 전술 모델 2차 정리
-        - ID reference / VO / 엔티티 경계 정교화
+        - aggregate / value object / ID reference / 엔티티 경계 정교화
 [다음] 11. Phase 6 진입 조건 충족 후 이벤트/포트 분리 시작
+        - hexagonal architecture(포트/어댑터) 적용 검토
 ```
 
 ---

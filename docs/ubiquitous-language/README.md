@@ -28,7 +28,7 @@
 | Post / Content | [`post-content.md`](./post-content.md) | `src/main/java/com/techfork/domain/post` | 기술 게시글 본문, 요약, 키워드, 검색 projection |
 | User Account | [`user-account.md`](./user-account.md) | `src/main/java/com/techfork/domain/useraccount` | 계정, 온보딩, 관심사, 계정 프로필 |
 | Personalization Profile | [`personalization-profile.md`](./personalization-profile.md) | `src/main/java/com/techfork/domain/personalization` | 개인화 프로필 생성, 벡터, 핵심 키워드, 재생성 |
-| Activity | [`activity.md`](./activity.md) | `src/main/java/com/techfork/domain/activity` | 읽기/검색/북마크 행동 기록 |
+| Activity | [`activity.md`](./activity.md) | `src/main/java/com/techfork/activity` | 읽기/검색/북마크 행동 기록 |
 | Search | [`search.md`](./search.md) | `src/main/java/com/techfork/domain/search` | query service / read model 중심 컨텍스트 |
 | Recommendation | [`recommendation.md`](./recommendation.md) | `src/main/java/com/techfork/domain/recommendation` | 추천 후보 탐색, 랭킹, 현재 추천 목록 |
 | Auth / Security | [`auth-security.md`](./auth-security.md) | `src/main/java/com/techfork/domain/auth`, `src/main/java/com/techfork/global/security` | 인증 애플리케이션 서비스 + 보안 인프라 |
@@ -68,6 +68,7 @@
 |---|---|---|---|
 | `ScrabPost → Bookmark` 통일 | [`activity.md`](./activity.md) | 반영 | legacy 문서 표현 정리, 운영 migration 적용 확인 |
 | `searchWord → query` 통일 | [`activity.md`](./activity.md), [`search.md`](./search.md) | 반영 | legacy JSON alias 정리 여부 결정 |
+| Activity slice DDD 계층 정리 (`Bookmark` / `ReadPost` / `SearchHistory`) | [`activity.md`](./activity.md), [`../tactical-design.md`](../tactical-design.md) | 반영 | aggregate/value object 강화, hexagonal/ID reference 후속 검토 |
 | `RecommendationSet` 표준 용어 확정 | [`recommendation.md`](./recommendation.md) | 미반영 | 현재 추천 목록 aggregate 정리 |
 | `markAsisClicked → markAsClicked` 오타 수정 | [`recommendation.md`](./recommendation.md) | 미반영 | 메서드명/호출부 수정 |
 | `TechBlog.markCrawled()` 추가 | [`source-ingestion.md`](./source-ingestion.md) | 미반영 | 도메인 메서드 추가 + 호출부 연결 |

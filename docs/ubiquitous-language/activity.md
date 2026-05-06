@@ -4,10 +4,10 @@
 
 ## Owning packages
 
-- `src/main/java/com/techfork/domain/activity`
-- `src/main/java/com/techfork/domain/activity/bookmark`
-- `src/main/java/com/techfork/domain/activity/readhistory`
-- `src/main/java/com/techfork/domain/activity/readpost`
+- `src/main/java/com/techfork/activity`
+- `src/main/java/com/techfork/activity/bookmark`
+- `src/main/java/com/techfork/activity/readhistory`
+- `src/main/java/com/techfork/activity/readpost`
 
 ## 표준 용어
 
@@ -53,21 +53,37 @@
 | 읽은 포스트 | 읽은 게시글 | Post 컨텍스트 표준 용어와 맞춘다 |
 | bookmarked 필드 | 북마크 여부 | 응답 조합값이라는 의미를 더 분명히 한다 |
 
+## 현재 구조 메모
+
+- 현재 브랜치 기준으로 `Bookmark`, `ReadPost`, `SearchHistory`는 모두 `presentation / application / domain / infrastructure` 기준으로 정리되어 있다.
+- `ReadPost` 조회는 `bookmark.infrastructure.BookmarkRepository`를 직접 참조하지 않고 `bookmark.application.query.lookup.BookmarkLookupService`를 통해 북마크 여부를 조합한다.
+- `ReadPost` 목록 조회 `size`는 HTTP layer에서 `1..100`으로 검증한다.
+- `SearchHistory` 저장은 `SearchHistoryRequest -> SaveSearchHistoryCommand -> ReadHistoryCommandService` 흐름을 따른다.
+- Activity application 서비스의 cross-context 조회는 `UserLookupService`, `PostLookupService`, `PostKeywordLookupService`, `BookmarkLookupService`를 통해 application 간 의존으로 정리되어 있다.
+- aggregate/value object 강화, hexagonal architecture(포트/어댑터), `ManyToOne -> ID reference` 전환은 후속 정리 범위다.
+
 ## 주요 근거 파일
 
-- `src/main/java/com/techfork/domain/activity/readpost/entity/ReadPost.java`
-- `src/main/java/com/techfork/domain/activity/readpost/domain/ReadPostFirstReadPolicy.java`
-- `src/main/java/com/techfork/domain/activity/readpost/service/ReadPostCommandService.java`
-- `src/main/java/com/techfork/domain/activity/readpost/service/ReadPostQueryService.java`
-- `src/main/java/com/techfork/domain/activity/readpost/converter/ReadPostConverter.java`
-- `src/main/java/com/techfork/domain/activity/readpost/controller/ReadPostController.java`
-- `src/main/java/com/techfork/domain/activity/readhistory/entity/SearchHistory.java`
-- `src/main/java/com/techfork/domain/activity/bookmark/entity/Bookmark.java`
-- `src/main/java/com/techfork/domain/activity/bookmark/controller/BookmarkController.java`
-- `src/main/java/com/techfork/domain/activity/bookmark/repository/BookmarkRepository.java`
-- `src/main/java/com/techfork/domain/activity/bookmark/service/BookmarkCommandService.java`
-- `src/main/java/com/techfork/domain/activity/bookmark/service/BookmarkQueryService.java`
-- `src/main/java/com/techfork/domain/activity/bookmark/converter/BookmarkConverter.java`
-- `src/main/java/com/techfork/domain/activity/readhistory/dto/SearchHistoryRequest.java`
-- `src/main/java/com/techfork/domain/activity/readhistory/controller/ReadHistoryController.java`
-- `src/main/java/com/techfork/domain/activity/readhistory/service/ReadHistoryCommandService.java`
+- `src/main/java/com/techfork/activity/readpost/domain/ReadPost.java`
+- `src/main/java/com/techfork/activity/readpost/domain/ReadPostFirstReadPolicy.java`
+- `src/main/java/com/techfork/activity/readpost/application/command/ReadPostCommandService.java`
+- `src/main/java/com/techfork/activity/readpost/application/command/SaveReadPostCommand.java`
+- `src/main/java/com/techfork/activity/readpost/application/query/ReadPostQueryService.java`
+- `src/main/java/com/techfork/activity/readpost/application/query/GetReadPostsQuery.java`
+- `src/main/java/com/techfork/activity/readpost/presentation/ReadPostConverter.java`
+- `src/main/java/com/techfork/activity/readpost/presentation/ReadPostController.java`
+- `src/main/java/com/techfork/activity/readhistory/domain/SearchHistory.java`
+- `src/main/java/com/techfork/activity/bookmark/domain/Bookmark.java`
+- `src/main/java/com/techfork/activity/bookmark/application/command/BookmarkCommandService.java`
+- `src/main/java/com/techfork/activity/bookmark/application/query/BookmarkQueryService.java`
+- `src/main/java/com/techfork/activity/bookmark/application/query/lookup/BookmarkLookupService.java`
+- `src/main/java/com/techfork/activity/bookmark/infrastructure/BookmarkRepository.java`
+- `src/main/java/com/techfork/activity/bookmark/presentation/BookmarkConverter.java`
+- `src/main/java/com/techfork/activity/bookmark/presentation/BookmarkController.java`
+- `src/main/java/com/techfork/domain/useraccount/service/UserLookupService.java`
+- `src/main/java/com/techfork/domain/post/service/PostLookupService.java`
+- `src/main/java/com/techfork/domain/post/service/PostKeywordLookupService.java`
+- `src/main/java/com/techfork/activity/readhistory/application/command/ReadHistoryCommandService.java`
+- `src/main/java/com/techfork/activity/readhistory/application/command/SaveSearchHistoryCommand.java`
+- `src/main/java/com/techfork/activity/readhistory/presentation/SearchHistoryRequest.java`
+- `src/main/java/com/techfork/activity/readhistory/presentation/ReadHistoryController.java`
