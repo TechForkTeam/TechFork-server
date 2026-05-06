@@ -1,9 +1,8 @@
-package com.techfork.activity.readpost.service;
+package com.techfork.activity.readpost.application.command;
 
+import com.techfork.activity.readpost.domain.ReadPost;
 import com.techfork.activity.readpost.domain.ReadPostFirstReadPolicy;
-import com.techfork.activity.readpost.dto.ReadPostRequest;
-import com.techfork.activity.readpost.entity.ReadPost;
-import com.techfork.activity.readpost.repository.ReadPostRepository;
+import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.exception.PostErrorCode;
 import com.techfork.domain.post.repository.PostRepository;
@@ -12,6 +11,8 @@ import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.exception.UserErrorCode;
 import com.techfork.domain.useraccount.repository.UserRepository;
 import com.techfork.global.exception.GeneralException;
+import java.time.LocalDateTime;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -20,9 +21,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.LocalDateTime;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -83,7 +81,7 @@ class ReadPostCommandServiceTest {
                         .crawledAt(LocalDateTime.now())
                         .techBlog(mockTechBlog)
                         .build();
-                ReadPostRequest request = new ReadPostRequest(postId, readAt, readDurationSeconds);
+                SaveReadPostCommand command = new SaveReadPostCommand(userId, postId, readAt, readDurationSeconds);
 
                 given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
                 given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
@@ -92,7 +90,7 @@ class ReadPostCommandServiceTest {
 
                 Long beforeViewCount = mockPost.getViewCount();
 
-                readPostCommandService.saveReadPost(userId, request);
+                readPostCommandService.saveReadPost(command);
 
                 ArgumentCaptor<ReadPost> readPostCaptor = ArgumentCaptor.forClass(ReadPost.class);
                 verify(readPostFirstReadPolicy, times(1)).isFirstRead(mockUser, mockPost);
@@ -130,7 +128,7 @@ class ReadPostCommandServiceTest {
                         .crawledAt(LocalDateTime.now())
                         .techBlog(mockTechBlog)
                         .build();
-                ReadPostRequest request = new ReadPostRequest(postId, readAt, readDurationSeconds);
+                SaveReadPostCommand command = new SaveReadPostCommand(userId, postId, readAt, readDurationSeconds);
 
                 given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
                 given(postRepository.findById(postId)).willReturn(Optional.of(mockPost));
@@ -139,7 +137,7 @@ class ReadPostCommandServiceTest {
 
                 Long beforeViewCount = mockPost.getViewCount();
 
-                readPostCommandService.saveReadPost(userId, request);
+                readPostCommandService.saveReadPost(command);
 
                 ArgumentCaptor<ReadPost> readPostCaptor = ArgumentCaptor.forClass(ReadPost.class);
                 verify(readPostFirstReadPolicy, times(1)).isFirstRead(mockUser, mockPost);
@@ -158,11 +156,11 @@ class ReadPostCommandServiceTest {
             @DisplayName("존재하지 않는 사용자면 저장에 실패한다")
             void saveReadPost_Fail_UserNotFound() {
                 Long userId = 999L;
-                ReadPostRequest request = new ReadPostRequest(100L, LocalDateTime.now(), 300);
+                SaveReadPostCommand command = new SaveReadPostCommand(userId, 100L, LocalDateTime.now(), 300);
 
                 given(userRepository.findById(userId)).willReturn(Optional.empty());
 
-                assertThatThrownBy(() -> readPostCommandService.saveReadPost(userId, request))
+                assertThatThrownBy(() -> readPostCommandService.saveReadPost(command))
                         .isInstanceOf(GeneralException.class)
                         .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
 
@@ -176,13 +174,13 @@ class ReadPostCommandServiceTest {
             void saveReadPost_Fail_PostNotFound() {
                 Long userId = 1L;
                 Long postId = 999L;
-                ReadPostRequest request = new ReadPostRequest(postId, LocalDateTime.now(), 300);
+                SaveReadPostCommand command = new SaveReadPostCommand(userId, postId, LocalDateTime.now(), 300);
                 User mockUser = mock(User.class);
 
                 given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
                 given(postRepository.findById(postId)).willReturn(Optional.empty());
 
-                assertThatThrownBy(() -> readPostCommandService.saveReadPost(userId, request))
+                assertThatThrownBy(() -> readPostCommandService.saveReadPost(command))
                         .isInstanceOf(GeneralException.class)
                         .hasFieldOrPropertyWithValue("code", PostErrorCode.POST_NOT_FOUND);
 

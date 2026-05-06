@@ -3,9 +3,9 @@ package com.techfork.activity.readpost.integration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techfork.activity.bookmark.domain.Bookmark;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
-import com.techfork.activity.readpost.dto.ReadPostRequest;
-import com.techfork.activity.readpost.entity.ReadPost;
-import com.techfork.activity.readpost.repository.ReadPostRepository;
+import com.techfork.activity.readpost.domain.ReadPost;
+import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
+import com.techfork.activity.readpost.presentation.ReadPostRequest;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;
@@ -14,7 +14,7 @@ import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.enums.Role;
 import com.techfork.domain.useraccount.enums.SocialType;
 import com.techfork.domain.useraccount.repository.UserRepository;
-import com.techfork.global.common.MySqlRedisIntegrationTestBase;
+import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.global.security.jwt.JwtDTO;
 import com.techfork.global.security.jwt.JwtUtil;
 import org.junit.jupiter.api.AfterEach;
@@ -36,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class ReadPostIntegrationTest extends MySqlRedisIntegrationTestBase {
+class ReadPostIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;

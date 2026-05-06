@@ -1,9 +1,10 @@
-package com.techfork.activity.readpost.controller;
+package com.techfork.activity.readpost.presentation;
 
-import com.techfork.activity.readpost.dto.ReadPostListResponse;
-import com.techfork.activity.readpost.dto.ReadPostRequest;
-import com.techfork.activity.readpost.service.ReadPostCommandService;
-import com.techfork.activity.readpost.service.ReadPostQueryService;
+import com.techfork.activity.readpost.application.command.ReadPostCommandService;
+import com.techfork.activity.readpost.application.command.SaveReadPostCommand;
+import com.techfork.activity.readpost.application.query.GetReadPostsQuery;
+import com.techfork.activity.readpost.application.query.GetReadPostsResult;
+import com.techfork.activity.readpost.application.query.ReadPostQueryService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import com.techfork.global.security.oauth.UserPrincipal;
@@ -29,6 +30,7 @@ public class ReadPostController {
 
     private final ReadPostCommandService readPostCommandService;
     private final ReadPostQueryService readPostQueryService;
+    private final ReadPostConverter readPostConverter;
 
     @Operation(
             summary = "읽은 게시글 목록 조회",
@@ -42,7 +44,9 @@ public class ReadPostController {
             @Parameter(description = "페이지 크기 (기본값: 20)")
             @RequestParam(defaultValue = "20") int size
     ) {
-        ReadPostListResponse response = readPostQueryService.getReadPosts(userPrincipal.getId(), lastReadPostId, size);
+        GetReadPostsQuery query = new GetReadPostsQuery(userPrincipal.getId(), lastReadPostId, size);
+        GetReadPostsResult result = readPostQueryService.getReadPosts(query);
+        ReadPostListResponse response = readPostConverter.toReadPostListResponse(result);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 
@@ -55,7 +59,13 @@ public class ReadPostController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody ReadPostRequest request
     ) {
-        readPostCommandService.saveReadPost(userPrincipal.getId(), request);
+        SaveReadPostCommand command = new SaveReadPostCommand(
+                userPrincipal.getId(),
+                request.postId(),
+                request.readAt(),
+                request.readDurationSeconds()
+        );
+        readPostCommandService.saveReadPost(command);
         return BaseResponse.of(SuccessCode.CREATED);
     }
 }

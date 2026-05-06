@@ -1,7 +1,6 @@
-package com.techfork.activity.readpost.repository;
+package com.techfork.activity.readpost.infrastructure;
 
-import com.techfork.activity.readpost.dto.ReadPostDto;
-import com.techfork.activity.readpost.entity.ReadPost;
+import com.techfork.activity.readpost.domain.ReadPost;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.repository.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;
@@ -127,10 +126,10 @@ class ReadPostRepositoryTest {
 
         readPostRepository.saveAll(List.of(read1, read2, read3));
 
-        List<ReadPostDto> result = readPostRepository.findReadPostsWithCursor(testUser.getId(), null, PageRequest.of(0, 10));
+        List<ReadPostQueryRow> result = readPostRepository.findReadPostsWithCursor(testUser.getId(), null, PageRequest.of(0, 10));
 
         assertThat(result).hasSize(2);
-        assertThat(result).extracting(ReadPostDto::postId)
+        assertThat(result).extracting(ReadPostQueryRow::postId)
                 .containsExactly(testPost2.getId(), testPost1.getId());
         assertThat(result.get(1).readPostId()).isEqualTo(read2.getId());
     }
@@ -144,7 +143,7 @@ class ReadPostRepositoryTest {
         readPostRepository.saveAll(List.of(read1, read2));
         readPostRepository.flush();
 
-        List<ReadPostDto> result = readPostRepository.findReadPostsWithCursor(
+        List<ReadPostQueryRow> result = readPostRepository.findReadPostsWithCursor(
                 testUser.getId(),
                 read2.getId(),
                 PageRequest.of(0, 10)

@@ -1,12 +1,11 @@
-package com.techfork.activity.readpost.dto;
-
-import lombok.Builder;
+package com.techfork.activity.readpost.application.query;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import lombok.Builder;
 
 @Builder
-public record ReadPostDto(
+public record ReadPostItem(
         Long readPostId,
         Long postId,
         String title,

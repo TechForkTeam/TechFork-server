@@ -1,4 +1,4 @@
-package com.techfork.activity.readpost.entity;
+package com.techfork.activity.readpost.domain;
 
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.useraccount.entity.User;

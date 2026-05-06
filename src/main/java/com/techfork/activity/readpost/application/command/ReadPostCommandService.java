@@ -1,9 +1,8 @@
-package com.techfork.activity.readpost.service;
+package com.techfork.activity.readpost.application.command;
 
+import com.techfork.activity.readpost.domain.ReadPost;
 import com.techfork.activity.readpost.domain.ReadPostFirstReadPolicy;
-import com.techfork.activity.readpost.dto.ReadPostRequest;
-import com.techfork.activity.readpost.entity.ReadPost;
-import com.techfork.activity.readpost.repository.ReadPostRepository;
+import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.exception.PostErrorCode;
 import com.techfork.domain.post.repository.PostRepository;
@@ -27,11 +26,11 @@ public class ReadPostCommandService {
     private final UserRepository userRepository;
     private final ReadPostFirstReadPolicy readPostFirstReadPolicy;
 
-    public void saveReadPost(Long userId, ReadPostRequest request) {
-        User user = userRepository.findById(userId)
+    public void saveReadPost(SaveReadPostCommand command) {
+        User user = userRepository.findById(command.userId())
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
-        Post post = postRepository.findById(request.postId())
+        Post post = postRepository.findById(command.postId())
                 .orElseThrow(() -> new GeneralException(PostErrorCode.POST_NOT_FOUND));
 
         boolean isFirstRead = readPostFirstReadPolicy.isFirstRead(user, post);
@@ -42,12 +41,12 @@ public class ReadPostCommandService {
         ReadPost readPost = ReadPost.create(
                 user,
                 post,
-                request.readAt(),
-                request.readDurationSeconds()
+                command.readAt(),
+                command.readDurationSeconds()
         );
 
         readPostRepository.save(readPost);
         log.info("Saved read post for user {} and post {} (viewCount incremented: {})",
-                userId, request.postId(), isFirstRead);
+                command.userId(), command.postId(), isFirstRead);
     }
 }

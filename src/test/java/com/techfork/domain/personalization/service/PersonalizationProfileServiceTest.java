@@ -1,10 +1,10 @@
 package com.techfork.domain.personalization.service;
 
 import com.techfork.activity.bookmark.domain.Bookmark;
-import com.techfork.activity.readpost.entity.ReadPost;
+import com.techfork.activity.readpost.domain.ReadPost;
 import com.techfork.activity.readhistory.entity.SearchHistory;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
-import com.techfork.activity.readpost.repository.ReadPostRepository;
+import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.activity.readhistory.repository.SearchHistoryRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.post.entity.PostKeyword;

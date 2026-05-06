@@ -1,15 +1,13 @@
-package com.techfork.activity.readpost.repository;
+package com.techfork.activity.readpost.infrastructure;
 
-import com.techfork.activity.readpost.dto.ReadPostDto;
-import com.techfork.activity.readpost.entity.ReadPost;
+import com.techfork.activity.readpost.domain.ReadPost;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.useraccount.entity.User;
+import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
-import java.util.List;
 
 public interface ReadPostRepository extends JpaRepository<ReadPost, Long> {
 
@@ -25,9 +23,9 @@ public interface ReadPostRepository extends JpaRepository<ReadPost, Long> {
     List<ReadPost> findRecentReadPostsByUserIdWithMinDuration(@Param("userId") Long userId, Pageable pageable);
 
     @Query("""
-            SELECT new com.techfork.activity.readpost.dto.ReadPostDto(
+            SELECT new com.techfork.activity.readpost.infrastructure.ReadPostQueryRow(
                 rp.id, p.id, p.title, p.shortSummary, p.url, t.companyName, t.logoUrl,
-                p.publishedAt, p.thumbnailUrl, p.viewCount, null, null, rp.readAt
+                p.publishedAt, p.thumbnailUrl, p.viewCount, rp.readAt
             )
             FROM ReadPost rp
             JOIN rp.post p
@@ -42,7 +40,7 @@ public interface ReadPostRepository extends JpaRepository<ReadPost, Long> {
             AND (:lastReadPostId IS NULL OR rp.id < :lastReadPostId)
             ORDER BY rp.id DESC
             """)
-    List<ReadPostDto> findReadPostsWithCursor(
+    List<ReadPostQueryRow> findReadPostsWithCursor(
             @Param("userId") Long userId,
             @Param("lastReadPostId") Long lastReadPostId,
             Pageable pageable
