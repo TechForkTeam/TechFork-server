@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
@@ -382,12 +383,8 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
     @DisplayName("GET /api/v2/posts/recent - POPULAR 정렬로 인기 게시글 조회")
     void getRecentPosts_Popular_Success() throws Exception {
         // Given: 조회수 증가
-        for (int i = 0; i < 100; i++) {
-            todayPost.incrementViewCount();
-        }
-        for (int i = 0; i < 50; i++) {
-            oldPost.incrementViewCount();
-        }
+        setViewCount(todayPost, 100L);
+        setViewCount(oldPost, 50L);
         postRepository.saveAll(List.of(todayPost, oldPost));
 
         // When & Then: 조회수 높은 순으로 정렬
@@ -467,9 +464,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
                     .build();
 
             // 조회수 설정
-            for (int j = 0; j < (6 - i) * 100; j++) {
-                post.incrementViewCount();
-            }
+            setViewCount(post, (long) ((6 - i) * 100));
             postRepository.save(post);
         }
 
@@ -511,6 +506,10 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data.posts").isArray())
                 .andExpect(jsonPath("$.data.posts.length()").value(0))
                 .andExpect(jsonPath("$.data.hasNext").value(false));
+    }
+
+    private void setViewCount(Post post, Long viewCount) {
+        ReflectionTestUtils.setField(post, "viewCount", viewCount);
     }
 
     @Test

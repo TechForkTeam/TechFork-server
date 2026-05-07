@@ -122,8 +122,4 @@ public class Post extends BaseEntity {
     public void clearKeywords() {
         this.keywords.clear();
     }
-
-    public void incrementViewCount() {
-        this.viewCount++;
-    }
 }

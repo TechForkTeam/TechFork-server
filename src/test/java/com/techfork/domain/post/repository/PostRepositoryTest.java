@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -547,9 +548,7 @@ class PostRepositoryTest {
                 .techBlog(techBlog)
                 .build();
 
-        for (int i = 0; i < viewCount; i++) {
-            post.incrementViewCount();
-        }
+        ReflectionTestUtils.setField(post, "viewCount", viewCount);
 
         return post;
     }
