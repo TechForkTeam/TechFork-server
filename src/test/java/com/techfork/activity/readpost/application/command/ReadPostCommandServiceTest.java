@@ -91,6 +91,7 @@ class ReadPostCommandServiceTest {
                 given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
                 given(postLookupService.getPostOrThrow(postId)).willReturn(mockPost);
                 given(readPostFirstReadPolicy.isFirstRead(mockUser, mockPost)).willReturn(true);
+                given(postCommandService.incrementViewCount(postId)).willReturn(true);
                 given(readPostRepository.save(any(ReadPost.class))).willReturn(mock(ReadPost.class));
 
                 Long beforeViewCount = mockPost.getViewCount();
