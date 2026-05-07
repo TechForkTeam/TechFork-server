@@ -6,6 +6,7 @@ import com.techfork.domain.post.dto.PostInfoDto;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.repository.TechBlogRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,6 +39,9 @@ class PostRepositoryTest {
     @Autowired
     private TechBlogRepository techBlogRepository;
 
+    @Autowired
+    private EntityManager entityManager;
+
     private TechBlog techBlog1;
     private TechBlog techBlog2;
     private TechBlog techBlog3;
@@ -65,6 +69,34 @@ class PostRepositoryTest {
                 .rssUrl("https://aws.com/rss")
                 .build();
         techBlogRepository.save(techBlog3);
+    }
+
+    @Test
+    @DisplayName("incrementViewCount - 조회수를 1 증가시킨다")
+    void incrementViewCount_IncreasesViewCount() {
+        Post post = postRepository.save(createPost("조회수 증가 대상", techBlog1, LocalDateTime.now(), 0L));
+
+        int updatedCount = postRepository.incrementViewCount(post.getId());
+
+        entityManager.clear();
+
+        Post updatedPost = postRepository.findById(post.getId()).orElseThrow();
+        assertThat(updatedCount).isEqualTo(1);
+        assertThat(updatedPost.getViewCount()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("incrementViewCount - 여러 번 호출하면 누적 증가한다")
+    void incrementViewCount_MultipleCalls_AccumulatesViewCount() {
+        Post post = postRepository.save(createPost("누적 조회수 대상", techBlog1, LocalDateTime.now(), 5L));
+
+        postRepository.incrementViewCount(post.getId());
+        postRepository.incrementViewCount(post.getId());
+
+        entityManager.clear();
+
+        Post updatedPost = postRepository.findById(post.getId()).orElseThrow();
+        assertThat(updatedPost.getViewCount()).isEqualTo(7L);
     }
 
     @Test

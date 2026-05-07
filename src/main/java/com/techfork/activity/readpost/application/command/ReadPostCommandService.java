@@ -4,6 +4,7 @@ import com.techfork.activity.readpost.domain.ReadPost;
 import com.techfork.activity.readpost.domain.ReadPostFirstReadPolicy;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.domain.post.entity.Post;
+import com.techfork.domain.post.service.PostCommandService;
 import com.techfork.domain.post.service.PostLookupService;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.service.UserLookupService;
@@ -20,6 +21,7 @@ public class ReadPostCommandService {
 
     private final ReadPostRepository readPostRepository;
     private final PostLookupService postLookupService;
+    private final PostCommandService postCommandService;
     private final UserLookupService userLookupService;
     private final ReadPostFirstReadPolicy readPostFirstReadPolicy;
 
@@ -29,7 +31,7 @@ public class ReadPostCommandService {
 
         boolean isFirstRead = readPostFirstReadPolicy.isFirstRead(user, post);
         if (isFirstRead) {
-            post.incrementViewCount();
+            postCommandService.incrementViewCount(post.getId());
         }
 
         ReadPost readPost = ReadPost.create(
