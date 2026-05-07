@@ -1,0 +1,54 @@
+package com.techfork.domain.post.service;
+
+import com.techfork.domain.post.repository.PostRepository;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
+@ExtendWith(MockitoExtension.class)
+class PostCommandServiceTest {
+
+    @Mock
+    private PostRepository postRepository;
+
+    @InjectMocks
+    private PostCommandService postCommandService;
+
+    @Nested
+    @DisplayName("incrementViewCount")
+    class IncrementViewCount {
+
+        @Test
+        @DisplayName("1건이 업데이트되면 true를 반환한다")
+        void incrementViewCount_ReturnsTrue_WhenSingleRowUpdated() {
+            Long postId = 100L;
+            given(postRepository.incrementViewCount(postId)).willReturn(1);
+
+            boolean incremented = postCommandService.incrementViewCount(postId);
+
+            assertThat(incremented).isTrue();
+            verify(postRepository, times(1)).incrementViewCount(postId);
+        }
+
+        @Test
+        @DisplayName("업데이트 건수가 1이 아니면 false를 반환한다")
+        void incrementViewCount_ReturnsFalse_WhenUpdatedCountIsNotOne() {
+            Long postId = 100L;
+            given(postRepository.incrementViewCount(postId)).willReturn(0);
+
+            boolean incremented = postCommandService.incrementViewCount(postId);
+
+            assertThat(incremented).isFalse();
+            verify(postRepository, times(1)).incrementViewCount(postId);
+        }
+    }
+}

@@ -21,6 +21,7 @@
 | 수집일 | `crawledAt` | TechFork가 해당 기술 게시글을 수집한 시각 |
 | 임베딩 완료일 | `embeddedAt` | 기술 게시글이 임베딩되어 Elasticsearch에 색인된 시각 |
 | 조회수 | `viewCount` | 사용자가 처음 읽은 경우 증가하는 popularity 지표 |
+| 조회수 증가 경로 | `PostCommandService.incrementViewCount()` | production에서 조회수를 증가시키는 canonical command 경로 |
 | 검색 문서 | `PostDocument` | Elasticsearch `posts` 인덱스에 저장되는 기술 게시글 projection |
 | 콘텐츠 청크 | `ContentChunk` | 긴 본문을 임베딩 검색용으로 분할한 단위 |
 | 출처명 | `Post.company`, `TechBlog.companyName` | 기술 게시글이 어느 기술 블로그/회사에서 왔는지 표시하기 위한 이름 |
@@ -31,6 +32,8 @@
 - 도메인/기획 문서에서는 `Post`를 **기술 게시글**로 부른다.
 - `PostDocument`, `ContentChunk`는 aggregate가 아니라 **검색/추천용 projection**이다.
 - `Post.company`는 Source 컨텍스트의 출처명을 복사한 조회용 스냅샷이다.
+- production 경로에서는 `Post.incrementViewCount()` 같은 엔티티 필드 증가를 사용하지 않고 `PostCommandService`/`PostRepository`의 SQL atomic update를 canonical write path로 둔다.
+- `PostCommandService.incrementViewCount()`는 DB 값을 원자적으로 증가시키지만, 이미 로드된 managed `Post`의 `viewCount`를 같은 트랜잭션 안에서 최신 상태로 동기화하지는 않는다.
 - `EDifficultyLevel`은 실제 사용처가 없어 제거되었다. 필요해지면 정책과 함께 재도입한다.
 
 ## 내부 glossary
@@ -43,6 +46,7 @@
 | 청크 projection | `ContentChunk` | 긴 본문을 분할한 임베딩 검색 단위 |
 | 임베딩 완료 시각 | `embeddedAt` | 검색/추천용 색인 준비 완료 시각 |
 | 인기 지표 | `viewCount` | 조회수 기반 popularity 지표 |
+| 조회수 증가 command | `PostCommandService.incrementViewCount` | 조회수 증가를 DB atomic update로 위임하는 application command |
 
 ## 혼동 금지
 
@@ -63,6 +67,8 @@
 
 - `src/main/java/com/techfork/domain/post/entity/Post.java`
 - `src/main/java/com/techfork/domain/post/entity/PostKeyword.java`
+- `src/main/java/com/techfork/domain/post/service/PostCommandService.java`
+- `src/main/java/com/techfork/domain/post/repository/PostRepository.java`
 - `src/main/java/com/techfork/domain/post/document/PostDocument.java`
 - `src/main/java/com/techfork/domain/post/document/ContentChunk.java`
 - `src/main/java/com/techfork/domain/post/batch/PostSummaryProcessor.java`
