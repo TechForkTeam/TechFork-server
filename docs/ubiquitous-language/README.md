@@ -73,7 +73,7 @@
 | `markAsisClicked → markAsClicked` 오타 수정 | [`recommendation.md`](./recommendation.md) | 미반영 | 메서드명/호출부 수정 |
 | `TechBlog.markCrawled()` 추가 | [`source-ingestion.md`](./source-ingestion.md) | 미반영 | 도메인 메서드 추가 + 호출부 연결 |
 | `User.replaceInterests()` 추가 | [`user-account.md`](./user-account.md) | 미반영 | aggregate 불변식 검증을 도메인 메서드로 이동 |
-| `Post.incrementViewCount()` SQL atomic UPDATE | [`post-content.md`](./post-content.md) | 미반영 | Repository atomic update 도입 |
+| `Post viewCount` SQL atomic UPDATE 경로 정리 | [`post-content.md`](./post-content.md) | 반영 | `isFirstRead` race / idempotency는 별도 이슈로 해결 |
 | `EDifficultyLevel` 제거 | [`post-content.md`](./post-content.md) | 반영 | 필요 시 정책과 함께 재도입 검토 |
 
 ---

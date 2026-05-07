@@ -13,7 +13,7 @@
 | 컨텍스트 | 애그리거트 루트 | 내부 엔티티 / 값 객체 / Projection | 트랜잭션 내 보장 불변식 | 현재 코드 평가 |
 |---|---|---|---|---|
 | Source / Ingestion | `TechBlog` | `RssFeedItem`은 DTO/ACL 결과 | `blogUrl`과 `rssUrl`은 유일해야 한다. `lastCrawledAt`은 `markCrawled(LocalDateTime)`으로만 갱신된다. 기술 블로그는 RSS 수집 대상의 기준이다. | `TechBlog`가 Source 컨텍스트의 루트로 적절하다. **`markCrawled(LocalDateTime)` 도메인 메서드 누락** — 현재 Anemic Model 위험. |
-| Post / Content | `Post` | `PostKeyword`, `PostDocument`, `ContentChunk` | URL은 유일해야 한다. 요약/짧은 요약은 `updateSummaries()`로만 교체된다. 키워드는 `clearKeywords() + addKeyword()` 조합으로만 교체된다. 임베딩 완료 시각은 `markAsEmbedded(LocalDateTime)`으로만 기록된다. `incrementViewCount()`는 비원자적 연산이므로 SQL atomic UPDATE 정책 적용 필요. | `Post`가 핵심 애그리거트 루트다. `PostKeyword`는 `Post` 내부 컬렉션으로 보는 것이 자연스럽다. **`incrementViewCount()` 동시성 정책 미결정** (§1.2 참조). |
+| Post / Content | `Post` | `PostKeyword`, `PostDocument`, `ContentChunk` | URL은 유일해야 한다. 요약/짧은 요약은 `updateSummaries()`로만 교체된다. 키워드는 `clearKeywords() + addKeyword()` 조합으로만 교체된다. 임베딩 완료 시각은 `markAsEmbedded(LocalDateTime)`으로만 기록된다. 조회수 증가는 `PostCommandService`/`PostRepository`의 SQL atomic UPDATE 경로로만 처리한다. | `Post`가 핵심 애그리거트 루트다. `PostKeyword`는 `Post` 내부 컬렉션으로 보는 것이 자연스럽다. 조회수 증가는 aggregate 필드 증가가 아니라 command/repository 경로를 canonical write path로 본다 (§1.2 참조). |
 | User Account | `User` | `UserInterestCategory`, `UserInterestKeyword` | `socialType + socialId` 조합은 유일해야 한다. 상태 전이는 `PENDING → ACTIVE → WITHDRAWN → PENDING(재활성화)` 경로만 허용된다. 관심 키워드는 반드시 선택된 관심 카테고리에 속해야 한다. 관심사 교체는 `replaceInterests()`로 단일 트랜잭션 내 불변식 검증과 함께 처리된다. | `User`가 루트다. 계정/온보딩/관심사 불변식을 소유한다. **`replaceInterests()` 도메인 메서드 누락** — 불변식 검증이 서비스 레이어에 산재. |
 | Personalization Profile | 명시적 쓰기 애그리거트 없음 | `PersonalizationProfileDocument`, `UserActivityData` | 같은 `userId` 기준 현재 개인화 프로필 projection은 하나만 유지된다. 프로필 텍스트, 벡터, 핵심 키워드는 함께 재생성된다. | Personalization Profile은 aggregate보다 read model / application service 중심 컨텍스트다. 현재 `PersonalizationProfileService`가 생성 책임을 가진다. |
 | Activity | `ReadPost`, `Bookmark`, `SearchHistory` | 없음 | `Bookmark`는 `userId + postId` 조합이 유일해야 한다. `ReadPost`는 같은 사용자+게시글 중복 저장을 허용하되 `ReadPostFirstReadPolicy.isFirstRead()`로 최초 읽기를 구분한다. `SearchHistory`는 같은 검색어를 중복 저장한다 (동일 검색어의 반복 횟수 자체가 개인화 관심 신호가 된다). 행동 기록은 삭제되지 않고 보존된다 (북마크 제외). | 각 행동 기록이 독립 record aggregate처럼 동작한다. 현재 브랜치 기준으로 `Bookmark`, `ReadPost`, `SearchHistory`는 모두 `activity/<slice>` 아래에서 `presentation / application / domain / infrastructure` 구조로 정리되었다. `ReadPost`는 `SaveReadPostCommand`, `GetReadPostsQuery`, `ReadPostConverter`, `BookmarkLookupService`를 통해 저장/조회/북마크 여부 조합을 분담하고, 목록 조회 `size`는 HTTP layer에서 `1..100`으로 검증한다. `SearchHistory`는 `SearchHistoryRequest`, `SaveSearchHistoryCommand`, `ReadHistoryCommandService`로 저장 흐름을 분리했다. 또한 Activity application 서비스의 cross-context 조회는 `UserLookupService`, `PostLookupService`, `PostKeywordLookupService`, `BookmarkLookupService`를 통해 application 간 의존으로 정리되었다. aggregate/value object 강화, hexagonal port/adaptor 적용, `ManyToOne -> id reference` 같은 경계 재설계는 후속 단계로 미룬다. |
@@ -43,17 +43,18 @@
 - `PostKeyword`는 독립 루트라기보다 `Post`의 키워드 컬렉션이다.
 - `PostDocument`, `ContentChunk`는 Elasticsearch 검색/추천용 projection이지 RDB 애그리거트 루트가 아니다.
 
-**`incrementViewCount()` 동시성 정책**
+**`viewCount` 동시성 정책**
 
-현재 `viewCount++` 연산은 JPA dirty checking 기반 비원자적 업데이트다. 동시 요청 시 Lost Update가 발생한다.
+기존 `viewCount++` 연산은 JPA dirty checking 기반 비원자적 업데이트라 동시 요청 시 Lost Update가 발생한다.
 
 - **결정**: SQL atomic UPDATE 방식 적용
   ```java
   @Modifying
   @Query("UPDATE Post p SET p.viewCount = p.viewCount + 1 WHERE p.id = :id")
-  void incrementViewCount(@Param("id") Long id);
+  int incrementViewCount(@Param("id") Long id);
   ```
 - `@Version` 낙관적 락은 재시도 비용이 발생하고 조회수 같은 통계성 필드에는 부적합하므로 채택하지 않는다.
+- production 경로에서는 `Post.incrementViewCount()` 같은 엔티티 필드 증가를 사용하지 않고 `PostCommandService`/`PostRepository` 경로를 canonical write path로 둔다.
 - 현재 `isFirstRead` 체크로 사용자 중복 카운트는 방지하고 있으나, 다수 사용자 동시 접근 시 레이스 컨디션은 여전히 존재한다.
 
 **누락된 도메인 메서드**
@@ -158,7 +159,7 @@ createSocialUser() → PENDING
 | P0 | 개인화 프로필이 생성됨 | `PersonalizedProfileGenerated` | `PersonalizationProfileService.generatePersonalizationProfileSync` | 추천 생성, 개인화 검색 준비 완료 | 현재 `PersonalizationProfileService`가 추천 생성을 직접 호출한다. 이벤트 분리 우선순위가 높다. |
 | P0 | 추천이 생성됨 | `RecommendationsGenerated` | `LlmRecommendationService.generateRecommendationsForUser` | Notification, Analytics | 사용자에게 보여줄 현재 추천 목록이 바뀌는 핵심 이벤트다. |
 | P1 | 기술 게시글을 읽음 | `TechnicalPostRead` | `ReadPostCommandService.saveReadPost` | 개인화 프로필 갱신, 추천 정책 | 읽기 행동은 개인화 프로필과 읽은 게시글 제외 정책의 핵심 입력이다. |
-| P1 | 기술 게시글을 처음 읽음 | `TechnicalPostFirstRead` | `ReadPostFirstReadPolicy.isFirstRead` + `Post.incrementViewCount` | 인기순 정렬, 분석 | 조회수 증가와 인기순 정렬에 직접 연결된다. |
+| P1 | 기술 게시글을 처음 읽음 | `TechnicalPostFirstRead` | `ReadPostFirstReadPolicy.isFirstRead` + `PostCommandService.incrementViewCount` | 인기순 정렬, 분석 | 조회수 증가와 인기순 정렬에 직접 연결된다. |
 | P1 | 기술 게시글을 북마크함 | `TechnicalPostBookmarked` | `BookmarkCommandService.addBookmark` | 개인화 프로필 갱신, 추천 튜닝 | 강한 선호 신호로 개인화 품질에 중요하다. |
 | P1 | 북마크가 해제됨 | `BookmarkRemoved` | `BookmarkCommandService.deleteBookmark` | 개인화 프로필 갱신, 추천 튜닝 | 선호 신호 제거로 볼 수 있다. |
 | P1 | 검색어가 기록됨 | `SearchQueryRecorded` | `saveSearchHistory` | 개인화 프로필 갱신, 검색 분석 | 검색 의도는 개인화 프로필의 주요 입력이다. |
