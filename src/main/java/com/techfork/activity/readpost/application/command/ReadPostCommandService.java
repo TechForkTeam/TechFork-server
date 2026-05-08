@@ -1,6 +1,7 @@
 package com.techfork.activity.readpost.application.command;
 
 import com.techfork.activity.readpost.domain.ReadPost;
+import com.techfork.activity.readpost.domain.ReadPostErrorCode;
 import com.techfork.activity.readpost.domain.ReadPostFirstReadPolicy;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.domain.post.entity.Post;
@@ -8,6 +9,7 @@ import com.techfork.domain.post.service.PostCommandService;
 import com.techfork.domain.post.service.PostLookupService;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.service.UserLookupService;
+import com.techfork.global.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,6 +35,9 @@ public class ReadPostCommandService {
         boolean viewCountIncremented = false;
         if (firstReadMarked) {
             viewCountIncremented = postCommandService.incrementViewCount(post.getId());
+            if (!viewCountIncremented) {
+                throw new GeneralException(ReadPostErrorCode.READ_POST_VIEW_COUNT_INCREMENT_FAILED);
+            }
         }
 
         ReadPost readPost = ReadPost.create(
