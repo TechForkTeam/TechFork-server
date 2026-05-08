@@ -3,7 +3,9 @@ package com.techfork.activity.readpost.integration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techfork.activity.bookmark.domain.Bookmark;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
+import com.techfork.activity.readpost.domain.FirstReadPost;
 import com.techfork.activity.readpost.domain.ReadPost;
+import com.techfork.activity.readpost.infrastructure.FirstReadPostRepository;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.activity.readpost.presentation.ReadPostRequest;
 import com.techfork.domain.post.entity.Post;
@@ -52,6 +54,9 @@ class ReadPostIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private ReadPostRepository readPostRepository;
+
+    @Autowired
+    private FirstReadPostRepository firstReadPostRepository;
 
     @Autowired
     private BookmarkRepository bookmarkRepository;
@@ -120,6 +125,7 @@ class ReadPostIntegrationTest extends IntegrationTestBase {
 
     @AfterEach
     void tearDown() {
+        firstReadPostRepository.deleteAll();
         readPostRepository.deleteAll();
         bookmarkRepository.deleteAll();
         postRepository.deleteAll();
@@ -138,8 +144,9 @@ class ReadPostIntegrationTest extends IntegrationTestBase {
             @Test
             @DisplayName("처음 읽는 경우 조회수가 증가한다")
             void saveReadPost_Success_FirstRead() throws Exception {
+                LocalDateTime readAt = LocalDateTime.of(2026, 5, 8, 15, 0);
                 Long initialViewCount = testPost1.getViewCount();
-                ReadPostRequest request = new ReadPostRequest(testPost1.getId(), LocalDateTime.now(), 300);
+                ReadPostRequest request = new ReadPostRequest(testPost1.getId(), readAt, 300);
 
                 mockMvc.perform(post("/api/v1/activities/read-posts")
                                 .header("Authorization", "Bearer " + accessToken)
@@ -153,7 +160,14 @@ class ReadPostIntegrationTest extends IntegrationTestBase {
                 assertThat(readPosts).hasSize(1);
                 assertThat(readPosts.get(0).getUser().getId()).isEqualTo(testUser.getId());
                 assertThat(readPosts.get(0).getPost().getId()).isEqualTo(testPost1.getId());
+                assertThat(readPosts.get(0).getReadAt()).isEqualTo(readAt);
                 assertThat(readPosts.get(0).getReadDurationSeconds()).isEqualTo(300);
+
+                List<FirstReadPost> firstReadPosts = firstReadPostRepository.findAll();
+                assertThat(firstReadPosts).hasSize(1);
+                assertThat(firstReadPosts.get(0).getUser().getId()).isEqualTo(testUser.getId());
+                assertThat(firstReadPosts.get(0).getPost().getId()).isEqualTo(testPost1.getId());
+                assertThat(firstReadPosts.get(0).getFirstReadAt()).isEqualTo(readAt);
 
                 Post updatedPost = postRepository.findById(testPost1.getId()).orElseThrow();
                 assertThat(updatedPost.getViewCount()).isEqualTo(initialViewCount + 1);
@@ -162,11 +176,14 @@ class ReadPostIntegrationTest extends IntegrationTestBase {
             @Test
             @DisplayName("이미 읽은 경우 조회수는 증가하지 않는다")
             void saveReadPost_Success_AlreadyRead() throws Exception {
-                ReadPost existingReadPost = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(1), 200);
+                LocalDateTime firstReadAt = LocalDateTime.of(2026, 5, 8, 14, 0);
+                LocalDateTime secondReadAt = LocalDateTime.of(2026, 5, 8, 15, 0);
+                ReadPost existingReadPost = ReadPost.create(testUser, testPost1, firstReadAt, 200);
                 readPostRepository.save(existingReadPost);
+                firstReadPostRepository.save(FirstReadPost.create(testUser, testPost1, firstReadAt));
 
                 Long currentViewCount = testPost1.getViewCount();
-                ReadPostRequest request = new ReadPostRequest(testPost1.getId(), LocalDateTime.now(), 400);
+                ReadPostRequest request = new ReadPostRequest(testPost1.getId(), secondReadAt, 400);
 
                 mockMvc.perform(post("/api/v1/activities/read-posts")
                                 .header("Authorization", "Bearer " + accessToken)
@@ -178,6 +195,9 @@ class ReadPostIntegrationTest extends IntegrationTestBase {
 
                 List<ReadPost> readPosts = readPostRepository.findAll();
                 assertThat(readPosts).hasSize(2);
+                List<FirstReadPost> firstReadPosts = firstReadPostRepository.findAll();
+                assertThat(firstReadPosts).hasSize(1);
+                assertThat(firstReadPosts.get(0).getFirstReadAt()).isEqualTo(firstReadAt);
 
                 Post updatedPost = postRepository.findById(testPost1.getId()).orElseThrow();
                 assertThat(updatedPost.getViewCount()).isEqualTo(currentViewCount);

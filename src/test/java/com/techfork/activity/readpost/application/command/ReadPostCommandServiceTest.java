@@ -1,6 +1,7 @@
 package com.techfork.activity.readpost.application.command;
 
 import com.techfork.activity.readpost.domain.ReadPost;
+import com.techfork.activity.readpost.domain.ReadPostErrorCode;
 import com.techfork.activity.readpost.domain.ReadPostFirstReadPolicy;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.domain.post.service.PostCommandService;
@@ -90,7 +91,7 @@ class ReadPostCommandServiceTest {
 
                 given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
                 given(postLookupService.getPostOrThrow(postId)).willReturn(mockPost);
-                given(readPostFirstReadPolicy.isFirstRead(mockUser, mockPost)).willReturn(true);
+                given(readPostFirstReadPolicy.markFirstRead(mockUser, mockPost, readAt)).willReturn(true);
                 given(postCommandService.incrementViewCount(postId)).willReturn(true);
                 given(readPostRepository.save(any(ReadPost.class))).willReturn(mock(ReadPost.class));
 
@@ -99,7 +100,7 @@ class ReadPostCommandServiceTest {
                 readPostCommandService.saveReadPost(command);
 
                 ArgumentCaptor<ReadPost> readPostCaptor = ArgumentCaptor.forClass(ReadPost.class);
-                verify(readPostFirstReadPolicy, times(1)).isFirstRead(mockUser, mockPost);
+                verify(readPostFirstReadPolicy, times(1)).markFirstRead(mockUser, mockPost, readAt);
                 verify(postCommandService, times(1)).incrementViewCount(postId);
                 verify(readPostRepository, times(1)).save(readPostCaptor.capture());
                 ReadPost savedReadPost = readPostCaptor.getValue();
@@ -139,7 +140,7 @@ class ReadPostCommandServiceTest {
 
                 given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
                 given(postLookupService.getPostOrThrow(postId)).willReturn(mockPost);
-                given(readPostFirstReadPolicy.isFirstRead(mockUser, mockPost)).willReturn(false);
+                given(readPostFirstReadPolicy.markFirstRead(mockUser, mockPost, readAt)).willReturn(false);
                 given(readPostRepository.save(any(ReadPost.class))).willReturn(mock(ReadPost.class));
 
                 Long beforeViewCount = mockPost.getViewCount();
@@ -147,12 +148,52 @@ class ReadPostCommandServiceTest {
                 readPostCommandService.saveReadPost(command);
 
                 ArgumentCaptor<ReadPost> readPostCaptor = ArgumentCaptor.forClass(ReadPost.class);
-                verify(readPostFirstReadPolicy, times(1)).isFirstRead(mockUser, mockPost);
+                verify(readPostFirstReadPolicy, times(1)).markFirstRead(mockUser, mockPost, readAt);
                 verify(postCommandService, never()).incrementViewCount(any());
                 verify(readPostRepository, times(1)).save(readPostCaptor.capture());
 
                 assertThat(mockPost.getViewCount()).isEqualTo(beforeViewCount);
                 assertThat(readPostCaptor.getValue().getReadDurationSeconds()).isEqualTo(readDurationSeconds);
+            }
+
+            @Test
+            @DisplayName("첫 읽기인데 조회수 증가에 실패하면 예외가 발생하고 기록을 저장하지 않는다")
+            void saveReadPost_FirstRead_ViewCountIncrementFailed_ThrowException() {
+                Long userId = 1L;
+                Long postId = 100L;
+                LocalDateTime readAt = LocalDateTime.of(2026, 5, 5, 16, 0, 0);
+
+                User mockUser = mock(User.class);
+                TechBlog mockTechBlog = TechBlog.builder()
+                        .companyName("테스트회사")
+                        .blogUrl("https://test.com")
+                        .rssUrl("https://test.com/rss")
+                        .build();
+                Post mockPost = Post.builder()
+                        .title("테스트 제목")
+                        .fullContent("내용")
+                        .plainContent("내용")
+                        .company("테스트회사")
+                        .url("https://test.com/post/1")
+                        .publishedAt(LocalDateTime.now())
+                        .crawledAt(LocalDateTime.now())
+                        .techBlog(mockTechBlog)
+                        .build();
+                ReflectionTestUtils.setField(mockPost, "id", postId);
+                SaveReadPostCommand command = new SaveReadPostCommand(userId, postId, readAt, 300);
+
+                given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
+                given(postLookupService.getPostOrThrow(postId)).willReturn(mockPost);
+                given(readPostFirstReadPolicy.markFirstRead(mockUser, mockPost, readAt)).willReturn(true);
+                given(postCommandService.incrementViewCount(postId)).willReturn(false);
+
+                assertThatThrownBy(() -> readPostCommandService.saveReadPost(command))
+                        .isInstanceOf(GeneralException.class)
+                        .hasFieldOrPropertyWithValue("code", ReadPostErrorCode.READ_POST_VIEW_COUNT_INCREMENT_FAILED);
+
+                verify(readPostFirstReadPolicy, times(1)).markFirstRead(mockUser, mockPost, readAt);
+                verify(postCommandService, times(1)).incrementViewCount(postId);
+                verify(readPostRepository, never()).save(any());
             }
         }
 
@@ -175,7 +216,7 @@ class ReadPostCommandServiceTest {
 
                 verify(postLookupService, never()).getPostOrThrow(any());
                 verify(postCommandService, never()).incrementViewCount(any());
-                verify(readPostFirstReadPolicy, never()).isFirstRead(any(), any());
+                verify(readPostFirstReadPolicy, never()).markFirstRead(any(), any(), any());
                 verify(readPostRepository, never()).save(any());
             }
 
@@ -196,7 +237,7 @@ class ReadPostCommandServiceTest {
                         .hasFieldOrPropertyWithValue("code", PostErrorCode.POST_NOT_FOUND);
 
                 verify(postCommandService, never()).incrementViewCount(any());
-                verify(readPostFirstReadPolicy, never()).isFirstRead(any(), any());
+                verify(readPostFirstReadPolicy, never()).markFirstRead(any(), any(), any());
                 verify(readPostRepository, never()).save(any());
             }
         }

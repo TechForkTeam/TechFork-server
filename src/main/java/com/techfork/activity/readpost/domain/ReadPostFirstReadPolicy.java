@@ -1,8 +1,9 @@
 package com.techfork.activity.readpost.domain;
 
-import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
+import com.techfork.activity.readpost.infrastructure.FirstReadPostRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.useraccount.entity.User;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -10,9 +11,9 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ReadPostFirstReadPolicy {
 
-    private final ReadPostRepository readPostRepository;
+    private final FirstReadPostRepository firstReadPostRepository;
 
-    public boolean isFirstRead(User user, Post post) {
-        return !readPostRepository.existsByUserAndPost(user, post);
+    public boolean markFirstRead(User user, Post post, LocalDateTime readAt) {
+        return firstReadPostRepository.markFirstRead(user.getId(), post.getId(), readAt);
     }
 }
