@@ -106,9 +106,6 @@ public class Post extends BaseEntity {
                 .build();
     }
 
-    public void updateSummary(String summary) {
-        this.summary = summary;
-    }
 
     public void updateSummaries(String summary, String shortSummary) {
         this.summary = summary;
