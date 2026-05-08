@@ -29,9 +29,9 @@ public class ReadPostCommandService {
         User user = userLookupService.getUserOrThrow(command.userId());
         Post post = postLookupService.getPostOrThrow(command.postId());
 
-        boolean isFirstRead = readPostFirstReadPolicy.isFirstRead(user, post);
+        boolean firstReadMarked = readPostFirstReadPolicy.markFirstRead(user, post, command.readAt());
         boolean viewCountIncremented = false;
-        if (isFirstRead) {
+        if (firstReadMarked) {
             viewCountIncremented = postCommandService.incrementViewCount(post.getId());
         }
 
@@ -43,7 +43,7 @@ public class ReadPostCommandService {
         );
 
         readPostRepository.save(readPost);
-        log.info("Saved read post for user {} and post {} (firstRead: {}, viewCount incremented: {})",
-                command.userId(), command.postId(), isFirstRead, viewCountIncremented);
+        log.info("Saved read post for user {} and post {} (firstReadMarked: {}, viewCount incremented: {})",
+                command.userId(), command.postId(), firstReadMarked, viewCountIncremented);
     }
 }

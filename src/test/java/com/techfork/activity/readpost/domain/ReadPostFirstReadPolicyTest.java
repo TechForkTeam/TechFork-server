@@ -1,8 +1,9 @@
 package com.techfork.activity.readpost.domain;
 
-import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
+import com.techfork.activity.readpost.infrastructure.FirstReadPostRepository;
 import com.techfork.domain.post.entity.Post;
 import com.techfork.domain.useraccount.entity.User;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -21,39 +22,45 @@ import static org.mockito.Mockito.verify;
 class ReadPostFirstReadPolicyTest {
 
     @Mock
-    private ReadPostRepository readPostRepository;
+    private FirstReadPostRepository firstReadPostRepository;
 
     @InjectMocks
     private ReadPostFirstReadPolicy readPostFirstReadPolicy;
 
     @Nested
-    @DisplayName("첫 읽기 판별")
-    class IsFirstRead {
+    @DisplayName("첫 읽기 마킹")
+    class MarkFirstRead {
 
         @Test
-        @DisplayName("기존 읽기 기록이 없으면 true를 반환한다")
-        void isFirstRead_ReturnTrue_WhenNoExistingReadPost() {
+        @DisplayName("첫 읽기 마킹이 성공하면 true를 반환한다")
+        void markFirstRead_ReturnTrue_WhenInsertSucceeds() {
             User user = mock(User.class);
             Post post = mock(Post.class);
-            given(readPostRepository.existsByUserAndPost(user, post)).willReturn(false);
+            LocalDateTime readAt = LocalDateTime.of(2026, 5, 8, 12, 0);
+            given(user.getId()).willReturn(1L);
+            given(post.getId()).willReturn(100L);
+            given(firstReadPostRepository.markFirstRead(1L, 100L, readAt)).willReturn(true);
 
-            boolean result = readPostFirstReadPolicy.isFirstRead(user, post);
+            boolean result = readPostFirstReadPolicy.markFirstRead(user, post, readAt);
 
             assertThat(result).isTrue();
-            verify(readPostRepository, times(1)).existsByUserAndPost(user, post);
+            verify(firstReadPostRepository, times(1)).markFirstRead(1L, 100L, readAt);
         }
 
         @Test
-        @DisplayName("기존 읽기 기록이 있으면 false를 반환한다")
-        void isFirstRead_ReturnFalse_WhenExistingReadPostExists() {
+        @DisplayName("이미 마킹된 조합이면 false를 반환한다")
+        void markFirstRead_ReturnFalse_WhenAlreadyMarked() {
             User user = mock(User.class);
             Post post = mock(Post.class);
-            given(readPostRepository.existsByUserAndPost(user, post)).willReturn(true);
+            LocalDateTime readAt = LocalDateTime.of(2026, 5, 8, 12, 5);
+            given(user.getId()).willReturn(1L);
+            given(post.getId()).willReturn(100L);
+            given(firstReadPostRepository.markFirstRead(1L, 100L, readAt)).willReturn(false);
 
-            boolean result = readPostFirstReadPolicy.isFirstRead(user, post);
+            boolean result = readPostFirstReadPolicy.markFirstRead(user, post, readAt);
 
             assertThat(result).isFalse();
-            verify(readPostRepository, times(1)).existsByUserAndPost(user, post);
+            verify(firstReadPostRepository, times(1)).markFirstRead(1L, 100L, readAt);
         }
     }
 }

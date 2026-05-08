@@ -90,7 +90,7 @@ class ReadPostCommandServiceTest {
 
                 given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
                 given(postLookupService.getPostOrThrow(postId)).willReturn(mockPost);
-                given(readPostFirstReadPolicy.isFirstRead(mockUser, mockPost)).willReturn(true);
+                given(readPostFirstReadPolicy.markFirstRead(mockUser, mockPost, readAt)).willReturn(true);
                 given(postCommandService.incrementViewCount(postId)).willReturn(true);
                 given(readPostRepository.save(any(ReadPost.class))).willReturn(mock(ReadPost.class));
 
@@ -99,7 +99,7 @@ class ReadPostCommandServiceTest {
                 readPostCommandService.saveReadPost(command);
 
                 ArgumentCaptor<ReadPost> readPostCaptor = ArgumentCaptor.forClass(ReadPost.class);
-                verify(readPostFirstReadPolicy, times(1)).isFirstRead(mockUser, mockPost);
+                verify(readPostFirstReadPolicy, times(1)).markFirstRead(mockUser, mockPost, readAt);
                 verify(postCommandService, times(1)).incrementViewCount(postId);
                 verify(readPostRepository, times(1)).save(readPostCaptor.capture());
                 ReadPost savedReadPost = readPostCaptor.getValue();
@@ -139,7 +139,7 @@ class ReadPostCommandServiceTest {
 
                 given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
                 given(postLookupService.getPostOrThrow(postId)).willReturn(mockPost);
-                given(readPostFirstReadPolicy.isFirstRead(mockUser, mockPost)).willReturn(false);
+                given(readPostFirstReadPolicy.markFirstRead(mockUser, mockPost, readAt)).willReturn(false);
                 given(readPostRepository.save(any(ReadPost.class))).willReturn(mock(ReadPost.class));
 
                 Long beforeViewCount = mockPost.getViewCount();
@@ -147,7 +147,7 @@ class ReadPostCommandServiceTest {
                 readPostCommandService.saveReadPost(command);
 
                 ArgumentCaptor<ReadPost> readPostCaptor = ArgumentCaptor.forClass(ReadPost.class);
-                verify(readPostFirstReadPolicy, times(1)).isFirstRead(mockUser, mockPost);
+                verify(readPostFirstReadPolicy, times(1)).markFirstRead(mockUser, mockPost, readAt);
                 verify(postCommandService, never()).incrementViewCount(any());
                 verify(readPostRepository, times(1)).save(readPostCaptor.capture());
 
@@ -175,7 +175,7 @@ class ReadPostCommandServiceTest {
 
                 verify(postLookupService, never()).getPostOrThrow(any());
                 verify(postCommandService, never()).incrementViewCount(any());
-                verify(readPostFirstReadPolicy, never()).isFirstRead(any(), any());
+                verify(readPostFirstReadPolicy, never()).markFirstRead(any(), any(), any());
                 verify(readPostRepository, never()).save(any());
             }
 
@@ -196,7 +196,7 @@ class ReadPostCommandServiceTest {
                         .hasFieldOrPropertyWithValue("code", PostErrorCode.POST_NOT_FOUND);
 
                 verify(postCommandService, never()).incrementViewCount(any());
-                verify(readPostFirstReadPolicy, never()).isFirstRead(any(), any());
+                verify(readPostFirstReadPolicy, never()).markFirstRead(any(), any(), any());
                 verify(readPostRepository, never()).save(any());
             }
         }
