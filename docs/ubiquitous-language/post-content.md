@@ -33,6 +33,7 @@
 - `PostDocument`, `ContentChunk`는 aggregate가 아니라 **검색/추천용 projection**이다.
 - `Post.company`는 Source 컨텍스트의 출처명을 복사한 조회용 스냅샷이다.
 - production 경로에서는 `Post.incrementViewCount()` 같은 엔티티 필드 증가를 사용하지 않고 `PostCommandService`/`PostRepository`의 SQL atomic update를 canonical write path로 둔다.
+- Activity 컨텍스트에서는 `first_read_posts(user_id, post_id)` dedupe ledger를 통과한 최초 읽기에서만 `PostCommandService.incrementViewCount()`를 호출한다.
 - `PostCommandService.incrementViewCount()`는 DB 값을 원자적으로 증가시키지만, 이미 로드된 managed `Post`의 `viewCount`를 같은 트랜잭션 안에서 최신 상태로 동기화하지는 않는다.
 - `EDifficultyLevel`은 실제 사용처가 없어 제거되었다. 필요해지면 정책과 함께 재도입한다.
 

@@ -73,7 +73,8 @@
 | `markAsisClicked → markAsClicked` 오타 수정 | [`recommendation.md`](./recommendation.md) | 미반영 | 메서드명/호출부 수정 |
 | `TechBlog.markCrawled()` 추가 | [`source-ingestion.md`](./source-ingestion.md) | 미반영 | 도메인 메서드 추가 + 호출부 연결 |
 | `User.replaceInterests()` 추가 | [`user-account.md`](./user-account.md) | 미반영 | aggregate 불변식 검증을 도메인 메서드로 이동 |
-| `Post viewCount` SQL atomic UPDATE 경로 정리 | [`post-content.md`](./post-content.md) | 반영 | `isFirstRead` race / idempotency는 별도 이슈로 해결 |
+| `Post viewCount` SQL atomic UPDATE 경로 정리 | [`post-content.md`](./post-content.md) | 반영 | `first_read_posts` 기반 dedupe ledger와 함께 유지 |
+| `ReadPost` 최초 읽기 dedupe / 조회수 증가 롤백 보호 | [`activity.md`](./activity.md), [`../tactical-design.md`](../tactical-design.md) | 반영 | `first_read_at` 의미 정교화가 필요하면 별도 검토 |
 | `EDifficultyLevel` 제거 | [`post-content.md`](./post-content.md) | 반영 | 필요 시 정책과 함께 재도입 검토 |
 
 ---
