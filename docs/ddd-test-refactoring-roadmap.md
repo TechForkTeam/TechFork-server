@@ -183,7 +183,10 @@ docs/test-gap-analysis.md
 - `PersonalizationProfileServiceTest`
 - `PostSummaryProcessorTest`
 - `PostSummaryReaderTest`
+- `PostSummaryReaderDataJpaTest`
 - `PostSummaryWriterTest`
+- `PostSummaryWriterDataJpaTest`
+- `SummaryExtractionServiceTest`
 
 ### 2.1 P0 테스트 후보
 
@@ -521,21 +524,39 @@ ContentChunk = 검색/추천용 projection 내부 값
 PostTest
 - RssFeedItem으로 기술 게시글을 생성한다.
 - 요약과 짧은 요약을 갱신한다.
-- 게시글 키워드를 추가한다.
-- 게시글 키워드를 초기화한다.
+- 게시글 키워드를 새 목록으로 재구성한다.
+- 빈 키워드 목록이면 기존 키워드를 모두 제거한다.
 - 조회수를 증가시킨다.
 ```
 
 ```text
 SummaryExtractionServiceTest
 - LLM 응답에서 summary, shortSummary, keywords를 파싱한다.
-- 잘못된 LLM 응답을 처리한다.
+- 잘못된 LLM 응답이면 예외를 던진다.
+```
+
+```text
+PostSummaryReaderDataJpaTest
+- summary가 null이거나 빈 문자열인 게시글만 읽는다.
+- keyword fetch join 계약을 유지한다.
+```
+
+```text
+PostSummaryWriterDataJpaTest
+- H2에서 summary/shortSummary 저장을 검증한다.
+- 기존 keyword 삭제 후 새 keyword 재구성을 검증한다.
 ```
 
 ```text
 PostEmbeddingProcessorTest
 - 제목/요약/본문 청크 임베딩으로 PostDocument를 생성한다.
 ```
+
+##### summary pipeline 현재 우려사항
+
+- summary 단계와 embedding 단계 상태가 아직 `summary IS NULL OR ''`, `embeddedAt IS NULL` 조합으로 암묵적으로 표현된다.
+- malformed LLM JSON은 이제 fail-fast로 막히지만, 예외 타입은 `LlmException`을 재사용해 transport 실패와 response-format 실패를 같은 버킷으로 본다.
+- `PostSummaryReader`는 여전히 미요약 backlog를 한 번에 메모리로 읽는 구조라, 데이터가 커지면 paging/streaming reader로 후속 전환이 필요하다.
 
 ##### 리팩터링 후보
 
@@ -966,8 +987,11 @@ TechnicalPostIndexed
        - Bookmark / ReadPost / SearchHistory slice를 `presentation / application / domain / infrastructure` 기준으로 정리
 [완료] 5-1. Activity 4.1 2차 정리
        - application 서비스의 direct cross-context repository 접근을 application 간 의존으로 전환
-[다음] 6. Post aggregate 테스트 작성
-       - PostTest, PostEmbeddingProcessorTest, PostEmbeddingWriterTest
+[완료] 6. Post aggregate / summary pipeline 안전망 확장
+       - PostTest, SummaryExtractionServiceTest
+       - PostSummaryReaderDataJpaTest, PostSummaryWriterDataJpaTest
+[다음] 6-1. Post embedding pipeline 테스트 작성
+       - PostEmbeddingProcessorTest, PostEmbeddingWriterTest
 [다음] 7. User aggregate 관심사 불변식 정리
 [다음] 8. Recommendation 생성 테스트 작성
        - MmrServiceTest, LlmRecommendationServiceTest
