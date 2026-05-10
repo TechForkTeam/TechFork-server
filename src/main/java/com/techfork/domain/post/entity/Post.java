@@ -112,11 +112,16 @@ public class Post extends BaseEntity {
         this.shortSummary = shortSummary;
     }
 
-    public void addKeyword(PostKeyword keyword) {
+    public void replaceKeywords(List<String> keywords) {
+        clearKeywords();
+        keywords.forEach(keyword -> addKeyword(PostKeyword.create(keyword, this)));
+    }
+
+    private void addKeyword(PostKeyword keyword) {
         this.keywords.add(keyword);
     }
 
-    public void clearKeywords() {
+    private void clearKeywords() {
         this.keywords.clear();
     }
 }

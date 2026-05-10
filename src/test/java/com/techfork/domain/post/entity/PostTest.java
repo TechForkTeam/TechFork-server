@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PostTest {
@@ -68,34 +70,31 @@ class PostTest {
     }
 
     @Nested
-    @DisplayName("addKeyword")
-    class AddKeyword {
+    @DisplayName("replaceKeywords")
+    class ReplaceKeywords {
 
         @Test
-        @DisplayName("keyword를 추가하고 동일한 post 연관관계를 유지한다")
-        void addsKeywordWithSamePostReference() {
+        @DisplayName("기존 keyword를 제거하고 새 keyword 목록으로 교체한다")
+        void replacesExistingKeywordsWithNewKeywordNames() {
             Post post = createPost();
-            PostKeyword keyword = PostKeyword.create("AI", post);
+            post.replaceKeywords(List.of("Legacy", "Old"));
 
-            post.addKeyword(keyword);
+            post.replaceKeywords(List.of("AI", "Batch"));
 
-            assertThat(post.getKeywords()).containsExactly(keyword);
-            assertThat(keyword.getPost()).isSameAs(post);
+            assertThat(post.getKeywords())
+                    .extracting(PostKeyword::getKeyword)
+                    .containsExactly("AI", "Batch");
+            assertThat(post.getKeywords())
+                    .allSatisfy(keyword -> assertThat(keyword.getPost()).isSameAs(post));
         }
-    }
-
-    @Nested
-    @DisplayName("clearKeywords")
-    class ClearKeywords {
 
         @Test
-        @DisplayName("기존 keyword를 모두 제거한다")
-        void clearsExistingKeywords() {
+        @DisplayName("빈 목록이면 기존 keyword를 모두 제거한다")
+        void clearsExistingKeywordsWhenKeywordNamesAreEmpty() {
             Post post = createPost();
-            post.addKeyword(PostKeyword.create("AI", post));
-            post.addKeyword(PostKeyword.create("Batch", post));
+            post.replaceKeywords(List.of("AI", "Batch"));
 
-            post.clearKeywords();
+            post.replaceKeywords(List.of());
 
             assertThat(post.getKeywords()).isEmpty();
         }
