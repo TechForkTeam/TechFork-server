@@ -3,6 +3,7 @@ package com.techfork.domain.post.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techfork.domain.post.dto.SummaryWithKeywordsDto;
 import com.techfork.global.llm.LlmClient;
+import com.techfork.global.llm.exception.LlmException;
 import com.techfork.global.util.ContentCleaner;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -112,16 +114,14 @@ class SummaryExtractionServiceTest {
         }
 
         @Test
-        @DisplayName("유효하지 않은 JSON 응답이면 빈 DTO를 반환한다")
-        void returnsEmptyDtoWhenJsonParsingFails() {
+        @DisplayName("유효하지 않은 JSON 응답이면 예외를 던진다")
+        void throwsExceptionWhenJsonParsingFails() {
             given(llmClient.call(anyString(), anyString()))
                     .willReturn("not-json");
 
-            SummaryWithKeywordsDto result = summaryExtractionService.extractSummary("제목", "본문");
-
-            assertThat(result.summary()).isEmpty();
-            assertThat(result.shortSummary()).isEmpty();
-            assertThat(result.keywords()).isEmpty();
+            assertThatThrownBy(() -> summaryExtractionService.extractSummary("제목", "본문"))
+                    .isInstanceOf(LlmException.class)
+                    .hasMessageContaining("LLM summary response parsing failed");
         }
 
         @Test

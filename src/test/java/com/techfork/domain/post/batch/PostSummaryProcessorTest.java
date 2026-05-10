@@ -79,12 +79,17 @@ class PostSummaryProcessorTest {
         void propagatesExtractionServiceFailure() {
             PostSummaryProcessor postSummaryProcessor = new PostSummaryProcessor(summaryExtractionService);
             Post post = createPostWithExistingKeywords();
+            PostKeyword oldKeyword1 = post.getKeywords().get(0);
+            PostKeyword oldKeyword2 = post.getKeywords().get(1);
             given(summaryExtractionService.extractSummary("요약 대상 글", "평문 본문"))
                     .willThrow(new IllegalStateException("LLM error"));
 
             assertThatThrownBy(() -> postSummaryProcessor.process(post))
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("LLM error");
+            assertThat(post.getSummary()).isEqualTo("기존 요약");
+            assertThat(post.getShortSummary()).isEqualTo("기존 짧은 요약");
+            assertThat(post.getKeywords()).containsExactly(oldKeyword1, oldKeyword2);
         }
 
         private Post createPostWithExistingKeywords() {
