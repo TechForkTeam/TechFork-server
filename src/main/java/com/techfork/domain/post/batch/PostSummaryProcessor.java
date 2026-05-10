@@ -2,7 +2,6 @@ package com.techfork.domain.post.batch;
 
 import com.techfork.domain.post.dto.SummaryWithKeywordsDto;
 import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.post.entity.PostKeyword;
 import com.techfork.domain.post.service.SummaryExtractionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,13 +30,7 @@ public class PostSummaryProcessor implements ItemProcessor<Post, Post> {
         );
 
         post.updateSummaries(result.summary(), result.shortSummary());
-
-        // 기존 키워드 삭제 후 새 키워드 추가
-        post.clearKeywords();
-        result.keywords().forEach(keyword -> {
-            PostKeyword postKeyword = PostKeyword.create(keyword, post);
-            post.addKeyword(postKeyword);
-        });
+        post.replaceKeywords(result.keywords());
 
         log.debug("요약 및 키워드 추출 완료: {} (키워드 {}개)", post.getTitle(), result.keywords().size());
         return post;

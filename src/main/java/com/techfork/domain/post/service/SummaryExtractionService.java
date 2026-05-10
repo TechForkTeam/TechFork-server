@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techfork.domain.post.dto.SummaryWithKeywordsDto;
 import com.techfork.global.llm.LlmClient;
+import com.techfork.global.llm.exception.LlmException;
 import com.techfork.global.util.ContentCleaner;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +50,7 @@ public class SummaryExtractionService {
 
         log.debug("LLM API 응답 (제목: {}): {}", title, response);
 
-        // JSON 응답 파싱 (파싱 실패 시 빈 DTO 반환)
+        // JSON 응답 파싱 (파싱 실패 시 예외 전파)
         return parseResponse(response.trim());
     }
 
@@ -68,7 +69,7 @@ public class SummaryExtractionService {
             return new SummaryWithKeywordsDto(summary, shortSummary, keywords);
         } catch (Exception e) {
             log.error("JSON 응답 파싱 실패: {}", response, e);
-            return new SummaryWithKeywordsDto("", "", List.of());
+            throw new LlmException("LLM summary response parsing failed", e);
         }
     }
 
