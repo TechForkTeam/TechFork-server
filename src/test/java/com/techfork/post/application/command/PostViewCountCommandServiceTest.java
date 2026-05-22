@@ -15,13 +15,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class PostCommandServiceTest {
+class PostViewCountCommandServiceTest {
 
     @Mock
     private PostRepository postRepository;
 
     @InjectMocks
-    private PostCommandService postCommandService;
+    private PostViewCountCommandService postViewCountCommandService;
 
     @Nested
     @DisplayName("incrementViewCount")
@@ -33,7 +33,7 @@ class PostCommandServiceTest {
             Long postId = 100L;
             given(postRepository.incrementViewCount(postId)).willReturn(1);
 
-            boolean incremented = postCommandService.incrementViewCount(postId);
+            boolean incremented = postViewCountCommandService.incrementViewCount(postId);
 
             assertThat(incremented).isTrue();
             verify(postRepository, times(1)).incrementViewCount(postId);
@@ -45,7 +45,7 @@ class PostCommandServiceTest {
             Long postId = 100L;
             given(postRepository.incrementViewCount(postId)).willReturn(0);
 
-            boolean incremented = postCommandService.incrementViewCount(postId);
+            boolean incremented = postViewCountCommandService.incrementViewCount(postId);
 
             assertThat(incremented).isFalse();
             verify(postRepository, times(1)).incrementViewCount(postId);

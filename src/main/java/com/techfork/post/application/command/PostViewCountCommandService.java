@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class PostCommandService {
+public class PostViewCountCommandService {
 
     private final PostRepository postRepository;
 
