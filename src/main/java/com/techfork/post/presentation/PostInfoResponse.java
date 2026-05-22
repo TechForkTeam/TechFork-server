@@ -7,8 +7,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Builder(toBuilder = true)
-@Schema(name = "PostInfoDto")
-public record PostInfoDto(
+@Schema(name = "PostInfoResponse")
+public record PostInfoResponse(
         Long id,
         String title,
         String shortSummary,

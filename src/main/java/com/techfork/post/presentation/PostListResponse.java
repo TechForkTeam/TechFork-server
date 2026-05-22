@@ -9,7 +9,7 @@ import java.util.List;
 @Builder
 @Schema(name = "PostListResponse")
 public record PostListResponse(
-        List<PostInfoDto> posts,
+        List<PostInfoResponse> posts,
         Long lastPostId,
         Long lastViewCount,
         LocalDateTime lastPublishedAt,

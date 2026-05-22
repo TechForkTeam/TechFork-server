@@ -144,7 +144,7 @@ class PostControllerIntegrationTest extends IntegrationTestBase {
         mockMvc.perform(get("/api/v1/posts/{postId}", testPost1.getId()))
                 .andDo(print())
                 .andExpect(status().isOk())
-                // PostDetailDto의 모든 필드 검증
+                // PostDetailResponse의 모든 필드 검증
                 .andExpect(jsonPath("$.data.id").value(testPost1.getId()))
                 .andExpect(jsonPath("$.data.title").value("테스트 게시글 1"))
                 .andExpect(jsonPath("$.data.summary").exists())
@@ -222,7 +222,7 @@ class PostControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data.lastViewCount").exists())
                 .andExpect(jsonPath("$.data.lastPublishedAt").exists())
                 .andExpect(jsonPath("$.data.hasNext").value(false))
-                // PostInfoDto의 모든 필드 검증 (첫 번째 항목만)
+                // PostInfoResponse의 모든 필드 검증 (첫 번째 항목만)
                 .andExpect(jsonPath("$.data.posts[0].id").isNumber())
                 .andExpect(jsonPath("$.data.posts[0].title").isString())
                 .andExpect(jsonPath("$.data.posts[0].shortSummary").isString())

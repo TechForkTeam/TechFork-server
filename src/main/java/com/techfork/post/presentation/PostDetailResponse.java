@@ -8,7 +8,7 @@ import java.util.List;
 
 @Builder
 @Schema(name = "PostDetailResponse")
-public record PostDetailDto(
+public record PostDetailResponse(
         Long id,
         String title,
         String summary,

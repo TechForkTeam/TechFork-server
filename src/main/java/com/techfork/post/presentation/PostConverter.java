@@ -21,7 +21,7 @@ public class PostConverter {
         return CompanyListResponse.builder()
                 .totalNumber(companies.size())
                 .companies(companies.stream()
-                        .map(company -> CompanyDto.builder()
+                        .map(company -> CompanyResponse.builder()
                                 .company(company.company())
                                 .hasNewPost(company.hasNewPost())
                                 .logoUrl(company.logoUrl())
@@ -47,7 +47,7 @@ public class PostConverter {
 
         return PostListResponse.builder()
                 .posts(content.stream()
-                        .map(post -> PostInfoDto.builder()
+                        .map(post -> PostInfoResponse.builder()
                                 .id(post.id())
                                 .title(post.title())
                                 .shortSummary(post.shortSummary())
@@ -68,8 +68,8 @@ public class PostConverter {
                 .build();
     }
 
-    public PostDetailDto toPostDetailDto(PostDetailRow baseDto, List<String> keywords, Boolean isBookmarked) {
-        return PostDetailDto.builder()
+    public PostDetailResponse toPostDetailResponse(PostDetailRow baseDto, List<String> keywords, Boolean isBookmarked) {
+        return PostDetailResponse.builder()
                 .id(baseDto.id())
                 .title(baseDto.title())
                 .summary(baseDto.summary())

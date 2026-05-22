@@ -1,7 +1,6 @@
 package com.techfork.post.application.query;
 
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
-import com.techfork.post.application.dto.*;
 import com.techfork.post.domain.PostKeyword;
 import com.techfork.post.domain.enums.EPostSortType;
 import com.techfork.post.infrastructure.PostKeywordRepository;
@@ -10,7 +9,7 @@ import com.techfork.post.infrastructure.row.CompanyRow;
 import com.techfork.post.infrastructure.row.PostDetailRow;
 import com.techfork.post.infrastructure.row.PostInfoRow;
 import com.techfork.post.presentation.CompanyListResponse;
-import com.techfork.post.presentation.PostDetailDto;
+import com.techfork.post.presentation.PostDetailResponse;
 import com.techfork.post.presentation.PostListResponse;
 import com.techfork.post.presentation.PostConverter;
 import com.techfork.global.exception.CommonErrorCode;
@@ -112,7 +111,7 @@ public class PostQueryService {
         return postConverter.toPostListResponse(postsWithKeywords, size);
     }
 
-    public PostDetailDto getPostDetail(Long postId, Long userId) {
+    public PostDetailResponse getPostDetail(Long postId, Long userId) {
         PostDetailRow postDetail = postRepository.findByIdWithTechBlog(postId)
                 .orElseThrow(() -> new GeneralException(CommonErrorCode.NOT_FOUND));
 
@@ -126,7 +125,7 @@ public class PostQueryService {
             isBookmarked = !bookmarkRepository.findBookmarkedPostIds(userId, List.of(postId)).isEmpty();
         }
 
-        return postConverter.toPostDetailDto(postDetail, keywords, isBookmarked);
+        return postConverter.toPostDetailResponse(postDetail, keywords, isBookmarked);
     }
 
     private List<PostInfoRow> attachKeywordsToPostInfoList(List<PostInfoRow> posts) {

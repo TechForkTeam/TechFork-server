@@ -1,7 +1,7 @@
 package com.techfork.post.presentation;
 
 import com.techfork.post.presentation.CompanyListResponse;
-import com.techfork.post.presentation.PostDetailDto;
+import com.techfork.post.presentation.PostDetailResponse;
 import com.techfork.post.presentation.PostListResponse;
 import com.techfork.post.domain.enums.EPostSortType;
 import com.techfork.post.application.query.PostQueryService;
@@ -81,14 +81,14 @@ public class PostController {
             description = "특정 게시글의 상세 정보를 조회합니다. 로그인 시 북마크 여부가 포함됩니다."
     )
     @GetMapping("/{postId}")
-    public ResponseEntity<BaseResponse<PostDetailDto>> getPostDetail(
+    public ResponseEntity<BaseResponse<PostDetailResponse>> getPostDetail(
             @Parameter(description = "게시글 ID")
             @PathVariable Long postId,
             @Parameter(hidden = true)
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         Long userId = userPrincipal != null ? userPrincipal.getId() : null;
-        PostDetailDto response = postQueryService.getPostDetail(postId, userId);
+        PostDetailResponse response = postQueryService.getPostDetail(postId, userId);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 }

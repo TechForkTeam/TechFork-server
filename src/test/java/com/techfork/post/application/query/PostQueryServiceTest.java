@@ -4,10 +4,10 @@ import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.post.infrastructure.row.CompanyRow;
 import com.techfork.post.infrastructure.row.PostDetailRow;
 import com.techfork.post.infrastructure.row.PostInfoRow;
-import com.techfork.post.presentation.CompanyDto;
+import com.techfork.post.presentation.CompanyResponse;
 import com.techfork.post.presentation.CompanyListResponse;
-import com.techfork.post.presentation.PostDetailDto;
-import com.techfork.post.presentation.PostInfoDto;
+import com.techfork.post.presentation.PostDetailResponse;
+import com.techfork.post.presentation.PostInfoResponse;
 import com.techfork.post.presentation.PostListResponse;
 import com.techfork.post.presentation.PostConverter;
 import com.techfork.post.domain.PostKeyword;
@@ -110,7 +110,7 @@ class PostQueryServiceTest {
                         .build()
         );
 
-        List<CompanyDto> mockCompanies = mockCompanyRows.stream().map(this::toCompanyDto).toList();
+        List<CompanyResponse> mockCompanies = mockCompanyRows.stream().map(this::toCompanyResponse).toList();
 
         CompanyListResponse expectedResponse = CompanyListResponse.builder()
                 .totalNumber(2)
@@ -127,7 +127,7 @@ class PostQueryServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.companies()).hasSize(2);
 
-        List<CompanyDto> resultCompanies = (List<CompanyDto>) result.companies();
+        List<CompanyResponse> resultCompanies = (List<CompanyResponse>) result.companies();
         assertThat(resultCompanies.get(0).company()).isEqualTo("카카오");
         assertThat(resultCompanies.get(0).hasNewPost()).isTrue();
         assertThat(resultCompanies.get(0).logoUrl()).isEqualTo("https://test.com/kakao-logo.png");
@@ -166,7 +166,7 @@ class PostQueryServiceTest {
         List<PostKeyword> mockKeywords = List.of(keyword1, keyword2);
         List<String> keywordStrings = List.of("Java", "Spring");
 
-        PostDetailDto expectedResponse = PostDetailDto.builder()
+        PostDetailResponse expectedResponse = PostDetailResponse.builder()
                 .id(postId)
                 .title("테스트 제목")
                 .summary("테스트 요약")
@@ -181,10 +181,10 @@ class PostQueryServiceTest {
 
         given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.of(mockPostDetailRow));
         given(postKeywordRepository.findByPostIdIn(List.of(postId))).willReturn(mockKeywords);
-        given(postConverter.toPostDetailDto(mockPostDetailRow, keywordStrings, null)).willReturn(expectedResponse);
+        given(postConverter.toPostDetailResponse(mockPostDetailRow, keywordStrings, null)).willReturn(expectedResponse);
 
         // When
-        PostDetailDto result = postQueryService.getPostDetail(postId, userId);
+        PostDetailResponse result = postQueryService.getPostDetail(postId, userId);
 
         // Then
         assertThat(result).isNotNull();
@@ -197,7 +197,7 @@ class PostQueryServiceTest {
 
         verify(postRepository, times(1)).findByIdWithTechBlog(postId);
         verify(postKeywordRepository, times(1)).findByPostIdIn(List.of(postId));
-        verify(postConverter, times(1)).toPostDetailDto(mockPostDetailRow, keywordStrings, null);
+        verify(postConverter, times(1)).toPostDetailResponse(mockPostDetailRow, keywordStrings, null);
         verify(bookmarkRepository, never()).findBookmarkedPostIds(any(), any());
     }
 
@@ -226,7 +226,7 @@ class PostQueryServiceTest {
         List<PostKeyword> mockKeywords = List.of(keyword1);
         List<String> keywordStrings = List.of("Java");
 
-        PostDetailDto expectedResponse = PostDetailDto.builder()
+        PostDetailResponse expectedResponse = PostDetailResponse.builder()
                 .id(postId)
                 .title("테스트 제목")
                 .summary("테스트 요약")
@@ -242,10 +242,10 @@ class PostQueryServiceTest {
         given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.of(mockPostDetailRow));
         given(postKeywordRepository.findByPostIdIn(List.of(postId))).willReturn(mockKeywords);
         given(bookmarkRepository.findBookmarkedPostIds(userId, List.of(postId))).willReturn(List.of(postId));
-        given(postConverter.toPostDetailDto(mockPostDetailRow, keywordStrings, true)).willReturn(expectedResponse);
+        given(postConverter.toPostDetailResponse(mockPostDetailRow, keywordStrings, true)).willReturn(expectedResponse);
 
         // When
-        PostDetailDto result = postQueryService.getPostDetail(postId, userId);
+        PostDetailResponse result = postQueryService.getPostDetail(postId, userId);
 
         // Then
         assertThat(result).isNotNull();
@@ -255,7 +255,7 @@ class PostQueryServiceTest {
         verify(postRepository, times(1)).findByIdWithTechBlog(postId);
         verify(postKeywordRepository, times(1)).findByPostIdIn(List.of(postId));
         verify(bookmarkRepository, times(1)).findBookmarkedPostIds(userId, List.of(postId));
-        verify(postConverter, times(1)).toPostDetailDto(mockPostDetailRow, keywordStrings, true);
+        verify(postConverter, times(1)).toPostDetailResponse(mockPostDetailRow, keywordStrings, true);
     }
 
     @Test
@@ -283,7 +283,7 @@ class PostQueryServiceTest {
         List<PostKeyword> mockKeywords = List.of(keyword1);
         List<String> keywordStrings = List.of("Java");
 
-        PostDetailDto expectedResponse = PostDetailDto.builder()
+        PostDetailResponse expectedResponse = PostDetailResponse.builder()
                 .id(postId)
                 .title("테스트 제목")
                 .summary("테스트 요약")
@@ -299,10 +299,10 @@ class PostQueryServiceTest {
         given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.of(mockPostDetailRow));
         given(postKeywordRepository.findByPostIdIn(List.of(postId))).willReturn(mockKeywords);
         given(bookmarkRepository.findBookmarkedPostIds(userId, List.of(postId))).willReturn(List.of());
-        given(postConverter.toPostDetailDto(mockPostDetailRow, keywordStrings, false)).willReturn(expectedResponse);
+        given(postConverter.toPostDetailResponse(mockPostDetailRow, keywordStrings, false)).willReturn(expectedResponse);
 
         // When
-        PostDetailDto result = postQueryService.getPostDetail(postId, userId);
+        PostDetailResponse result = postQueryService.getPostDetail(postId, userId);
 
         // Then
         assertThat(result).isNotNull();
@@ -312,7 +312,7 @@ class PostQueryServiceTest {
         verify(postRepository, times(1)).findByIdWithTechBlog(postId);
         verify(postKeywordRepository, times(1)).findByPostIdIn(List.of(postId));
         verify(bookmarkRepository, times(1)).findBookmarkedPostIds(userId, List.of(postId));
-        verify(postConverter, times(1)).toPostDetailDto(mockPostDetailRow, keywordStrings, false);
+        verify(postConverter, times(1)).toPostDetailResponse(mockPostDetailRow, keywordStrings, false);
     }
 
     @Test
@@ -362,7 +362,7 @@ class PostQueryServiceTest {
                         .build()
         );
 
-        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+        List<PostInfoResponse> mockPosts = mockPostRows.stream().map(this::toPostInfoResponse).toList();
 
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
@@ -418,7 +418,7 @@ class PostQueryServiceTest {
                         .build()
         );
 
-        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+        List<PostInfoResponse> mockPosts = mockPostRows.stream().map(this::toPostInfoResponse).toList();
 
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
@@ -464,7 +464,7 @@ class PostQueryServiceTest {
                         .build()
         );
 
-        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+        List<PostInfoResponse> mockPosts = mockPostRows.stream().map(this::toPostInfoResponse).toList();
 
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
@@ -521,7 +521,7 @@ class PostQueryServiceTest {
                         .build()
         );
 
-        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+        List<PostInfoResponse> mockPosts = mockPostRows.stream().map(this::toPostInfoResponse).toList();
 
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
@@ -583,7 +583,7 @@ class PostQueryServiceTest {
                         .build()
         );
 
-        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+        List<PostInfoResponse> mockPosts = mockPostRows.stream().map(this::toPostInfoResponse).toList();
 
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
@@ -629,7 +629,7 @@ class PostQueryServiceTest {
                         .build()
         );
 
-        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+        List<PostInfoResponse> mockPosts = mockPostRows.stream().map(this::toPostInfoResponse).toList();
 
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
@@ -688,7 +688,7 @@ class PostQueryServiceTest {
                         .build()
         );
 
-        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+        List<PostInfoResponse> mockPosts = mockPostRows.stream().map(this::toPostInfoResponse).toList();
 
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
@@ -749,7 +749,7 @@ class PostQueryServiceTest {
                         .build()
         );
 
-        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+        List<PostInfoResponse> mockPosts = mockPostRows.stream().map(this::toPostInfoResponse).toList();
 
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
@@ -798,7 +798,7 @@ class PostQueryServiceTest {
                         .build()
         );
 
-        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+        List<PostInfoResponse> mockPosts = mockPostRows.stream().map(this::toPostInfoResponse).toList();
 
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
@@ -846,7 +846,7 @@ class PostQueryServiceTest {
                         .build()
         );
 
-        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+        List<PostInfoResponse> mockPosts = mockPostRows.stream().map(this::toPostInfoResponse).toList();
 
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
@@ -906,7 +906,7 @@ class PostQueryServiceTest {
         );
 
         List<Long> bookmarkedPostIds = List.of(1L);
-        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+        List<PostInfoResponse> mockPosts = mockPostRows.stream().map(this::toPostInfoResponse).toList();
 
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(List.of(
@@ -959,7 +959,7 @@ class PostQueryServiceTest {
                         .build()
         );
 
-        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+        List<PostInfoResponse> mockPosts = mockPostRows.stream().map(this::toPostInfoResponse).toList();
 
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
@@ -1019,7 +1019,7 @@ class PostQueryServiceTest {
         );
 
         List<Long> bookmarkedPostIds = List.of(2L);
-        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+        List<PostInfoResponse> mockPosts = mockPostRows.stream().map(this::toPostInfoResponse).toList();
 
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(List.of(
@@ -1086,7 +1086,7 @@ class PostQueryServiceTest {
         );
 
         List<Long> bookmarkedPostIds = List.of(1L, 2L);
-        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+        List<PostInfoResponse> mockPosts = mockPostRows.stream().map(this::toPostInfoResponse).toList();
 
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(List.of(
@@ -1143,7 +1143,7 @@ class PostQueryServiceTest {
         );
 
         List<Long> bookmarkedPostIds = List.of();
-        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+        List<PostInfoResponse> mockPosts = mockPostRows.stream().map(this::toPostInfoResponse).toList();
 
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(List.of(
@@ -1171,8 +1171,8 @@ class PostQueryServiceTest {
         verify(bookmarkRepository, times(1)).findBookmarkedPostIds(eq(userId), any());
     }
 
-    private PostInfoDto toPostInfoDto(PostInfoRow row) {
-        return PostInfoDto.builder()
+    private PostInfoResponse toPostInfoResponse(PostInfoRow row) {
+        return PostInfoResponse.builder()
                 .id(row.id())
                 .title(row.title())
                 .shortSummary(row.shortSummary())
@@ -1187,8 +1187,8 @@ class PostQueryServiceTest {
                 .build();
     }
 
-    private CompanyDto toCompanyDto(CompanyRow row) {
-        return CompanyDto.builder()
+    private CompanyResponse toCompanyResponse(CompanyRow row) {
+        return CompanyResponse.builder()
                 .company(row.company())
                 .hasNewPost(row.hasNewPost())
                 .logoUrl(row.logoUrl())
