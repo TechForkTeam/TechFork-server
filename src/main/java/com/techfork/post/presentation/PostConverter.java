@@ -1,4 +1,4 @@
-package com.techfork.post.application.converter;
+package com.techfork.post.presentation;
 
 import com.techfork.post.application.dto.*;
 import org.springframework.stereotype.Component;

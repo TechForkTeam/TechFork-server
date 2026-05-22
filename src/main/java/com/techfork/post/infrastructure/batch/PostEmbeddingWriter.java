@@ -1,4 +1,4 @@
-package com.techfork.post.application.batch;
+package com.techfork.post.infrastructure.batch;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.BulkResponse;

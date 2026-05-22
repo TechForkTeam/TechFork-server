@@ -1,12 +1,12 @@
 package com.techfork.post.application.query;
 
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
-import com.techfork.post.application.converter.PostConverter;
 import com.techfork.post.application.dto.*;
 import com.techfork.post.domain.PostKeyword;
 import com.techfork.post.domain.enums.EPostSortType;
 import com.techfork.post.infrastructure.PostKeywordRepository;
 import com.techfork.post.infrastructure.PostRepository;
+import com.techfork.post.presentation.PostConverter;
 import com.techfork.global.exception.CommonErrorCode;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;

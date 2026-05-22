@@ -1,4 +1,4 @@
-package com.techfork.post.application.batch;
+package com.techfork.post.infrastructure.batch;
 
 import com.techfork.post.domain.Post;
 import com.techfork.domain.source.dto.RssFeedItem;

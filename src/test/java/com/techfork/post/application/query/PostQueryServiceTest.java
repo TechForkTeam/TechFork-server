@@ -1,8 +1,8 @@
 package com.techfork.post.application.query;
 
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
-import com.techfork.post.application.converter.PostConverter;
 import com.techfork.post.application.dto.*;
+import com.techfork.post.presentation.PostConverter;
 import com.techfork.post.domain.PostKeyword;
 import com.techfork.post.domain.enums.EPostSortType;
 import com.techfork.post.infrastructure.PostKeywordRepository;
