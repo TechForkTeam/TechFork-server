@@ -5,7 +5,7 @@
 ## Owning packages
 
 - `src/main/java/com/techfork/domain/admin`
-- 연관 운영 서비스: `src/main/java/com/techfork/domain/source`, `src/main/java/com/techfork/domain/post/batch`
+- 연관 운영 서비스: `src/main/java/com/techfork/domain/source`, `src/main/java/com/techfork/post/application/batch`, `src/main/java/com/techfork/post/infrastructure/batch`
 
 ## 표준 용어
 

@@ -25,7 +25,7 @@
 | 바운디드 컨텍스트 | 문서 | 현재 owning package | 메모 |
 |---|---|---|---|
 | Source / Ingestion | [`source-ingestion.md`](./source-ingestion.md) | `src/main/java/com/techfork/domain/source` | RSS 수집, 소스 블로그, 파이프라인 시작점 |
-| Post / Content | [`post-content.md`](./post-content.md) | `src/main/java/com/techfork/domain/post` | 기술 게시글 본문, 요약, 키워드, 검색 projection |
+| Post / Content | [`post-content.md`](./post-content.md) | `src/main/java/com/techfork/post` | 기술 게시글 본문, 요약, 키워드, 검색 projection |
 | User Account | [`user-account.md`](./user-account.md) | `src/main/java/com/techfork/domain/useraccount` | 계정, 온보딩, 관심사, 계정 프로필 |
 | Personalization Profile | [`personalization-profile.md`](./personalization-profile.md) | `src/main/java/com/techfork/domain/personalization` | 개인화 프로필 생성, 벡터, 핵심 키워드, 재생성 |
 | Activity | [`activity.md`](./activity.md) | `src/main/java/com/techfork/activity` | 읽기/검색/북마크 행동 기록 |

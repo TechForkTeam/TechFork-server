@@ -4,7 +4,7 @@
 
 ## Owning packages
 
-- `src/main/java/com/techfork/domain/post`
+- `src/main/java/com/techfork/post`
 
 ## 표준 용어
 
@@ -66,11 +66,11 @@
 
 ## 주요 근거 파일
 
-- `src/main/java/com/techfork/domain/post/entity/Post.java`
-- `src/main/java/com/techfork/domain/post/entity/PostKeyword.java`
+- `src/main/java/com/techfork/post/domain/Post.java`
+- `src/main/java/com/techfork/post/domain/PostKeyword.java`
 - `src/main/java/com/techfork/post/application/command/PostViewCountCommandService.java`
-- `src/main/java/com/techfork/domain/post/repository/PostRepository.java`
-- `src/main/java/com/techfork/domain/post/document/PostDocument.java`
-- `src/main/java/com/techfork/domain/post/document/ContentChunk.java`
-- `src/main/java/com/techfork/domain/post/batch/PostSummaryProcessor.java`
-- `src/main/java/com/techfork/domain/post/batch/PostEmbeddingProcessor.java`
+- `src/main/java/com/techfork/post/infrastructure/PostRepository.java`
+- `src/main/java/com/techfork/post/domain/projection/PostDocument.java`
+- `src/main/java/com/techfork/post/domain/projection/ContentChunk.java`
+- `src/main/java/com/techfork/post/application/batch/PostSummaryProcessor.java`
+- `src/main/java/com/techfork/post/application/batch/PostEmbeddingProcessor.java`

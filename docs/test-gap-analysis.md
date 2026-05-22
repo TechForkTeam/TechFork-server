@@ -86,7 +86,8 @@
 현재 working tree에는 다음 untracked 테스트 디렉터리가 있다.
 
 ```text
-src/test/java/com/techfork/domain/post/batch/
+src/test/java/com/techfork/post/application/batch/
+src/test/java/com/techfork/post/infrastructure/batch/
 ```
 
 포함 파일:
