@@ -1,14 +1,14 @@
 package com.techfork.domain.source.config;
 
-import com.techfork.domain.post.batch.PostEmbeddingProcessor;
-import com.techfork.domain.post.batch.PostEmbeddingReader;
-import com.techfork.domain.post.batch.PostEmbeddingWriter;
-import com.techfork.domain.post.batch.PostSummaryProcessor;
-import com.techfork.domain.post.batch.PostSummaryReader;
-import com.techfork.domain.post.batch.PostSummaryWriter;
-import com.techfork.domain.post.document.ContentChunk;
-import com.techfork.domain.post.document.PostDocument;
-import com.techfork.domain.post.entity.Post;
+import com.techfork.post.application.batch.PostEmbeddingProcessor;
+import com.techfork.post.application.batch.PostEmbeddingReader;
+import com.techfork.post.application.batch.PostEmbeddingWriter;
+import com.techfork.post.application.batch.PostSummaryProcessor;
+import com.techfork.post.application.batch.PostSummaryReader;
+import com.techfork.post.application.batch.PostSummaryWriter;
+import com.techfork.post.domain.projection.ContentChunk;
+import com.techfork.post.domain.projection.PostDocument;
+import com.techfork.post.domain.Post;
 import com.techfork.domain.source.batch.PostBatchWriter;
 import com.techfork.domain.source.batch.RssFeedReader;
 import com.techfork.domain.source.batch.RssToPostProcessor;

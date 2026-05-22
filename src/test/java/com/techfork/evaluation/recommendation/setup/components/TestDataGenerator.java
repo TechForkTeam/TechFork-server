@@ -1,7 +1,7 @@
 package com.techfork.evaluation.recommendation.setup.components;
 
-import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.post.repository.PostRepository;
+import com.techfork.post.domain.Post;
+import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.domain.personalization.document.PersonalizationProfileDocument;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.enums.EInterestCategory;

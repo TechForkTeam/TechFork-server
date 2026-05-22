@@ -6,7 +6,7 @@ import com.techfork.activity.readhistory.domain.SearchHistory;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.activity.readhistory.infrastructure.SearchHistoryRepository;
-import com.techfork.domain.post.entity.Post;
+import com.techfork.post.domain.Post;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.entity.UserInterestCategory;
 import com.techfork.domain.useraccount.entity.UserInterestKeyword;

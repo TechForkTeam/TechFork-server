@@ -1,8 +1,8 @@
-package com.techfork.domain.post.service;
+package com.techfork.post.application.query;
 
-import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.post.exception.PostErrorCode;
-import com.techfork.domain.post.repository.PostRepository;
+import com.techfork.post.domain.Post;
+import com.techfork.post.domain.exception.PostErrorCode;
+import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.global.exception.GeneralException;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;

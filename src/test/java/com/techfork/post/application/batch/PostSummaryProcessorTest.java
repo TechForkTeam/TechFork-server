@@ -1,10 +1,10 @@
-package com.techfork.domain.post.batch;
+package com.techfork.post.application.batch;
 
-import com.techfork.domain.post.dto.SummaryWithKeywordsDto;
-import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.post.entity.PostKeyword;
-import com.techfork.domain.post.fixture.PostFixture;
-import com.techfork.domain.post.service.SummaryExtractionService;
+import com.techfork.post.application.dto.SummaryWithKeywordsDto;
+import com.techfork.post.domain.Post;
+import com.techfork.post.domain.PostKeyword;
+import com.techfork.post.fixture.PostFixture;
+import com.techfork.post.application.support.SummaryExtractionService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -1,8 +1,8 @@
-package com.techfork.domain.post.batch;
+package com.techfork.post.application.batch;
 
-import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.post.entity.PostKeyword;
-import com.techfork.domain.post.fixture.PostFixture;
+import com.techfork.post.domain.Post;
+import com.techfork.post.domain.PostKeyword;
+import com.techfork.post.fixture.PostFixture;
 import com.techfork.global.util.JdbcBatchExecutor;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;

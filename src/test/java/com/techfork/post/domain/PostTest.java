@@ -1,8 +1,8 @@
-package com.techfork.domain.post.entity;
+package com.techfork.post.domain;
 
 import com.techfork.domain.source.dto.RssFeedItem;
 import com.techfork.domain.source.entity.TechBlog;
-import com.techfork.domain.post.fixture.PostFixture;
+import com.techfork.post.fixture.PostFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

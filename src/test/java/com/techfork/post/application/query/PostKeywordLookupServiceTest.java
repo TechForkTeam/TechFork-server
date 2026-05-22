@@ -1,8 +1,8 @@
-package com.techfork.domain.post.service;
+package com.techfork.post.application.query;
 
-import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.post.entity.PostKeyword;
-import com.techfork.domain.post.repository.PostKeywordRepository;
+import com.techfork.post.domain.Post;
+import com.techfork.post.domain.PostKeyword;
+import com.techfork.post.infrastructure.PostKeywordRepository;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;

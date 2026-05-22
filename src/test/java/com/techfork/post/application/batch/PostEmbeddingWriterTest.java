@@ -1,4 +1,4 @@
-package com.techfork.domain.post.batch;
+package com.techfork.post.application.batch;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ErrorCause;
@@ -7,11 +7,11 @@ import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.bulk.OperationType;
 import co.elastic.clients.util.ObjectBuilder;
-import com.techfork.domain.post.document.ContentChunk;
-import com.techfork.domain.post.document.PostDocument;
-import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.post.fixture.PostFixture;
-import com.techfork.domain.post.repository.PostRepository;
+import com.techfork.post.domain.projection.ContentChunk;
+import com.techfork.post.domain.projection.PostDocument;
+import com.techfork.post.domain.Post;
+import com.techfork.post.fixture.PostFixture;
+import com.techfork.post.infrastructure.PostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -2,7 +2,7 @@ package com.techfork.activity.bookmark.application.query;
 
 import com.techfork.activity.bookmark.infrastructure.BookmarkQueryRow;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
-import com.techfork.domain.post.service.PostKeywordLookupService;
+import com.techfork.post.application.query.PostKeywordLookupService;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.exception.UserErrorCode;
 import com.techfork.domain.useraccount.service.UserLookupService;

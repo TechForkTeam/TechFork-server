@@ -1,9 +1,9 @@
-package com.techfork.domain.post.repository;
+package com.techfork.post.infrastructure;
 
-import com.techfork.domain.post.dto.CompanyDto;
-import com.techfork.domain.post.dto.PostDetailDto;
-import com.techfork.domain.post.dto.PostInfoDto;
-import com.techfork.domain.post.entity.Post;
+import com.techfork.post.application.dto.CompanyDto;
+import com.techfork.post.application.dto.PostDetailDto;
+import com.techfork.post.application.dto.PostInfoDto;
+import com.techfork.post.domain.Post;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import jakarta.persistence.EntityManager;

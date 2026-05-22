@@ -1,7 +1,7 @@
-package com.techfork.domain.post.service;
+package com.techfork.post.application.support;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.techfork.domain.post.dto.SummaryWithKeywordsDto;
+import com.techfork.post.application.dto.SummaryWithKeywordsDto;
 import com.techfork.global.llm.LlmClient;
 import com.techfork.global.llm.exception.LlmException;
 import com.techfork.global.util.ContentCleaner;

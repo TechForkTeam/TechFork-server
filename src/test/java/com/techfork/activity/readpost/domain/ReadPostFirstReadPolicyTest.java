@@ -1,7 +1,7 @@
 package com.techfork.activity.readpost.domain;
 
 import com.techfork.activity.readpost.infrastructure.FirstReadPostRepository;
-import com.techfork.domain.post.entity.Post;
+import com.techfork.post.domain.Post;
 import com.techfork.domain.useraccount.entity.User;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;

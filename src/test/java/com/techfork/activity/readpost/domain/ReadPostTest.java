@@ -1,6 +1,6 @@
 package com.techfork.activity.readpost.domain;
 
-import com.techfork.domain.post.entity.Post;
+import com.techfork.post.domain.Post;
 import com.techfork.domain.useraccount.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

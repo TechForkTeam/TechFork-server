@@ -1,7 +1,7 @@
-package com.techfork.domain.post.batch;
+package com.techfork.post.application.batch;
 
-import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.post.repository.PostRepository;
+import com.techfork.post.domain.Post;
+import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.domain.source.dto.RssFeedItem;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.repository.TechBlogRepository;

@@ -1,6 +1,6 @@
 package com.techfork.domain.recommendation.converter;
 
-import com.techfork.domain.post.entity.Post;
+import com.techfork.post.domain.Post;
 import com.techfork.domain.recommendation.dto.RecommendedPostDto;
 import com.techfork.domain.recommendation.entity.RecommendedPost;
 import com.techfork.domain.source.entity.TechBlog;

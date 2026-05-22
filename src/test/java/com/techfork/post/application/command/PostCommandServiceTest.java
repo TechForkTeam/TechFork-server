@@ -1,6 +1,6 @@
-package com.techfork.domain.post.service;
+package com.techfork.post.application.command;
 
-import com.techfork.domain.post.repository.PostRepository;
+import com.techfork.post.infrastructure.PostRepository;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

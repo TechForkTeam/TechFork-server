@@ -1,6 +1,6 @@
-package com.techfork.domain.post.fixture;
+package com.techfork.post.fixture;
 
-import com.techfork.domain.post.entity.Post;
+import com.techfork.post.domain.Post;
 import com.techfork.domain.source.dto.RssFeedItem;
 import com.techfork.domain.source.entity.TechBlog;
 import org.springframework.test.util.ReflectionTestUtils;
