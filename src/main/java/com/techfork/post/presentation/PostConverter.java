@@ -5,6 +5,11 @@ import com.techfork.post.application.query.result.GetCompanyListResult;
 import com.techfork.post.application.query.result.GetPostDetailResult;
 import com.techfork.post.application.query.result.GetPostListResult;
 import com.techfork.post.application.query.result.PostListItemResult;
+import com.techfork.post.presentation.response.CompanyListResponse;
+import com.techfork.post.presentation.response.CompanyResponse;
+import com.techfork.post.presentation.response.PostDetailResponse;
+import com.techfork.post.presentation.response.PostInfoResponse;
+import com.techfork.post.presentation.response.PostListResponse;
 import org.springframework.stereotype.Component;
 
 @Component

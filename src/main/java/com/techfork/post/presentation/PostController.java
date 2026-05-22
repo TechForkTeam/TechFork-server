@@ -1,8 +1,8 @@
 package com.techfork.post.presentation;
 
-import com.techfork.post.presentation.CompanyListResponse;
-import com.techfork.post.presentation.PostDetailResponse;
-import com.techfork.post.presentation.PostListResponse;
+import com.techfork.post.presentation.response.CompanyListResponse;
+import com.techfork.post.presentation.response.PostDetailResponse;
+import com.techfork.post.presentation.response.PostListResponse;
 import com.techfork.post.application.query.result.GetCompanyListResult;
 import com.techfork.post.application.query.result.GetPostDetailResult;
 import com.techfork.post.application.query.result.GetPostListResult;
