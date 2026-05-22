@@ -90,9 +90,9 @@
 - `src/main/java/com/techfork/activity/bookmark/presentation/BookmarkConverter.java`
 - `src/main/java/com/techfork/activity/bookmark/presentation/BookmarkController.java`
 - `src/main/java/com/techfork/domain/useraccount/service/UserLookupService.java`
-- `src/main/java/com/techfork/post/application/query/PostLookupService.java`
+- `src/main/java/com/techfork/post/application/query/lookup/PostLookupService.java`
 - `src/main/java/com/techfork/post/application/command/PostViewCountCommandService.java`
-- `src/main/java/com/techfork/post/application/query/PostKeywordLookupService.java`
+- `src/main/java/com/techfork/post/application/query/lookup/PostKeywordLookupService.java`
 - `src/main/java/com/techfork/activity/readhistory/application/command/ReadHistoryCommandService.java`
 - `src/main/java/com/techfork/activity/readhistory/application/command/SaveSearchHistoryCommand.java`
 - `src/main/java/com/techfork/activity/readhistory/presentation/SearchHistoryRequest.java`

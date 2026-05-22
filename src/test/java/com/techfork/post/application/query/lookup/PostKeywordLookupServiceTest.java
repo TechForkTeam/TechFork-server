@@ -1,4 +1,4 @@
-package com.techfork.post.application.query;
+package com.techfork.post.application.query.lookup;
 
 import com.techfork.post.domain.Post;
 import com.techfork.post.domain.PostKeyword;

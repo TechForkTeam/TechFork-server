@@ -6,7 +6,7 @@ import com.techfork.activity.readpost.domain.ReadPostFirstReadPolicy;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.post.domain.Post;
 import com.techfork.post.application.command.PostViewCountCommandService;
-import com.techfork.post.application.query.PostLookupService;
+import com.techfork.post.application.query.lookup.PostLookupService;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.service.UserLookupService;
 import com.techfork.global.exception.GeneralException;

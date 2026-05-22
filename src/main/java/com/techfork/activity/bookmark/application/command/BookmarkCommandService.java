@@ -4,7 +4,7 @@ import com.techfork.activity.bookmark.domain.Bookmark;
 import com.techfork.activity.bookmark.domain.BookmarkErrorCode;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.post.domain.Post;
-import com.techfork.post.application.query.PostLookupService;
+import com.techfork.post.application.query.lookup.PostLookupService;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.service.UserLookupService;
 import com.techfork.global.exception.GeneralException;
