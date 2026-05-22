@@ -28,7 +28,13 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             """)
     List<Post> findWithKeywordsBySummaryIsNull();
 
-    List<Post> findBySummaryIsNotNullAndEmbeddedAtIsNull();
+    @Query("""
+            SELECT p FROM Post p
+            WHERE p.summary IS NOT NULL
+              AND p.summary <> ''
+              AND p.embeddedAt IS NULL
+            """)
+    List<Post> findReadyForEmbedding();
 
     @Modifying
     @Query("UPDATE Post p SET p.embeddedAt = :embeddedAt WHERE p.id IN :ids")

@@ -5,10 +5,6 @@ import com.techfork.domain.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.ItemReader;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.util.Iterator;
@@ -28,7 +24,7 @@ public class PostEmbeddingReader implements ItemReader<Post> {
     @Override
     public Post read() {
         if(postIterator == null) {
-            List<Post> posts = postRepository.findBySummaryIsNotNullAndEmbeddedAtIsNull();
+            List<Post> posts = postRepository.findReadyForEmbedding();
             log.info("임베딩 대상 Post 개수: {}", posts.size());
             postIterator = posts.iterator();
         }
