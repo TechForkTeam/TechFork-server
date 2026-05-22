@@ -2,6 +2,8 @@ package com.techfork.post.presentation;
 
 import com.techfork.post.presentation.CompanyListResponse;
 import com.techfork.post.presentation.PostListResponse;
+import com.techfork.post.application.query.result.GetCompanyListResult;
+import com.techfork.post.application.query.result.GetPostListResult;
 import com.techfork.post.domain.enums.EPostSortType;
 import com.techfork.post.application.query.PostQueryService;
 import com.techfork.global.common.code.SuccessCode;
@@ -31,6 +33,7 @@ import java.util.List;
 public class PostControllerV2 {
 
     private final PostQueryService postQueryService;
+    private final PostConverter postConverter;
 
     @Operation(
             summary = "게시글이 있는 회사 목록 조회 (V2)",
@@ -43,7 +46,8 @@ public class PostControllerV2 {
     )
     @GetMapping("/companies")
     public ResponseEntity<BaseResponse<CompanyListResponse>> getCompanies() {
-        CompanyListResponse response = postQueryService.getCompaniesV2();
+        GetCompanyListResult result = postQueryService.getCompaniesV2();
+        CompanyListResponse response = postConverter.toCompanyListResponseV2(result);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 
@@ -77,7 +81,8 @@ public class PostControllerV2 {
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         Long userId = userPrincipal != null ? userPrincipal.getId() : null;
-        PostListResponse response = postQueryService.getPostsByCompanyV2(companies, lastPublishedAt, lastPostId, size, userId);
+        GetPostListResult result = postQueryService.getPostsByCompanyV2(companies, lastPublishedAt, lastPostId, size, userId);
+        PostListResponse response = postConverter.toPostListResponse(result);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 
@@ -114,7 +119,8 @@ public class PostControllerV2 {
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         Long userId = userPrincipal != null ? userPrincipal.getId() : null;
-        PostListResponse response = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size, userId);
+        GetPostListResult result = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size, userId);
+        PostListResponse response = postConverter.toPostListResponse(result);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 }

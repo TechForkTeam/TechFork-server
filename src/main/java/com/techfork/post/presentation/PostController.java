@@ -3,6 +3,9 @@ package com.techfork.post.presentation;
 import com.techfork.post.presentation.CompanyListResponse;
 import com.techfork.post.presentation.PostDetailResponse;
 import com.techfork.post.presentation.PostListResponse;
+import com.techfork.post.application.query.result.GetCompanyListResult;
+import com.techfork.post.application.query.result.GetPostDetailResult;
+import com.techfork.post.application.query.result.GetPostListResult;
 import com.techfork.post.domain.enums.EPostSortType;
 import com.techfork.post.application.query.PostQueryService;
 import com.techfork.global.common.code.SuccessCode;
@@ -25,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 public class PostController {
 
     private final PostQueryService postQueryService;
+    private final PostConverter postConverter;
 
     @Operation(
             summary = "게시글이 있는 회사 목록 조회",
@@ -32,7 +36,8 @@ public class PostController {
     )
     @GetMapping("/companies")
     public ResponseEntity<BaseResponse<CompanyListResponse>> getCompanies() {
-        CompanyListResponse response = postQueryService.getCompanies();
+        GetCompanyListResult result = postQueryService.getCompanies();
+        CompanyListResponse response = postConverter.toCompanyListResponse(result);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 
@@ -52,7 +57,8 @@ public class PostController {
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         Long userId = userPrincipal != null ? userPrincipal.getId() : null;
-        PostListResponse response = postQueryService.getPostsByCompany(company, lastPostId, size, userId);
+        GetPostListResult result = postQueryService.getPostsByCompany(company, lastPostId, size, userId);
+        PostListResponse response = postConverter.toPostListResponse(result);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 
@@ -72,7 +78,8 @@ public class PostController {
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         Long userId = userPrincipal != null ? userPrincipal.getId() : null;
-        PostListResponse response = postQueryService.getRecentPosts(sortBy, lastPostId, size, userId);
+        GetPostListResult result = postQueryService.getRecentPosts(sortBy, lastPostId, size, userId);
+        PostListResponse response = postConverter.toPostListResponse(result);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 
@@ -88,7 +95,8 @@ public class PostController {
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         Long userId = userPrincipal != null ? userPrincipal.getId() : null;
-        PostDetailResponse response = postQueryService.getPostDetail(postId, userId);
+        GetPostDetailResult result = postQueryService.getPostDetail(postId, userId);
+        PostDetailResponse response = postConverter.toPostDetailResponse(result);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 }

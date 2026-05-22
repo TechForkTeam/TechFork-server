@@ -1,6 +1,11 @@
 package com.techfork.post.application.query;
 
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
+import com.techfork.post.application.query.result.CompanyListItemResult;
+import com.techfork.post.application.query.result.GetCompanyListResult;
+import com.techfork.post.application.query.result.GetPostDetailResult;
+import com.techfork.post.application.query.result.GetPostListResult;
+import com.techfork.post.application.query.result.PostListItemResult;
 import com.techfork.post.domain.PostKeyword;
 import com.techfork.post.domain.enums.EPostSortType;
 import com.techfork.post.infrastructure.PostKeywordRepository;
@@ -8,10 +13,6 @@ import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.post.infrastructure.row.CompanyRow;
 import com.techfork.post.infrastructure.row.PostDetailRow;
 import com.techfork.post.infrastructure.row.PostInfoRow;
-import com.techfork.post.presentation.CompanyListResponse;
-import com.techfork.post.presentation.PostDetailResponse;
-import com.techfork.post.presentation.PostListResponse;
-import com.techfork.post.presentation.PostConverter;
 import com.techfork.global.exception.CommonErrorCode;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
@@ -36,20 +37,35 @@ public class PostQueryService {
     private final PostRepository postRepository;
     private final PostKeywordRepository postKeywordRepository;
     private final BookmarkRepository bookmarkRepository;
-    private final PostConverter postConverter;
     private final CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
 
-    public CompanyListResponse getCompanies() {
+    public GetCompanyListResult getCompanies() {
         List<String> companies = postRepository.findDistinctCompanies();
-        return postConverter.toCompanyListResponse(companies);
+        return GetCompanyListResult.builder()
+                .totalNumber(null)
+                .companies(companies.stream()
+                        .map(company -> CompanyListItemResult.builder()
+                                .company(company)
+                                .build())
+                        .toList())
+                .build();
     }
 
-    public CompanyListResponse getCompaniesV2() {
+    public GetCompanyListResult getCompaniesV2() {
         List<CompanyRow> companies = postRepository.findCompaniesWithDetails();
-        return postConverter.toCompanyListResponseV2(companies);
+        return GetCompanyListResult.builder()
+                .totalNumber(companies.size())
+                .companies(companies.stream()
+                        .map(company -> CompanyListItemResult.builder()
+                                .company(company.company())
+                                .hasNewPost(company.hasNewPost())
+                                .logoUrl(company.logoUrl())
+                                .build())
+                        .toList())
+                .build();
     }
 
-    public PostListResponse getPostsByCompany(String company, Long lastPostId, int size, Long userId) {
+    public GetPostListResult getPostsByCompany(String company, Long lastPostId, int size, Long userId) {
         PageRequest pageRequest = PageRequest.of(0, size + 1);
         List<PostInfoRow> posts = postRepository.findByCompanyWithCursor(company, lastPostId, pageRequest);
         List<PostInfoRow> postsWithKeywords = attachKeywordsToPostInfoList(posts);
@@ -58,10 +74,10 @@ public class PostQueryService {
             postsWithKeywords = attachBookmarksToPostInfoList(postsWithKeywords, userId);
         }
 
-        return postConverter.toPostListResponse(postsWithKeywords, size);
+        return toGetPostListResult(postsWithKeywords, size);
     }
 
-    public PostListResponse getPostsByCompanyV2(List<String> companies, LocalDateTime lastPublishedAt, Long lastPostId, int size, Long userId) {
+    public GetPostListResult getPostsByCompanyV2(List<String> companies, LocalDateTime lastPublishedAt, Long lastPostId, int size, Long userId) {
         PageRequest pageRequest = PageRequest.of(0, size + 1);
         List<PostInfoRow> posts = postRepository.findByCompanyNamesWithCursor(companies, lastPublishedAt, lastPostId, pageRequest);
         List<PostInfoRow> postsWithKeywords = attachKeywordsToPostInfoList(posts);
@@ -70,10 +86,10 @@ public class PostQueryService {
             postsWithKeywords = attachBookmarksToPostInfoList(postsWithKeywords, userId);
         }
 
-        return postConverter.toPostListResponse(postsWithKeywords, size);
+        return toGetPostListResult(postsWithKeywords, size);
     }
 
-    public PostListResponse getRecentPosts(EPostSortType sortBy, Long lastPostId, int size, Long userId) {
+    public GetPostListResult getRecentPosts(EPostSortType sortBy, Long lastPostId, int size, Long userId) {
         PageRequest pageRequest = PageRequest.of(0, size + 1);
         List<PostInfoRow> posts;
 
@@ -89,10 +105,10 @@ public class PostQueryService {
             postsWithKeywords = attachBookmarksToPostInfoList(postsWithKeywords, userId);
         }
 
-        return postConverter.toPostListResponse(postsWithKeywords, size);
+        return toGetPostListResult(postsWithKeywords, size);
     }
 
-    public PostListResponse getRecentPostsV2(EPostSortType sortBy, Integer lastViewCount, LocalDateTime lastPublishedAt, Long lastPostId, int size, Long userId) {
+    public GetPostListResult getRecentPostsV2(EPostSortType sortBy, Integer lastViewCount, LocalDateTime lastPublishedAt, Long lastPostId, int size, Long userId) {
         PageRequest pageRequest = PageRequest.of(0, size + 1);
         List<PostInfoRow> posts;
 
@@ -108,10 +124,10 @@ public class PostQueryService {
             postsWithKeywords = attachBookmarksToPostInfoList(postsWithKeywords, userId);
         }
 
-        return postConverter.toPostListResponse(postsWithKeywords, size);
+        return toGetPostListResult(postsWithKeywords, size);
     }
 
-    public PostDetailResponse getPostDetail(Long postId, Long userId) {
+    public GetPostDetailResult getPostDetail(Long postId, Long userId) {
         PostDetailRow postDetail = postRepository.findByIdWithTechBlog(postId)
                 .orElseThrow(() -> new GeneralException(CommonErrorCode.NOT_FOUND));
 
@@ -125,7 +141,18 @@ public class PostQueryService {
             isBookmarked = !bookmarkRepository.findBookmarkedPostIds(userId, List.of(postId)).isEmpty();
         }
 
-        return postConverter.toPostDetailResponse(postDetail, keywords, isBookmarked);
+        return GetPostDetailResult.builder()
+                .id(postDetail.id())
+                .title(postDetail.title())
+                .summary(postDetail.summary())
+                .company(postDetail.company())
+                .url(postDetail.url())
+                .logoUrl(postDetail.logoUrl())
+                .publishedAt(postDetail.publishedAt())
+                .viewCount(postDetail.viewCount())
+                .keywords(keywords)
+                .isBookmarked(isBookmarked)
+                .build();
     }
 
     private List<PostInfoRow> attachKeywordsToPostInfoList(List<PostInfoRow> posts) {
@@ -189,5 +216,43 @@ public class PostQueryService {
                         .isBookmarked(bookmarkedPostIds.contains(post.id()))
                         .build())
                 .toList();
+    }
+
+    private GetPostListResult toGetPostListResult(List<PostInfoRow> posts, int requestedSize) {
+        boolean hasNext = posts.size() > requestedSize;
+        List<PostInfoRow> content = hasNext ? posts.subList(0, requestedSize) : posts;
+
+        Long lastPostId = null;
+        Long lastViewCount = null;
+        LocalDateTime lastPublishedAt = null;
+
+        if (!content.isEmpty()) {
+            PostInfoRow lastPost = content.get(content.size() - 1);
+            lastPostId = lastPost.id();
+            lastViewCount = lastPost.viewCount();
+            lastPublishedAt = lastPost.publishedAt();
+        }
+
+        return GetPostListResult.builder()
+                .posts(content.stream()
+                        .map(post -> PostListItemResult.builder()
+                                .id(post.id())
+                                .title(post.title())
+                                .shortSummary(post.shortSummary())
+                                .company(post.company())
+                                .url(post.url())
+                                .logoUrl(post.logoUrl())
+                                .thumbnailUrl(post.thumbnailUrl())
+                                .publishedAt(post.publishedAt())
+                                .viewCount(post.viewCount())
+                                .keywords(post.keywords())
+                                .isBookmarked(post.isBookmarked())
+                                .build())
+                        .toList())
+                .lastPostId(lastPostId)
+                .lastViewCount(lastViewCount)
+                .lastPublishedAt(lastPublishedAt)
+                .hasNext(hasNext)
+                .build();
     }
 }

@@ -1,26 +1,27 @@
 package com.techfork.post.presentation;
 
-import com.techfork.post.infrastructure.row.CompanyRow;
-import com.techfork.post.infrastructure.row.PostDetailRow;
-import com.techfork.post.infrastructure.row.PostInfoRow;
+import com.techfork.post.application.query.result.CompanyListItemResult;
+import com.techfork.post.application.query.result.GetCompanyListResult;
+import com.techfork.post.application.query.result.GetPostDetailResult;
+import com.techfork.post.application.query.result.GetPostListResult;
+import com.techfork.post.application.query.result.PostListItemResult;
 import org.springframework.stereotype.Component;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Component
 public class PostConverter {
 
-    public CompanyListResponse toCompanyListResponse(List<String> companies) {
+    public CompanyListResponse toCompanyListResponse(GetCompanyListResult result) {
         return CompanyListResponse.builder()
-                .companies(companies)
+                .companies(result.companies().stream()
+                        .map(CompanyListItemResult::company)
+                        .toList())
                 .build();
     }
 
-    public CompanyListResponse toCompanyListResponseV2(List<CompanyRow> companies) {
+    public CompanyListResponse toCompanyListResponseV2(GetCompanyListResult result) {
         return CompanyListResponse.builder()
-                .totalNumber(companies.size())
-                .companies(companies.stream()
+                .totalNumber(result.totalNumber())
+                .companies(result.companies().stream()
                         .map(company -> CompanyResponse.builder()
                                 .company(company.company())
                                 .hasNewPost(company.hasNewPost())
@@ -30,23 +31,9 @@ public class PostConverter {
                 .build();
     }
 
-    public PostListResponse toPostListResponse(List<PostInfoRow> posts, int requestedSize) {
-        boolean hasNext = posts.size() > requestedSize;
-        List<PostInfoRow> content = hasNext ? posts.subList(0, requestedSize) : posts;
-
-        Long lastPostId = null;
-        Long lastViewCount = null;
-        LocalDateTime lastPublishedAt = null;
-
-        if (!content.isEmpty()) {
-            PostInfoRow lastPost = content.get(content.size() - 1);
-            lastPostId = lastPost.id();
-            lastViewCount = lastPost.viewCount();
-            lastPublishedAt = lastPost.publishedAt();
-        }
-
+    public PostListResponse toPostListResponse(GetPostListResult result) {
         return PostListResponse.builder()
-                .posts(content.stream()
+                .posts(result.posts().stream()
                         .map(post -> PostInfoResponse.builder()
                                 .id(post.id())
                                 .title(post.title())
@@ -61,25 +48,25 @@ public class PostConverter {
                                 .isBookmarked(post.isBookmarked())
                                 .build())
                         .toList())
-                .lastPostId(lastPostId)
-                .lastViewCount(lastViewCount)
-                .lastPublishedAt(lastPublishedAt)
-                .hasNext(hasNext)
+                .lastPostId(result.lastPostId())
+                .lastViewCount(result.lastViewCount())
+                .lastPublishedAt(result.lastPublishedAt())
+                .hasNext(result.hasNext())
                 .build();
     }
 
-    public PostDetailResponse toPostDetailResponse(PostDetailRow baseDto, List<String> keywords, Boolean isBookmarked) {
+    public PostDetailResponse toPostDetailResponse(GetPostDetailResult result) {
         return PostDetailResponse.builder()
-                .id(baseDto.id())
-                .title(baseDto.title())
-                .summary(baseDto.summary())
-                .company(baseDto.company())
-                .url(baseDto.url())
-                .logoUrl(baseDto.logoUrl())
-                .publishedAt(baseDto.publishedAt())
-                .viewCount(baseDto.viewCount())
-                .keywords(keywords)
-                .isBookmarked(isBookmarked)
+                .id(result.id())
+                .title(result.title())
+                .summary(result.summary())
+                .company(result.company())
+                .url(result.url())
+                .logoUrl(result.logoUrl())
+                .publishedAt(result.publishedAt())
+                .viewCount(result.viewCount())
+                .keywords(result.keywords())
+                .isBookmarked(result.isBookmarked())
                 .build();
     }
 }
