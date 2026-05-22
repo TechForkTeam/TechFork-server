@@ -53,12 +53,13 @@ class PostEmbeddingReaderDataJpaTest {
     class Read {
 
         @Test
-        @DisplayName("요약이 비어 있지 않고 embeddedAt이 null인 게시글만 읽는다")
+        @DisplayName("요약이 공백이 아니고 embeddedAt이 null인 게시글만 읽는다")
         void readsOnlyPostsReadyForEmbedding() throws Exception {
             Post readyPost1 = savePost("ready-1", "요약 완료 1", "짧은 요약 1", null);
             Post readyPost2 = savePost("ready-2", "요약 완료 2", "짧은 요약 2", null);
             savePost("null-summary", null, null, null);
             savePost("empty-summary", "", "", null);
+            savePost("blank-summary", "   ", "   ", null);
             savePost("already-embedded", "이미 임베딩됨", "짧은 요약", LocalDateTime.of(2026, 5, 11, 9, 0));
 
             entityManager.clear();
@@ -89,6 +90,7 @@ class PostEmbeddingReaderDataJpaTest {
         void returnsNullWhenNoPostsAreReadyForEmbedding() throws Exception {
             savePost("null-summary", null, null, null);
             savePost("empty-summary", "", "", null);
+            savePost("blank-summary", "   ", "   ", null);
             savePost("already-embedded", "이미 임베딩됨", "짧은 요약", LocalDateTime.of(2026, 5, 11, 9, 0));
 
             entityManager.clear();

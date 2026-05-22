@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.batch.item.ExecutionContext;
 
 import java.util.List;
 
@@ -66,6 +67,30 @@ class PostEmbeddingReaderTest {
             assertThat(firstRead).isNull();
             assertThat(secondRead).isNull();
             verify(postRepository, times(1)).findReadyForEmbedding();
+        }
+
+        @Test
+        @DisplayName("새 step execution이 시작되면 repository를 다시 조회한다")
+        void reloadsRepositoryWhenNewStepExecutionStarts() {
+            PostEmbeddingReader postEmbeddingReader = new PostEmbeddingReader(postRepository);
+            Post firstStepPost = PostFixture.createPost(1L, "첫 실행 글", "본문1", "평문1", "TechFork", "요약1", "짧은요약1");
+            Post secondStepPost = PostFixture.createPost(2L, "두 번째 실행 글", "본문2", "평문2", "TechFork", "요약2", "짧은요약2");
+            given(postRepository.findReadyForEmbedding())
+                    .willReturn(List.of(firstStepPost))
+                    .willReturn(List.of(secondStepPost));
+
+            postEmbeddingReader.open(new ExecutionContext());
+            Post firstExecutionRead = postEmbeddingReader.read();
+            Post firstExecutionEnd = postEmbeddingReader.read();
+            postEmbeddingReader.close();
+
+            postEmbeddingReader.open(new ExecutionContext());
+            Post secondExecutionRead = postEmbeddingReader.read();
+
+            assertThat(firstExecutionRead).isSameAs(firstStepPost);
+            assertThat(firstExecutionEnd).isNull();
+            assertThat(secondExecutionRead).isSameAs(secondStepPost);
+            verify(postRepository, times(2)).findReadyForEmbedding();
         }
     }
 }

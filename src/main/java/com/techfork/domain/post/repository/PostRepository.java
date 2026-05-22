@@ -31,7 +31,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("""
             SELECT p FROM Post p
             WHERE p.summary IS NOT NULL
-              AND p.summary <> ''
+              AND LENGTH(TRIM(p.summary)) > 0
               AND p.embeddedAt IS NULL
             """)
     List<Post> findReadyForEmbedding();
