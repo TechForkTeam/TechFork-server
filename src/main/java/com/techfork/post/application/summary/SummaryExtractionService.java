@@ -2,7 +2,7 @@ package com.techfork.post.application.summary;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.techfork.post.application.dto.SummaryWithKeywordsDto;
+import com.techfork.post.application.summary.SummaryExtractionResult;
 import com.techfork.global.llm.LlmClient;
 import com.techfork.global.llm.exception.LlmException;
 import com.techfork.global.util.ContentCleaner;
@@ -37,7 +37,7 @@ public class SummaryExtractionService {
             }
             """;
 
-    public SummaryWithKeywordsDto extractSummary(String title, String content) {
+    public SummaryExtractionResult extractSummary(String title, String content) {
         String processedContent = content;
         if (content != null && content.length() > 50000) {
             processedContent = ContentCleaner.cleanAndLimit(content, 50000);
@@ -54,7 +54,7 @@ public class SummaryExtractionService {
         return parseResponse(response.trim());
     }
 
-    private SummaryWithKeywordsDto parseResponse(String response) {
+    private SummaryExtractionResult parseResponse(String response) {
         try {
             JsonNode jsonNode = objectMapper.readTree(response);
             String summary = jsonNode.get("summary").asText();
@@ -66,7 +66,7 @@ public class SummaryExtractionService {
                 keywordsNode.forEach(node -> keywords.add(node.asText()));
             }
 
-            return new SummaryWithKeywordsDto(summary, shortSummary, keywords);
+            return new SummaryExtractionResult(summary, shortSummary, keywords);
         } catch (Exception e) {
             log.error("JSON 응답 파싱 실패: {}", response, e);
             throw new LlmException("LLM summary response parsing failed", e);

@@ -1,7 +1,7 @@
 package com.techfork.post.application.summary;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.techfork.post.application.dto.SummaryWithKeywordsDto;
+import com.techfork.post.application.summary.SummaryExtractionResult;
 import com.techfork.global.llm.LlmClient;
 import com.techfork.global.llm.exception.LlmException;
 import com.techfork.global.util.ContentCleaner;
@@ -51,7 +51,7 @@ class SummaryExtractionServiceTest {
                             }
                             """);
 
-            SummaryWithKeywordsDto result = summaryExtractionService.extractSummary("제목", "본문");
+            SummaryExtractionResult result = summaryExtractionService.extractSummary("제목", "본문");
 
             assertThat(result.summary()).isEqualTo("상세 요약");
             assertThat(result.shortSummary()).isEqualTo("짧은 요약");
@@ -69,7 +69,7 @@ class SummaryExtractionServiceTest {
                             }
                             """);
 
-            SummaryWithKeywordsDto result = summaryExtractionService.extractSummary("제목", "본문");
+            SummaryExtractionResult result = summaryExtractionService.extractSummary("제목", "본문");
 
             assertThat(result.summary()).isEqualTo("상세 요약");
             assertThat(result.shortSummary()).isEmpty();
@@ -87,7 +87,7 @@ class SummaryExtractionServiceTest {
                             }
                             """);
 
-            SummaryWithKeywordsDto result = summaryExtractionService.extractSummary("제목", "본문");
+            SummaryExtractionResult result = summaryExtractionService.extractSummary("제목", "본문");
 
             assertThat(result.summary()).isEqualTo("상세 요약");
             assertThat(result.shortSummary()).isEqualTo("짧은 요약");
@@ -106,7 +106,7 @@ class SummaryExtractionServiceTest {
                             }
                             """);
 
-            SummaryWithKeywordsDto result = summaryExtractionService.extractSummary("제목", "본문");
+            SummaryExtractionResult result = summaryExtractionService.extractSummary("제목", "본문");
 
             assertThat(result.summary()).isEqualTo("상세 요약");
             assertThat(result.shortSummary()).isEqualTo("짧은 요약");

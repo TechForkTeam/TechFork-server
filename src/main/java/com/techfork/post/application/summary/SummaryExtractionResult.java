@@ -1,8 +1,8 @@
-package com.techfork.post.application.dto;
+package com.techfork.post.application.summary;
 
 import java.util.List;
 
-public record SummaryWithKeywordsDto(
+public record SummaryExtractionResult(
         String summary,
         String shortSummary,
         List<String> keywords

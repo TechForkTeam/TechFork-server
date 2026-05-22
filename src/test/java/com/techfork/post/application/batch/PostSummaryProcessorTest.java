@@ -1,6 +1,6 @@
 package com.techfork.post.application.batch;
 
-import com.techfork.post.application.dto.SummaryWithKeywordsDto;
+import com.techfork.post.application.summary.SummaryExtractionResult;
 import com.techfork.post.domain.Post;
 import com.techfork.post.domain.PostKeyword;
 import com.techfork.post.fixture.PostFixture;
@@ -36,7 +36,7 @@ class PostSummaryProcessorTest {
             Post post = createPostWithExistingKeywords();
             PostKeyword oldKeyword1 = post.getKeywords().get(0);
             PostKeyword oldKeyword2 = post.getKeywords().get(1);
-            SummaryWithKeywordsDto summaryWithKeywordsDto = new SummaryWithKeywordsDto(
+            SummaryExtractionResult summaryWithKeywordsDto = new SummaryExtractionResult(
                     "새 요약",
                     "새 짧은 요약",
                     List.of("AI", "Batch")
@@ -64,7 +64,7 @@ class PostSummaryProcessorTest {
             PostSummaryProcessor postSummaryProcessor = new PostSummaryProcessor(summaryExtractionService);
             Post post = createPostWithExistingKeywords();
             given(summaryExtractionService.extractSummary("요약 대상 글", "평문 본문"))
-                    .willReturn(new SummaryWithKeywordsDto("새 요약", "새 짧은 요약", List.of()));
+                    .willReturn(new SummaryExtractionResult("새 요약", "새 짧은 요약", List.of()));
 
             Post result = postSummaryProcessor.process(post);
 
