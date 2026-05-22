@@ -3,7 +3,7 @@ package com.techfork.activity.readpost.application.query;
 import com.techfork.activity.bookmark.application.query.lookup.BookmarkLookupService;
 import com.techfork.activity.readpost.infrastructure.ReadPostQueryRow;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
-import com.techfork.domain.post.service.PostKeywordLookupService;
+import com.techfork.post.application.query.PostKeywordLookupService;
 import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import java.util.List;
 import java.util.Map;

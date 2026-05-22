@@ -7,9 +7,9 @@ import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
-import com.techfork.domain.post.document.PostDocument;
-import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.post.repository.PostRepository;
+import com.techfork.post.domain.projection.PostDocument;
+import com.techfork.post.domain.Post;
+import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.domain.search.config.GeneralSearchProperties;
 import com.techfork.domain.search.dto.SearchResult;
 

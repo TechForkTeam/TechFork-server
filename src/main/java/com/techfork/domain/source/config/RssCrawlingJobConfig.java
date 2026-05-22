@@ -1,8 +1,8 @@
 package com.techfork.domain.source.config;
 
-import com.techfork.domain.post.batch.*;
-import com.techfork.domain.post.document.PostDocument;
-import com.techfork.domain.post.entity.Post;
+import com.techfork.post.application.batch.*;
+import com.techfork.post.domain.projection.PostDocument;
+import com.techfork.post.domain.Post;
 import com.techfork.domain.source.batch.PostBatchWriter;
 import com.techfork.domain.source.batch.RssFeedReader;
 import com.techfork.domain.source.batch.RssToPostProcessor;

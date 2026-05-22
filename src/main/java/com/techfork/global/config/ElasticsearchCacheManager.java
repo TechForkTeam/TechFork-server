@@ -3,7 +3,7 @@ package com.techfork.global.config;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.KnnSearch;
 import co.elastic.clients.json.JsonData;
-import com.techfork.domain.post.document.PostDocument;
+import com.techfork.post.domain.projection.PostDocument;
 import com.techfork.domain.recommendation.config.RecommendationProperties;
 import com.techfork.domain.personalization.document.PersonalizationProfileDocument;
 import lombok.RequiredArgsConstructor;

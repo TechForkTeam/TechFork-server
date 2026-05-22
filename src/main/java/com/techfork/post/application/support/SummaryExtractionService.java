@@ -1,0 +1,105 @@
+package com.techfork.post.application.support;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.techfork.post.application.dto.SummaryWithKeywordsDto;
+import com.techfork.global.llm.LlmClient;
+import com.techfork.global.llm.exception.LlmException;
+import com.techfork.global.util.ContentCleaner;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * LLM을 사용한 게시글 요약 추출 서비스
+ * 의미 기반 검색 최적화를 위한 요약 생성
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class SummaryExtractionService {
+
+    private final LlmClient llmClient;
+    private final ObjectMapper objectMapper;
+
+    private static final String SYSTEM_PROMPT = """
+            너는 기술 블로그 분석 전문가야.
+            주어진 기술 블로그 글을 분석하고, 요약과 핵심 키워드를 추출해줘.
+
+            응답은 반드시 아래 JSON 형식으로만 작성해:
+            {
+              "summary": "상세 요약 내용",
+              "shortSummary": "짧은 요약 내용",
+              "keywords": ["키워드1", "키워드2", ...]
+            }
+            """;
+
+    public SummaryWithKeywordsDto extractSummary(String title, String content) {
+        String processedContent = content;
+        if (content != null && content.length() > 50000) {
+            processedContent = ContentCleaner.cleanAndLimit(content, 50000);
+            log.debug("콘텐츠가 너무 길어 50,000자로 제한: {} (원본: {}자 -> 정제 후: {}자)",
+                    title, content.length(), processedContent.length());
+        }
+
+        String userPrompt = buildUserPrompt(title, processedContent);
+        String response = llmClient.call(SYSTEM_PROMPT, userPrompt);
+
+        log.debug("LLM API 응답 (제목: {}): {}", title, response);
+
+        // JSON 응답 파싱 (파싱 실패 시 예외 전파)
+        return parseResponse(response.trim());
+    }
+
+    private SummaryWithKeywordsDto parseResponse(String response) {
+        try {
+            JsonNode jsonNode = objectMapper.readTree(response);
+            String summary = jsonNode.get("summary").asText();
+            String shortSummary = jsonNode.has("shortSummary") ? jsonNode.get("shortSummary").asText() : "";
+            List<String> keywords = new ArrayList<>();
+
+            JsonNode keywordsNode = jsonNode.get("keywords");
+            if (keywordsNode != null && keywordsNode.isArray()) {
+                keywordsNode.forEach(node -> keywords.add(node.asText()));
+            }
+
+            return new SummaryWithKeywordsDto(summary, shortSummary, keywords);
+        } catch (Exception e) {
+            log.error("JSON 응답 파싱 실패: {}", response, e);
+            throw new LlmException("LLM summary response parsing failed", e);
+        }
+    }
+
+    private String buildUserPrompt(String title, String content) {
+        return String.format("""
+                다음 기술 블로그 글을 분석해서 요약과 키워드를 추출해줘:
+
+                제목: %s
+                내용: %s
+
+                상세 요약(summary) 작성 가이드:
+                - 글의 전체 맥락과 흐름을 포함 (300-500자)
+                - 글에서 다루는 핵심 문제와 해결 방법을 구체적으로 기술
+                - 사용된 기술 스택, 도구, 프레임워크를 정확한 명칭으로 명시
+                - 자연스러운 한국어 문장으로 작성
+                - 마크다운이나 특수 기호 없이 순수 텍스트로만 작성
+
+                짧은 요약(shortSummary) 작성 가이드:
+                - 웹 UI에 표시될 짧은 요약 (150-200자)
+                - 글의 핵심 주제와 내용을 한두 문장으로 간결하게 표현
+                - 사용자가 빠르게 글의 내용을 파악할 수 있도록 작성
+                - 자연스러운 한국어 문장으로 작성
+
+                키워드 추출 가이드:
+                - 10-15개의 핵심 키워드 추출
+                - 기술 스택 (예: Spring Boot, React, Kubernetes)
+                - 주제/개념 (예: 성능 최적화, 마이크로서비스, CI/CD)
+                - 방법론 (예: TDD, DDD, 애자일)
+                - 영문과 한글 키워드 모두 포함
+                - 너무 일반적인 키워드(예: "개발", "코딩")는 제외
+                """, title, content != null ? content : "");
+    }
+}

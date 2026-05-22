@@ -6,7 +6,7 @@ import com.techfork.activity.readhistory.domain.SearchHistory;
 import com.techfork.activity.readhistory.infrastructure.SearchHistoryRepository;
 import com.techfork.activity.readpost.domain.ReadPost;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
-import com.techfork.domain.post.entity.PostKeyword;
+import com.techfork.post.domain.PostKeyword;
 import com.techfork.domain.recommendation.service.RecommendationService;
 import com.techfork.domain.personalization.document.PersonalizationProfileDocument;
 import com.techfork.domain.useraccount.entity.User;
