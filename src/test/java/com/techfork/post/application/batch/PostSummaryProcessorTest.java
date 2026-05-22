@@ -4,7 +4,7 @@ import com.techfork.post.application.dto.SummaryWithKeywordsDto;
 import com.techfork.post.domain.Post;
 import com.techfork.post.domain.PostKeyword;
 import com.techfork.post.fixture.PostFixture;
-import com.techfork.post.application.support.SummaryExtractionService;
+import com.techfork.post.application.summary.SummaryExtractionService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

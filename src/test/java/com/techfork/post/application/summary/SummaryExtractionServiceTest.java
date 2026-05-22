@@ -1,4 +1,4 @@
-package com.techfork.post.application.support;
+package com.techfork.post.application.summary;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techfork.post.application.dto.SummaryWithKeywordsDto;

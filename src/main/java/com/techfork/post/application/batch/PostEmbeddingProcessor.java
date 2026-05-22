@@ -3,7 +3,7 @@ package com.techfork.post.application.batch;
 import com.techfork.post.domain.projection.ContentChunk;
 import com.techfork.post.domain.projection.PostDocument;
 import com.techfork.post.domain.Post;
-import com.techfork.post.application.support.ContentChunkerService;
+import com.techfork.post.application.embedding.ContentChunkerService;
 import com.techfork.global.llm.EmbeddingClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

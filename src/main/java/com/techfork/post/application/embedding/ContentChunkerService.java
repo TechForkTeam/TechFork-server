@@ -1,4 +1,4 @@
-package com.techfork.post.application.support;
+package com.techfork.post.application.embedding;
 
 import com.techfork.global.util.ContentCleaner;
 import lombok.extern.slf4j.Slf4j;

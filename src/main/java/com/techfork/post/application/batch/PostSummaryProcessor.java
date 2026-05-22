@@ -2,7 +2,7 @@ package com.techfork.post.application.batch;
 
 import com.techfork.post.application.dto.SummaryWithKeywordsDto;
 import com.techfork.post.domain.Post;
-import com.techfork.post.application.support.SummaryExtractionService;
+import com.techfork.post.application.summary.SummaryExtractionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.configuration.annotation.StepScope;

@@ -4,7 +4,7 @@ import com.techfork.post.domain.projection.ContentChunk;
 import com.techfork.post.domain.projection.PostDocument;
 import com.techfork.post.domain.Post;
 import com.techfork.post.fixture.PostFixture;
-import com.techfork.post.application.support.ContentChunkerService;
+import com.techfork.post.application.embedding.ContentChunkerService;
 import com.techfork.global.llm.EmbeddingClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
