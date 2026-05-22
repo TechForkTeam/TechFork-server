@@ -1,6 +1,6 @@
 package com.techfork.activity.bookmark.domain;
 
-import com.techfork.domain.post.entity.Post;
+import com.techfork.post.domain.Post;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.global.common.BaseEntity;
 import jakarta.persistence.*;

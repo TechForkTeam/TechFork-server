@@ -2,7 +2,7 @@ package com.techfork.evaluation.recommendation.setup;
 
 import com.techfork.activity.readpost.domain.ReadPost;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
-import com.techfork.domain.post.entity.Post;
+import com.techfork.post.domain.Post;
 import com.techfork.evaluation.recommendation.setup.components.FileExporter;
 import com.techfork.evaluation.recommendation.setup.components.TestDataGenerator;
 import com.techfork.evaluation.recommendation.setup.components.TestDataGenerator.UserCreationResult;

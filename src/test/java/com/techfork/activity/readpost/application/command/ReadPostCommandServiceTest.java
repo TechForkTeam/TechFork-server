@@ -4,10 +4,10 @@ import com.techfork.activity.readpost.domain.ReadPost;
 import com.techfork.activity.readpost.domain.ReadPostErrorCode;
 import com.techfork.activity.readpost.domain.ReadPostFirstReadPolicy;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
-import com.techfork.domain.post.service.PostCommandService;
-import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.post.exception.PostErrorCode;
-import com.techfork.domain.post.service.PostLookupService;
+import com.techfork.post.application.command.PostViewCountCommandService;
+import com.techfork.post.domain.Post;
+import com.techfork.post.domain.exception.PostErrorCode;
+import com.techfork.post.application.query.lookup.PostLookupService;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.exception.UserErrorCode;
@@ -43,7 +43,7 @@ class ReadPostCommandServiceTest {
     private PostLookupService postLookupService;
 
     @Mock
-    private PostCommandService postCommandService;
+    private PostViewCountCommandService postViewCountCommandService;
 
     @Mock
     private UserLookupService userLookupService;
@@ -92,7 +92,7 @@ class ReadPostCommandServiceTest {
                 given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
                 given(postLookupService.getPostOrThrow(postId)).willReturn(mockPost);
                 given(readPostFirstReadPolicy.markFirstRead(mockUser, mockPost, readAt)).willReturn(true);
-                given(postCommandService.incrementViewCount(postId)).willReturn(true);
+                given(postViewCountCommandService.incrementViewCount(postId)).willReturn(true);
                 given(readPostRepository.save(any(ReadPost.class))).willReturn(mock(ReadPost.class));
 
                 Long beforeViewCount = mockPost.getViewCount();
@@ -101,7 +101,7 @@ class ReadPostCommandServiceTest {
 
                 ArgumentCaptor<ReadPost> readPostCaptor = ArgumentCaptor.forClass(ReadPost.class);
                 verify(readPostFirstReadPolicy, times(1)).markFirstRead(mockUser, mockPost, readAt);
-                verify(postCommandService, times(1)).incrementViewCount(postId);
+                verify(postViewCountCommandService, times(1)).incrementViewCount(postId);
                 verify(readPostRepository, times(1)).save(readPostCaptor.capture());
                 ReadPost savedReadPost = readPostCaptor.getValue();
 
@@ -149,7 +149,7 @@ class ReadPostCommandServiceTest {
 
                 ArgumentCaptor<ReadPost> readPostCaptor = ArgumentCaptor.forClass(ReadPost.class);
                 verify(readPostFirstReadPolicy, times(1)).markFirstRead(mockUser, mockPost, readAt);
-                verify(postCommandService, never()).incrementViewCount(any());
+                verify(postViewCountCommandService, never()).incrementViewCount(any());
                 verify(readPostRepository, times(1)).save(readPostCaptor.capture());
 
                 assertThat(mockPost.getViewCount()).isEqualTo(beforeViewCount);
@@ -185,14 +185,14 @@ class ReadPostCommandServiceTest {
                 given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
                 given(postLookupService.getPostOrThrow(postId)).willReturn(mockPost);
                 given(readPostFirstReadPolicy.markFirstRead(mockUser, mockPost, readAt)).willReturn(true);
-                given(postCommandService.incrementViewCount(postId)).willReturn(false);
+                given(postViewCountCommandService.incrementViewCount(postId)).willReturn(false);
 
                 assertThatThrownBy(() -> readPostCommandService.saveReadPost(command))
                         .isInstanceOf(GeneralException.class)
                         .hasFieldOrPropertyWithValue("code", ReadPostErrorCode.READ_POST_VIEW_COUNT_INCREMENT_FAILED);
 
                 verify(readPostFirstReadPolicy, times(1)).markFirstRead(mockUser, mockPost, readAt);
-                verify(postCommandService, times(1)).incrementViewCount(postId);
+                verify(postViewCountCommandService, times(1)).incrementViewCount(postId);
                 verify(readPostRepository, never()).save(any());
             }
         }
@@ -215,7 +215,7 @@ class ReadPostCommandServiceTest {
                         .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
 
                 verify(postLookupService, never()).getPostOrThrow(any());
-                verify(postCommandService, never()).incrementViewCount(any());
+                verify(postViewCountCommandService, never()).incrementViewCount(any());
                 verify(readPostFirstReadPolicy, never()).markFirstRead(any(), any(), any());
                 verify(readPostRepository, never()).save(any());
             }
@@ -236,7 +236,7 @@ class ReadPostCommandServiceTest {
                         .isInstanceOf(GeneralException.class)
                         .hasFieldOrPropertyWithValue("code", PostErrorCode.POST_NOT_FOUND);
 
-                verify(postCommandService, never()).incrementViewCount(any());
+                verify(postViewCountCommandService, never()).incrementViewCount(any());
                 verify(readPostFirstReadPolicy, never()).markFirstRead(any(), any(), any());
                 verify(readPostRepository, never()).save(any());
             }

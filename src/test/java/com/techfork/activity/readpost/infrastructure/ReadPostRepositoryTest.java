@@ -1,8 +1,8 @@
 package com.techfork.activity.readpost.infrastructure;
 
 import com.techfork.activity.readpost.domain.ReadPost;
-import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.post.repository.PostRepository;
+import com.techfork.post.domain.Post;
+import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.domain.useraccount.entity.User;

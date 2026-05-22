@@ -1,9 +1,9 @@
 package com.techfork.evaluation.recommendation.setup;
 
-import com.techfork.domain.post.document.PostDocument;
-import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.post.repository.PostDocumentRepository;
-import com.techfork.domain.post.repository.PostRepository;
+import com.techfork.post.domain.projection.PostDocument;
+import com.techfork.post.domain.Post;
+import com.techfork.post.infrastructure.PostDocumentRepository;
+import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.evaluation.recommendation.setup.components.FileExporter;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Disabled;

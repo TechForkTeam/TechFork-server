@@ -34,7 +34,7 @@
 |---|---|---|
 | 읽기 기록 | `ReadPost` | 사용자와 기술 게시글의 읽기 이벤트 레코드 |
 | 최초 읽기 마킹 | `ReadPostFirstReadPolicy.markFirstRead` | `first_read_posts` 유니크 제약을 이용해 조회수 증가 여부를 결정하는 정책 |
-| 조회수 증가 위임 | `PostCommandService.incrementViewCount` | 첫 읽기일 때 Post 컨텍스트에 조회수 증가를 위임하는 command 경로 |
+| 조회수 증가 위임 | `PostViewCountCommandService.incrementViewCount` | 첫 읽기일 때 Post 컨텍스트에 조회수 증가를 위임하는 command 경로 |
 | 최초 읽기 ledger | `FirstReadPost`, `first_read_posts` | 사용자별 게시글 조회수 dedupe를 담당하는 보조 record |
 | 북마크 레코드 | `Bookmark` (legacy name: `ScrabPost`) | 북마크 저장 레코드의 현재 표준 이름과 과거 이름을 함께 설명한다 |
 | 검색 기록 레코드 | `SearchHistory` | 사용자 검색어를 시간순으로 남기는 레코드 |
@@ -58,13 +58,13 @@
 ## 현재 구조 메모
 
 - 현재 브랜치 기준으로 `Bookmark`, `ReadPost`, `SearchHistory`는 모두 `presentation / application / domain / infrastructure` 기준으로 정리되어 있다.
-- `ReadPost` 저장은 `UserLookupService`, `PostLookupService`, `ReadPostFirstReadPolicy`, `PostCommandService`를 조합해 읽기 이력 저장과 조회수 증가를 분리한다.
+- `ReadPost` 저장은 `UserLookupService`, `PostLookupService`, `ReadPostFirstReadPolicy`, `PostViewCountCommandService`를 조합해 읽기 이력 저장과 조회수 증가를 분리한다.
 - `ReadPostFirstReadPolicy.markFirstRead()`는 `first_read_posts(user_id, post_id)` 유니크 제약을 first-read 판정의 단일 진실 원천으로 사용한다.
-- `ReadPostCommandService`는 first-read 마킹이 성공했을 때만 `PostCommandService.incrementViewCount()`를 호출하고, 조회수 증가 실패 시 예외를 던져 전체 트랜잭션을 롤백한다.
+- `ReadPostCommandService`는 first-read 마킹이 성공했을 때만 `PostViewCountCommandService.incrementViewCount()`를 호출하고, 조회수 증가 실패 시 예외를 던져 전체 트랜잭션을 롤백한다.
 - `ReadPost` 조회는 `bookmark.infrastructure.BookmarkRepository`를 직접 참조하지 않고 `bookmark.application.query.lookup.BookmarkLookupService`를 통해 북마크 여부를 조합한다.
 - `ReadPost` 목록 조회 `size`는 HTTP layer에서 `1..100`으로 검증한다.
 - `SearchHistory` 저장은 `SearchHistoryRequest -> SaveSearchHistoryCommand -> ReadHistoryCommandService` 흐름을 따른다.
-- Activity application 서비스의 cross-context 조회/명령 의존은 `UserLookupService`, `PostLookupService`, `PostKeywordLookupService`, `BookmarkLookupService`, `PostCommandService`를 통해 application 간 의존으로 정리되어 있다.
+- Activity application 서비스의 cross-context 조회/명령 의존은 `UserLookupService`, `PostLookupService`, `PostKeywordLookupService`, `BookmarkLookupService`, `PostViewCountCommandService`를 통해 application 간 의존으로 정리되어 있다.
 - aggregate/value object 강화, hexagonal architecture(포트/어댑터), `ManyToOne -> ID reference` 전환은 후속 정리 범위다.
 
 ## 주요 근거 파일
@@ -90,9 +90,9 @@
 - `src/main/java/com/techfork/activity/bookmark/presentation/BookmarkConverter.java`
 - `src/main/java/com/techfork/activity/bookmark/presentation/BookmarkController.java`
 - `src/main/java/com/techfork/domain/useraccount/service/UserLookupService.java`
-- `src/main/java/com/techfork/domain/post/service/PostLookupService.java`
-- `src/main/java/com/techfork/domain/post/service/PostCommandService.java`
-- `src/main/java/com/techfork/domain/post/service/PostKeywordLookupService.java`
+- `src/main/java/com/techfork/post/application/query/lookup/PostLookupService.java`
+- `src/main/java/com/techfork/post/application/command/PostViewCountCommandService.java`
+- `src/main/java/com/techfork/post/application/query/lookup/PostKeywordLookupService.java`
 - `src/main/java/com/techfork/activity/readhistory/application/command/ReadHistoryCommandService.java`
 - `src/main/java/com/techfork/activity/readhistory/application/command/SaveSearchHistoryCommand.java`
 - `src/main/java/com/techfork/activity/readhistory/presentation/SearchHistoryRequest.java`

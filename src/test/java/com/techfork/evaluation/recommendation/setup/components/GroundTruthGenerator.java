@@ -1,8 +1,8 @@
 package com.techfork.evaluation.recommendation.setup.components;
 
-import com.techfork.domain.post.document.PostDocument;
-import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.post.repository.PostDocumentRepository;
+import com.techfork.post.domain.projection.PostDocument;
+import com.techfork.post.domain.Post;
+import com.techfork.post.infrastructure.PostDocumentRepository;
 import com.techfork.domain.personalization.document.PersonalizationProfileDocument;
 import com.techfork.global.llm.LlmClient;
 import lombok.RequiredArgsConstructor;

@@ -4,9 +4,9 @@ import com.techfork.activity.readpost.domain.ReadPost;
 import com.techfork.activity.readpost.domain.ReadPostErrorCode;
 import com.techfork.activity.readpost.domain.ReadPostFirstReadPolicy;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
-import com.techfork.domain.post.entity.Post;
-import com.techfork.domain.post.service.PostCommandService;
-import com.techfork.domain.post.service.PostLookupService;
+import com.techfork.post.domain.Post;
+import com.techfork.post.application.command.PostViewCountCommandService;
+import com.techfork.post.application.query.lookup.PostLookupService;
 import com.techfork.domain.useraccount.entity.User;
 import com.techfork.domain.useraccount.service.UserLookupService;
 import com.techfork.global.exception.GeneralException;
@@ -23,7 +23,7 @@ public class ReadPostCommandService {
 
     private final ReadPostRepository readPostRepository;
     private final PostLookupService postLookupService;
-    private final PostCommandService postCommandService;
+    private final PostViewCountCommandService postViewCountCommandService;
     private final UserLookupService userLookupService;
     private final ReadPostFirstReadPolicy readPostFirstReadPolicy;
 
@@ -34,7 +34,7 @@ public class ReadPostCommandService {
         boolean firstReadMarked = readPostFirstReadPolicy.markFirstRead(user, post, command.readAt());
         boolean viewCountIncremented = false;
         if (firstReadMarked) {
-            viewCountIncremented = postCommandService.incrementViewCount(post.getId());
+            viewCountIncremented = postViewCountCommandService.incrementViewCount(post.getId());
             if (!viewCountIncremented) {
                 throw new GeneralException(ReadPostErrorCode.READ_POST_VIEW_COUNT_INCREMENT_FAILED);
             }
