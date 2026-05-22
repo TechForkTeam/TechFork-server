@@ -4,6 +4,8 @@ import com.techfork.post.presentation.CompanyListResponse;
 import com.techfork.post.presentation.PostListResponse;
 import com.techfork.post.application.query.result.GetCompanyListResult;
 import com.techfork.post.application.query.result.GetPostListResult;
+import com.techfork.post.application.query.GetPostsByCompanyV2Query;
+import com.techfork.post.application.query.GetRecentPostsV2Query;
 import com.techfork.post.domain.enums.EPostSortType;
 import com.techfork.post.application.query.PostQueryService;
 import com.techfork.global.common.code.SuccessCode;
@@ -81,7 +83,8 @@ public class PostControllerV2 {
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         Long userId = userPrincipal != null ? userPrincipal.getId() : null;
-        GetPostListResult result = postQueryService.getPostsByCompanyV2(companies, lastPublishedAt, lastPostId, size, userId);
+        GetPostsByCompanyV2Query query = new GetPostsByCompanyV2Query(companies, lastPublishedAt, lastPostId, size, userId);
+        GetPostListResult result = postQueryService.getPostsByCompanyV2(query);
         PostListResponse response = postConverter.toPostListResponse(result);
         return BaseResponse.of(SuccessCode.OK, response);
     }
@@ -119,7 +122,8 @@ public class PostControllerV2 {
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         Long userId = userPrincipal != null ? userPrincipal.getId() : null;
-        GetPostListResult result = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size, userId);
+        GetRecentPostsV2Query query = new GetRecentPostsV2Query(sortBy, lastViewCount, lastPublishedAt, lastPostId, size, userId);
+        GetPostListResult result = postQueryService.getRecentPostsV2(query);
         PostListResponse response = postConverter.toPostListResponse(result);
         return BaseResponse.of(SuccessCode.OK, response);
     }

@@ -6,6 +6,9 @@ import com.techfork.post.presentation.PostListResponse;
 import com.techfork.post.application.query.result.GetCompanyListResult;
 import com.techfork.post.application.query.result.GetPostDetailResult;
 import com.techfork.post.application.query.result.GetPostListResult;
+import com.techfork.post.application.query.GetPostDetailQuery;
+import com.techfork.post.application.query.GetPostsByCompanyQuery;
+import com.techfork.post.application.query.GetRecentPostsQuery;
 import com.techfork.post.domain.enums.EPostSortType;
 import com.techfork.post.application.query.PostQueryService;
 import com.techfork.global.common.code.SuccessCode;
@@ -57,7 +60,8 @@ public class PostController {
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         Long userId = userPrincipal != null ? userPrincipal.getId() : null;
-        GetPostListResult result = postQueryService.getPostsByCompany(company, lastPostId, size, userId);
+        GetPostsByCompanyQuery query = new GetPostsByCompanyQuery(company, lastPostId, size, userId);
+        GetPostListResult result = postQueryService.getPostsByCompany(query);
         PostListResponse response = postConverter.toPostListResponse(result);
         return BaseResponse.of(SuccessCode.OK, response);
     }
@@ -78,7 +82,8 @@ public class PostController {
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         Long userId = userPrincipal != null ? userPrincipal.getId() : null;
-        GetPostListResult result = postQueryService.getRecentPosts(sortBy, lastPostId, size, userId);
+        GetRecentPostsQuery query = new GetRecentPostsQuery(sortBy, lastPostId, size, userId);
+        GetPostListResult result = postQueryService.getRecentPosts(query);
         PostListResponse response = postConverter.toPostListResponse(result);
         return BaseResponse.of(SuccessCode.OK, response);
     }
@@ -95,7 +100,8 @@ public class PostController {
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         Long userId = userPrincipal != null ? userPrincipal.getId() : null;
-        GetPostDetailResult result = postQueryService.getPostDetail(postId, userId);
+        GetPostDetailQuery query = new GetPostDetailQuery(postId, userId);
+        GetPostDetailResult result = postQueryService.getPostDetail(query);
         PostDetailResponse response = postConverter.toPostDetailResponse(result);
         return BaseResponse.of(SuccessCode.OK, response);
     }

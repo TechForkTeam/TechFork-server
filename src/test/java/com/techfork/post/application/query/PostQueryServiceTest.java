@@ -1,6 +1,11 @@
 package com.techfork.post.application.query;
 
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
+import com.techfork.post.application.query.GetPostDetailQuery;
+import com.techfork.post.application.query.GetPostsByCompanyQuery;
+import com.techfork.post.application.query.GetPostsByCompanyV2Query;
+import com.techfork.post.application.query.GetRecentPostsQuery;
+import com.techfork.post.application.query.GetRecentPostsV2Query;
 import com.techfork.post.infrastructure.row.CompanyRow;
 import com.techfork.post.infrastructure.row.PostDetailRow;
 import com.techfork.post.infrastructure.row.PostInfoRow;
@@ -173,7 +178,7 @@ class PostQueryServiceTest {
         given(postKeywordRepository.findByPostIdIn(List.of(postId))).willReturn(mockKeywords);
 
         // When
-        GetPostDetailResult result = postQueryService.getPostDetail(postId, userId);
+        GetPostDetailResult result = postQueryService.getPostDetail(new GetPostDetailQuery(postId, userId));
 
         // Then
         assertThat(result).isNotNull();
@@ -232,7 +237,7 @@ class PostQueryServiceTest {
         given(bookmarkRepository.findBookmarkedPostIds(userId, List.of(postId))).willReturn(List.of(postId));
 
         // When
-        GetPostDetailResult result = postQueryService.getPostDetail(postId, userId);
+        GetPostDetailResult result = postQueryService.getPostDetail(new GetPostDetailQuery(postId, userId));
 
         // Then
         assertThat(result).isNotNull();
@@ -287,7 +292,7 @@ class PostQueryServiceTest {
         given(bookmarkRepository.findBookmarkedPostIds(userId, List.of(postId))).willReturn(List.of());
 
         // When
-        GetPostDetailResult result = postQueryService.getPostDetail(postId, userId);
+        GetPostDetailResult result = postQueryService.getPostDetail(new GetPostDetailQuery(postId, userId));
 
         // Then
         assertThat(result).isNotNull();
@@ -308,7 +313,7 @@ class PostQueryServiceTest {
         given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> postQueryService.getPostDetail(postId, userId))
+        assertThatThrownBy(() -> postQueryService.getPostDetail(new GetPostDetailQuery(postId, userId)))
                 .isInstanceOf(GeneralException.class);
 
         verify(postRepository, times(1)).findByIdWithTechBlog(postId);
@@ -359,7 +364,7 @@ class PostQueryServiceTest {
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
 
         // When
-        GetPostListResult result = postQueryService.getRecentPosts(sortBy, lastPostId, size, null);
+        GetPostListResult result = postQueryService.getRecentPosts(new GetRecentPostsQuery(sortBy, lastPostId, size, null));
 
         // Then
         assertThat(result).isNotNull();
@@ -414,7 +419,7 @@ class PostQueryServiceTest {
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
 
         // When
-        GetPostListResult result = postQueryService.getRecentPosts(sortBy, lastPostId, size, null);
+        GetPostListResult result = postQueryService.getRecentPosts(new GetRecentPostsQuery(sortBy, lastPostId, size, null));
 
         // Then
         assertThat(result).isNotNull();
@@ -459,7 +464,7 @@ class PostQueryServiceTest {
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
 
         // When
-        GetPostListResult result = postQueryService.getPostsByCompany(company, lastPostId, size, null);
+        GetPostListResult result = postQueryService.getPostsByCompany(new GetPostsByCompanyQuery(company, lastPostId, size, null));
 
         // Then
         assertThat(result).isNotNull();
@@ -516,7 +521,7 @@ class PostQueryServiceTest {
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
 
         // When
-        GetPostListResult result = postQueryService.getPostsByCompanyV2(companies, lastPublishedAt, lastPostId, size, null);
+        GetPostListResult result = postQueryService.getPostsByCompanyV2(new GetPostsByCompanyV2Query(companies, lastPublishedAt, lastPostId, size, null));
 
         // Then
         assertThat(result).isNotNull();
@@ -576,7 +581,7 @@ class PostQueryServiceTest {
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
 
         // When
-        GetPostListResult result = postQueryService.getPostsByCompanyV2(companies, lastPublishedAt, lastPostId, size, null);
+        GetPostListResult result = postQueryService.getPostsByCompanyV2(new GetPostsByCompanyV2Query(companies, lastPublishedAt, lastPostId, size, null));
 
         // Then
         assertThat(result).isNotNull();
@@ -621,7 +626,7 @@ class PostQueryServiceTest {
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
 
         // When
-        GetPostListResult result = postQueryService.getPostsByCompanyV2(companies, lastPublishedAt, lastPostId, size, null);
+        GetPostListResult result = postQueryService.getPostsByCompanyV2(new GetPostsByCompanyV2Query(companies, lastPublishedAt, lastPostId, size, null));
 
         // Then
         assertThat(result).isNotNull();
@@ -679,7 +684,7 @@ class PostQueryServiceTest {
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
 
         // When
-        GetPostListResult result = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size, null);
+        GetPostListResult result = postQueryService.getRecentPostsV2(new GetRecentPostsV2Query(sortBy, lastViewCount, lastPublishedAt, lastPostId, size, null));
 
         // Then
         assertThat(result).isNotNull();
@@ -739,7 +744,7 @@ class PostQueryServiceTest {
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
 
         // When
-        GetPostListResult result = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size, null);
+        GetPostListResult result = postQueryService.getRecentPostsV2(new GetRecentPostsV2Query(sortBy, lastViewCount, lastPublishedAt, lastPostId, size, null));
 
         // Then
         assertThat(result).isNotNull();
@@ -787,7 +792,7 @@ class PostQueryServiceTest {
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
 
         // When
-        GetPostListResult result = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size, null);
+        GetPostListResult result = postQueryService.getRecentPostsV2(new GetRecentPostsV2Query(sortBy, lastViewCount, lastPublishedAt, lastPostId, size, null));
 
         // Then
         assertThat(result).isNotNull();
@@ -834,7 +839,7 @@ class PostQueryServiceTest {
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
 
         // When
-        GetPostListResult result = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size, null);
+        GetPostListResult result = postQueryService.getRecentPostsV2(new GetRecentPostsV2Query(sortBy, lastViewCount, lastPublishedAt, lastPostId, size, null));
 
         // Then
         assertThat(result).isNotNull();
@@ -896,7 +901,7 @@ class PostQueryServiceTest {
         given(bookmarkRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
 
         // When
-        GetPostListResult result = postQueryService.getPostsByCompany(company, lastPostId, size, userId);
+        GetPostListResult result = postQueryService.getPostsByCompany(new GetPostsByCompanyQuery(company, lastPostId, size, userId));
 
         // Then
         assertThat(result).isNotNull();
@@ -944,7 +949,7 @@ class PostQueryServiceTest {
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
 
         // When
-        GetPostListResult result = postQueryService.getPostsByCompany(company, lastPostId, size, userId);
+        GetPostListResult result = postQueryService.getPostsByCompany(new GetPostsByCompanyQuery(company, lastPostId, size, userId));
 
         // Then
         assertThat(result).isNotNull();
@@ -1007,7 +1012,7 @@ class PostQueryServiceTest {
         given(bookmarkRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
 
         // When
-        GetPostListResult result = postQueryService.getRecentPosts(sortBy, lastPostId, size, userId);
+        GetPostListResult result = postQueryService.getRecentPosts(new GetRecentPostsQuery(sortBy, lastPostId, size, userId));
 
         // Then
         assertThat(result).isNotNull();
@@ -1073,7 +1078,7 @@ class PostQueryServiceTest {
         given(bookmarkRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
 
         // When
-        GetPostListResult result = postQueryService.getPostsByCompanyV2(companies, lastPublishedAt, lastPostId, size, userId);
+        GetPostListResult result = postQueryService.getPostsByCompanyV2(new GetPostsByCompanyV2Query(companies, lastPublishedAt, lastPostId, size, userId));
 
         // Then
         assertThat(result).isNotNull();
@@ -1128,7 +1133,7 @@ class PostQueryServiceTest {
         given(bookmarkRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
 
         // When
-        GetPostListResult result = postQueryService.getRecentPostsV2(sortBy, lastViewCount, lastPublishedAt, lastPostId, size, userId);
+        GetPostListResult result = postQueryService.getRecentPostsV2(new GetRecentPostsV2Query(sortBy, lastViewCount, lastPublishedAt, lastPostId, size, userId));
 
         // Then
         assertThat(result).isNotNull();

@@ -65,80 +65,80 @@ public class PostQueryService {
                 .build();
     }
 
-    public GetPostListResult getPostsByCompany(String company, Long lastPostId, int size, Long userId) {
-        PageRequest pageRequest = PageRequest.of(0, size + 1);
-        List<PostInfoRow> posts = postRepository.findByCompanyWithCursor(company, lastPostId, pageRequest);
+    public GetPostListResult getPostsByCompany(GetPostsByCompanyQuery query) {
+        PageRequest pageRequest = PageRequest.of(0, query.size() + 1);
+        List<PostInfoRow> posts = postRepository.findByCompanyWithCursor(query.company(), query.lastPostId(), pageRequest);
         List<PostInfoRow> postsWithKeywords = attachKeywordsToPostInfoList(posts);
 
-        if (userId != null) {
-            postsWithKeywords = attachBookmarksToPostInfoList(postsWithKeywords, userId);
+        if (query.userId() != null) {
+            postsWithKeywords = attachBookmarksToPostInfoList(postsWithKeywords, query.userId());
         }
 
-        return toGetPostListResult(postsWithKeywords, size);
+        return toGetPostListResult(postsWithKeywords, query.size());
     }
 
-    public GetPostListResult getPostsByCompanyV2(List<String> companies, LocalDateTime lastPublishedAt, Long lastPostId, int size, Long userId) {
-        PageRequest pageRequest = PageRequest.of(0, size + 1);
-        List<PostInfoRow> posts = postRepository.findByCompanyNamesWithCursor(companies, lastPublishedAt, lastPostId, pageRequest);
+    public GetPostListResult getPostsByCompanyV2(GetPostsByCompanyV2Query query) {
+        PageRequest pageRequest = PageRequest.of(0, query.size() + 1);
+        List<PostInfoRow> posts = postRepository.findByCompanyNamesWithCursor(query.companies(), query.lastPublishedAt(), query.lastPostId(), pageRequest);
         List<PostInfoRow> postsWithKeywords = attachKeywordsToPostInfoList(posts);
 
-        if (userId != null) {
-            postsWithKeywords = attachBookmarksToPostInfoList(postsWithKeywords, userId);
+        if (query.userId() != null) {
+            postsWithKeywords = attachBookmarksToPostInfoList(postsWithKeywords, query.userId());
         }
 
-        return toGetPostListResult(postsWithKeywords, size);
+        return toGetPostListResult(postsWithKeywords, query.size());
     }
 
-    public GetPostListResult getRecentPosts(EPostSortType sortBy, Long lastPostId, int size, Long userId) {
-        PageRequest pageRequest = PageRequest.of(0, size + 1);
+    public GetPostListResult getRecentPosts(GetRecentPostsQuery query) {
+        PageRequest pageRequest = PageRequest.of(0, query.size() + 1);
         List<PostInfoRow> posts;
 
-        if (sortBy == EPostSortType.POPULAR) {
-            posts = postRepository.findPopularPostsWithCursor(lastPostId, pageRequest);
+        if (query.sortBy() == EPostSortType.POPULAR) {
+            posts = postRepository.findPopularPostsWithCursor(query.lastPostId(), pageRequest);
         } else {
-            posts = postRepository.findRecentPostsWithCursor(lastPostId, pageRequest);
+            posts = postRepository.findRecentPostsWithCursor(query.lastPostId(), pageRequest);
         }
 
         List<PostInfoRow> postsWithKeywords = attachKeywordsToPostInfoList(posts);
 
-        if (userId != null) {
-            postsWithKeywords = attachBookmarksToPostInfoList(postsWithKeywords, userId);
+        if (query.userId() != null) {
+            postsWithKeywords = attachBookmarksToPostInfoList(postsWithKeywords, query.userId());
         }
 
-        return toGetPostListResult(postsWithKeywords, size);
+        return toGetPostListResult(postsWithKeywords, query.size());
     }
 
-    public GetPostListResult getRecentPostsV2(EPostSortType sortBy, Integer lastViewCount, LocalDateTime lastPublishedAt, Long lastPostId, int size, Long userId) {
-        PageRequest pageRequest = PageRequest.of(0, size + 1);
+    public GetPostListResult getRecentPostsV2(GetRecentPostsV2Query query) {
+        PageRequest pageRequest = PageRequest.of(0, query.size() + 1);
         List<PostInfoRow> posts;
 
-        if (sortBy == EPostSortType.POPULAR) {
-            posts = postRepository.findPopularPostsWithCursorV2(lastViewCount, lastPostId, pageRequest);
+        if (query.sortBy() == EPostSortType.POPULAR) {
+            posts = postRepository.findPopularPostsWithCursorV2(query.lastViewCount(), query.lastPostId(), pageRequest);
         } else {
-            posts = postRepository.findRecentPostsWithCursorV2(lastPublishedAt, lastPostId, pageRequest);
+            posts = postRepository.findRecentPostsWithCursorV2(query.lastPublishedAt(), query.lastPostId(), pageRequest);
         }
 
         List<PostInfoRow> postsWithKeywords = attachKeywordsToPostInfoList(posts);
 
-        if (userId != null) {
-            postsWithKeywords = attachBookmarksToPostInfoList(postsWithKeywords, userId);
+        if (query.userId() != null) {
+            postsWithKeywords = attachBookmarksToPostInfoList(postsWithKeywords, query.userId());
         }
 
-        return toGetPostListResult(postsWithKeywords, size);
+        return toGetPostListResult(postsWithKeywords, query.size());
     }
 
-    public GetPostDetailResult getPostDetail(Long postId, Long userId) {
-        PostDetailRow postDetail = postRepository.findByIdWithTechBlog(postId)
+    public GetPostDetailResult getPostDetail(GetPostDetailQuery query) {
+        PostDetailRow postDetail = postRepository.findByIdWithTechBlog(query.postId())
                 .orElseThrow(() -> new GeneralException(CommonErrorCode.NOT_FOUND));
 
-        List<String> keywords = postKeywordRepository.findByPostIdIn(List.of(postId))
+        List<String> keywords = postKeywordRepository.findByPostIdIn(List.of(query.postId()))
                 .stream()
                 .map(PostKeyword::getKeyword)
                 .toList();
 
         Boolean isBookmarked = null;
-        if (userId != null) {
-            isBookmarked = !bookmarkRepository.findBookmarkedPostIds(userId, List.of(postId)).isEmpty();
+        if (query.userId() != null) {
+            isBookmarked = !bookmarkRepository.findBookmarkedPostIds(query.userId(), List.of(query.postId())).isEmpty();
         }
 
         return GetPostDetailResult.builder()
