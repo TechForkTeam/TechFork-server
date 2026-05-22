@@ -1,4 +1,4 @@
-package com.techfork.post.application.dto;
+package com.techfork.post.presentation;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;

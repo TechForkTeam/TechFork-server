@@ -1,8 +1,8 @@
 package com.techfork.post.presentation;
 
-import com.techfork.post.application.dto.CompanyListResponse;
-import com.techfork.post.application.dto.PostDetailDto;
-import com.techfork.post.application.dto.PostListResponse;
+import com.techfork.post.presentation.CompanyListResponse;
+import com.techfork.post.presentation.PostDetailDto;
+import com.techfork.post.presentation.PostListResponse;
 import com.techfork.post.domain.enums.EPostSortType;
 import com.techfork.post.application.query.PostQueryService;
 import com.techfork.global.common.code.SuccessCode;

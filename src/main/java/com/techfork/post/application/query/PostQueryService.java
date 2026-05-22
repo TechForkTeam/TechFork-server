@@ -6,6 +6,12 @@ import com.techfork.post.domain.PostKeyword;
 import com.techfork.post.domain.enums.EPostSortType;
 import com.techfork.post.infrastructure.PostKeywordRepository;
 import com.techfork.post.infrastructure.PostRepository;
+import com.techfork.post.infrastructure.row.CompanyRow;
+import com.techfork.post.infrastructure.row.PostDetailRow;
+import com.techfork.post.infrastructure.row.PostInfoRow;
+import com.techfork.post.presentation.CompanyListResponse;
+import com.techfork.post.presentation.PostDetailDto;
+import com.techfork.post.presentation.PostListResponse;
 import com.techfork.post.presentation.PostConverter;
 import com.techfork.global.exception.CommonErrorCode;
 import com.techfork.global.exception.GeneralException;
@@ -40,14 +46,14 @@ public class PostQueryService {
     }
 
     public CompanyListResponse getCompaniesV2() {
-        List<CompanyDto> companies = postRepository.findCompaniesWithDetails();
+        List<CompanyRow> companies = postRepository.findCompaniesWithDetails();
         return postConverter.toCompanyListResponseV2(companies);
     }
 
     public PostListResponse getPostsByCompany(String company, Long lastPostId, int size, Long userId) {
         PageRequest pageRequest = PageRequest.of(0, size + 1);
-        List<PostInfoDto> posts = postRepository.findByCompanyWithCursor(company, lastPostId, pageRequest);
-        List<PostInfoDto> postsWithKeywords = attachKeywordsToPostInfoList(posts);
+        List<PostInfoRow> posts = postRepository.findByCompanyWithCursor(company, lastPostId, pageRequest);
+        List<PostInfoRow> postsWithKeywords = attachKeywordsToPostInfoList(posts);
 
         if (userId != null) {
             postsWithKeywords = attachBookmarksToPostInfoList(postsWithKeywords, userId);
@@ -58,8 +64,8 @@ public class PostQueryService {
 
     public PostListResponse getPostsByCompanyV2(List<String> companies, LocalDateTime lastPublishedAt, Long lastPostId, int size, Long userId) {
         PageRequest pageRequest = PageRequest.of(0, size + 1);
-        List<PostInfoDto> posts = postRepository.findByCompanyNamesWithCursor(companies, lastPublishedAt, lastPostId, pageRequest);
-        List<PostInfoDto> postsWithKeywords = attachKeywordsToPostInfoList(posts);
+        List<PostInfoRow> posts = postRepository.findByCompanyNamesWithCursor(companies, lastPublishedAt, lastPostId, pageRequest);
+        List<PostInfoRow> postsWithKeywords = attachKeywordsToPostInfoList(posts);
 
         if (userId != null) {
             postsWithKeywords = attachBookmarksToPostInfoList(postsWithKeywords, userId);
@@ -70,7 +76,7 @@ public class PostQueryService {
 
     public PostListResponse getRecentPosts(EPostSortType sortBy, Long lastPostId, int size, Long userId) {
         PageRequest pageRequest = PageRequest.of(0, size + 1);
-        List<PostInfoDto> posts;
+        List<PostInfoRow> posts;
 
         if (sortBy == EPostSortType.POPULAR) {
             posts = postRepository.findPopularPostsWithCursor(lastPostId, pageRequest);
@@ -78,7 +84,7 @@ public class PostQueryService {
             posts = postRepository.findRecentPostsWithCursor(lastPostId, pageRequest);
         }
 
-        List<PostInfoDto> postsWithKeywords = attachKeywordsToPostInfoList(posts);
+        List<PostInfoRow> postsWithKeywords = attachKeywordsToPostInfoList(posts);
 
         if (userId != null) {
             postsWithKeywords = attachBookmarksToPostInfoList(postsWithKeywords, userId);
@@ -89,7 +95,7 @@ public class PostQueryService {
 
     public PostListResponse getRecentPostsV2(EPostSortType sortBy, Integer lastViewCount, LocalDateTime lastPublishedAt, Long lastPostId, int size, Long userId) {
         PageRequest pageRequest = PageRequest.of(0, size + 1);
-        List<PostInfoDto> posts;
+        List<PostInfoRow> posts;
 
         if (sortBy == EPostSortType.POPULAR) {
             posts = postRepository.findPopularPostsWithCursorV2(lastViewCount, lastPostId, pageRequest);
@@ -97,7 +103,7 @@ public class PostQueryService {
             posts = postRepository.findRecentPostsWithCursorV2(lastPublishedAt, lastPostId, pageRequest);
         }
 
-        List<PostInfoDto> postsWithKeywords = attachKeywordsToPostInfoList(posts);
+        List<PostInfoRow> postsWithKeywords = attachKeywordsToPostInfoList(posts);
 
         if (userId != null) {
             postsWithKeywords = attachBookmarksToPostInfoList(postsWithKeywords, userId);
@@ -107,7 +113,7 @@ public class PostQueryService {
     }
 
     public PostDetailDto getPostDetail(Long postId, Long userId) {
-        PostDetailDto postDetail = postRepository.findByIdWithTechBlog(postId)
+        PostDetailRow postDetail = postRepository.findByIdWithTechBlog(postId)
                 .orElseThrow(() -> new GeneralException(CommonErrorCode.NOT_FOUND));
 
         List<String> keywords = postKeywordRepository.findByPostIdIn(List.of(postId))
@@ -123,13 +129,13 @@ public class PostQueryService {
         return postConverter.toPostDetailDto(postDetail, keywords, isBookmarked);
     }
 
-    private List<PostInfoDto> attachKeywordsToPostInfoList(List<PostInfoDto> posts) {
+    private List<PostInfoRow> attachKeywordsToPostInfoList(List<PostInfoRow> posts) {
         if (posts.isEmpty()) {
             return posts;
         }
 
         List<Long> postIds = posts.stream()
-                .map(PostInfoDto::id)
+                .map(PostInfoRow::id)
                 .toList();
 
         Map<Long, List<String>> keywordMap = postKeywordRepository.findByPostIdIn(postIds)
@@ -140,7 +146,7 @@ public class PostQueryService {
                 ));
 
         return posts.stream()
-                .map(post -> PostInfoDto.builder()
+                .map(post -> PostInfoRow.builder()
                         .id(post.id())
                         .title(post.title())
                         .shortSummary(post.shortSummary())
@@ -156,13 +162,13 @@ public class PostQueryService {
                 .toList();
     }
 
-    private List<PostInfoDto> attachBookmarksToPostInfoList(List<PostInfoDto> posts, Long userId) {
+    private List<PostInfoRow> attachBookmarksToPostInfoList(List<PostInfoRow> posts, Long userId) {
         if (posts.isEmpty()) {
             return posts;
         }
 
         List<Long> postIds = posts.stream()
-                .map(PostInfoDto::id)
+                .map(PostInfoRow::id)
                 .toList();
 
         Set<Long> bookmarkedPostIds = bookmarkRepository.findBookmarkedPostIds(userId, postIds)
@@ -170,7 +176,7 @@ public class PostQueryService {
                 .collect(Collectors.toSet());
 
         return posts.stream()
-                .map(post -> PostInfoDto.builder()
+                .map(post -> PostInfoRow.builder()
                         .id(post.id())
                         .title(post.title())
                         .shortSummary(post.shortSummary())

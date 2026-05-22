@@ -1,14 +1,12 @@
-package com.techfork.post.application.dto;
+package com.techfork.post.infrastructure.row;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Builder(toBuilder = true)
-@Schema(name = "PostInfoDto")
-public record PostInfoDto(
+public record PostInfoRow(
         Long id,
         String title,
         String shortSummary,

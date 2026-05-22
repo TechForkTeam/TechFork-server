@@ -1,6 +1,8 @@
 package com.techfork.post.presentation;
 
-import com.techfork.post.application.dto.*;
+import com.techfork.post.infrastructure.row.CompanyRow;
+import com.techfork.post.infrastructure.row.PostDetailRow;
+import com.techfork.post.infrastructure.row.PostInfoRow;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -15,30 +17,50 @@ public class PostConverter {
                 .build();
     }
 
-    public CompanyListResponse toCompanyListResponseV2(List<CompanyDto> companies) {
+    public CompanyListResponse toCompanyListResponseV2(List<CompanyRow> companies) {
         return CompanyListResponse.builder()
                 .totalNumber(companies.size())
-                .companies(companies)
+                .companies(companies.stream()
+                        .map(company -> CompanyDto.builder()
+                                .company(company.company())
+                                .hasNewPost(company.hasNewPost())
+                                .logoUrl(company.logoUrl())
+                                .build())
+                        .toList())
                 .build();
     }
 
-    public PostListResponse toPostListResponse(List<PostInfoDto> posts, int requestedSize) {
+    public PostListResponse toPostListResponse(List<PostInfoRow> posts, int requestedSize) {
         boolean hasNext = posts.size() > requestedSize;
-        List<PostInfoDto> content = hasNext ? posts.subList(0, requestedSize) : posts;
+        List<PostInfoRow> content = hasNext ? posts.subList(0, requestedSize) : posts;
 
         Long lastPostId = null;
         Long lastViewCount = null;
         LocalDateTime lastPublishedAt = null;
 
         if (!content.isEmpty()) {
-            PostInfoDto lastPost = content.get(content.size() - 1);
+            PostInfoRow lastPost = content.get(content.size() - 1);
             lastPostId = lastPost.id();
             lastViewCount = lastPost.viewCount();
             lastPublishedAt = lastPost.publishedAt();
         }
 
         return PostListResponse.builder()
-                .posts(content)
+                .posts(content.stream()
+                        .map(post -> PostInfoDto.builder()
+                                .id(post.id())
+                                .title(post.title())
+                                .shortSummary(post.shortSummary())
+                                .company(post.company())
+                                .url(post.url())
+                                .logoUrl(post.logoUrl())
+                                .thumbnailUrl(post.thumbnailUrl())
+                                .publishedAt(post.publishedAt())
+                                .viewCount(post.viewCount())
+                                .keywords(post.keywords())
+                                .isBookmarked(post.isBookmarked())
+                                .build())
+                        .toList())
                 .lastPostId(lastPostId)
                 .lastViewCount(lastViewCount)
                 .lastPublishedAt(lastPublishedAt)
@@ -46,7 +68,7 @@ public class PostConverter {
                 .build();
     }
 
-    public PostDetailDto toPostDetailDto(PostDetailDto baseDto, List<String> keywords, Boolean isBookmarked) {
+    public PostDetailDto toPostDetailDto(PostDetailRow baseDto, List<String> keywords, Boolean isBookmarked) {
         return PostDetailDto.builder()
                 .id(baseDto.id())
                 .title(baseDto.title())

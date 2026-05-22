@@ -1,8 +1,8 @@
 package com.techfork.post.infrastructure;
 
-import com.techfork.post.application.dto.CompanyDto;
-import com.techfork.post.application.dto.PostDetailDto;
-import com.techfork.post.application.dto.PostInfoDto;
+import com.techfork.post.infrastructure.row.CompanyRow;
+import com.techfork.post.infrastructure.row.PostDetailRow;
+import com.techfork.post.infrastructure.row.PostInfoRow;
 import com.techfork.post.domain.Post;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.repository.TechBlogRepository;
@@ -117,7 +117,7 @@ class PostRepositoryTest {
             Post post3 = createPost("게시글3", techBlog1, LocalDateTime.now().minusDays(1), 300L);
             postRepository.saveAll(List.of(post1, post2, post3));
 
-            List<PostInfoDto> result = postRepository.findPopularPostsWithCursor(null, PageRequest.of(0, 10));
+            List<PostInfoRow> result = postRepository.findPopularPostsWithCursor(null, PageRequest.of(0, 10));
 
             assertThat(result).hasSize(3);
             assertThat(result.get(0).viewCount()).isEqualTo(500L);
@@ -135,7 +135,7 @@ class PostRepositoryTest {
             Post post5 = createPost("게시글5", techBlog1, LocalDateTime.now().minusDays(1), 100L);
             postRepository.saveAll(List.of(post1, post2, post3, post4, post5));
 
-            List<PostInfoDto> result = postRepository.findPopularPostsWithCursor(post3.getId(), PageRequest.of(0, 10));
+            List<PostInfoRow> result = postRepository.findPopularPostsWithCursor(post3.getId(), PageRequest.of(0, 10));
 
             assertThat(result).hasSize(2);
             assertThat(result).allMatch(dto -> dto.id() < post3.getId());
@@ -154,7 +154,7 @@ class PostRepositoryTest {
             Post post3 = createPost("게시글3", techBlog1, LocalDateTime.now().minusDays(3), 100L);
             postRepository.saveAll(List.of(post1, post2, post3));
 
-            List<PostInfoDto> result = postRepository.findPopularPostsWithCursorV2(null, null, PageRequest.of(0, 10));
+            List<PostInfoRow> result = postRepository.findPopularPostsWithCursorV2(null, null, PageRequest.of(0, 10));
 
             assertThat(result).hasSize(3);
             assertThat(result.get(0).viewCount()).isEqualTo(500L);
@@ -170,7 +170,7 @@ class PostRepositoryTest {
             Post post3 = createPost("게시글3", techBlog1, LocalDateTime.now().minusDays(3), 500L);
             postRepository.saveAll(List.of(post1, post2, post3));
 
-            List<PostInfoDto> result = postRepository.findPopularPostsWithCursorV2(null, null, PageRequest.of(0, 10));
+            List<PostInfoRow> result = postRepository.findPopularPostsWithCursorV2(null, null, PageRequest.of(0, 10));
 
             assertThat(result).hasSize(3);
             assertThat(result.get(0).id()).isGreaterThan(result.get(1).id());
@@ -188,9 +188,9 @@ class PostRepositoryTest {
             postRepository.saveAll(List.of(post1, post2, post3, post4, post5));
 
             PageRequest pageRequest = PageRequest.of(0, 2);
-            List<PostInfoDto> page1 = postRepository.findPopularPostsWithCursorV2(null, null, pageRequest);
-            PostInfoDto lastPost = page1.get(1);
-            List<PostInfoDto> page2 = postRepository.findPopularPostsWithCursorV2(
+            List<PostInfoRow> page1 = postRepository.findPopularPostsWithCursorV2(null, null, pageRequest);
+            PostInfoRow lastPost = page1.get(1);
+            List<PostInfoRow> page2 = postRepository.findPopularPostsWithCursorV2(
                     lastPost.viewCount().intValue(),
                     lastPost.id(),
                     pageRequest
@@ -215,7 +215,7 @@ class PostRepositoryTest {
             Post post3 = createPost("게시글3", techBlog1, now.minusDays(2), 300L);
             postRepository.saveAll(List.of(post1, post2, post3));
 
-            List<PostInfoDto> result = postRepository.findRecentPostsWithCursor(null, PageRequest.of(0, 10));
+            List<PostInfoRow> result = postRepository.findRecentPostsWithCursor(null, PageRequest.of(0, 10));
 
             assertThat(result).hasSize(3);
             assertThat(result.get(0).publishedAt()).isAfter(result.get(1).publishedAt());
@@ -230,7 +230,7 @@ class PostRepositoryTest {
                 postRepository.save(post);
             }
 
-            List<PostInfoDto> result = postRepository.findRecentPostsWithCursor(null, PageRequest.of(0, 4));
+            List<PostInfoRow> result = postRepository.findRecentPostsWithCursor(null, PageRequest.of(0, 4));
 
             assertThat(result).hasSize(4);
             boolean hasNext = result.size() > 3;
@@ -251,7 +251,7 @@ class PostRepositoryTest {
             Post post3 = createPost("게시글3", techBlog1, now, 300L);
             postRepository.saveAll(List.of(post1, post2, post3));
 
-            List<PostInfoDto> page1 = postRepository.findRecentPostsWithCursorV2(null, null, PageRequest.of(0, 10));
+            List<PostInfoRow> page1 = postRepository.findRecentPostsWithCursorV2(null, null, PageRequest.of(0, 10));
 
             assertThat(page1).hasSize(3);
             assertThat(page1.get(0).id()).isGreaterThan(page1.get(1).id());
@@ -270,9 +270,9 @@ class PostRepositoryTest {
             postRepository.saveAll(List.of(post1, post2, post3, post4, post5));
 
             PageRequest pageRequest = PageRequest.of(0, 2);
-            List<PostInfoDto> page1 = postRepository.findRecentPostsWithCursorV2(null, null, pageRequest);
-            PostInfoDto lastPost = page1.get(1);
-            List<PostInfoDto> page2 = postRepository.findRecentPostsWithCursorV2(
+            List<PostInfoRow> page1 = postRepository.findRecentPostsWithCursorV2(null, null, pageRequest);
+            PostInfoRow lastPost = page1.get(1);
+            List<PostInfoRow> page2 = postRepository.findRecentPostsWithCursorV2(
                     lastPost.publishedAt(),
                     lastPost.id(),
                     pageRequest
@@ -295,10 +295,10 @@ class PostRepositoryTest {
             Post naverPost = createPost("네이버 게시글", techBlog2, LocalDateTime.now(), 200L);
             postRepository.saveAll(List.of(kakaoPost, naverPost));
 
-            List<PostInfoDto> result = postRepository.findByCompanyWithCursor(null, null, PageRequest.of(0, 10));
+            List<PostInfoRow> result = postRepository.findByCompanyWithCursor(null, null, PageRequest.of(0, 10));
 
             assertThat(result).hasSize(2);
-            assertThat(result).extracting(PostInfoDto::company)
+            assertThat(result).extracting(PostInfoRow::company)
                     .containsExactlyInAnyOrder("카카오", "네이버");
         }
 
@@ -310,7 +310,7 @@ class PostRepositoryTest {
             Post naverPost = createPost("네이버 게시글", techBlog2, LocalDateTime.now(), 300L);
             postRepository.saveAll(List.of(kakaoPost1, kakaoPost2, naverPost));
 
-            List<PostInfoDto> result = postRepository.findByCompanyWithCursor("카카오", null, PageRequest.of(0, 10));
+            List<PostInfoRow> result = postRepository.findByCompanyWithCursor("카카오", null, PageRequest.of(0, 10));
 
             assertThat(result).hasSize(2);
             assertThat(result).allMatch(dto -> dto.company().equals("카카오"));
@@ -329,10 +329,10 @@ class PostRepositoryTest {
             Post awsPost = createPost("AWS 게시글", techBlog3, LocalDateTime.now(), 500L);
             postRepository.saveAll(List.of(kakaoPost, naverPost, awsPost));
 
-            List<PostInfoDto> result = postRepository.findByCompanyNamesWithCursor(null, null, null, PageRequest.of(0, 10));
+            List<PostInfoRow> result = postRepository.findByCompanyNamesWithCursor(null, null, null, PageRequest.of(0, 10));
 
             assertThat(result).hasSize(3);
-            assertThat(result).extracting(PostInfoDto::company)
+            assertThat(result).extracting(PostInfoRow::company)
                     .containsExactlyInAnyOrder("카카오", "네이버", "AWS");
         }
 
@@ -345,7 +345,7 @@ class PostRepositoryTest {
             Post awsPost = createPost("AWS 게시글", techBlog3, LocalDateTime.now(), 500L);
             postRepository.saveAll(List.of(kakaoPost1, kakaoPost2, naverPost, awsPost));
 
-            List<PostInfoDto> result = postRepository.findByCompanyNamesWithCursor(
+            List<PostInfoRow> result = postRepository.findByCompanyNamesWithCursor(
                     List.of("카카오", "네이버"),
                     null,
                     null,
@@ -353,7 +353,7 @@ class PostRepositoryTest {
             );
 
             assertThat(result).hasSize(3);
-            assertThat(result).extracting(PostInfoDto::company)
+            assertThat(result).extracting(PostInfoRow::company)
                     .containsOnly("카카오", "네이버")
                     .doesNotContain("AWS");
         }
@@ -365,10 +365,10 @@ class PostRepositoryTest {
             Post oldPost = createPost("옛날 글", techBlog1, LocalDateTime.now().minusDays(5), 200L);
             postRepository.saveAll(List.of(recentPost, oldPost));
 
-            List<PostInfoDto> result = postRepository.findByCompanyNamesWithCursor(null, null, null, PageRequest.of(0, 10));
+            List<PostInfoRow> result = postRepository.findByCompanyNamesWithCursor(null, null, null, PageRequest.of(0, 10));
 
             assertThat(result)
-                    .extracting(PostInfoDto::title)
+                    .extracting(PostInfoRow::title)
                     .containsExactly("최신 글", "옛날 글");
         }
 
@@ -381,7 +381,7 @@ class PostRepositoryTest {
             Post awsPost = createPost("AWS 게시글", techBlog3, now, 500L);
             postRepository.saveAll(List.of(kakaoPost, naverPost, awsPost));
 
-            List<PostInfoDto> result = postRepository.findByCompanyNamesWithCursor(null, null, null, PageRequest.of(0, 10));
+            List<PostInfoRow> result = postRepository.findByCompanyNamesWithCursor(null, null, null, PageRequest.of(0, 10));
 
             assertThat(result)
                     .extracting("id")
@@ -399,9 +399,9 @@ class PostRepositoryTest {
             postRepository.saveAll(posts);
 
             PageRequest pageRequest = PageRequest.of(0, 2);
-            List<PostInfoDto> page1 = postRepository.findByCompanyNamesWithCursor(null, null, null, pageRequest);
-            PostInfoDto lastPostOfPage1 = page1.get(1);
-            List<PostInfoDto> page2 = postRepository.findByCompanyNamesWithCursor(
+            List<PostInfoRow> page1 = postRepository.findByCompanyNamesWithCursor(null, null, null, pageRequest);
+            PostInfoRow lastPostOfPage1 = page1.get(1);
+            List<PostInfoRow> page2 = postRepository.findByCompanyNamesWithCursor(
                     null,
                     lastPostOfPage1.publishedAt(),
                     lastPostOfPage1.id(),
@@ -421,13 +421,13 @@ class PostRepositoryTest {
 
         @Test
         @DisplayName("JOIN하여 게시글 상세 정보 조회에 성공한다")
-        void findByIdWithTechBlog_Success_ReturnsPostDetailDto() {
+        void findByIdWithTechBlog_Success_ReturnsPostDetailRow() {
             Post post = postRepository.save(createPost("테스트 게시글", techBlog1, LocalDateTime.now(), 100L));
 
-            Optional<PostDetailDto> result = postRepository.findByIdWithTechBlog(post.getId());
+            Optional<PostDetailRow> result = postRepository.findByIdWithTechBlog(post.getId());
 
             assertThat(result).isPresent();
-            PostDetailDto dto = result.get();
+            PostDetailRow dto = result.get();
             assertThat(dto.id()).isEqualTo(post.getId());
             assertThat(dto.title()).isEqualTo("테스트 게시글");
             assertThat(dto.company()).isEqualTo("카카오");
@@ -438,7 +438,7 @@ class PostRepositoryTest {
         @Test
         @DisplayName("존재하지 않는 ID 조회 시 Empty를 반환한다")
         void findByIdWithTechBlog_NotFound_ReturnsEmpty() {
-            Optional<PostDetailDto> result = postRepository.findByIdWithTechBlog(99999L);
+            Optional<PostDetailRow> result = postRepository.findByIdWithTechBlog(99999L);
 
             assertThat(result).isEmpty();
         }
@@ -475,16 +475,16 @@ class PostRepositoryTest {
             Post naverPost = createPost("네이버 게시글", techBlog2, LocalDate.now().minusDays(2).atStartOfDay(), 300L);
             postRepository.saveAll(List.of(kakaoPost1, kakaoPost2, naverPost));
 
-            List<CompanyDto> result = postRepository.findCompaniesWithDetails();
+            List<CompanyRow> result = postRepository.findCompaniesWithDetails();
 
             assertThat(result).hasSize(2);
 
-            CompanyDto firstCompany = result.get(0);
+            CompanyRow firstCompany = result.get(0);
             assertThat(firstCompany.company()).isEqualTo("카카오");
             assertThat(firstCompany.hasNewPost()).isTrue();
             assertThat(firstCompany.logoUrl()).isNotNull();
 
-            CompanyDto secondCompany = result.get(1);
+            CompanyRow secondCompany = result.get(1);
             assertThat(secondCompany.company()).isEqualTo("네이버");
             assertThat(secondCompany.hasNewPost()).isFalse();
         }
@@ -496,15 +496,15 @@ class PostRepositoryTest {
             Post yesterdayPost = createPost("어제 게시글", techBlog2, LocalDate.now().minusDays(1).atStartOfDay(), 200L);
             postRepository.saveAll(List.of(todayPost, yesterdayPost));
 
-            List<CompanyDto> result = postRepository.findCompaniesWithDetails();
+            List<CompanyRow> result = postRepository.findCompaniesWithDetails();
 
-            CompanyDto kakaoCompany = result.stream()
+            CompanyRow kakaoCompany = result.stream()
                     .filter(c -> c.company().equals("카카오"))
                     .findFirst()
                     .orElseThrow();
             assertThat(kakaoCompany.hasNewPost()).isTrue();
 
-            CompanyDto naverCompany = result.stream()
+            CompanyRow naverCompany = result.stream()
                     .filter(c -> c.company().equals("네이버"))
                     .findFirst()
                     .orElseThrow();
@@ -518,7 +518,7 @@ class PostRepositoryTest {
             Post recentPost = createPost("최근 게시글", techBlog2, LocalDate.now().minusDays(1).atStartOfDay(), 200L);
             postRepository.saveAll(List.of(oldPost, recentPost));
 
-            List<CompanyDto> result = postRepository.findCompaniesWithDetails();
+            List<CompanyRow> result = postRepository.findCompaniesWithDetails();
 
             assertThat(result).hasSize(2);
             assertThat(result.get(0).company()).isEqualTo("네이버");
@@ -528,7 +528,7 @@ class PostRepositoryTest {
         @Test
         @DisplayName("게시글이 없으면 빈 리스트를 반환한다")
         void findCompaniesWithDetails_NoPosts_ReturnsEmptyList() {
-            List<CompanyDto> result = postRepository.findCompaniesWithDetails();
+            List<CompanyRow> result = postRepository.findCompaniesWithDetails();
 
             assertThat(result).isEmpty();
         }

@@ -1,9 +1,9 @@
 package com.techfork.post.infrastructure;
 
-import com.techfork.post.application.dto.CompanyDto;
-import com.techfork.post.application.dto.PostDetailDto;
-import com.techfork.post.application.dto.PostInfoDto;
 import com.techfork.post.domain.Post;
+import com.techfork.post.infrastructure.row.CompanyRow;
+import com.techfork.post.infrastructure.row.PostDetailRow;
+import com.techfork.post.infrastructure.row.PostInfoRow;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -48,7 +48,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     List<String> findDistinctCompanies();
 
     @Query("""
-            SELECT new com.techfork.post.application.dto.CompanyDto(
+            SELECT new com.techfork.post.infrastructure.row.CompanyRow(
                 p.company,
                 (COUNT(CASE WHEN p.publishedAt >= CURRENT_DATE THEN 1 END) > 0),
                 MAX(p.logoUrl)
@@ -57,24 +57,24 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             GROUP BY p.company
             ORDER BY MAX(p.publishedAt) DESC
             """)
-    List<CompanyDto> findCompaniesWithDetails();
+    List<CompanyRow> findCompaniesWithDetails();
 
     @Query("""
-            SELECT new com.techfork.post.application.dto.PostInfoDto(
+            SELECT new com.techfork.post.infrastructure.row.PostInfoRow(
             p.id, p.title, p.shortSummary, p.company, p.url, p.logoUrl, p.thumbnailUrl, p.publishedAt, p.viewCount, null, null)
             FROM Post p
             WHERE (:company IS NULL OR p.company = :company)
             AND (:lastPostId IS NULL OR p.id < :lastPostId)
             ORDER BY p.publishedAt DESC
             """)
-    List<PostInfoDto> findByCompanyWithCursor(
+    List<PostInfoRow> findByCompanyWithCursor(
             @Param("company") String company,
             @Param("lastPostId") Long lastPostId,
             Pageable pageable
     );
 
     @Query("""
-            SELECT new com.techfork.post.application.dto.PostInfoDto(
+            SELECT new com.techfork.post.infrastructure.row.PostInfoRow(
             p.id, p.title, p.shortSummary, p.company, p.url, p.logoUrl, p.thumbnailUrl, p.publishedAt, p.viewCount, null, null)
             FROM Post p
             WHERE (:companies IS NULL OR p.company IN :companies)
@@ -85,22 +85,22 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             )
             ORDER BY p.publishedAt DESC, p.id DESC
             """)
-    List<PostInfoDto> findByCompanyNamesWithCursor(List<String> companies, LocalDateTime lastPublishedAt, Long lastPostId, PageRequest pageRequest);
+    List<PostInfoRow> findByCompanyNamesWithCursor(List<String> companies, LocalDateTime lastPublishedAt, Long lastPostId, PageRequest pageRequest);
 
     @Query("""
-            SELECT new com.techfork.post.application.dto.PostInfoDto(
+            SELECT new com.techfork.post.infrastructure.row.PostInfoRow(
             p.id, p.title, p.shortSummary, p.company, p.url, p.logoUrl, p.thumbnailUrl, p.publishedAt, p.viewCount, null, null)
             FROM Post p
             WHERE :lastPostId IS NULL OR p.id < :lastPostId
             ORDER BY p.publishedAt DESC
             """)
-    List<PostInfoDto> findRecentPostsWithCursor(
+    List<PostInfoRow> findRecentPostsWithCursor(
             @Param("lastPostId") Long lastPostId,
             Pageable pageable
     );
 
     @Query("""
-            SELECT new com.techfork.post.application.dto.PostInfoDto(
+            SELECT new com.techfork.post.infrastructure.row.PostInfoRow(
             p.id, p.title, p.shortSummary, p.company, p.url, p.logoUrl, p.thumbnailUrl, p.publishedAt, p.viewCount, null, null)
             FROM Post p
             WHERE (
@@ -110,26 +110,26 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             )
             ORDER BY p.publishedAt DESC, p.id DESC
             """)
-    List<PostInfoDto> findRecentPostsWithCursorV2(
+    List<PostInfoRow> findRecentPostsWithCursorV2(
             @Param("lastPublishedAt") LocalDateTime lastPublishedAt,
             @Param("lastPostId") Long lastPostId,
             Pageable pageable
     );
 
     @Query("""
-            SELECT new com.techfork.post.application.dto.PostInfoDto(
+            SELECT new com.techfork.post.infrastructure.row.PostInfoRow(
             p.id, p.title, p.shortSummary, p.company, p.url, p.logoUrl, p.thumbnailUrl, p.publishedAt, p.viewCount, null, null)
             FROM Post p
             WHERE :lastPostId IS NULL OR p.id < :lastPostId
             ORDER BY p.viewCount DESC, p.publishedAt DESC
             """)
-    List<PostInfoDto> findPopularPostsWithCursor(
+    List<PostInfoRow> findPopularPostsWithCursor(
             @Param("lastPostId") Long lastPostId,
             Pageable pageable
     );
 
     @Query("""
-            SELECT new com.techfork.post.application.dto.PostInfoDto(
+            SELECT new com.techfork.post.infrastructure.row.PostInfoRow(
             p.id, p.title, p.shortSummary, p.company, p.url, p.logoUrl, p.thumbnailUrl, p.publishedAt, p.viewCount, null, null)
             FROM Post p
             WHERE (
@@ -139,17 +139,17 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             )
             ORDER BY p.viewCount DESC, p.id DESC
             """)
-    List<PostInfoDto> findPopularPostsWithCursorV2(
+    List<PostInfoRow> findPopularPostsWithCursorV2(
             @Param("lastViewCount") Integer lastViewCount,
             @Param("lastPostId") Long lastPostId,
             Pageable pageable
     );
 
     @Query("""
-            SELECT new com.techfork.post.application.dto.PostDetailDto(
+            SELECT new com.techfork.post.infrastructure.row.PostDetailRow(
             p.id, p.title, p.summary, p.company, p.url, p.logoUrl, p.publishedAt, p.viewCount, null, null)
             FROM Post p
             WHERE p.id = :id
             """)
-    Optional<PostDetailDto> findByIdWithTechBlog(@Param("id") Long id);
+    Optional<PostDetailRow> findByIdWithTechBlog(@Param("id") Long id);
 }

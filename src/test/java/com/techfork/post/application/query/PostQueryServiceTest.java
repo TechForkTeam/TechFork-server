@@ -1,7 +1,14 @@
 package com.techfork.post.application.query;
 
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
-import com.techfork.post.application.dto.*;
+import com.techfork.post.infrastructure.row.CompanyRow;
+import com.techfork.post.infrastructure.row.PostDetailRow;
+import com.techfork.post.infrastructure.row.PostInfoRow;
+import com.techfork.post.presentation.CompanyDto;
+import com.techfork.post.presentation.CompanyListResponse;
+import com.techfork.post.presentation.PostDetailDto;
+import com.techfork.post.presentation.PostInfoDto;
+import com.techfork.post.presentation.PostListResponse;
 import com.techfork.post.presentation.PostConverter;
 import com.techfork.post.domain.PostKeyword;
 import com.techfork.post.domain.enums.EPostSortType;
@@ -90,26 +97,28 @@ class PostQueryServiceTest {
     @DisplayName("getCompaniesV2() - 회사 상세 정보 포함 목록 조회 성공")
     void getCompaniesV2_Success() {
         // Given
-        List<CompanyDto> mockCompanies = List.of(
-                CompanyDto.builder()
+        List<CompanyRow> mockCompanyRows = List.of(
+                CompanyRow.builder()
                         .company("카카오")
                         .hasNewPost(true)
                         .logoUrl("https://test.com/kakao-logo.png")
                         .build(),
-                CompanyDto.builder()
+                CompanyRow.builder()
                         .company("네이버")
                         .hasNewPost(false)
                         .logoUrl("https://test.com/naver-logo.png")
                         .build()
         );
 
+        List<CompanyDto> mockCompanies = mockCompanyRows.stream().map(this::toCompanyDto).toList();
+
         CompanyListResponse expectedResponse = CompanyListResponse.builder()
                 .totalNumber(2)
                 .companies(mockCompanies)
                 .build();
 
-        given(postRepository.findCompaniesWithDetails()).willReturn(mockCompanies);
-        given(postConverter.toCompanyListResponseV2(mockCompanies)).willReturn(expectedResponse);
+        given(postRepository.findCompaniesWithDetails()).willReturn(mockCompanyRows);
+        given(postConverter.toCompanyListResponseV2(mockCompanyRows)).willReturn(expectedResponse);
 
         // When
         CompanyListResponse result = postQueryService.getCompaniesV2();
@@ -126,7 +135,7 @@ class PostQueryServiceTest {
         assertThat(resultCompanies.get(1).hasNewPost()).isFalse();
 
         verify(postRepository, times(1)).findCompaniesWithDetails();
-        verify(postConverter, times(1)).toCompanyListResponseV2(mockCompanies);
+        verify(postConverter, times(1)).toCompanyListResponseV2(mockCompanyRows);
     }
 
     @Test
@@ -136,7 +145,7 @@ class PostQueryServiceTest {
         Long postId = 1L;
         Long userId = null;
 
-        PostDetailDto mockPostDetail = PostDetailDto.builder()
+        PostDetailRow mockPostDetailRow = PostDetailRow.builder()
                 .id(postId)
                 .title("테스트 제목")
                 .summary("테스트 요약")
@@ -164,15 +173,15 @@ class PostQueryServiceTest {
                 .company("카카오")
                 .url("https://test.com/1")
                 .logoUrl("https://test.com/logo.png")
-                .publishedAt(mockPostDetail.publishedAt())
+                .publishedAt(mockPostDetailRow.publishedAt())
                 .viewCount(100L)
                 .keywords(keywordStrings)
                 .isBookmarked(null)
                 .build();
 
-        given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.of(mockPostDetail));
+        given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.of(mockPostDetailRow));
         given(postKeywordRepository.findByPostIdIn(List.of(postId))).willReturn(mockKeywords);
-        given(postConverter.toPostDetailDto(mockPostDetail, keywordStrings, null)).willReturn(expectedResponse);
+        given(postConverter.toPostDetailDto(mockPostDetailRow, keywordStrings, null)).willReturn(expectedResponse);
 
         // When
         PostDetailDto result = postQueryService.getPostDetail(postId, userId);
@@ -188,7 +197,7 @@ class PostQueryServiceTest {
 
         verify(postRepository, times(1)).findByIdWithTechBlog(postId);
         verify(postKeywordRepository, times(1)).findByPostIdIn(List.of(postId));
-        verify(postConverter, times(1)).toPostDetailDto(mockPostDetail, keywordStrings, null);
+        verify(postConverter, times(1)).toPostDetailDto(mockPostDetailRow, keywordStrings, null);
         verify(bookmarkRepository, never()).findBookmarkedPostIds(any(), any());
     }
 
@@ -199,7 +208,7 @@ class PostQueryServiceTest {
         Long postId = 1L;
         Long userId = 100L;
 
-        PostDetailDto mockPostDetail = PostDetailDto.builder()
+        PostDetailRow mockPostDetailRow = PostDetailRow.builder()
                 .id(postId)
                 .title("테스트 제목")
                 .summary("테스트 요약")
@@ -224,16 +233,16 @@ class PostQueryServiceTest {
                 .company("카카오")
                 .url("https://test.com/1")
                 .logoUrl("https://test.com/logo.png")
-                .publishedAt(mockPostDetail.publishedAt())
+                .publishedAt(mockPostDetailRow.publishedAt())
                 .viewCount(100L)
                 .keywords(keywordStrings)
                 .isBookmarked(true)
                 .build();
 
-        given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.of(mockPostDetail));
+        given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.of(mockPostDetailRow));
         given(postKeywordRepository.findByPostIdIn(List.of(postId))).willReturn(mockKeywords);
         given(bookmarkRepository.findBookmarkedPostIds(userId, List.of(postId))).willReturn(List.of(postId));
-        given(postConverter.toPostDetailDto(mockPostDetail, keywordStrings, true)).willReturn(expectedResponse);
+        given(postConverter.toPostDetailDto(mockPostDetailRow, keywordStrings, true)).willReturn(expectedResponse);
 
         // When
         PostDetailDto result = postQueryService.getPostDetail(postId, userId);
@@ -246,7 +255,7 @@ class PostQueryServiceTest {
         verify(postRepository, times(1)).findByIdWithTechBlog(postId);
         verify(postKeywordRepository, times(1)).findByPostIdIn(List.of(postId));
         verify(bookmarkRepository, times(1)).findBookmarkedPostIds(userId, List.of(postId));
-        verify(postConverter, times(1)).toPostDetailDto(mockPostDetail, keywordStrings, true);
+        verify(postConverter, times(1)).toPostDetailDto(mockPostDetailRow, keywordStrings, true);
     }
 
     @Test
@@ -256,7 +265,7 @@ class PostQueryServiceTest {
         Long postId = 1L;
         Long userId = 100L;
 
-        PostDetailDto mockPostDetail = PostDetailDto.builder()
+        PostDetailRow mockPostDetailRow = PostDetailRow.builder()
                 .id(postId)
                 .title("테스트 제목")
                 .summary("테스트 요약")
@@ -281,16 +290,16 @@ class PostQueryServiceTest {
                 .company("카카오")
                 .url("https://test.com/1")
                 .logoUrl("https://test.com/logo.png")
-                .publishedAt(mockPostDetail.publishedAt())
+                .publishedAt(mockPostDetailRow.publishedAt())
                 .viewCount(100L)
                 .keywords(keywordStrings)
                 .isBookmarked(false)
                 .build();
 
-        given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.of(mockPostDetail));
+        given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.of(mockPostDetailRow));
         given(postKeywordRepository.findByPostIdIn(List.of(postId))).willReturn(mockKeywords);
         given(bookmarkRepository.findBookmarkedPostIds(userId, List.of(postId))).willReturn(List.of());
-        given(postConverter.toPostDetailDto(mockPostDetail, keywordStrings, false)).willReturn(expectedResponse);
+        given(postConverter.toPostDetailDto(mockPostDetailRow, keywordStrings, false)).willReturn(expectedResponse);
 
         // When
         PostDetailDto result = postQueryService.getPostDetail(postId, userId);
@@ -303,7 +312,7 @@ class PostQueryServiceTest {
         verify(postRepository, times(1)).findByIdWithTechBlog(postId);
         verify(postKeywordRepository, times(1)).findByPostIdIn(List.of(postId));
         verify(bookmarkRepository, times(1)).findBookmarkedPostIds(userId, List.of(postId));
-        verify(postConverter, times(1)).toPostDetailDto(mockPostDetail, keywordStrings, false);
+        verify(postConverter, times(1)).toPostDetailDto(mockPostDetailRow, keywordStrings, false);
     }
 
     @Test
@@ -330,8 +339,8 @@ class PostQueryServiceTest {
         Long lastPostId = null;
         int size = 20;
 
-        List<PostInfoDto> mockPosts = List.of(
-                PostInfoDto.builder()
+        List<PostInfoRow> mockPostRows = List.of(
+                PostInfoRow.builder()
                         .id(2L)
                         .title("게시글 2")
                         .company("카카오")
@@ -341,7 +350,7 @@ class PostQueryServiceTest {
                         .viewCount(50L)
                         .keywords(null)
                         .build(),
-                PostInfoDto.builder()
+                PostInfoRow.builder()
                         .id(1L)
                         .title("게시글 1")
                         .company("네이버")
@@ -353,6 +362,8 @@ class PostQueryServiceTest {
                         .build()
         );
 
+        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
                 .lastPostId(1L)
@@ -360,7 +371,7 @@ class PostQueryServiceTest {
                 .build();
 
         given(postRepository.findRecentPostsWithCursor(eq(lastPostId), any(PageRequest.class)))
-                .willReturn(mockPosts);
+                .willReturn(mockPostRows);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
@@ -384,8 +395,8 @@ class PostQueryServiceTest {
         Long lastPostId = null;
         int size = 20;
 
-        List<PostInfoDto> mockPosts = List.of(
-                PostInfoDto.builder()
+        List<PostInfoRow> mockPostRows = List.of(
+                PostInfoRow.builder()
                         .id(1L)
                         .title("인기 게시글 1")
                         .company("카카오")
@@ -395,7 +406,7 @@ class PostQueryServiceTest {
                         .viewCount(1000L)
                         .keywords(null)
                         .build(),
-                PostInfoDto.builder()
+                PostInfoRow.builder()
                         .id(2L)
                         .title("인기 게시글 2")
                         .company("네이버")
@@ -407,6 +418,8 @@ class PostQueryServiceTest {
                         .build()
         );
 
+        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
                 .lastPostId(2L)
@@ -414,7 +427,7 @@ class PostQueryServiceTest {
                 .build();
 
         given(postRepository.findPopularPostsWithCursor(eq(lastPostId), any(PageRequest.class)))
-                .willReturn(mockPosts);
+                .willReturn(mockPostRows);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
@@ -438,8 +451,8 @@ class PostQueryServiceTest {
         Long lastPostId = null;
         int size = 20;
 
-        List<PostInfoDto> mockPosts = List.of(
-                PostInfoDto.builder()
+        List<PostInfoRow> mockPostRows = List.of(
+                PostInfoRow.builder()
                         .id(1L)
                         .title("카카오 게시글")
                         .company(company)
@@ -451,6 +464,8 @@ class PostQueryServiceTest {
                         .build()
         );
 
+        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
                 .lastPostId(1L)
@@ -458,7 +473,7 @@ class PostQueryServiceTest {
                 .build();
 
         given(postRepository.findByCompanyWithCursor(eq(company), eq(lastPostId), any(PageRequest.class)))
-                .willReturn(mockPosts);
+                .willReturn(mockPostRows);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
@@ -483,8 +498,8 @@ class PostQueryServiceTest {
         int size = 20;
 
         LocalDateTime now = LocalDateTime.now();
-        List<PostInfoDto> mockPosts = List.of(
-                PostInfoDto.builder()
+        List<PostInfoRow> mockPostRows = List.of(
+                PostInfoRow.builder()
                         .id(2L)
                         .title("네이버 게시글")
                         .company("네이버")
@@ -494,7 +509,7 @@ class PostQueryServiceTest {
                         .viewCount(100L)
                         .keywords(null)
                         .build(),
-                PostInfoDto.builder()
+                PostInfoRow.builder()
                         .id(1L)
                         .title("카카오 게시글")
                         .company("카카오")
@@ -506,6 +521,8 @@ class PostQueryServiceTest {
                         .build()
         );
 
+        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
                 .lastPostId(1L)
@@ -514,7 +531,7 @@ class PostQueryServiceTest {
                 .build();
 
         given(postRepository.findByCompanyNamesWithCursor(eq(companies), eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class)))
-                .willReturn(mockPosts);
+                .willReturn(mockPostRows);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
@@ -543,8 +560,8 @@ class PostQueryServiceTest {
         int size = 20;
 
         LocalDateTime now = LocalDateTime.now();
-        List<PostInfoDto> mockPosts = List.of(
-                PostInfoDto.builder()
+        List<PostInfoRow> mockPostRows = List.of(
+                PostInfoRow.builder()
                         .id(3L)
                         .title("라인 게시글")
                         .company("라인")
@@ -554,7 +571,7 @@ class PostQueryServiceTest {
                         .viewCount(200L)
                         .keywords(null)
                         .build(),
-                PostInfoDto.builder()
+                PostInfoRow.builder()
                         .id(2L)
                         .title("네이버 게시글")
                         .company("네이버")
@@ -566,6 +583,8 @@ class PostQueryServiceTest {
                         .build()
         );
 
+        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
                 .lastPostId(2L)
@@ -574,7 +593,7 @@ class PostQueryServiceTest {
                 .build();
 
         given(postRepository.findByCompanyNamesWithCursor(eq(companies), eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class)))
-                .willReturn(mockPosts);
+                .willReturn(mockPostRows);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
@@ -597,8 +616,8 @@ class PostQueryServiceTest {
         Long lastPostId = 100L;
         int size = 20;
 
-        List<PostInfoDto> mockPosts = List.of(
-                PostInfoDto.builder()
+        List<PostInfoRow> mockPostRows = List.of(
+                PostInfoRow.builder()
                         .id(99L)
                         .title("카카오 게시글 99")
                         .company("카카오")
@@ -610,6 +629,8 @@ class PostQueryServiceTest {
                         .build()
         );
 
+        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
                 .lastPostId(99L)
@@ -618,7 +639,7 @@ class PostQueryServiceTest {
                 .build();
 
         given(postRepository.findByCompanyNamesWithCursor(eq(companies), eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class)))
-                .willReturn(mockPosts);
+                .willReturn(mockPostRows);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
@@ -644,8 +665,8 @@ class PostQueryServiceTest {
         int size = 20;
 
         LocalDateTime now = LocalDateTime.now();
-        List<PostInfoDto> mockPosts = List.of(
-                PostInfoDto.builder()
+        List<PostInfoRow> mockPostRows = List.of(
+                PostInfoRow.builder()
                         .id(2L)
                         .title("게시글 2")
                         .company("카카오")
@@ -655,7 +676,7 @@ class PostQueryServiceTest {
                         .viewCount(50L)
                         .keywords(null)
                         .build(),
-                PostInfoDto.builder()
+                PostInfoRow.builder()
                         .id(1L)
                         .title("게시글 1")
                         .company("네이버")
@@ -667,6 +688,8 @@ class PostQueryServiceTest {
                         .build()
         );
 
+        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
                 .lastPostId(1L)
@@ -675,7 +698,7 @@ class PostQueryServiceTest {
                 .build();
 
         given(postRepository.findRecentPostsWithCursorV2(eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class)))
-                .willReturn(mockPosts);
+                .willReturn(mockPostRows);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
@@ -703,8 +726,8 @@ class PostQueryServiceTest {
         int size = 20;
 
         LocalDateTime now = LocalDateTime.now();
-        List<PostInfoDto> mockPosts = List.of(
-                PostInfoDto.builder()
+        List<PostInfoRow> mockPostRows = List.of(
+                PostInfoRow.builder()
                         .id(1L)
                         .title("인기 게시글 1")
                         .company("카카오")
@@ -714,7 +737,7 @@ class PostQueryServiceTest {
                         .viewCount(1000L)
                         .keywords(null)
                         .build(),
-                PostInfoDto.builder()
+                PostInfoRow.builder()
                         .id(2L)
                         .title("인기 게시글 2")
                         .company("네이버")
@@ -726,6 +749,8 @@ class PostQueryServiceTest {
                         .build()
         );
 
+        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
                 .lastPostId(2L)
@@ -734,7 +759,7 @@ class PostQueryServiceTest {
                 .build();
 
         given(postRepository.findPopularPostsWithCursorV2(eq(lastViewCount), eq(lastPostId), any(PageRequest.class)))
-                .willReturn(mockPosts);
+                .willReturn(mockPostRows);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
@@ -760,8 +785,8 @@ class PostQueryServiceTest {
         Long lastPostId = 100L;
         int size = 20;
 
-        List<PostInfoDto> mockPosts = List.of(
-                PostInfoDto.builder()
+        List<PostInfoRow> mockPostRows = List.of(
+                PostInfoRow.builder()
                         .id(99L)
                         .title("인기 게시글 99")
                         .company("카카오")
@@ -773,6 +798,8 @@ class PostQueryServiceTest {
                         .build()
         );
 
+        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
                 .lastPostId(99L)
@@ -781,7 +808,7 @@ class PostQueryServiceTest {
                 .build();
 
         given(postRepository.findPopularPostsWithCursorV2(eq(lastViewCount), eq(lastPostId), any(PageRequest.class)))
-                .willReturn(mockPosts);
+                .willReturn(mockPostRows);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
@@ -806,8 +833,8 @@ class PostQueryServiceTest {
         Long lastPostId = 100L;
         int size = 20;
 
-        List<PostInfoDto> mockPosts = List.of(
-                PostInfoDto.builder()
+        List<PostInfoRow> mockPostRows = List.of(
+                PostInfoRow.builder()
                         .id(99L)
                         .title("게시글 99")
                         .company("카카오")
@@ -819,6 +846,8 @@ class PostQueryServiceTest {
                         .build()
         );
 
+        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
                 .lastPostId(99L)
@@ -827,7 +856,7 @@ class PostQueryServiceTest {
                 .build();
 
         given(postRepository.findRecentPostsWithCursorV2(eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class)))
-                .willReturn(mockPosts);
+                .willReturn(mockPostRows);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
@@ -851,8 +880,8 @@ class PostQueryServiceTest {
         int size = 20;
         Long userId = 1L;
 
-        List<PostInfoDto> mockPosts = List.of(
-                PostInfoDto.builder()
+        List<PostInfoRow> mockPostRows = List.of(
+                PostInfoRow.builder()
                         .id(1L)
                         .title("카카오 게시글 1")
                         .company(company)
@@ -863,7 +892,7 @@ class PostQueryServiceTest {
                         .keywords(List.of("Java"))
                         .isBookmarked(null)
                         .build(),
-                PostInfoDto.builder()
+                PostInfoRow.builder()
                         .id(2L)
                         .title("카카오 게시글 2")
                         .company(company)
@@ -877,38 +906,19 @@ class PostQueryServiceTest {
         );
 
         List<Long> bookmarkedPostIds = List.of(1L);
+        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
 
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(List.of(
-                        PostInfoDto.builder()
-                                .id(1L)
-                                .title("카카오 게시글 1")
-                                .company(company)
-                                .url("https://test.com/1")
-                                .logoUrl("https://test.com/logo.png")
-                                .publishedAt(mockPosts.get(0).publishedAt())
-                                .viewCount(50L)
-                                .keywords(List.of("Java"))
-                                .isBookmarked(true)
-                                .build(),
-                        PostInfoDto.builder()
-                                .id(2L)
-                                .title("카카오 게시글 2")
-                                .company(company)
-                                .url("https://test.com/2")
-                                .logoUrl("https://test.com/logo.png")
-                                .publishedAt(mockPosts.get(1).publishedAt())
-                                .viewCount(100L)
-                                .keywords(List.of("Spring"))
-                                .isBookmarked(false)
-                                .build()
+                        mockPosts.get(0).toBuilder().isBookmarked(true).build(),
+                        mockPosts.get(1).toBuilder().isBookmarked(false).build()
                 ))
                 .lastPostId(2L)
                 .hasNext(false)
                 .build();
 
         given(postRepository.findByCompanyWithCursor(eq(company), eq(lastPostId), any(PageRequest.class)))
-                .willReturn(mockPosts);
+                .willReturn(mockPostRows);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
         given(bookmarkRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
@@ -935,8 +945,8 @@ class PostQueryServiceTest {
         int size = 20;
         Long userId = null;
 
-        List<PostInfoDto> mockPosts = List.of(
-                PostInfoDto.builder()
+        List<PostInfoRow> mockPostRows = List.of(
+                PostInfoRow.builder()
                         .id(1L)
                         .title("카카오 게시글 1")
                         .company(company)
@@ -949,6 +959,8 @@ class PostQueryServiceTest {
                         .build()
         );
 
+        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
+
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(mockPosts)
                 .lastPostId(1L)
@@ -956,7 +968,7 @@ class PostQueryServiceTest {
                 .build();
 
         given(postRepository.findByCompanyWithCursor(eq(company), eq(lastPostId), any(PageRequest.class)))
-                .willReturn(mockPosts);
+                .willReturn(mockPostRows);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
 
@@ -981,8 +993,8 @@ class PostQueryServiceTest {
         int size = 20;
         Long userId = 1L;
 
-        List<PostInfoDto> mockPosts = List.of(
-                PostInfoDto.builder()
+        List<PostInfoRow> mockPostRows = List.of(
+                PostInfoRow.builder()
                         .id(1L)
                         .title("게시글 1")
                         .company("카카오")
@@ -993,7 +1005,7 @@ class PostQueryServiceTest {
                         .keywords(List.of())
                         .isBookmarked(null)
                         .build(),
-                PostInfoDto.builder()
+                PostInfoRow.builder()
                         .id(2L)
                         .title("게시글 2")
                         .company("네이버")
@@ -1007,6 +1019,7 @@ class PostQueryServiceTest {
         );
 
         List<Long> bookmarkedPostIds = List.of(2L);
+        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
 
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(List.of(
@@ -1018,7 +1031,7 @@ class PostQueryServiceTest {
                 .build();
 
         given(postRepository.findRecentPostsWithCursor(eq(lastPostId), any(PageRequest.class)))
-                .willReturn(mockPosts);
+                .willReturn(mockPostRows);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
         given(bookmarkRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
@@ -1047,8 +1060,8 @@ class PostQueryServiceTest {
         Long userId = 1L;
 
         LocalDateTime now = LocalDateTime.now();
-        List<PostInfoDto> mockPosts = List.of(
-                PostInfoDto.builder()
+        List<PostInfoRow> mockPostRows = List.of(
+                PostInfoRow.builder()
                         .id(1L)
                         .title("카카오 게시글")
                         .company("카카오")
@@ -1059,7 +1072,7 @@ class PostQueryServiceTest {
                         .keywords(List.of())
                         .isBookmarked(null)
                         .build(),
-                PostInfoDto.builder()
+                PostInfoRow.builder()
                         .id(2L)
                         .title("네이버 게시글")
                         .company("네이버")
@@ -1073,6 +1086,7 @@ class PostQueryServiceTest {
         );
 
         List<Long> bookmarkedPostIds = List.of(1L, 2L);
+        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
 
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(List.of(
@@ -1084,7 +1098,7 @@ class PostQueryServiceTest {
                 .build();
 
         given(postRepository.findByCompanyNamesWithCursor(eq(companies), eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class)))
-                .willReturn(mockPosts);
+                .willReturn(mockPostRows);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
         given(bookmarkRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
@@ -1114,8 +1128,8 @@ class PostQueryServiceTest {
         Long userId = 1L;
 
         LocalDateTime now = LocalDateTime.now();
-        List<PostInfoDto> mockPosts = List.of(
-                PostInfoDto.builder()
+        List<PostInfoRow> mockPostRows = List.of(
+                PostInfoRow.builder()
                         .id(1L)
                         .title("인기 게시글 1")
                         .company("카카오")
@@ -1129,6 +1143,7 @@ class PostQueryServiceTest {
         );
 
         List<Long> bookmarkedPostIds = List.of();
+        List<PostInfoDto> mockPosts = mockPostRows.stream().map(this::toPostInfoDto).toList();
 
         PostListResponse expectedResponse = PostListResponse.builder()
                 .posts(List.of(
@@ -1139,7 +1154,7 @@ class PostQueryServiceTest {
                 .build();
 
         given(postRepository.findPopularPostsWithCursorV2(eq(lastViewCount), eq(lastPostId), any(PageRequest.class)))
-                .willReturn(mockPosts);
+                .willReturn(mockPostRows);
         given(postKeywordRepository.findByPostIdIn(any())).willReturn(List.of());
         given(bookmarkRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
         given(postConverter.toPostListResponse(any(), eq(size))).willReturn(expectedResponse);
@@ -1155,4 +1170,29 @@ class PostQueryServiceTest {
         verify(postRepository, times(1)).findPopularPostsWithCursorV2(eq(lastViewCount), eq(lastPostId), any(PageRequest.class));
         verify(bookmarkRepository, times(1)).findBookmarkedPostIds(eq(userId), any());
     }
+
+    private PostInfoDto toPostInfoDto(PostInfoRow row) {
+        return PostInfoDto.builder()
+                .id(row.id())
+                .title(row.title())
+                .shortSummary(row.shortSummary())
+                .company(row.company())
+                .url(row.url())
+                .logoUrl(row.logoUrl())
+                .thumbnailUrl(row.thumbnailUrl())
+                .publishedAt(row.publishedAt())
+                .viewCount(row.viewCount())
+                .keywords(row.keywords())
+                .isBookmarked(row.isBookmarked())
+                .build();
+    }
+
+    private CompanyDto toCompanyDto(CompanyRow row) {
+        return CompanyDto.builder()
+                .company(row.company())
+                .hasNewPost(row.hasNewPost())
+                .logoUrl(row.logoUrl())
+                .build();
+    }
+
 }
