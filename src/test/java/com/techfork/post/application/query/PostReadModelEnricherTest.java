@@ -1,9 +1,8 @@
-package com.techfork.post.application.query.composition;
+package com.techfork.post.application.query;
 
 import com.techfork.activity.bookmark.application.query.lookup.BookmarkLookupService;
 import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import com.techfork.post.application.query.lookup.PostKeywordLookupService;
-import com.techfork.post.application.query.result.GetPostDetailResult;
 import com.techfork.post.infrastructure.row.PostDetailRow;
 import com.techfork.post.infrastructure.row.PostInfoRow;
 import java.time.LocalDateTime;
@@ -25,7 +24,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class PostReadModelCompositionServiceTest {
+class PostReadModelEnricherTest {
 
     @Mock
     private PostKeywordLookupService postKeywordLookupService;
@@ -37,11 +36,11 @@ class PostReadModelCompositionServiceTest {
     private CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
 
     @InjectMocks
-    private PostReadModelCompositionService postReadModelCompositionService;
+    private PostReadModelEnricher postReadModelEnricher;
 
     @Nested
-    @DisplayName("게시글 목록 조합")
-    class ComposePostInfoRows {
+    @DisplayName("게시글 목록 enrichment")
+    class EnrichPostInfoRows {
 
         @Nested
         @DisplayName("Success")
@@ -49,8 +48,8 @@ class PostReadModelCompositionServiceTest {
 
             @Test
             @DisplayName("빈 목록이면 추가 조회 없이 빈 목록을 반환한다")
-            void composePostInfoRows_EmptyList_ReturnsEmpty() {
-                List<PostInfoRow> result = postReadModelCompositionService.composePostInfoRows(List.of(), 1L);
+            void enrichPostInfoRows_EmptyList_ReturnsEmpty() {
+                List<PostInfoRow> result = postReadModelEnricher.enrichPostInfoRows(List.of(), 1L);
 
                 assertThat(result).isEmpty();
                 verify(postKeywordLookupService, never()).getKeywordsByPostIds(List.of());
@@ -59,7 +58,7 @@ class PostReadModelCompositionServiceTest {
 
             @Test
             @DisplayName("비로그인 목록 조회는 keywords와 optimized thumbnail만 조합한다")
-            void composePostInfoRows_WithoutUserId_ComposesKeywordsAndThumbnail() {
+            void enrichPostInfoRows_WithoutUserId_ComposesKeywordsAndThumbnail() {
                 List<PostInfoRow> posts = List.of(
                         postInfoRow(1L, "thumb-1"),
                         postInfoRow(2L, "thumb-2")
@@ -69,7 +68,7 @@ class PostReadModelCompositionServiceTest {
                 given(thumbnailOptimizer.optimize("thumb-1")).willReturn("optimized-1");
                 given(thumbnailOptimizer.optimize("thumb-2")).willReturn("optimized-2");
 
-                List<PostInfoRow> result = postReadModelCompositionService.composePostInfoRows(posts, null);
+                List<PostInfoRow> result = postReadModelEnricher.enrichPostInfoRows(posts, null);
 
                 assertThat(result).hasSize(2);
                 assertThat(result.get(0).keywords()).containsExactly("Java");
@@ -84,7 +83,7 @@ class PostReadModelCompositionServiceTest {
 
             @Test
             @DisplayName("로그인 목록 조회는 keywords와 bookmark 여부를 함께 조합한다")
-            void composePostInfoRows_WithUserId_ComposesKeywordsBookmarksAndThumbnail() {
+            void enrichPostInfoRows_WithUserId_ComposesKeywordsBookmarksAndThumbnail() {
                 Long userId = 10L;
                 List<PostInfoRow> posts = List.of(
                         postInfoRow(1L, "thumb-1"),
@@ -97,7 +96,7 @@ class PostReadModelCompositionServiceTest {
                 given(thumbnailOptimizer.optimize("thumb-1")).willReturn("optimized-1");
                 given(thumbnailOptimizer.optimize("thumb-2")).willReturn("optimized-2");
 
-                List<PostInfoRow> result = postReadModelCompositionService.composePostInfoRows(posts, userId);
+                List<PostInfoRow> result = postReadModelEnricher.enrichPostInfoRows(posts, userId);
 
                 assertThat(result).hasSize(2);
                 assertThat(result.get(0).keywords()).containsExactly("Java");
@@ -112,22 +111,22 @@ class PostReadModelCompositionServiceTest {
     }
 
     @Nested
-    @DisplayName("게시글 상세 조합")
-    class ComposePostDetail {
+    @DisplayName("게시글 상세 enrichment")
+    class EnrichPostDetailRow {
 
         @Nested
         @DisplayName("Success")
         class Success {
 
             @Test
-            @DisplayName("비로그인 상세 조회는 keywords만 조합한다")
-            void composePostDetail_WithoutUserId_ComposesKeywordsOnly() {
+            @DisplayName("비로그인 상세 조회는 keywords만 row에 채운다")
+            void enrichPostDetailRow_WithoutUserId_FillsKeywordsOnly() {
                 Long postId = 1L;
                 PostDetailRow postDetailRow = postDetailRow(postId);
                 given(postKeywordLookupService.getKeywordsByPostIds(List.of(postId)))
                         .willReturn(Map.of(postId, List.of("Java", "Spring")));
 
-                GetPostDetailResult result = postReadModelCompositionService.composePostDetail(postDetailRow, null);
+                PostDetailRow result = postReadModelEnricher.enrichPostDetailRow(postDetailRow, null);
 
                 assertThat(result.id()).isEqualTo(postId);
                 assertThat(result.keywords()).containsExactly("Java", "Spring");
@@ -137,8 +136,8 @@ class PostReadModelCompositionServiceTest {
             }
 
             @Test
-            @DisplayName("로그인 상세 조회는 bookmark 여부를 함께 조합한다")
-            void composePostDetail_WithUserId_ComposesBookmarkStatus() {
+            @DisplayName("로그인 상세 조회는 bookmark 여부를 row에 함께 채운다")
+            void enrichPostDetailRow_WithUserId_FillsBookmarkStatus() {
                 Long postId = 1L;
                 Long userId = 20L;
                 PostDetailRow postDetailRow = postDetailRow(postId);
@@ -147,7 +146,7 @@ class PostReadModelCompositionServiceTest {
                 given(bookmarkLookupService.getBookmarkedPostIds(userId, List.of(postId)))
                         .willReturn(Set.of(postId));
 
-                GetPostDetailResult result = postReadModelCompositionService.composePostDetail(postDetailRow, userId);
+                PostDetailRow result = postReadModelEnricher.enrichPostDetailRow(postDetailRow, userId);
 
                 assertThat(result.keywords()).containsExactly("Kotlin");
                 assertThat(result.isBookmarked()).isTrue();
@@ -183,6 +182,8 @@ class PostReadModelCompositionServiceTest {
                 .logoUrl("https://test.com/logo-" + postId + ".png")
                 .publishedAt(LocalDateTime.now())
                 .viewCount(100L)
+                .keywords(null)
+                .isBookmarked(null)
                 .build();
     }
 }

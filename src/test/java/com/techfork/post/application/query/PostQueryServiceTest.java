@@ -1,7 +1,6 @@
 package com.techfork.post.application.query;
 
 import com.techfork.global.exception.GeneralException;
-import com.techfork.post.application.query.composition.PostReadModelCompositionService;
 import com.techfork.post.application.query.result.CompanyListItemResult;
 import com.techfork.post.application.query.result.GetCompanyListResult;
 import com.techfork.post.application.query.result.GetPostDetailResult;
@@ -39,7 +38,7 @@ class PostQueryServiceTest {
     private PostRepository postRepository;
 
     @Mock
-    private PostReadModelCompositionService postReadModelCompositionService;
+    private PostReadModelEnricher postReadModelEnricher;
 
     @InjectMocks
     private PostQueryService postQueryService;
@@ -109,6 +108,8 @@ class PostQueryServiceTest {
                         .logoUrl("https://test.com/logo.png")
                         .publishedAt(LocalDateTime.now())
                         .viewCount(100L)
+                        .keywords(List.of("Java"))
+                        .isBookmarked(true)
                         .build();
                 GetPostDetailResult expected = GetPostDetailResult.builder()
                         .id(postId)
@@ -124,13 +125,13 @@ class PostQueryServiceTest {
                         .build();
 
                 given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.of(postDetailRow));
-                given(postReadModelCompositionService.composePostDetail(postDetailRow, userId)).willReturn(expected);
+                given(postReadModelEnricher.enrichPostDetailRow(postDetailRow, userId)).willReturn(postDetailRow);
 
                 GetPostDetailResult result = postQueryService.getPostDetail(new GetPostDetailQuery(postId, userId));
 
                 assertThat(result).isEqualTo(expected);
                 verify(postRepository, times(1)).findByIdWithTechBlog(postId);
-                verify(postReadModelCompositionService, times(1)).composePostDetail(postDetailRow, userId);
+                verify(postReadModelEnricher, times(1)).enrichPostDetailRow(postDetailRow, userId);
             }
         }
 
@@ -148,7 +149,7 @@ class PostQueryServiceTest {
                         .isInstanceOf(GeneralException.class);
 
                 verify(postRepository, times(1)).findByIdWithTechBlog(postId);
-                verify(postReadModelCompositionService, never()).composePostDetail(any(), any());
+                verify(postReadModelEnricher, never()).enrichPostDetailRow(any(), any());
             }
         }
     }
@@ -172,7 +173,7 @@ class PostQueryServiceTest {
             );
 
             given(postRepository.findRecentPostsWithCursor(eq(lastPostId), any(PageRequest.class))).willReturn(rawPosts);
-            given(postReadModelCompositionService.composePostInfoRows(rawPosts, null)).willReturn(composedPosts);
+            given(postReadModelEnricher.enrichPostInfoRows(rawPosts, null)).willReturn(composedPosts);
 
             GetPostListResult result = postQueryService.getRecentPosts(
                     new GetRecentPostsQuery(EPostSortType.LATEST, lastPostId, size, null)
@@ -184,7 +185,7 @@ class PostQueryServiceTest {
             assertThat(result.hasNext()).isFalse();
             verify(postRepository, times(1)).findRecentPostsWithCursor(eq(lastPostId), any(PageRequest.class));
             verify(postRepository, never()).findPopularPostsWithCursor(any(), any());
-            verify(postReadModelCompositionService, times(1)).composePostInfoRows(rawPosts, null);
+            verify(postReadModelEnricher, times(1)).enrichPostInfoRows(rawPosts, null);
         }
 
         @Test
@@ -202,7 +203,7 @@ class PostQueryServiceTest {
             );
 
             given(postRepository.findPopularPostsWithCursor(eq(lastPostId), any(PageRequest.class))).willReturn(rawPosts);
-            given(postReadModelCompositionService.composePostInfoRows(rawPosts, userId)).willReturn(composedPosts);
+            given(postReadModelEnricher.enrichPostInfoRows(rawPosts, userId)).willReturn(composedPosts);
 
             GetPostListResult result = postQueryService.getRecentPosts(
                     new GetRecentPostsQuery(EPostSortType.POPULAR, lastPostId, size, userId)
@@ -212,7 +213,7 @@ class PostQueryServiceTest {
             assertThat(result.posts().get(0).isBookmarked()).isTrue();
             verify(postRepository, times(1)).findPopularPostsWithCursor(eq(lastPostId), any(PageRequest.class));
             verify(postRepository, never()).findRecentPostsWithCursor(any(), any());
-            verify(postReadModelCompositionService, times(1)).composePostInfoRows(rawPosts, userId);
+            verify(postReadModelEnricher, times(1)).enrichPostInfoRows(rawPosts, userId);
         }
 
         @Test
@@ -233,7 +234,7 @@ class PostQueryServiceTest {
             );
 
             given(postRepository.findRecentPostsWithCursor(eq(lastPostId), any(PageRequest.class))).willReturn(rawPosts);
-            given(postReadModelCompositionService.composePostInfoRows(rawPosts, null)).willReturn(composedPosts);
+            given(postReadModelEnricher.enrichPostInfoRows(rawPosts, null)).willReturn(composedPosts);
 
             GetPostListResult result = postQueryService.getRecentPosts(
                     new GetRecentPostsQuery(EPostSortType.LATEST, lastPostId, size, null)
@@ -250,7 +251,7 @@ class PostQueryServiceTest {
         @DisplayName("빈 결과면 커서 값은 모두 null이고 hasNext는 false다")
         void getRecentPosts_EmptyRows_ReturnsNullCursors() {
             given(postRepository.findRecentPostsWithCursor(eq(null), any(PageRequest.class))).willReturn(List.of());
-            given(postReadModelCompositionService.composePostInfoRows(List.of(), null)).willReturn(List.of());
+            given(postReadModelEnricher.enrichPostInfoRows(List.of(), null)).willReturn(List.of());
 
             GetPostListResult result = postQueryService.getRecentPosts(
                     new GetRecentPostsQuery(EPostSortType.LATEST, null, 20, null)
@@ -261,7 +262,7 @@ class PostQueryServiceTest {
             assertThat(result.lastViewCount()).isNull();
             assertThat(result.lastPublishedAt()).isNull();
             assertThat(result.hasNext()).isFalse();
-            verify(postReadModelCompositionService, times(1)).composePostInfoRows(List.of(), null);
+            verify(postReadModelEnricher, times(1)).enrichPostInfoRows(List.of(), null);
         }
     }
 
@@ -285,7 +286,7 @@ class PostQueryServiceTest {
 
             given(postRepository.findRecentPostsWithCursorV2(eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class)))
                     .willReturn(rawPosts);
-            given(postReadModelCompositionService.composePostInfoRows(rawPosts, userId)).willReturn(composedPosts);
+            given(postReadModelEnricher.enrichPostInfoRows(rawPosts, userId)).willReturn(composedPosts);
 
             GetPostListResult result = postQueryService.getRecentPostsV2(
                     new GetRecentPostsV2Query(EPostSortType.LATEST, null, lastPublishedAt, lastPostId, 20, userId)
@@ -295,7 +296,7 @@ class PostQueryServiceTest {
             assertThat(result.lastPublishedAt()).isEqualTo(nextPublishedAt);
             verify(postRepository, times(1)).findRecentPostsWithCursorV2(eq(lastPublishedAt), eq(lastPostId), any(PageRequest.class));
             verify(postRepository, never()).findPopularPostsWithCursorV2(any(), any(), any());
-            verify(postReadModelCompositionService, times(1)).composePostInfoRows(rawPosts, userId);
+            verify(postReadModelEnricher, times(1)).enrichPostInfoRows(rawPosts, userId);
         }
 
         @Test
@@ -317,7 +318,7 @@ class PostQueryServiceTest {
 
             given(postRepository.findPopularPostsWithCursorV2(eq(lastViewCount), eq(lastPostId), any(PageRequest.class)))
                     .willReturn(rawPosts);
-            given(postReadModelCompositionService.composePostInfoRows(rawPosts, userId)).willReturn(composedPosts);
+            given(postReadModelEnricher.enrichPostInfoRows(rawPosts, userId)).willReturn(composedPosts);
 
             GetPostListResult result = postQueryService.getRecentPostsV2(
                     new GetRecentPostsV2Query(EPostSortType.POPULAR, lastViewCount, null, lastPostId, size, userId)
@@ -330,7 +331,7 @@ class PostQueryServiceTest {
             assertThat(result.hasNext()).isTrue();
             verify(postRepository, times(1)).findPopularPostsWithCursorV2(eq(lastViewCount), eq(lastPostId), any(PageRequest.class));
             verify(postRepository, never()).findRecentPostsWithCursorV2(any(), any(), any());
-            verify(postReadModelCompositionService, times(1)).composePostInfoRows(rawPosts, userId);
+            verify(postReadModelEnricher, times(1)).enrichPostInfoRows(rawPosts, userId);
         }
 
         @Test
@@ -348,7 +349,7 @@ class PostQueryServiceTest {
 
             given(postRepository.findPopularPostsWithCursorV2(eq(lastViewCount), eq(lastPostId), any(PageRequest.class)))
                     .willReturn(rawPosts);
-            given(postReadModelCompositionService.composePostInfoRows(rawPosts, null)).willReturn(composedPosts);
+            given(postReadModelEnricher.enrichPostInfoRows(rawPosts, null)).willReturn(composedPosts);
 
             GetPostListResult result = postQueryService.getRecentPostsV2(
                     new GetRecentPostsV2Query(EPostSortType.POPULAR, lastViewCount, lastPublishedAt, lastPostId, 20, null)
@@ -358,7 +359,7 @@ class PostQueryServiceTest {
             assertThat(result.lastPostId()).isEqualTo(10L);
             assertThat(result.lastViewCount()).isEqualTo(200L);
             verify(postRepository, times(1)).findPopularPostsWithCursorV2(eq(lastViewCount), eq(lastPostId), any(PageRequest.class));
-            verify(postReadModelCompositionService, times(1)).composePostInfoRows(rawPosts, null);
+            verify(postReadModelEnricher, times(1)).enrichPostInfoRows(rawPosts, null);
         }
     }
 
@@ -379,7 +380,7 @@ class PostQueryServiceTest {
             );
 
             given(postRepository.findByCompanyWithCursor(eq(company), eq(null), any(PageRequest.class))).willReturn(rawPosts);
-            given(postReadModelCompositionService.composePostInfoRows(rawPosts, userId)).willReturn(composedPosts);
+            given(postReadModelEnricher.enrichPostInfoRows(rawPosts, userId)).willReturn(composedPosts);
 
             GetPostListResult result = postQueryService.getPostsByCompany(
                     new GetPostsByCompanyQuery(company, null, 20, userId)
@@ -389,7 +390,7 @@ class PostQueryServiceTest {
             assertThat(result.posts().get(0).company()).isEqualTo(company);
             assertThat(result.posts().get(0).isBookmarked()).isTrue();
             verify(postRepository, times(1)).findByCompanyWithCursor(eq(company), eq(null), any(PageRequest.class));
-            verify(postReadModelCompositionService, times(1)).composePostInfoRows(rawPosts, userId);
+            verify(postReadModelEnricher, times(1)).enrichPostInfoRows(rawPosts, userId);
         }
 
         @Test
@@ -404,7 +405,7 @@ class PostQueryServiceTest {
             );
 
             given(postRepository.findByCompanyWithCursor(eq(company), eq(null), any(PageRequest.class))).willReturn(rawPosts);
-            given(postReadModelCompositionService.composePostInfoRows(rawPosts, null)).willReturn(composedPosts);
+            given(postReadModelEnricher.enrichPostInfoRows(rawPosts, null)).willReturn(composedPosts);
 
             GetPostListResult result = postQueryService.getPostsByCompany(
                     new GetPostsByCompanyQuery(company, null, 20, null)
@@ -412,7 +413,7 @@ class PostQueryServiceTest {
 
             assertThat(result.posts()).hasSize(1);
             assertThat(result.posts().get(0).isBookmarked()).isNull();
-            verify(postReadModelCompositionService, times(1)).composePostInfoRows(rawPosts, null);
+            verify(postReadModelEnricher, times(1)).enrichPostInfoRows(rawPosts, null);
         }
     }
 
@@ -435,7 +436,7 @@ class PostQueryServiceTest {
 
             given(postRepository.findByCompanyNamesWithCursor(eq(null), eq(null), eq(null), any(PageRequest.class)))
                     .willReturn(rawPosts);
-            given(postReadModelCompositionService.composePostInfoRows(rawPosts, null)).willReturn(composedPosts);
+            given(postReadModelEnricher.enrichPostInfoRows(rawPosts, null)).willReturn(composedPosts);
 
             GetPostListResult result = postQueryService.getPostsByCompanyV2(
                     new GetPostsByCompanyV2Query(null, null, null, 20, null)
@@ -462,7 +463,7 @@ class PostQueryServiceTest {
 
             given(postRepository.findByCompanyNamesWithCursor(eq(companies), eq(null), eq(null), any(PageRequest.class)))
                     .willReturn(rawPosts);
-            given(postReadModelCompositionService.composePostInfoRows(rawPosts, null)).willReturn(composedPosts);
+            given(postReadModelEnricher.enrichPostInfoRows(rawPosts, null)).willReturn(composedPosts);
 
             GetPostListResult result = postQueryService.getPostsByCompanyV2(
                     new GetPostsByCompanyV2Query(companies, null, null, 20, null)
@@ -472,7 +473,7 @@ class PostQueryServiceTest {
             assertThat(result.lastPostId()).isEqualTo(1L);
             assertThat(result.lastPublishedAt()).isEqualTo(now.minusHours(1));
             verify(postRepository, times(1)).findByCompanyNamesWithCursor(eq(companies), eq(null), eq(null), any(PageRequest.class));
-            verify(postReadModelCompositionService, times(1)).composePostInfoRows(rawPosts, null);
+            verify(postReadModelEnricher, times(1)).enrichPostInfoRows(rawPosts, null);
         }
     }
 

@@ -1,6 +1,5 @@
 package com.techfork.post.application.query;
 
-import com.techfork.post.application.query.composition.PostReadModelCompositionService;
 import com.techfork.post.application.query.result.CompanyListItemResult;
 import com.techfork.post.application.query.result.GetCompanyListResult;
 import com.techfork.post.application.query.result.GetPostDetailResult;
@@ -27,7 +26,7 @@ import java.util.List;
 public class PostQueryService {
 
     private final PostRepository postRepository;
-    private final PostReadModelCompositionService postReadModelCompositionService;
+    private final PostReadModelEnricher postReadModelEnricher;
 
     public GetCompanyListResult getCompanies() {
         List<String> companies = postRepository.findDistinctCompanies();
@@ -58,15 +57,15 @@ public class PostQueryService {
     public GetPostListResult getPostsByCompany(GetPostsByCompanyQuery query) {
         PageRequest pageRequest = PageRequest.of(0, query.size() + 1);
         List<PostInfoRow> posts = postRepository.findByCompanyWithCursor(query.company(), query.lastPostId(), pageRequest);
-        List<PostInfoRow> composedPosts = postReadModelCompositionService.composePostInfoRows(posts, query.userId());
-        return toGetPostListResult(composedPosts, query.size());
+        List<PostInfoRow> enrichedPosts = postReadModelEnricher.enrichPostInfoRows(posts, query.userId());
+        return toGetPostListResult(enrichedPosts, query.size());
     }
 
     public GetPostListResult getPostsByCompanyV2(GetPostsByCompanyV2Query query) {
         PageRequest pageRequest = PageRequest.of(0, query.size() + 1);
         List<PostInfoRow> posts = postRepository.findByCompanyNamesWithCursor(query.companies(), query.lastPublishedAt(), query.lastPostId(), pageRequest);
-        List<PostInfoRow> composedPosts = postReadModelCompositionService.composePostInfoRows(posts, query.userId());
-        return toGetPostListResult(composedPosts, query.size());
+        List<PostInfoRow> enrichedPosts = postReadModelEnricher.enrichPostInfoRows(posts, query.userId());
+        return toGetPostListResult(enrichedPosts, query.size());
     }
 
     public GetPostListResult getRecentPosts(GetRecentPostsQuery query) {
@@ -79,8 +78,8 @@ public class PostQueryService {
             posts = postRepository.findRecentPostsWithCursor(query.lastPostId(), pageRequest);
         }
 
-        List<PostInfoRow> composedPosts = postReadModelCompositionService.composePostInfoRows(posts, query.userId());
-        return toGetPostListResult(composedPosts, query.size());
+        List<PostInfoRow> enrichedPosts = postReadModelEnricher.enrichPostInfoRows(posts, query.userId());
+        return toGetPostListResult(enrichedPosts, query.size());
     }
 
     public GetPostListResult getRecentPostsV2(GetRecentPostsV2Query query) {
@@ -93,15 +92,27 @@ public class PostQueryService {
             posts = postRepository.findRecentPostsWithCursorV2(query.lastPublishedAt(), query.lastPostId(), pageRequest);
         }
 
-        List<PostInfoRow> composedPosts = postReadModelCompositionService.composePostInfoRows(posts, query.userId());
-        return toGetPostListResult(composedPosts, query.size());
+        List<PostInfoRow> enrichedPosts = postReadModelEnricher.enrichPostInfoRows(posts, query.userId());
+        return toGetPostListResult(enrichedPosts, query.size());
     }
 
     public GetPostDetailResult getPostDetail(GetPostDetailQuery query) {
         PostDetailRow postDetail = postRepository.findByIdWithTechBlog(query.postId())
                 .orElseThrow(() -> new GeneralException(CommonErrorCode.NOT_FOUND));
+        PostDetailRow enrichedPostDetail = postReadModelEnricher.enrichPostDetailRow(postDetail, query.userId());
 
-        return postReadModelCompositionService.composePostDetail(postDetail, query.userId());
+        return GetPostDetailResult.builder()
+                .id(enrichedPostDetail.id())
+                .title(enrichedPostDetail.title())
+                .summary(enrichedPostDetail.summary())
+                .company(enrichedPostDetail.company())
+                .url(enrichedPostDetail.url())
+                .logoUrl(enrichedPostDetail.logoUrl())
+                .publishedAt(enrichedPostDetail.publishedAt())
+                .viewCount(enrichedPostDetail.viewCount())
+                .keywords(enrichedPostDetail.keywords())
+                .isBookmarked(enrichedPostDetail.isBookmarked())
+                .build();
     }
 
     private GetPostListResult toGetPostListResult(List<PostInfoRow> posts, int requestedSize) {

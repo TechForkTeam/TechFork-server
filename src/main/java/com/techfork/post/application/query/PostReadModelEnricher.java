@@ -1,11 +1,10 @@
-package com.techfork.post.application.query.composition;
+package com.techfork.post.application.query;
 
 import com.techfork.activity.bookmark.application.query.lookup.BookmarkLookupService;
+import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import com.techfork.post.application.query.lookup.PostKeywordLookupService;
-import com.techfork.post.application.query.result.GetPostDetailResult;
 import com.techfork.post.infrastructure.row.PostDetailRow;
 import com.techfork.post.infrastructure.row.PostInfoRow;
-import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,13 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class PostReadModelCompositionService {
+public class PostReadModelEnricher {
 
     private final PostKeywordLookupService postKeywordLookupService;
     private final BookmarkLookupService bookmarkLookupService;
     private final CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
 
-    public List<PostInfoRow> composePostInfoRows(List<PostInfoRow> posts, Long userId) {
+    public List<PostInfoRow> enrichPostInfoRows(List<PostInfoRow> posts, Long userId) {
         if (posts.isEmpty()) {
             return List.of();
         }
@@ -45,7 +44,7 @@ public class PostReadModelCompositionService {
                 .toList();
     }
 
-    public GetPostDetailResult composePostDetail(PostDetailRow postDetail, Long userId) {
+    public PostDetailRow enrichPostDetailRow(PostDetailRow postDetail, Long userId) {
         Long postId = postDetail.id();
         List<String> keywords = postKeywordLookupService.getKeywordsByPostIds(List.of(postId))
                 .getOrDefault(postId, List.of());
@@ -55,7 +54,7 @@ public class PostReadModelCompositionService {
                 postId
         );
 
-        return GetPostDetailResult.builder()
+        return PostDetailRow.builder()
                 .id(postDetail.id())
                 .title(postDetail.title())
                 .summary(postDetail.summary())
