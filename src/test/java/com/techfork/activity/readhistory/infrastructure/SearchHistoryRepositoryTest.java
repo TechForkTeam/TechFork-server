@@ -1,9 +1,9 @@
 package com.techfork.activity.readhistory.infrastructure;
 
 import com.techfork.activity.readhistory.domain.SearchHistory;
-import com.techfork.domain.useraccount.entity.User;
-import com.techfork.domain.useraccount.enums.SocialType;
-import com.techfork.domain.useraccount.repository.UserRepository;
+import com.techfork.useraccount.domain.User;
+import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.infrastructure.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;

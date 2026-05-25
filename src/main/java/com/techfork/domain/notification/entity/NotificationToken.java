@@ -1,6 +1,6 @@
 package com.techfork.domain.notification.entity;
 
-import com.techfork.domain.useraccount.entity.User;
+import com.techfork.useraccount.domain.User;
 import com.techfork.global.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

@@ -18,7 +18,7 @@ import com.techfork.domain.recommendation.repository.RecommendationHistoryReposi
 import com.techfork.domain.recommendation.service.MmrService.MmrCandidate;
 import com.techfork.domain.recommendation.service.MmrService.MmrResult;
 import com.techfork.domain.personalization.document.PersonalizationProfileDocument;
-import com.techfork.domain.useraccount.entity.User;
+import com.techfork.useraccount.domain.User;
 import com.techfork.domain.personalization.repository.PersonalizationProfileDocumentRepository;
 import com.techfork.global.util.RrfScorer;
 import com.techfork.global.util.TimeDecayStrategy;

@@ -1,6 +1,6 @@
 package com.techfork.activity.readhistory.domain;
 
-import com.techfork.domain.useraccount.entity.User;
+import com.techfork.useraccount.domain.User;
 import com.techfork.global.common.BaseEntity;
 import java.time.LocalDateTime;
 import jakarta.persistence.Column;

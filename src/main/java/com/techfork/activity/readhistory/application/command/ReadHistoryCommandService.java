@@ -2,8 +2,8 @@ package com.techfork.activity.readhistory.application.command;
 
 import com.techfork.activity.readhistory.domain.SearchHistory;
 import com.techfork.activity.readhistory.infrastructure.SearchHistoryRepository;
-import com.techfork.domain.useraccount.entity.User;
-import com.techfork.domain.useraccount.service.UserLookupService;
+import com.techfork.useraccount.domain.User;
+import com.techfork.useraccount.application.query.lookup.UserLookupService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

@@ -1,6 +1,6 @@
 package com.techfork.evaluation.recommendation.setup.components;
 
-import com.techfork.domain.useraccount.enums.EInterestCategory;
+import com.techfork.useraccount.domain.enums.EInterestCategory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 

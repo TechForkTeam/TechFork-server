@@ -1,8 +1,8 @@
 package com.techfork.global.security.oauth;
 
-import com.techfork.domain.useraccount.entity.User;
-import com.techfork.domain.useraccount.enums.SocialType;
-import com.techfork.domain.useraccount.repository.UserRepository;
+import com.techfork.useraccount.domain.User;
+import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.infrastructure.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;

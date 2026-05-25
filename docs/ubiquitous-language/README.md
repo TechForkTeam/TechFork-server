@@ -9,7 +9,7 @@
 
 - **기준 단위는 패키지가 아니라 바운디드 컨텍스트다.** 다만 각 문서에 현재 owning package를 함께 적어 코드 탐색 경로를 명확히 한다.
 - **유비쿼터스 언어 문서는 도메인 전략과 왕복한다.** 새 용어가 나오면 먼저 이 문서를 고치고, 경계가 바뀌면 `domain-strategy.md`를 함께 조정한다.
-- **전략 문서에서는 `User Account`와 `Personalization Profile`을 별도 컨텍스트로 본다.** 현재 구현도 `domain/useraccount`와 `domain/personalization`으로 물리 분리되어 있다.
+- **전략 문서에서는 `User Account`와 `Personalization Profile`을 별도 컨텍스트로 본다.** 현재 구현도 `useraccount`와 `domain/personalization`으로 물리 분리되어 있다.
 - 레거시 코드명(`ScrabPost`, `searchWord`, `markAsisClicked`)은 허용하되, 문서/PR/API에서는 표준 용어를 우선 사용한다.
 - 각 컨텍스트 문서는 가능하면 아래 다섯 블록을 유지한다.
   1. 표준 용어
@@ -26,7 +26,7 @@
 |---|---|---|---|
 | Source / Ingestion | [`source-ingestion.md`](./source-ingestion.md) | `src/main/java/com/techfork/domain/source` | RSS 수집, 소스 블로그, 파이프라인 시작점 |
 | Post / Content | [`post-content.md`](./post-content.md) | `src/main/java/com/techfork/post` | 기술 게시글 본문, 요약, 키워드, 검색 projection |
-| User Account | [`user-account.md`](./user-account.md) | `src/main/java/com/techfork/domain/useraccount` | 계정, 온보딩, 관심사, 계정 프로필 |
+| User Account | [`user-account.md`](./user-account.md) | `src/main/java/com/techfork/useraccount` | 계정, 온보딩, 관심사, 계정 프로필 |
 | Personalization Profile | [`personalization-profile.md`](./personalization-profile.md) | `src/main/java/com/techfork/domain/personalization` | 개인화 프로필 생성, 벡터, 핵심 키워드, 재생성 |
 | Activity | [`activity.md`](./activity.md) | `src/main/java/com/techfork/activity` | 읽기/검색/북마크 행동 기록 |
 | Search | [`search.md`](./search.md) | `src/main/java/com/techfork/domain/search` | query service / read model 중심 컨텍스트 |

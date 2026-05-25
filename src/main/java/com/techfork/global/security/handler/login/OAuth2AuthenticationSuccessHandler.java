@@ -1,6 +1,6 @@
 package com.techfork.global.security.handler.login;
 
-import com.techfork.domain.useraccount.enums.UserStatus;
+import com.techfork.useraccount.domain.enums.UserStatus;
 import com.techfork.global.security.auth.service.RefreshTokenService;
 import com.techfork.global.security.jwt.JwtDTO;
 import com.techfork.global.security.jwt.JwtProperties;

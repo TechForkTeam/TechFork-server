@@ -6,5 +6,5 @@
 - [User Account](./user-account.md)
 - [Personalization Profile](./personalization-profile.md)
 
-현재 구현은 `src/main/java/com/techfork/domain/useraccount`와
+현재 구현은 `src/main/java/com/techfork/useraccount`와
 `src/main/java/com/techfork/domain/personalization`로 분리되어 있습니다.
