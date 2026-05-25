@@ -80,6 +80,23 @@ TechFork의 비즈니스 도메인은 다음으로 정의할 수 있다.
 | Webhook/운영 알림 전송 | `WebhookNotificationService` | 외부 메시지 전송 자체는 범용 integration이다. |
 | 이미지 URL 최적화 | `CloudflareThirdPartyThumbnailOptimizer` | 썸네일 전달 최적화는 범용 지원 기술이다. |
 
+### `global` 패키지 해석 원칙
+
+`src/main/java/com/techfork/global`은 **독립 바운디드 컨텍스트가 아니라 shared implementation bucket**으로 해석한다.
+
+따라서 DDD 리팩터링에서는 `global`을 먼저 정리하는 것이 아니라, **실제 소유 컨텍스트를 먼저 정리하고 그 과정에서 `global` 코드를 회수**하는 방식을 기본 원칙으로 둔다.
+
+대표 분류는 다음과 같다.
+
+| 현재 위치 | DDD 해석 | 기본 처리 원칙 |
+|---|---|---|
+| `global/security/*` | `Auth / Security`의 실제 구현 표면 | Auth / Security 리팩터링 시 컨텍스트로 승격/회수 |
+| `global/llm/*` | 범용 provider adapter / AI integration | provider adapter는 shared로 유지, 프롬프트/정책은 owning context로 분리 |
+| `global/elasticsearch/query/*` | Search / Recommendation 후보 탐색 정책 support | Search / Recommendation 리팩터링 시 owning context로 회수 |
+| `global/util/LinearTimeDecayStrategy` | Recommendation 정책 | Recommendation 컨텍스트로 회수 |
+| `global/config/InitialDataConfig` | Source 초기 데이터 bootstrap | Source / Ingestion 컨텍스트로 회수 |
+| `global/common/*`, `global/response/*`, `global/exception/*`, 일부 `global/config/*`, `global/lock/*` | shared technical support | 진짜 공통이면 유지하거나 shared/platform support로 축소 |
+
 #### 분류상 주의사항
 
 - `User Account` 컨텍스트는 전체가 핵심은 아니다.  
@@ -93,6 +110,9 @@ TechFork의 비즈니스 도메인은 다음으로 정의할 수 있다.
   - 요약, 키워드 추출, 청크, 임베딩, 검색 문서화는 핵심 하위 도메인에 가깝다.
 - `Search` 컨텍스트에서 Elasticsearch 호출 자체는 일반 하위 도메인이지만, BM25/semantic/RRF/personal reranking 조합 정책은 핵심 하위 도메인이다.
 - `Recommendation` 컨텍스트는 거의 전체가 핵심 하위 도메인이다. 다만 executor, repository plumbing 같은 기술 요소는 일반/지원으로 볼 수 있다.
+- `global`은 문서상 독립 컨텍스트로 다루지 않는다.
+  - `global/security`처럼 실제 컨텍스트 소유권이 분명한 코드는 해당 컨텍스트로 승격한다.
+  - `BaseEntity`, `BaseResponse`, `GlobalExceptionHandler`, infra config처럼 진짜 공통 지원 코드는 shared/platform support로 유지한다.
 
 
 ---
