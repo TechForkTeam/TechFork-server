@@ -1,9 +1,9 @@
 package com.techfork.global.security.filter;
 
 import com.techfork.domain.auth.exception.AuthErrorCode;
-import com.techfork.domain.useraccount.entity.User;
-import com.techfork.domain.useraccount.enums.UserStatus;
-import com.techfork.domain.useraccount.repository.UserRepository;
+import com.techfork.useraccount.entity.User;
+import com.techfork.useraccount.enums.UserStatus;
+import com.techfork.useraccount.repository.UserRepository;
 import com.techfork.global.constant.Constants;
 import com.techfork.global.constant.MdcKey;
 import com.techfork.global.exception.GeneralException;

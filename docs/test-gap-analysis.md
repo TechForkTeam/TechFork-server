@@ -77,7 +77,7 @@
 | domain/post | 4 | 72 | tracked 기준 controller/repository/query service 중심. batch 테스트 3개는 아직 untracked |
 | domain/recommendation | 3 | 8 | 조회/컨버터 중심, 생성 로직 부족 |
 | domain/source | 10 | 38 | RSS/배치/스케줄러/락/웹훅 커버 좋음 |
-| domain/useraccount + domain/personalization | 8 | 61 | User Account service/controller/repository 커버 + Personalization Profile 기본 unit 안전망 확보 |
+| useraccount + domain/personalization | 8 | 61 | User Account service/controller/repository 커버 + Personalization Profile 기본 unit 안전망 확보 |
 | global | 6 | 32 | Security, cache, util, integration base |
 | evaluation | 28 | 16 | 검색/추천 품질 평가 및 fixture setup |
 

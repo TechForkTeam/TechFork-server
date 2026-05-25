@@ -1,7 +1,7 @@
 package com.techfork.activity.readpost.domain;
 
 import com.techfork.post.domain.Post;
-import com.techfork.domain.useraccount.entity.User;
+import com.techfork.useraccount.entity.User;
 import com.techfork.global.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

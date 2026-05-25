@@ -1,6 +1,6 @@
 package com.techfork.domain.recommendation.service;
 
-import com.techfork.domain.useraccount.entity.User;
+import com.techfork.useraccount.entity.User;
 
 /**
  * 추천 전략 인터페이스

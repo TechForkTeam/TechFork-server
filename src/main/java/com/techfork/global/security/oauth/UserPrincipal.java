@@ -1,8 +1,8 @@
 package com.techfork.global.security.oauth;
 
-import com.techfork.domain.useraccount.entity.User;
-import com.techfork.domain.useraccount.enums.Role;
-import com.techfork.domain.useraccount.enums.UserStatus;
+import com.techfork.useraccount.entity.User;
+import com.techfork.useraccount.enums.Role;
+import com.techfork.useraccount.enums.UserStatus;
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;

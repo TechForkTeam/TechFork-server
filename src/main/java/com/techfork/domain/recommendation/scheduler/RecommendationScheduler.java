@@ -2,8 +2,8 @@ package com.techfork.domain.recommendation.scheduler;
 
 import com.techfork.domain.recommendation.config.RecommendationProperties;
 import com.techfork.domain.recommendation.service.RecommendationService;
-import com.techfork.domain.useraccount.entity.User;
-import com.techfork.domain.useraccount.repository.UserRepository;
+import com.techfork.useraccount.entity.User;
+import com.techfork.useraccount.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

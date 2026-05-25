@@ -1,9 +1,9 @@
 package com.techfork.global.security.auth.service;
 
-import com.techfork.domain.useraccount.entity.User;
-import com.techfork.domain.useraccount.enums.Role;
-import com.techfork.domain.useraccount.enums.SocialType;
-import com.techfork.domain.useraccount.enums.UserStatus;
+import com.techfork.useraccount.entity.User;
+import com.techfork.useraccount.enums.Role;
+import com.techfork.useraccount.enums.SocialType;
+import com.techfork.useraccount.enums.UserStatus;
 import com.techfork.global.security.oauth.UserPrincipal;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

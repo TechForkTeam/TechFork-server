@@ -1,11 +1,11 @@
 # User Account
 
 > 사용자 계정, 온보딩, 관심사, 계정 프로필을 다루는 개념적 바운디드 컨텍스트입니다.  
-> 현재 구현은 `domain/useraccount`로 분리되어 있으며, `Personalization Profile`과 물리적으로도 구분됩니다.
+> 현재 구현은 `useraccount`로 분리되어 있으며, `Personalization Profile`과 물리적으로도 구분됩니다.
 
 ## Owning packages
 
-- `src/main/java/com/techfork/domain/useraccount`
+- `src/main/java/com/techfork/useraccount`
 
 ## 표준 용어
 
@@ -50,11 +50,11 @@
 
 ## 주요 근거 파일
 
-- `src/main/java/com/techfork/domain/useraccount/entity/User.java`
-- `src/main/java/com/techfork/domain/useraccount/enums/UserStatus.java`
-- `src/main/java/com/techfork/domain/useraccount/enums/EInterestCategory.java`
-- `src/main/java/com/techfork/domain/useraccount/enums/EInterestKeyword.java`
-- `src/main/java/com/techfork/domain/useraccount/service/UserCommandService.java`
-- `src/main/java/com/techfork/domain/useraccount/service/InterestCommandService.java`
-- `src/main/java/com/techfork/domain/useraccount/controller/OnboardingController.java`
-- `src/main/java/com/techfork/domain/useraccount/controller/UserController.java`
+- `src/main/java/com/techfork/useraccount/entity/User.java`
+- `src/main/java/com/techfork/useraccount/enums/UserStatus.java`
+- `src/main/java/com/techfork/useraccount/enums/EInterestCategory.java`
+- `src/main/java/com/techfork/useraccount/enums/EInterestKeyword.java`
+- `src/main/java/com/techfork/useraccount/service/UserCommandService.java`
+- `src/main/java/com/techfork/useraccount/service/InterestCommandService.java`
+- `src/main/java/com/techfork/useraccount/controller/OnboardingController.java`
+- `src/main/java/com/techfork/useraccount/controller/UserController.java`

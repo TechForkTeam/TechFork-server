@@ -8,10 +8,10 @@ import com.techfork.evaluation.recommendation.setup.components.TestDataGenerator
 import com.techfork.evaluation.recommendation.setup.components.TestDataGenerator.UserCreationResult;
 import com.techfork.evaluation.recommendation.util.EvaluationFixtureLoader;
 import com.techfork.domain.personalization.document.PersonalizationProfileDocument;
-import com.techfork.domain.useraccount.entity.User;
-import com.techfork.domain.useraccount.enums.EInterestCategory;
+import com.techfork.useraccount.entity.User;
+import com.techfork.useraccount.enums.EInterestCategory;
 import com.techfork.domain.personalization.repository.PersonalizationProfileDocumentRepository;
-import com.techfork.domain.useraccount.repository.UserRepository;
+import com.techfork.useraccount.repository.UserRepository;
 import com.techfork.global.common.IntegrationTestBase;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;

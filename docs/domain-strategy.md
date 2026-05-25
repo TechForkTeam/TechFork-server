@@ -139,7 +139,7 @@ TechFork의 비즈니스 도메인은 다음으로 정의할 수 있다.
 현재 문서 기준 결론은 다음과 같다.
 
 - **전략 문서와 glossary에서는 `User Account`와 `Personalization Profile`을 별도 컨텍스트로 본다.**
-- 현재 구현은 `domain/useraccount`와 `domain/personalization`으로 물리 분리되어 있다.
+- 현재 구현은 `useraccount`와 `domain/personalization`으로 물리 분리되어 있다.
 
 의미:
 

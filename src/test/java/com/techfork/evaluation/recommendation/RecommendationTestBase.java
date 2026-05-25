@@ -5,7 +5,7 @@ import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.post.infrastructure.PostDocumentRepository;
 import com.techfork.domain.recommendation.config.RecommendationProperties;
 import com.techfork.evaluation.recommendation.util.EvaluationFixtureLoader;
-import com.techfork.domain.useraccount.entity.User;
+import com.techfork.useraccount.entity.User;
 import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.global.config.ElasticsearchCacheManager;
 import com.techfork.global.util.VectorUtil;
@@ -51,7 +51,7 @@ public abstract class RecommendationTestBase extends IntegrationTestBase {
     @Autowired protected RecommendationEvaluationService evaluationService;
     @Autowired protected PostDocumentRepository postDocumentRepository;
     @Autowired protected ReadPostRepository readPostRepository;
-    @Autowired protected com.techfork.domain.useraccount.repository.UserRepository userRepository;
+    @Autowired protected com.techfork.useraccount.repository.UserRepository userRepository;
     @Autowired protected ElasticsearchClient elasticsearchClient;
     @Autowired protected ElasticsearchCacheManager elasticsearchCacheManager;
 
