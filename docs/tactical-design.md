@@ -213,6 +213,22 @@ createSocialUser() → PENDING
 - `PersonalizationProfileService`는 현재 Personalization Profile 쪽 생성 책임을 맡는 Application Service다. `User`, `Activity`, `Recommendation` 등 여러 컨텍스트를 조합하지만, 각 Aggregate의 상태 변경은 해당 Aggregate의 도메인 메서드를 통해서만 수행해야 한다.
 - 향후 컨텍스트 분리가 필요해지면 그 시점에 직접 참조를 ID 참조로 전환하고 ACL 또는 Anti-Corruption Layer를 도입한다.
 
+### 3.4 #382 현재 phase 유지 계약
+
+이번 phase 에서는 cross-context 결합을 모두 제거하지 않고, **유지할 seam** 과 **후속 분리 seam** 을 명시적으로 구분한다.
+
+| Seam | 이번 phase 결정 | 현재 공개 계약 / 설명 | 후속 분리 후보 |
+|---|---|---|---|
+| Activity → Post lookup | 유지 | `PostLookupService`, `PostKeywordLookupService` 를 Activity 의 **임시 application seam / repository-access choke-point** 로 유지한다. Activity 는 Post repository 직접 의존 대신 이 seam 을 통해 게시글/키워드를 읽지만, 아직 `Post` aggregate shape 를 그대로 노출한다. | 경량 조회 포트, DTO 기반 published query |
+| Search → Post | 유지 | Search 는 `PostDocument` 를 검색 후보 projection 으로 소비한다. `PostRepository` 사용은 후보 탐색이 아니라 `viewCount` 같은 metadata 조합으로 한정한다. | metadata 용 별도 read model / query port |
+| Recommendation → Post | 유지 | Recommendation 은 후보 탐색에는 `PostDocument` projection 을 사용하고, 저장 시점에만 `Post` reference 를 확보한다. 후보 탐색 seam 과 저장 seam 을 분리해서 해석한다. | 추천 저장용 최소 식별 공유, 이벤트 기반 추천 재생성 |
+| Source → Post 생성 | 유지 | `RssFeedItem` 은 Source 가 외부 RSS 를 정제해 만든 **현재 monolith 내부 handoff DTO** 로 보고, `Post.create(RssFeedItem, TechBlog)` 경계를 유지한다. 아직 published language 로 분리된 상태는 아니다. | Post 소유 command/published language, `TechnicalPostDiscovered` 이벤트 handoff |
+
+명시적 제외:
+
+- 이번 phase 에서는 이벤트 도입, `ManyToOne -> id reference` 전환, hexagonal port/adaptor 전환을 수행하지 않는다.
+- 목표는 구조 대수술이 아니라 **현재 의존의 의도와 한계를 문서/코드/테스트로 고정하는 것**이다.
+
 ---
 
 ## 4. Domain Event 발행/구독 규약

@@ -10,6 +10,12 @@ import java.util.List;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
+/**
+ * 검색/추천용 PostDocument 내부에 포함되는 콘텐츠 청크 projection.
+ *
+ * <p>ContentChunk 는 RDB aggregate 나 독립 도메인 엔티티가 아니라, Elasticsearch read model
+ * 안에서만 사용하는 projection 값이다.</p>
+ */
 public class ContentChunk {
 
     @Field(type = FieldType.Integer)

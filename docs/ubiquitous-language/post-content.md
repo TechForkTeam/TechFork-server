@@ -32,6 +32,10 @@
 - 도메인/기획 문서에서는 `Post`를 **기술 게시글**로 부른다.
 - `PostDocument`, `ContentChunk`는 aggregate가 아니라 **검색/추천용 projection**이다.
 - `Post.company`는 Source 컨텍스트의 출처명을 복사한 조회용 스냅샷이다.
+- Activity 컨텍스트가 게시글/키워드를 읽을 때의 현재 진입점은 `PostLookupService`, `PostKeywordLookupService`다. 다만 이것은 published query 라기보다 repository 직접 의존을 막는 임시 application seam 에 가깝다.
+- Search 는 후보 탐색에 `PostDocument` 를 사용하고, `viewCount` 같은 응답 metadata 는 별도 query composition 으로 읽는다.
+- `Post.create(RssFeedItem, TechBlog)`는 현재 Source 컨텍스트가 정제한 **monolith 내부 handoff DTO** 를 받는 생성 경계로 유지한다.
+- `RssFeedItem` 직접 참조를 없애는 별도 published language, command object, 이벤트 handoff 는 후속 리팩토링 후보로 남긴다.
 - production 경로에서는 `Post.incrementViewCount()` 같은 엔티티 필드 증가를 사용하지 않고 `PostViewCountCommandService`/`PostRepository`의 SQL atomic update를 canonical write path로 둔다.
 - Activity 컨텍스트에서는 `first_read_posts(user_id, post_id)` dedupe ledger를 통과한 최초 읽기에서만 `PostViewCountCommandService.incrementViewCount()`를 호출한다.
 - `PostViewCountCommandService.incrementViewCount()`는 DB 값을 원자적으로 증가시키지만, 이미 로드된 managed `Post`의 `viewCount`를 같은 트랜잭션 안에서 최신 상태로 동기화하지는 않는다.
