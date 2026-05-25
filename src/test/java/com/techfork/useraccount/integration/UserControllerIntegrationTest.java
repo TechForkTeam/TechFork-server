@@ -1,4 +1,4 @@
-package com.techfork.useraccount.presentation;
+package com.techfork.useraccount.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techfork.useraccount.presentation.request.UpdateAccountProfileRequest;
