@@ -20,6 +20,12 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
+/**
+ * Search / Recommendation 이 소비하는 게시글 projection.
+ *
+ * <p>PostDocument 는 Post aggregate 자체가 아니라 Elasticsearch 의 read model 이며,
+ * 검색/추천 컨텍스트가 후보 탐색과 리랭킹에 사용하는 published projection contract 이다.</p>
+ */
 public class PostDocument {
 
     @Id

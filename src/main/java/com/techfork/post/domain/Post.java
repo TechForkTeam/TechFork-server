@@ -91,6 +91,13 @@ public class Post extends BaseEntity {
         this.techBlog = techBlog;
     }
 
+    /**
+     * Source 컨텍스트가 정제한 현재 monolith 내부 handoff DTO 에서 기술 게시글 aggregate 를 생성한다.
+     *
+     * <p>DDD 순도 관점에서는 다른 컨텍스트 DTO 의 직접 참조를 줄이는 편이 더 이상적이지만,
+     * 현재 phase 에서는 {@link RssFeedItem} 직접 참조를 유지한다.
+     * 별도 published language, command object, 이벤트 handoff 전환은 후속 작업 범위다.</p>
+     */
     public static Post create(RssFeedItem item, TechBlog techBlog) {
         return Post.builder()
                 .title(item.title())
@@ -105,7 +112,6 @@ public class Post extends BaseEntity {
                 .techBlog(techBlog)
                 .build();
     }
-
 
     public void updateSummaries(String summary, String shortSummary) {
         this.summary = summary;
