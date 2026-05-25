@@ -1,6 +1,6 @@
-package com.techfork.useraccount.entity;
+package com.techfork.useraccount.domain;
 
-import com.techfork.useraccount.enums.EInterestCategory;
+import com.techfork.useraccount.domain.enums.EInterestCategory;
 import com.techfork.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

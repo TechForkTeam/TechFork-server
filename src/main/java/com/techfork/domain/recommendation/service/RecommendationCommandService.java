@@ -1,7 +1,7 @@
 package com.techfork.domain.recommendation.service;
 
-import com.techfork.useraccount.entity.User;
-import com.techfork.useraccount.repository.UserRepository;
+import com.techfork.useraccount.domain.User;
+import com.techfork.useraccount.infrastructure.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

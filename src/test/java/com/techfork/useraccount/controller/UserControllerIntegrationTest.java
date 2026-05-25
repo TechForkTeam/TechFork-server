@@ -2,11 +2,11 @@ package com.techfork.useraccount.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techfork.useraccount.dto.UpdateAccountProfileRequest;
-import com.techfork.useraccount.entity.User;
-import com.techfork.useraccount.enums.Role;
-import com.techfork.useraccount.enums.SocialType;
-import com.techfork.useraccount.enums.UserStatus;
-import com.techfork.useraccount.repository.UserRepository;
+import com.techfork.useraccount.domain.User;
+import com.techfork.useraccount.domain.enums.Role;
+import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.domain.enums.UserStatus;
+import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.global.security.jwt.JwtDTO;
 import com.techfork.global.security.jwt.JwtUtil;

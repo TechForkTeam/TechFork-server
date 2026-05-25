@@ -1,6 +1,6 @@
-package com.techfork.useraccount.repository;
+package com.techfork.useraccount.infrastructure;
 
-import com.techfork.useraccount.entity.UserInterestCategory;
+import com.techfork.useraccount.domain.UserInterestCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

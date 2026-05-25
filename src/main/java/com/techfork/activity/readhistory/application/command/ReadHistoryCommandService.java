@@ -2,7 +2,7 @@ package com.techfork.activity.readhistory.application.command;
 
 import com.techfork.activity.readhistory.domain.SearchHistory;
 import com.techfork.activity.readhistory.infrastructure.SearchHistoryRepository;
-import com.techfork.useraccount.entity.User;
+import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.service.UserLookupService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -2,9 +2,9 @@ package com.techfork.useraccount.converter;
 
 import com.techfork.useraccount.dto.InterestListResponse;
 import com.techfork.useraccount.dto.UserInterestDto;
-import com.techfork.useraccount.entity.UserInterestCategory;
-import com.techfork.useraccount.enums.EInterestCategory;
-import com.techfork.useraccount.enums.EInterestKeyword;
+import com.techfork.useraccount.domain.UserInterestCategory;
+import com.techfork.useraccount.domain.enums.EInterestCategory;
+import com.techfork.useraccount.domain.enums.EInterestKeyword;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;

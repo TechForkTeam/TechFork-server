@@ -1,4 +1,4 @@
-package com.techfork.useraccount.repository;
+package com.techfork.useraccount.infrastructure;
 
 import com.techfork.activity.readpost.domain.ReadPost;
 import com.techfork.activity.bookmark.domain.Bookmark;
@@ -10,10 +10,10 @@ import com.techfork.post.domain.Post;
 import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.repository.TechBlogRepository;
-import com.techfork.useraccount.entity.User;
-import com.techfork.useraccount.entity.UserInterestCategory;
-import com.techfork.useraccount.enums.EInterestCategory;
-import com.techfork.useraccount.enums.SocialType;
+import com.techfork.useraccount.domain.User;
+import com.techfork.useraccount.domain.UserInterestCategory;
+import com.techfork.useraccount.domain.enums.EInterestCategory;
+import com.techfork.useraccount.domain.enums.SocialType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

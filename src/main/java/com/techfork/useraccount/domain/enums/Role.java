@@ -1,4 +1,4 @@
-package com.techfork.useraccount.enums;
+package com.techfork.useraccount.domain.enums;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

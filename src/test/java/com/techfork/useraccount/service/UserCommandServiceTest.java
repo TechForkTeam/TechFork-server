@@ -4,10 +4,10 @@ import com.techfork.useraccount.dto.OnboardingRequest;
 import com.techfork.useraccount.dto.SaveInterestRequest;
 import com.techfork.useraccount.dto.UpdateAccountProfileRequest;
 import com.techfork.useraccount.dto.UserInterestDto;
-import com.techfork.useraccount.entity.User;
-import com.techfork.useraccount.enums.SocialType;
-import com.techfork.useraccount.exception.UserErrorCode;
-import com.techfork.useraccount.repository.UserRepository;
+import com.techfork.useraccount.domain.User;
+import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.domain.exception.UserErrorCode;
+import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.global.security.auth.service.UserAuthCacheService;
 import org.junit.jupiter.api.BeforeEach;
@@ -302,7 +302,7 @@ class UserCommandServiceTest {
         userCommandService.withdrawUser(userId);
 
         // Then
-        assertThat(testUser.getStatus()).isEqualTo(com.techfork.useraccount.enums.UserStatus.WITHDRAWN);
+        assertThat(testUser.getStatus()).isEqualTo(com.techfork.useraccount.domain.enums.UserStatus.WITHDRAWN);
         assertThat(testUser.isWithdrawn()).isTrue();
 
         // 개인정보 익명화 확인

@@ -1,8 +1,8 @@
-package com.techfork.useraccount.entity;
+package com.techfork.useraccount.domain;
 
-import com.techfork.useraccount.enums.Role;
-import com.techfork.useraccount.enums.SocialType;
-import com.techfork.useraccount.enums.UserStatus;
+import com.techfork.useraccount.domain.enums.Role;
+import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.domain.enums.UserStatus;
 import com.techfork.global.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

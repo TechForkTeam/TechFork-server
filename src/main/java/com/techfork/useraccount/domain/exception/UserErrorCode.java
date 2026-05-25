@@ -1,4 +1,4 @@
-package com.techfork.useraccount.exception;
+package com.techfork.useraccount.domain.exception;
 
 import com.techfork.global.common.code.BaseCode;
 import com.techfork.global.response.ReasonDTO;

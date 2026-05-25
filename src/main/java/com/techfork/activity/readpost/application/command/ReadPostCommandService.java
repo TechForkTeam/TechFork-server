@@ -7,7 +7,7 @@ import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.post.domain.Post;
 import com.techfork.post.application.command.PostViewCountCommandService;
 import com.techfork.post.application.query.lookup.PostLookupService;
-import com.techfork.useraccount.entity.User;
+import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.service.UserLookupService;
 import com.techfork.global.exception.GeneralException;
 import lombok.RequiredArgsConstructor;

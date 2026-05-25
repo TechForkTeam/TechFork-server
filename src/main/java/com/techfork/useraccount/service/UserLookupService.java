@@ -1,8 +1,8 @@
 package com.techfork.useraccount.service;
 
-import com.techfork.useraccount.entity.User;
-import com.techfork.useraccount.exception.UserErrorCode;
-import com.techfork.useraccount.repository.UserRepository;
+import com.techfork.useraccount.domain.User;
+import com.techfork.useraccount.domain.exception.UserErrorCode;
+import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

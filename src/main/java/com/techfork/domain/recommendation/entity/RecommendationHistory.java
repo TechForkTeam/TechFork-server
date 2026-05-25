@@ -1,7 +1,7 @@
 package com.techfork.domain.recommendation.entity;
 
 import com.techfork.post.domain.Post;
-import com.techfork.useraccount.entity.User;
+import com.techfork.useraccount.domain.User;
 import com.techfork.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

@@ -1,7 +1,7 @@
 package com.techfork.useraccount.converter;
 
 import com.techfork.useraccount.dto.AccountProfileResponse;
-import com.techfork.useraccount.entity.User;
+import com.techfork.useraccount.domain.User;
 import org.springframework.stereotype.Component;
 
 @Component

@@ -1,7 +1,7 @@
-package com.techfork.useraccount.repository;
+package com.techfork.useraccount.infrastructure;
 
-import com.techfork.useraccount.entity.User;
-import com.techfork.useraccount.enums.SocialType;
+import com.techfork.useraccount.domain.User;
+import com.techfork.useraccount.domain.enums.SocialType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

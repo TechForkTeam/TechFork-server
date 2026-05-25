@@ -1,8 +1,8 @@
 package com.techfork.global.security.auth.service;
 
-import com.techfork.useraccount.entity.User;
-import com.techfork.useraccount.enums.Role;
-import com.techfork.useraccount.enums.UserStatus;
+import com.techfork.useraccount.domain.User;
+import com.techfork.useraccount.domain.enums.Role;
+import com.techfork.useraccount.domain.enums.UserStatus;
 import com.techfork.global.constant.RedisKey;
 import com.techfork.global.security.oauth.UserPrincipal;
 import lombok.RequiredArgsConstructor;

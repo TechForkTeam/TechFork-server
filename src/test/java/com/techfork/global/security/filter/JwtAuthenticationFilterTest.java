@@ -1,10 +1,10 @@
 package com.techfork.global.security.filter;
 
-import com.techfork.useraccount.entity.User;
-import com.techfork.useraccount.enums.Role;
-import com.techfork.useraccount.enums.SocialType;
-import com.techfork.useraccount.enums.UserStatus;
-import com.techfork.useraccount.repository.UserRepository;
+import com.techfork.useraccount.domain.User;
+import com.techfork.useraccount.domain.enums.Role;
+import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.domain.enums.UserStatus;
+import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.security.auth.service.UserAuthCacheService;
 import com.techfork.global.security.jwt.JwtProperties;
 import com.techfork.global.security.jwt.JwtUtil;

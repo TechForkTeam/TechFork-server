@@ -2,11 +2,11 @@ package com.techfork.useraccount.service;
 
 import com.techfork.useraccount.dto.SaveInterestRequest;
 import com.techfork.useraccount.dto.UserInterestDto;
-import com.techfork.useraccount.entity.User;
-import com.techfork.useraccount.entity.UserInterestCategory;
-import com.techfork.useraccount.enums.SocialType;
-import com.techfork.useraccount.exception.UserErrorCode;
-import com.techfork.useraccount.repository.UserRepository;
+import com.techfork.useraccount.domain.User;
+import com.techfork.useraccount.domain.UserInterestCategory;
+import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.domain.exception.UserErrorCode;
+import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.domain.personalization.service.PersonalizationProfileService;
 import com.techfork.global.exception.GeneralException;
 import org.junit.jupiter.api.DisplayName;

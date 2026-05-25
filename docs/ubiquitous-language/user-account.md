@@ -50,10 +50,10 @@
 
 ## 주요 근거 파일
 
-- `src/main/java/com/techfork/useraccount/entity/User.java`
-- `src/main/java/com/techfork/useraccount/enums/UserStatus.java`
-- `src/main/java/com/techfork/useraccount/enums/EInterestCategory.java`
-- `src/main/java/com/techfork/useraccount/enums/EInterestKeyword.java`
+- `src/main/java/com/techfork/useraccount/domain/User.java`
+- `src/main/java/com/techfork/useraccount/domain/enums/UserStatus.java`
+- `src/main/java/com/techfork/useraccount/domain/enums/EInterestCategory.java`
+- `src/main/java/com/techfork/useraccount/domain/enums/EInterestKeyword.java`
 - `src/main/java/com/techfork/useraccount/service/UserCommandService.java`
 - `src/main/java/com/techfork/useraccount/service/InterestCommandService.java`
 - `src/main/java/com/techfork/useraccount/controller/OnboardingController.java`

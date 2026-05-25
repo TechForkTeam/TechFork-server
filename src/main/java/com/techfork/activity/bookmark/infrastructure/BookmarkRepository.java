@@ -2,7 +2,7 @@ package com.techfork.activity.bookmark.infrastructure;
 
 import com.techfork.activity.bookmark.domain.Bookmark;
 import com.techfork.post.domain.Post;
-import com.techfork.useraccount.entity.User;
+import com.techfork.useraccount.domain.User;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
