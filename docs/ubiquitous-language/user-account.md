@@ -56,5 +56,5 @@
 - `src/main/java/com/techfork/useraccount/domain/enums/EInterestKeyword.java`
 - `src/main/java/com/techfork/useraccount/application/command/UserCommandService.java`
 - `src/main/java/com/techfork/useraccount/application/command/InterestCommandService.java`
-- `src/main/java/com/techfork/useraccount/controller/OnboardingController.java`
-- `src/main/java/com/techfork/useraccount/controller/UserController.java`
+- `src/main/java/com/techfork/useraccount/presentation/OnboardingController.java`
+- `src/main/java/com/techfork/useraccount/presentation/UserController.java`

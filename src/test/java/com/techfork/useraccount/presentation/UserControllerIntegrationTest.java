@@ -1,7 +1,7 @@
-package com.techfork.useraccount.controller;
+package com.techfork.useraccount.presentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.techfork.useraccount.dto.UpdateAccountProfileRequest;
+import com.techfork.useraccount.presentation.request.UpdateAccountProfileRequest;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.SocialType;

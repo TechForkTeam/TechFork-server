@@ -1,13 +1,13 @@
-package com.techfork.useraccount.converter;
+package com.techfork.useraccount.presentation;
 
 import com.techfork.useraccount.application.command.UpdateUserInterestsCommand;
 import com.techfork.useraccount.application.command.UserInterestCommand;
 import com.techfork.useraccount.application.query.result.GetInterestListResult;
 import com.techfork.useraccount.application.query.result.GetUserInterestsResult;
-import com.techfork.useraccount.dto.InterestListResponse;
-import com.techfork.useraccount.dto.SaveInterestRequest;
-import com.techfork.useraccount.dto.UserInterestDto;
-import com.techfork.useraccount.dto.UserInterestResponse;
+import com.techfork.useraccount.presentation.request.SaveInterestRequest;
+import com.techfork.useraccount.presentation.request.UserInterestRequest;
+import com.techfork.useraccount.presentation.response.InterestListResponse;
+import com.techfork.useraccount.presentation.response.UserInterestResponse;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -15,7 +15,7 @@ import java.util.List;
 @Component
 public class InterestConverter {
 
-    public List<UserInterestCommand> toUserInterestCommands(List<UserInterestDto> interests) {
+    public List<UserInterestCommand> toUserInterestCommands(List<UserInterestRequest> interests) {
         return interests.stream()
                 .map(interest -> UserInterestCommand.builder()
                         .category(interest.category())
@@ -45,7 +45,7 @@ public class InterestConverter {
     public UserInterestResponse toUserInterestResponse(GetUserInterestsResult result) {
         return UserInterestResponse.builder()
                 .interests(result.interests().stream()
-                        .map(interest -> UserInterestDto.builder()
+                        .map(interest -> UserInterestResponse.Interest.builder()
                                 .category(interest.category())
                                 .keywords(interest.keywords())
                                 .build())

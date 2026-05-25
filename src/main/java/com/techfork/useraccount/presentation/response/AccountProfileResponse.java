@@ -1,4 +1,4 @@
-package com.techfork.useraccount.dto;
+package com.techfork.useraccount.presentation.response;
 
 import lombok.Builder;
 

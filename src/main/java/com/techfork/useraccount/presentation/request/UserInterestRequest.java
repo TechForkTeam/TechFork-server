@@ -1,11 +1,11 @@
-package com.techfork.useraccount.dto;
+package com.techfork.useraccount.presentation.request;
 
 import lombok.Builder;
 
 import java.util.List;
 
 @Builder
-public record UserInterestDto(
+public record UserInterestRequest(
         String category,
         List<String> keywords
 ) {

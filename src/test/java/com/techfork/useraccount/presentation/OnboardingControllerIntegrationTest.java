@@ -1,8 +1,8 @@
-package com.techfork.useraccount.controller;
+package com.techfork.useraccount.presentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.techfork.useraccount.dto.OnboardingRequest;
-import com.techfork.useraccount.dto.UserInterestDto;
+import com.techfork.useraccount.presentation.request.OnboardingRequest;
+import com.techfork.useraccount.presentation.request.UserInterestRequest;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.SocialType;
@@ -98,12 +98,12 @@ class OnboardingControllerIntegrationTest extends IntegrationTestBase {
     @DisplayName("온보딩 완료 - 정상 케이스")
     void completeOnboarding_Success() throws Exception {
         // Given
-        List<UserInterestDto> interests = List.of(
-                UserInterestDto.builder()
+        List<UserInterestRequest> interests = List.of(
+                UserInterestRequest.builder()
                         .category("BACKEND")
                         .keywords(List.of("JAVA", "SPRING"))
                         .build(),
-                UserInterestDto.builder()
+                UserInterestRequest.builder()
                         .category("DATABASE")
                         .keywords(List.of("MYSQL", "REDIS"))
                         .build()
@@ -144,7 +144,7 @@ class OnboardingControllerIntegrationTest extends IntegrationTestBase {
                 "user@techfork.com",
                 null,
                 List.of(
-                        UserInterestDto.builder()
+                        UserInterestRequest.builder()
                                 .category("FRONTEND")
                                 .keywords(List.of("REACT"))
                                 .build()
@@ -175,7 +175,7 @@ class OnboardingControllerIntegrationTest extends IntegrationTestBase {
                 "user@techfork.com",
                 null,
                 List.of(
-                        UserInterestDto.builder()
+                        UserInterestRequest.builder()
                                 .category("BACKEND")
                                 .keywords(List.of("JAVA"))
                                 .build()
@@ -202,7 +202,7 @@ class OnboardingControllerIntegrationTest extends IntegrationTestBase {
                 "user@techfork.com",
                 null,
                 List.of(
-                        UserInterestDto.builder()
+                        UserInterestRequest.builder()
                                 .category("BACKEND")
                                 .keywords(List.of("JAVA"))
                                 .build()
@@ -229,7 +229,7 @@ class OnboardingControllerIntegrationTest extends IntegrationTestBase {
                 "invalid-email", // 잘못된 이메일 형식
                 null,
                 List.of(
-                        UserInterestDto.builder()
+                        UserInterestRequest.builder()
                                 .category("BACKEND")
                                 .keywords(List.of("JAVA"))
                                 .build()
@@ -280,7 +280,7 @@ class OnboardingControllerIntegrationTest extends IntegrationTestBase {
                 "user@techfork.com",
                 longDescription,
                 List.of(
-                        UserInterestDto.builder()
+                        UserInterestRequest.builder()
                                 .category("BACKEND")
                                 .keywords(List.of("JAVA"))
                                 .build()
@@ -302,16 +302,16 @@ class OnboardingControllerIntegrationTest extends IntegrationTestBase {
     @DisplayName("온보딩 완료 - 여러 카테고리와 키워드 조합")
     void completeOnboarding_MultipleCategories_Success() throws Exception {
         // Given
-        List<UserInterestDto> interests = List.of(
-                UserInterestDto.builder()
+        List<UserInterestRequest> interests = List.of(
+                UserInterestRequest.builder()
                         .category("BACKEND")
                         .keywords(List.of("JAVA", "SPRING", "PYTHON"))
                         .build(),
-                UserInterestDto.builder()
+                UserInterestRequest.builder()
                         .category("DEVOPS")
                         .keywords(List.of("DOCKER", "KUBERNETES"))
                         .build(),
-                UserInterestDto.builder()
+                UserInterestRequest.builder()
                         .category("DATABASE")
                         .keywords(List.of("MYSQL", "POSTGRESQL", "REDIS"))
                         .build()

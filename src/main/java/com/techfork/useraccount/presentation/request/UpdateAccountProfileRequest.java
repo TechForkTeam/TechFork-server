@@ -1,4 +1,4 @@
-package com.techfork.useraccount.dto;
+package com.techfork.useraccount.presentation.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

@@ -1,12 +1,10 @@
-package com.techfork.useraccount.controller;
+package com.techfork.useraccount.presentation;
 
-import com.techfork.useraccount.application.query.result.GetInterestListResult;
-import com.techfork.useraccount.converter.InterestConverter;
-import com.techfork.useraccount.converter.UserConverter;
-import com.techfork.useraccount.dto.InterestListResponse;
-import com.techfork.useraccount.dto.OnboardingRequest;
-import com.techfork.useraccount.application.query.InterestQueryService;
 import com.techfork.useraccount.application.command.UserCommandService;
+import com.techfork.useraccount.application.query.InterestQueryService;
+import com.techfork.useraccount.application.query.result.GetInterestListResult;
+import com.techfork.useraccount.presentation.request.OnboardingRequest;
+import com.techfork.useraccount.presentation.response.InterestListResponse;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import com.techfork.global.security.oauth.UserPrincipal;

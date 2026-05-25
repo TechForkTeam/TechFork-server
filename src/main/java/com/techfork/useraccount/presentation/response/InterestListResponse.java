@@ -1,4 +1,4 @@
-package com.techfork.useraccount.dto;
+package com.techfork.useraccount.presentation.response;
 
 import lombok.Builder;
 
@@ -13,10 +13,12 @@ public record InterestListResponse(
             String category,
             String displayName,
             List<Keyword> keywords
-    ) {}
+    ) {
+    }
 
     public record Keyword(
             String keyword,
             String displayName
-    ) {}
+    ) {
+    }
 }

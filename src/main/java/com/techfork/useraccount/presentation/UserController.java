@@ -1,4 +1,4 @@
-package com.techfork.useraccount.controller;
+package com.techfork.useraccount.presentation;
 
 import com.techfork.useraccount.application.command.InterestCommandService;
 import com.techfork.useraccount.application.command.UserCommandService;
@@ -9,12 +9,10 @@ import com.techfork.useraccount.application.query.InterestQueryService;
 import com.techfork.useraccount.application.query.UserQueryService;
 import com.techfork.useraccount.application.query.result.GetAccountProfileResult;
 import com.techfork.useraccount.application.query.result.GetUserInterestsResult;
-import com.techfork.useraccount.converter.InterestConverter;
-import com.techfork.useraccount.converter.UserConverter;
-import com.techfork.useraccount.dto.AccountProfileResponse;
-import com.techfork.useraccount.dto.SaveInterestRequest;
-import com.techfork.useraccount.dto.UpdateAccountProfileRequest;
-import com.techfork.useraccount.dto.UserInterestResponse;
+import com.techfork.useraccount.presentation.request.SaveInterestRequest;
+import com.techfork.useraccount.presentation.request.UpdateAccountProfileRequest;
+import com.techfork.useraccount.presentation.response.AccountProfileResponse;
+import com.techfork.useraccount.presentation.response.UserInterestResponse;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import com.techfork.global.security.oauth.UserPrincipal;

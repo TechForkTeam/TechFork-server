@@ -1,6 +1,10 @@
-package com.techfork.useraccount.dto;
+package com.techfork.useraccount.presentation.request;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.util.List;
 
@@ -18,6 +22,6 @@ public record OnboardingRequest(
 
         @NotNull(message = "관심사 목록은 필수입니다.")
         @NotEmpty(message = "관심사를 최소 1개 이상 선택해주세요.")
-        List<UserInterestDto> interests
+        List<UserInterestRequest> interests
 ) {
 }
