@@ -1,9 +1,12 @@
 package com.techfork.useraccount.controller;
 
+import com.techfork.useraccount.application.query.result.GetInterestListResult;
+import com.techfork.useraccount.converter.InterestConverter;
+import com.techfork.useraccount.converter.UserConverter;
 import com.techfork.useraccount.dto.InterestListResponse;
 import com.techfork.useraccount.dto.OnboardingRequest;
-import com.techfork.useraccount.service.InterestQueryService;
-import com.techfork.useraccount.service.UserCommandService;
+import com.techfork.useraccount.application.query.InterestQueryService;
+import com.techfork.useraccount.application.command.UserCommandService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import com.techfork.global.security.oauth.UserPrincipal;
@@ -14,7 +17,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Onboarding", description = "온보딩 API")
 @Slf4j
@@ -25,6 +32,8 @@ public class OnboardingController {
 
     private final InterestQueryService interestQueryService;
     private final UserCommandService userCommandService;
+    private final InterestConverter interestConverter;
+    private final UserConverter userConverter;
 
     @Operation(
             summary = "관심사 목록 조회",
@@ -32,7 +41,8 @@ public class OnboardingController {
     )
     @GetMapping("/interests")
     public ResponseEntity<BaseResponse<InterestListResponse>> getInterests() {
-        InterestListResponse response = interestQueryService.getAllInterests();
+        GetInterestListResult result = interestQueryService.getAllInterests();
+        InterestListResponse response = interestConverter.toInterestListResponse(result);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 
@@ -45,7 +55,13 @@ public class OnboardingController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody OnboardingRequest request
     ) {
-        userCommandService.completeOnboarding(userPrincipal.getId(), request);
+        userCommandService.completeOnboarding(
+                userConverter.toCompleteOnboardingCommand(
+                        userPrincipal.getId(),
+                        request,
+                        interestConverter.toUserInterestCommands(request.interests())
+                )
+        );
         return BaseResponse.of(SuccessCode.CREATED);
     }
 }

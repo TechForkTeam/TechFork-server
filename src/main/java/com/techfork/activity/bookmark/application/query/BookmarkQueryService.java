@@ -4,7 +4,7 @@ import com.techfork.activity.bookmark.infrastructure.BookmarkQueryRow;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.post.application.query.lookup.PostKeywordLookupService;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.service.UserLookupService;
+import com.techfork.useraccount.application.query.lookup.UserLookupService;
 import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import java.util.List;
 import java.util.Map;

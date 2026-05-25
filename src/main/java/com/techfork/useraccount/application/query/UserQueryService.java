@@ -1,7 +1,6 @@
-package com.techfork.useraccount.service;
+package com.techfork.useraccount.application.query;
 
-import com.techfork.useraccount.converter.UserConverter;
-import com.techfork.useraccount.dto.AccountProfileResponse;
+import com.techfork.useraccount.application.query.result.GetAccountProfileResult;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
 import com.techfork.useraccount.infrastructure.UserRepository;
@@ -18,14 +17,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserQueryService {
 
     private final UserRepository userRepository;
-    private final UserConverter userConverter;
 
-    public AccountProfileResponse getAccountProfile(Long userId) {
-        User user = userRepository.findById(userId)
+    public GetAccountProfileResult getAccountProfile(GetAccountProfileQuery query) {
+        User user = userRepository.findById(query.userId())
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
-        log.info("Account profile retrieved for userId: {}", userId);
+        log.info("Account profile retrieved for userId: {}", query.userId());
 
-        return userConverter.toAccountProfileResponse(user);
+        return GetAccountProfileResult.builder()
+                .profileImage(user.getProfileImage())
+                .nickName(user.getNickName())
+                .email(user.getEmail())
+                .description(user.getDescription())
+                .build();
     }
 }

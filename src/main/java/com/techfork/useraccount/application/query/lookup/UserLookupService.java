@@ -1,4 +1,4 @@
-package com.techfork.useraccount.service;
+package com.techfork.useraccount.application.query.lookup;
 
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.exception.UserErrorCode;

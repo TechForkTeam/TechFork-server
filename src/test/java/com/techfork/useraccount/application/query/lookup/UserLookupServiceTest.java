@@ -1,16 +1,17 @@
-package com.techfork.useraccount.service;
+package com.techfork.useraccount.application.query.lookup;
 
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.exception.GeneralException;
-import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

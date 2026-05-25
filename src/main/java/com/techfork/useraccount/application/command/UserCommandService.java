@@ -1,14 +1,10 @@
-package com.techfork.useraccount.service;
+package com.techfork.useraccount.application.command;
 
-import com.techfork.useraccount.dto.OnboardingRequest;
-import com.techfork.useraccount.dto.SaveInterestRequest;
-import com.techfork.useraccount.dto.UpdateAccountProfileRequest;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.global.security.auth.service.UserAuthCacheService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,31 +20,31 @@ public class UserCommandService {
     private final UserRepository userRepository;
     private final UserAuthCacheService userAuthCacheService;
 
-    public void completeOnboarding(Long userId, @Valid OnboardingRequest request) {
-        User user = userRepository.findByIdWithInterestCategories(userId)
+    public void completeOnboarding(CompleteOnboardingCommand command) {
+        User user = userRepository.findByIdWithInterestCategories(command.userId())
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
-        user.updateUser(request.nickname(), request.email(), request.description());
+        user.updateUser(command.nickname(), command.email(), command.description());
 
-        interestCommandService.saveUserInterests(user, new SaveInterestRequest(request.interests()));
+        interestCommandService.saveUserInterests(user, command.interests());
 
-        userAuthCacheService.evict(userId);
+        userAuthCacheService.evict(command.userId());
     }
 
-    public void updateAccountProfile(Long userId, UpdateAccountProfileRequest request) {
-        User user = userRepository.findById(userId)
+    public void updateAccountProfile(UpdateAccountProfileCommand command) {
+        User user = userRepository.findById(command.userId())
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
-        user.updateProfile(request.nickName(), request.description());
+        user.updateProfile(command.nickName(), command.description());
 
         log.info("Account profile updated for userId: {} - nickName: {}, description: {}",
-                userId,
-                request.nickName() != null ? "updated" : "unchanged",
-                request.description() != null ? "updated" : "unchanged");
+                command.userId(),
+                command.nickName() != null ? "updated" : "unchanged",
+                command.description() != null ? "updated" : "unchanged");
     }
 
-    public void withdrawUser(Long userId) {
-        User user = userRepository.findById(userId)
+    public void withdrawUser(WithdrawUserCommand command) {
+        User user = userRepository.findById(command.userId())
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
         if (user.isWithdrawn()) {
@@ -56,7 +52,7 @@ public class UserCommandService {
         }
 
         user.withdraw();
-        userAuthCacheService.evict(userId);
+        userAuthCacheService.evict(command.userId());
 
         log.info("User withdrawn - status changed to WITHDRAWN and personal data anonymized");
     }

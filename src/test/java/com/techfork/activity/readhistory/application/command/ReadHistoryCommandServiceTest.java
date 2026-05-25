@@ -4,7 +4,7 @@ import com.techfork.activity.readhistory.domain.SearchHistory;
 import com.techfork.activity.readhistory.infrastructure.SearchHistoryRepository;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
-import com.techfork.useraccount.service.UserLookupService;
+import com.techfork.useraccount.application.query.lookup.UserLookupService;
 import com.techfork.global.exception.GeneralException;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;

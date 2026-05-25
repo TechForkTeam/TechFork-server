@@ -1,7 +1,5 @@
-package com.techfork.useraccount.service;
+package com.techfork.useraccount.application.command;
 
-import com.techfork.useraccount.dto.SaveInterestRequest;
-import com.techfork.useraccount.dto.UserInterestDto;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.UserInterestCategory;
 import com.techfork.useraccount.domain.UserInterestKeyword;
@@ -27,16 +25,16 @@ public class InterestCommandService {
     private final UserRepository userRepository;
     private final PersonalizationProfileService personalizationProfileService;
 
-    public void updateUserInterests(Long userId, SaveInterestRequest request) {
-        User user = userRepository.findByIdWithInterestCategories(userId)
+    public void updateUserInterests(UpdateUserInterestsCommand command) {
+        User user = userRepository.findByIdWithInterestCategories(command.userId())
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
-        saveUserInterests(user, request);
+        saveUserInterests(user, command.interests());
     }
 
-    void saveUserInterests(User user, SaveInterestRequest request) {
+    void saveUserInterests(User user, List<UserInterestCommand> interests) {
         user.getInterestCategories().clear();
-        List<UserInterestCategory> categories = createCategoriesFromRequest(user, request);
+        List<UserInterestCategory> categories = createCategoriesFromRequest(user, interests);
         user.getInterestCategories().addAll(categories);
 
         log.info("Saved {} interest categories for user {}", categories.size(), user.getId());
@@ -44,18 +42,18 @@ public class InterestCommandService {
         personalizationProfileService.generatePersonalizationProfile(user.getId());
     }
 
-    private List<UserInterestCategory> createCategoriesFromRequest(User user, SaveInterestRequest request) {
-        return request.interests().stream()
+    private List<UserInterestCategory> createCategoriesFromRequest(User user, List<UserInterestCommand> interests) {
+        return interests.stream()
                 .map(dto -> createCategoryWithKeywords(user, dto))
                 .toList();
     }
 
-    private UserInterestCategory createCategoryWithKeywords(User user, UserInterestDto dto) {
-        EInterestCategory category = EInterestCategory.valueOf(dto.category());
+    private UserInterestCategory createCategoryWithKeywords(User user, UserInterestCommand command) {
+        EInterestCategory category = EInterestCategory.valueOf(command.category());
         UserInterestCategory userCategory = UserInterestCategory.create(user, category);
 
-        if (dto.keywords() != null && !dto.keywords().isEmpty()) {
-            addKeywordsToCategory(userCategory, category, dto.keywords());
+        if (command.keywords() != null && !command.keywords().isEmpty()) {
+            addKeywordsToCategory(userCategory, category, command.keywords());
         }
 
         return userCategory;

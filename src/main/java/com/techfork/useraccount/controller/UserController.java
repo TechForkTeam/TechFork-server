@@ -1,13 +1,20 @@
 package com.techfork.useraccount.controller;
 
+import com.techfork.useraccount.application.command.InterestCommandService;
+import com.techfork.useraccount.application.command.UserCommandService;
+import com.techfork.useraccount.application.command.WithdrawUserCommand;
+import com.techfork.useraccount.application.query.GetAccountProfileQuery;
+import com.techfork.useraccount.application.query.GetUserInterestsQuery;
+import com.techfork.useraccount.application.query.InterestQueryService;
+import com.techfork.useraccount.application.query.UserQueryService;
+import com.techfork.useraccount.application.query.result.GetAccountProfileResult;
+import com.techfork.useraccount.application.query.result.GetUserInterestsResult;
+import com.techfork.useraccount.converter.InterestConverter;
+import com.techfork.useraccount.converter.UserConverter;
+import com.techfork.useraccount.dto.AccountProfileResponse;
 import com.techfork.useraccount.dto.SaveInterestRequest;
 import com.techfork.useraccount.dto.UpdateAccountProfileRequest;
 import com.techfork.useraccount.dto.UserInterestResponse;
-import com.techfork.useraccount.dto.AccountProfileResponse;
-import com.techfork.useraccount.service.InterestCommandService;
-import com.techfork.useraccount.service.InterestQueryService;
-import com.techfork.useraccount.service.UserCommandService;
-import com.techfork.useraccount.service.UserQueryService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import com.techfork.global.security.oauth.UserPrincipal;
@@ -18,7 +25,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "User", description = "사용자 API")
 @Slf4j
@@ -31,6 +43,8 @@ public class UserController {
     private final InterestQueryService interestQueryService;
     private final UserCommandService userCommandService;
     private final UserQueryService userQueryService;
+    private final InterestConverter interestConverter;
+    private final UserConverter userConverter;
 
     @Operation(
             summary = "내 관심사 수정",
@@ -41,7 +55,9 @@ public class UserController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody SaveInterestRequest request
     ) {
-        interestCommandService.updateUserInterests(userPrincipal.getId(), request);
+        interestCommandService.updateUserInterests(
+                interestConverter.toUpdateUserInterestsCommand(userPrincipal.getId(), request)
+        );
         return BaseResponse.of(SuccessCode.OK);
     }
 
@@ -53,7 +69,8 @@ public class UserController {
     public ResponseEntity<BaseResponse<UserInterestResponse>> getMyInterests(
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        UserInterestResponse response = interestQueryService.getUserInterests(userPrincipal.getId());
+        GetUserInterestsResult result = interestQueryService.getUserInterests(new GetUserInterestsQuery(userPrincipal.getId()));
+        UserInterestResponse response = interestConverter.toUserInterestResponse(result);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 
@@ -66,7 +83,9 @@ public class UserController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @RequestBody UpdateAccountProfileRequest request
     ) {
-        userCommandService.updateAccountProfile(userPrincipal.getId(), request);
+        userCommandService.updateAccountProfile(
+                userConverter.toUpdateAccountProfileCommand(userPrincipal.getId(), request)
+        );
         return BaseResponse.of(SuccessCode.OK);
     }
 
@@ -78,7 +97,8 @@ public class UserController {
     public ResponseEntity<BaseResponse<AccountProfileResponse>> getMyAccountProfile(
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        AccountProfileResponse response = userQueryService.getAccountProfile(userPrincipal.getId());
+        GetAccountProfileResult result = userQueryService.getAccountProfile(new GetAccountProfileQuery(userPrincipal.getId()));
+        AccountProfileResponse response = userConverter.toAccountProfileResponse(result);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 
@@ -90,7 +110,7 @@ public class UserController {
     public ResponseEntity<BaseResponse<Void>> withdrawUser(
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        userCommandService.withdrawUser(userPrincipal.getId());
+        userCommandService.withdrawUser(new WithdrawUserCommand(userPrincipal.getId()));
         return BaseResponse.of(SuccessCode.OK);
     }
 }

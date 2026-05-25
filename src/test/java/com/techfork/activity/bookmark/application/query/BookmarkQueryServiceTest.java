@@ -5,7 +5,7 @@ import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.post.application.query.lookup.PostKeywordLookupService;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
-import com.techfork.useraccount.service.UserLookupService;
+import com.techfork.useraccount.application.query.lookup.UserLookupService;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import java.time.LocalDateTime;
