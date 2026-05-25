@@ -796,7 +796,82 @@ RssToPostProcessorTest
 
 ---
 
-#### 4.8 전술 모델 2차 정리 (ID reference / 값 객체 / 엔티티 경계)
+#### 4.8 `global` 패키지 소유권 회수 원칙
+
+##### 왜 `global`을 먼저 정리하지 않는가
+
+- `global`은 바운디드 컨텍스트가 아니라 shared infra, 웹/API 계약, 도메인 정책 잔여물이 섞여 있는 구현 bucket이다.
+- 따라서 `global`을 먼저 청소하기 시작하면 “어디로 보내야 하는가” 기준이 약해져, 잘못된 공통화나 과한 패키지 이동이 생기기 쉽다.
+- DDD 관점에서는 **소유 도메인을 먼저 정리하고**, 그 과정에서 해당 도메인이 실제로 소유하는 `global` 코드를 회수하는 편이 더 안전하다.
+
+##### 기본 원칙
+
+```text
+global-first cleanup 금지
+→ owner-context-first reclaim
+```
+
+즉:
+
+1. 먼저 바운디드 컨텍스트의 테스트/용어/aggregate 책임을 정리한다.
+2. 그 다음 해당 컨텍스트가 실제로 소유하는 `global/*` 코드를 회수한다.
+3. 끝까지 공통으로 남는 것만 shared/platform support로 유지한다.
+
+##### 무엇이 진짜 공통인가
+
+대체로 다음은 독립 컨텍스트로 보지 않고 shared/platform support로 유지 가능하다.
+
+```text
+global/common/BaseEntity, BaseTimeEntity
+global/response/*
+global/exception/*
+global/config/* (단, 도메인 초기 데이터 제외)
+global/lock/DistributedLock
+```
+
+##### 무엇이 도메인 소유인가
+
+대표 예시는 다음과 같다.
+
+```text
+global/security/*                   -> Auth / Security
+global/elasticsearch/query/*        -> Search / Recommendation
+global/util/LinearTimeDecayStrategy -> Recommendation
+global/config/InitialDataConfig     -> Source / Ingestion
+global/util/ContentCleaner          -> Source / Post shared content support 후보
+```
+
+##### 권장 회수 순서
+
+현재 시점 기준 추천 순서는 다음과 같다.
+
+```text
+1. User Account 4.3
+   - 필요 시 global/security shared seam(UserAuthCacheService, UserPrincipal)만 함께 정리
+   - 하지만 Auth / Security 전체 승격은 아직 하지 않는다
+
+2. Personalization Profile 4.4
+   - User Account와의 직접 호출 책임을 먼저 정리
+
+3. Auth / Security
+   - global/security를 실제 컨텍스트 표면으로 승격/정리
+
+4. Recommendation / Search
+   - VectorQueryBuilder, LinearTimeDecayStrategy, RRF/검색 정책 support를 owning context로 회수
+
+5. Source / Post shared content support
+   - InitialDataConfig, ContentCleaner, 일부 converter/util을 owning context나 shared support로 재배치
+```
+
+##### Activity / Post 1차 정리 이후의 해석
+
+- Activity와 Post는 1차 정리가 끝났더라도, 지금 남아 있는 `global` 의존 중 상당수는 진짜 shared support이거나 다른 컨텍스트 소유다.
+- 따라서 **Activity/Post 관련 `global` 정리를 먼저 별도 작업으로 시작하지 않는다.**
+- 대신 이후 `Auth / Security`, `Recommendation / Search`, `Source`를 정리할 때 각각의 소유 코드를 회수한다.
+
+---
+
+#### 4.9 전술 모델 2차 정리 (ID reference / 값 객체 / 엔티티 경계)
 
 모든 컨텍스트를 **1차로 한 번씩 정리한 뒤**, 전역 기준에 맞춰 2차 정리를 수행한다.
 
@@ -990,15 +1065,23 @@ TechnicalPostIndexed
 [완료] 6. Post aggregate / summary pipeline 안전망 확장
        - PostTest, SummaryExtractionServiceTest
        - PostSummaryReaderDataJpaTest, PostSummaryWriterDataJpaTest
-[다음] 6-1. Post embedding pipeline 테스트 작성
+[완료] 6-1. Post embedding pipeline 테스트 작성
        - PostEmbeddingProcessorTest, PostEmbeddingWriterTest
-[다음] 7. User aggregate 관심사 불변식 정리
-[다음] 8. Recommendation 생성 테스트 작성
-       - MmrServiceTest, LlmRecommendationServiceTest
-[다음] 9. SearchServiceImpl 테스트 작성
-[다음] 10. 컨텍스트 1차 정리 후 전술 모델 2차 정리
+[다음] 7. User Account 4.3 1차 정리
+       - UserTest로 aggregate 규칙 보호
+       - 관심사 불변식 aggregate 내부 이동
+       - Personalization/Auth shared seam 정리
+[다음] 8. Personalization Profile 4.4 1차 정리
+       - User Account와의 직접 호출 책임 분리
+[부분 진행] 9. Recommendation/Search 회귀 테스트 보강
+       - LlmRecommendationServiceTest, SearchServiceImplTest 반영
+       - MmrServiceTest 추가 필요
+[후속] 10. global 소유권 회수
+        - global-first가 아니라 owner-context-first 방식으로 진행
+        - Auth / Security -> Recommendation/Search -> Source/Post shared support 순으로 회수
+[다음] 11. 컨텍스트 1차 정리 후 전술 모델 2차 정리
         - aggregate / value object / ID reference / 엔티티 경계 정교화
-[다음] 11. Phase 6 진입 조건 충족 후 이벤트/포트 분리 시작
+[다음] 12. Phase 6 진입 조건 충족 후 이벤트/포트 분리 시작
         - hexagonal architecture(포트/어댑터) 적용 검토
 ```
 
