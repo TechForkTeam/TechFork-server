@@ -49,11 +49,11 @@ public class InterestCommandService {
     }
 
     private UserInterestSelection toInterestSelection(UserInterestCommand command) {
-        EInterestCategory category = EInterestCategory.valueOf(command.category());
+        EInterestCategory category = EInterestCategory.from(command.category());
         List<EInterestKeyword> keywords = command.keywords() == null
                 ? List.of()
                 : command.keywords().stream()
-                        .map(EInterestKeyword::valueOf)
+                        .map(EInterestKeyword::from)
                         .toList();
 
         return new UserInterestSelection(category, keywords);

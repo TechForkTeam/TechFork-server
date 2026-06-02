@@ -190,6 +190,72 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data.profileImage").value("profile.jpg")); // 변경되지 않음
     }
 
+    // ===== 관심사 수정 테스트 =====
+
+    @Test
+    @DisplayName("내 관심사 수정 실패 - 관심사 카테고리는 필수")
+    void updateMyInterests_BlankCategory_BadRequest() throws Exception {
+        String requestBody = """
+                {
+                  "interests": [
+                    {
+                      "category": "",
+                      "keywords": ["JAVA"]
+                    }
+                  ]
+                }
+                """;
+
+        mockMvc.perform(put("/api/v1/users/me/interests")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.isSuccess").value(false));
+    }
+
+    @Test
+    @DisplayName("내 관심사 수정 실패 - 관심사 항목은 null일 수 없음")
+    void updateMyInterests_NullInterestItem_BadRequest() throws Exception {
+        String requestBody = """
+                {
+                  "interests": [null]
+                }
+                """;
+
+        mockMvc.perform(put("/api/v1/users/me/interests")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.isSuccess").value(false));
+    }
+
+    @Test
+    @DisplayName("내 관심사 수정 실패 - 관심사 키워드는 빈 문자열일 수 없음")
+    void updateMyInterests_BlankKeyword_BadRequest() throws Exception {
+        String requestBody = """
+                {
+                  "interests": [
+                    {
+                      "category": "BACKEND",
+                      "keywords": [""]
+                    }
+                  ]
+                }
+                """;
+
+        mockMvc.perform(put("/api/v1/users/me/interests")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.isSuccess").value(false));
+    }
+
     // ===== 회원 탈퇴 테스트 =====
 
     @Test

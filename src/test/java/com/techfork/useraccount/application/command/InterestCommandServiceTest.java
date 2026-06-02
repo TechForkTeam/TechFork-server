@@ -102,6 +102,36 @@ class InterestCommandServiceTest {
     }
 
     @Test
+    @DisplayName("관심사 저장 - 존재하지 않는 카테고리면 개인화 프로필 생성을 트리거하지 않는다")
+    void saveUserInterests_UnknownCategory_SkipsProfileGeneration() {
+        User user = createUserWithId(1L);
+        List<UserInterestCommand> interests = List.of(
+                UserInterestCommand.builder().category("UNKNOWN").keywords(List.of("JAVA")).build()
+        );
+
+        assertThatThrownBy(() -> interestCommandService.saveUserInterests(user, interests))
+                .isInstanceOf(GeneralException.class)
+                .hasFieldOrPropertyWithValue("code", UserErrorCode.INVALID_INTEREST_CATEGORY);
+
+        verify(personalizationProfileService, never()).generatePersonalizationProfile(any());
+    }
+
+    @Test
+    @DisplayName("관심사 저장 - 존재하지 않는 키워드면 개인화 프로필 생성을 트리거하지 않는다")
+    void saveUserInterests_UnknownKeyword_SkipsProfileGeneration() {
+        User user = createUserWithId(1L);
+        List<UserInterestCommand> interests = List.of(
+                UserInterestCommand.builder().category("BACKEND").keywords(List.of("UNKNOWN")).build()
+        );
+
+        assertThatThrownBy(() -> interestCommandService.saveUserInterests(user, interests))
+                .isInstanceOf(GeneralException.class)
+                .hasFieldOrPropertyWithValue("code", UserErrorCode.INVALID_INTEREST_KEYWORD);
+
+        verify(personalizationProfileService, never()).generatePersonalizationProfile(any());
+    }
+
+    @Test
     @DisplayName("관심사 업데이트 - 사용자를 조회해 관심사를 교체하고 개인화 프로필 생성을 트리거한다")
     void updateUserInterests_Success() {
         Long userId = 1L;
