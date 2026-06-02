@@ -1,5 +1,7 @@
 package com.techfork.useraccount.application.command;
 
+import com.techfork.useraccount.application.command.input.UpdateUserInterestsCommand;
+import com.techfork.useraccount.application.command.input.UserInterestCommand;
 import com.techfork.domain.personalization.service.PersonalizationProfileService;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.useraccount.domain.User;

@@ -1,5 +1,7 @@
 package com.techfork.useraccount.application.command;
 
+import com.techfork.useraccount.application.command.input.UpdateUserInterestsCommand;
+import com.techfork.useraccount.application.command.input.UserInterestCommand;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.EInterestCategory;
 import com.techfork.useraccount.domain.enums.EInterestKeyword;
