@@ -133,6 +133,10 @@ public class User extends BaseTimeEntity {
     }
 
     public void withdraw() {
+        if (isWithdrawn()) {
+            throw new GeneralException(UserErrorCode.ALREADY_WITHDRAWN);
+        }
+
         this.status = UserStatus.WITHDRAWN;
         this.nickName = null;
         this.email = null;

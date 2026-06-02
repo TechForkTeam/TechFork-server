@@ -213,6 +213,17 @@ class UserTest {
             assertThat(user.getSocialType()).isEqualTo(originalSocialType);
             assertThat(user.getRole()).isEqualTo(originalRole);
         }
+
+        @Test
+        @DisplayName("이미 탈퇴한 사용자면 예외를 던진다")
+        void rejectsAlreadyWithdrawnUser() {
+            User user = activeUser();
+            user.withdraw();
+
+            assertThatThrownBy(user::withdraw)
+                    .isInstanceOf(GeneralException.class)
+                    .hasFieldOrPropertyWithValue("code", UserErrorCode.ALREADY_WITHDRAWN);
+        }
     }
 
     @Nested

@@ -28,15 +28,17 @@
 | 내부 용어 | 코드상 표현 | 설명 |
 |---|---|---|
 | 사용자 루트 | `User` | 계정/상태/기본 프로필/관심사를 소유하는 aggregate root |
-| 온보딩 완료 커맨드 | `UserCommandService.completeOnboarding` | 계정 정보 저장 + 관심사 저장 + 활성화 흐름 |
-| 관심사 교체 커맨드 | `InterestCommandService.updateUserInterests` | 관심사 전체를 갈아끼우는 흐름 |
+| 온보딩 완료 커맨드 | `UserCommandService.completeOnboarding` | 계정 정보 저장 + 관심사 저장 + 활성화 후 `OnboardingCompletedEvent`를 발행하는 흐름 |
+| 관심사 교체 커맨드 | `InterestCommandService.updateUserInterests` | 관심사 전체를 갈아끼운 뒤 `UserInterestsChangedEvent`를 발행하는 흐름 |
 | 계정 프로필 수정 | `UserCommandService.updateAccountProfile` | 닉네임/자기소개 수정 흐름 |
-| 탈퇴 처리 | `User.withdraw()` | 개인정보 익명화와 상태 변경을 수행하는 도메인 동작 |
+| 탈퇴 처리 | `User.withdraw()` | 개인정보 익명화와 상태 변경을 수행하고 `UserWithdrawnEvent`를 발행하는 흐름 |
+| 사용자 계정 이벤트 | `OnboardingCompletedEvent`, `UserInterestsChangedEvent`, `UserWithdrawnEvent` | User Account 상태 변화 이후 다른 컨텍스트 후처리를 연결하는 application event |
 
 ## 혼동 금지
 
 - `계정 프로필`은 UI에서 보이는 사용자 정보이고, `개인화 프로필`은 검색/추천 입력 모델이다.
 - `관심사`는 User Account가 소유하는 입력 데이터다. 다만 그 데이터는 Personalization Profile 생성의 재료로도 사용된다.
+- User Account는 Personalization Profile/Auth 후처리 서비스를 직접 호출하지 않고 application event를 발행한다.
 - Auth / Security가 다루는 `UserPrincipal`은 User Account aggregate 그 자체가 아니다.
 
 ## 금지 표현 / 권장 표현
@@ -56,5 +58,6 @@
 - `src/main/java/com/techfork/useraccount/domain/enums/EInterestKeyword.java`
 - `src/main/java/com/techfork/useraccount/application/command/UserCommandService.java`
 - `src/main/java/com/techfork/useraccount/application/command/InterestCommandService.java`
+- `src/main/java/com/techfork/useraccount/application/event/`
 - `src/main/java/com/techfork/useraccount/presentation/OnboardingController.java`
 - `src/main/java/com/techfork/useraccount/presentation/UserController.java`

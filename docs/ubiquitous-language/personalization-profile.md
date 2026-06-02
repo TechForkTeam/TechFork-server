@@ -27,12 +27,14 @@
 | 프로필 재생성 스케줄러 | `PersonalizationProfileScheduler` | 활성 사용자 개인화 프로필을 주기적으로 다시 생성하는 스케줄러 |
 | 프로필 projection | `PersonalizationProfileDocument` | 검색/추천에 제공되는 read model |
 | 개인화 입력 키워드 | `keyKeywords` | 추천 BM25와 검색 개인화에 활용되는 키워드 |
-| 프로필 생성 트리거 | 관심사 변경 / 활동 누적 | 현재는 서비스 직접 호출 기반, 장기적으로는 이벤트 분리 대상 |
+| 프로필 생성 트리거 | `OnboardingCompletedEvent`, `UserInterestsChangedEvent`, scheduler | 온보딩 완료/관심사 변경은 이벤트 기반으로, 주기 재생성은 scheduler 기반으로 개인화 프로필 생성을 요청한다 |
+| 프로필 생성 이벤트 리스너 | `PersonalizationProfileEventListener` | User Account 이벤트를 `AFTER_COMMIT`에서 받아 개인화 프로필 생성을 요청하는 리스너 |
 
 ## 혼동 금지
 
 - `개인화 프로필`은 UI용 내 프로필이 아니다.
 - `PersonalizationProfileDocument`는 aggregate라기보다 projection/read model이다.
+- 온보딩 완료/관심사 변경에 따른 프로필 생성은 사용자 상태 변경 트랜잭션 커밋 이후 실행된다.
 - `핵심 키워드`는 추천/검색용 프로필 파생 키워드이고, `게시글 키워드(PostKeyword)`나 `검색어(SearchQuery)`와 다르다.
 
 ## 금지 표현 / 권장 표현
@@ -49,3 +51,4 @@
 - `src/main/java/com/techfork/domain/personalization/service/PersonalizationProfileService.java`
 - `src/main/java/com/techfork/domain/personalization/document/PersonalizationProfileDocument.java`
 - `src/main/java/com/techfork/domain/personalization/scheduler/PersonalizationProfileScheduler.java`
+- `src/main/java/com/techfork/domain/personalization/listener/PersonalizationProfileEventListener.java`
