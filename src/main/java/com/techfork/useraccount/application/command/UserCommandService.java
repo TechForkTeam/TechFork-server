@@ -5,9 +5,9 @@ import com.techfork.useraccount.application.command.input.UpdateAccountProfileCo
 import com.techfork.useraccount.application.command.input.WithdrawUserCommand;
 import com.techfork.useraccount.application.event.OnboardingCompletedEvent;
 import com.techfork.useraccount.application.event.UserWithdrawnEvent;
+import com.techfork.useraccount.application.reader.UserReader;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
-import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,23 +22,20 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserCommandService {
 
     private final InterestCommandService interestCommandService;
-    private final UserRepository userRepository;
+    private final UserReader userReader;
     private final ApplicationEventPublisher eventPublisher;
 
     public void completeOnboarding(CompleteOnboardingCommand command) {
-        User user = userRepository.findByIdWithInterestCategories(command.userId())
-                .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
+        User user = userReader.getByIdWithInterestCategories(command.userId());
 
         user.updateUser(command.nickname(), command.email(), command.description());
-
         interestCommandService.saveUserInterests(user, command.interests());
 
         eventPublisher.publishEvent(new OnboardingCompletedEvent(command.userId()));
     }
 
     public void updateAccountProfile(UpdateAccountProfileCommand command) {
-        User user = userRepository.findById(command.userId())
-                .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
+        User user = userReader.getById(command.userId());
 
         user.updateProfile(command.nickName(), command.description());
 
@@ -49,8 +46,7 @@ public class UserCommandService {
     }
 
     public void withdrawUser(WithdrawUserCommand command) {
-        User user = userRepository.findById(command.userId())
-                .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
+        User user = userReader.getById(command.userId());
 
         if (user.isWithdrawn()) {
             throw new GeneralException(UserErrorCode.ALREADY_WITHDRAWN);

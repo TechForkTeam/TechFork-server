@@ -7,11 +7,11 @@ import com.techfork.useraccount.application.command.input.UserInterestCommand;
 import com.techfork.useraccount.application.command.input.WithdrawUserCommand;
 import com.techfork.useraccount.application.event.OnboardingCompletedEvent;
 import com.techfork.useraccount.application.event.UserWithdrawnEvent;
+import com.techfork.useraccount.application.reader.UserReader;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.enums.UserStatus;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
-import com.techfork.useraccount.infrastructure.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,7 +24,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -41,7 +40,7 @@ class UserCommandServiceTest {
     private InterestCommandService interestCommandService;
 
     @Mock
-    private UserRepository userRepository;
+    private UserReader userReader;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -69,14 +68,14 @@ class UserCommandServiceTest {
                 UserInterestCommand.builder().category("DATABASE").keywords(List.of("MYSQL", "REDIS")).build()
         );
         CompleteOnboardingCommand command = new CompleteOnboardingCommand(userId, "테크포크유저", "user@techfork.com", "백엔드 개발자입니다", interests);
-        given(userRepository.findByIdWithInterestCategories(userId)).willReturn(Optional.of(mockUser));
+        given(userReader.getByIdWithInterestCategories(userId)).willReturn(mockUser);
 
         userCommandService.completeOnboarding(command);
 
         assertThat(mockUser.getNickName()).isEqualTo("테크포크유저");
         assertThat(mockUser.getEmail()).isEqualTo("user@techfork.com");
         assertThat(mockUser.getDescription()).isEqualTo("백엔드 개발자입니다");
-        verify(userRepository).findByIdWithInterestCategories(userId);
+        verify(userReader).getByIdWithInterestCategories(userId);
         verify(interestCommandService).saveUserInterests(eq(mockUser), any());
         verifyPublishedEvent(OnboardingCompletedEvent.class, userId);
     }
@@ -91,7 +90,7 @@ class UserCommandServiceTest {
                 null,
                 List.of(UserInterestCommand.builder().category("BACKEND").keywords(List.of("JAVA")).build())
         );
-        given(userRepository.findByIdWithInterestCategories(999L)).willReturn(Optional.empty());
+        given(userReader.getByIdWithInterestCategories(999L)).willThrow(new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
         assertThatThrownBy(() -> userCommandService.completeOnboarding(command))
                 .isInstanceOf(GeneralException.class)
@@ -112,7 +111,7 @@ class UserCommandServiceTest {
                 null,
                 List.of(UserInterestCommand.builder().category("FRONTEND").keywords(List.of("REACT", "TYPESCRIPT")).build())
         );
-        given(userRepository.findByIdWithInterestCategories(userId)).willReturn(Optional.of(mockUser));
+        given(userReader.getByIdWithInterestCategories(userId)).willReturn(mockUser);
 
         userCommandService.completeOnboarding(command);
 
@@ -133,7 +132,7 @@ class UserCommandServiceTest {
                 UserInterestCommand.builder().category("DATABASE").keywords(List.of("MYSQL", "POSTGRESQL", "REDIS")).build()
         );
         CompleteOnboardingCommand command = new CompleteOnboardingCommand(userId, "풀스택개발자", "fullstack@techfork.com", "백엔드와 인프라를 다룹니다", interests);
-        given(userRepository.findByIdWithInterestCategories(userId)).willReturn(Optional.of(mockUser));
+        given(userReader.getByIdWithInterestCategories(userId)).willReturn(mockUser);
 
         userCommandService.completeOnboarding(command);
 
@@ -146,71 +145,71 @@ class UserCommandServiceTest {
     @DisplayName("계정 프로필 수정 성공 - 닉네임만 수정")
     void updateAccountProfile_Success_OnlyNickName() {
         UpdateAccountProfileCommand command = new UpdateAccountProfileCommand(userId, "새로운닉네임", null);
-        given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+        given(userReader.getById(userId)).willReturn(testUser);
 
         userCommandService.updateAccountProfile(command);
 
         assertThat(testUser.getNickName()).isEqualTo("새로운닉네임");
         assertThat(testUser.getDescription()).isEqualTo("백엔드 개발자입니다.");
-        verify(userRepository).findById(userId);
+        verify(userReader).getById(userId);
     }
 
     @Test
     @DisplayName("계정 프로필 수정 성공 - 자기소개만 수정")
     void updateAccountProfile_Success_OnlyDescription() {
         UpdateAccountProfileCommand command = new UpdateAccountProfileCommand(userId, null, "새로운 자기소개");
-        given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+        given(userReader.getById(userId)).willReturn(testUser);
 
         userCommandService.updateAccountProfile(command);
 
         assertThat(testUser.getNickName()).isEqualTo("테스트유저");
         assertThat(testUser.getDescription()).isEqualTo("새로운 자기소개");
-        verify(userRepository).findById(userId);
+        verify(userReader).getById(userId);
     }
 
     @Test
     @DisplayName("계정 프로필 수정 성공 - 닉네임과 자기소개 모두 수정")
     void updateAccountProfile_Success_BothFields() {
         UpdateAccountProfileCommand command = new UpdateAccountProfileCommand(userId, "새닉네임", "새 자기소개");
-        given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+        given(userReader.getById(userId)).willReturn(testUser);
 
         userCommandService.updateAccountProfile(command);
 
         assertThat(testUser.getNickName()).isEqualTo("새닉네임");
         assertThat(testUser.getDescription()).isEqualTo("새 자기소개");
-        verify(userRepository).findById(userId);
+        verify(userReader).getById(userId);
     }
 
     @Test
     @DisplayName("계정 프로필 수정 성공 - 아무것도 수정하지 않음")
     void updateAccountProfile_Success_NoChanges() {
         UpdateAccountProfileCommand command = new UpdateAccountProfileCommand(userId, null, null);
-        given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+        given(userReader.getById(userId)).willReturn(testUser);
 
         userCommandService.updateAccountProfile(command);
 
         assertThat(testUser.getNickName()).isEqualTo("테스트유저");
         assertThat(testUser.getDescription()).isEqualTo("백엔드 개발자입니다.");
-        verify(userRepository).findById(userId);
+        verify(userReader).getById(userId);
     }
 
     @Test
     @DisplayName("계정 프로필 수정 실패 - 사용자를 찾을 수 없음")
     void updateAccountProfile_Fail_UserNotFound() {
         UpdateAccountProfileCommand command = new UpdateAccountProfileCommand(userId, "새닉네임", "새 자기소개");
-        given(userRepository.findById(userId)).willReturn(Optional.empty());
+        given(userReader.getById(userId)).willThrow(new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
         assertThatThrownBy(() -> userCommandService.updateAccountProfile(command))
                 .isInstanceOf(GeneralException.class)
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(UserErrorCode.USER_NOT_FOUND);
-        verify(userRepository).findById(userId);
+        verify(userReader).getById(userId);
     }
 
     @Test
     @DisplayName("회원 탈퇴 성공 - 개인정보 익명화 확인")
     void withdrawUser_Success() {
-        given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+        given(userReader.getById(userId)).willReturn(testUser);
         String originalSocialId = testUser.getSocialId();
 
         userCommandService.withdrawUser(new WithdrawUserCommand(userId));
@@ -222,20 +221,20 @@ class UserCommandServiceTest {
         assertThat(testUser.getProfileImage()).isNull();
         assertThat(testUser.getDescription()).isNull();
         assertThat(testUser.getSocialId()).isEqualTo(originalSocialId);
-        verify(userRepository).findById(userId);
+        verify(userReader).getById(userId);
         verifyPublishedEvent(UserWithdrawnEvent.class, userId);
     }
 
     @Test
     @DisplayName("회원 탈퇴 실패 - 사용자를 찾을 수 없음")
     void withdrawUser_Fail_UserNotFound() {
-        given(userRepository.findById(userId)).willReturn(Optional.empty());
+        given(userReader.getById(userId)).willThrow(new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
         assertThatThrownBy(() -> userCommandService.withdrawUser(new WithdrawUserCommand(userId)))
                 .isInstanceOf(GeneralException.class)
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(UserErrorCode.USER_NOT_FOUND);
-        verify(userRepository).findById(userId);
+        verify(userReader).getById(userId);
         verify(eventPublisher, never()).publishEvent(any());
     }
 
@@ -243,13 +242,13 @@ class UserCommandServiceTest {
     @DisplayName("회원 탈퇴 실패 - 이미 탈퇴한 회원")
     void withdrawUser_Fail_AlreadyWithdrawn() {
         testUser.withdraw();
-        given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+        given(userReader.getById(userId)).willReturn(testUser);
 
         assertThatThrownBy(() -> userCommandService.withdrawUser(new WithdrawUserCommand(userId)))
                 .isInstanceOf(GeneralException.class)
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(UserErrorCode.ALREADY_WITHDRAWN);
-        verify(userRepository).findById(userId);
+        verify(userReader).getById(userId);
         verify(eventPublisher, never()).publishEvent(any());
     }
 

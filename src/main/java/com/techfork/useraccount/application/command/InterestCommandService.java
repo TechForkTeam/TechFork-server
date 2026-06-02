@@ -3,13 +3,11 @@ package com.techfork.useraccount.application.command;
 import com.techfork.useraccount.application.command.input.UpdateUserInterestsCommand;
 import com.techfork.useraccount.application.command.input.UserInterestCommand;
 import com.techfork.useraccount.application.event.UserInterestsChangedEvent;
+import com.techfork.useraccount.application.reader.UserReader;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.EInterestCategory;
 import com.techfork.useraccount.domain.enums.EInterestKeyword;
-import com.techfork.useraccount.domain.exception.UserErrorCode;
 import com.techfork.useraccount.domain.vo.UserInterestSelection;
-import com.techfork.useraccount.infrastructure.UserRepository;
-import com.techfork.global.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -24,13 +22,11 @@ import java.util.List;
 @Transactional
 public class InterestCommandService {
 
-    private final UserRepository userRepository;
+    private final UserReader userReader;
     private final ApplicationEventPublisher eventPublisher;
 
     public void updateUserInterests(UpdateUserInterestsCommand command) {
-        User user = userRepository.findByIdWithInterestCategories(command.userId())
-                .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
-
+        User user = userReader.getByIdWithInterestCategories(command.userId());
         saveUserInterests(user, command.interests());
 
         eventPublisher.publishEvent(new UserInterestsChangedEvent(command.userId()));

@@ -4,6 +4,7 @@ import com.techfork.global.exception.GeneralException;
 import com.techfork.useraccount.application.command.input.UpdateUserInterestsCommand;
 import com.techfork.useraccount.application.command.input.UserInterestCommand;
 import com.techfork.useraccount.application.event.UserInterestsChangedEvent;
+import com.techfork.useraccount.application.reader.UserReader;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.UserInterestCategory;
 import com.techfork.useraccount.domain.UserInterestKeyword;
@@ -11,7 +12,6 @@ import com.techfork.useraccount.domain.enums.EInterestCategory;
 import com.techfork.useraccount.domain.enums.EInterestKeyword;
 import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
-import com.techfork.useraccount.infrastructure.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,7 +23,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -36,7 +35,7 @@ import static org.mockito.Mockito.verify;
 class InterestCommandServiceTest {
 
     @Mock
-    private UserRepository userRepository;
+    private UserReader userReader;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -139,12 +138,12 @@ class InterestCommandServiceTest {
         List<UserInterestCommand> interests = List.of(
                 UserInterestCommand.builder().category("AI_ML").keywords(List.of("TENSORFLOW", "PYTORCH")).build()
         );
-        given(userRepository.findByIdWithInterestCategories(userId)).willReturn(Optional.of(user));
+        given(userReader.getByIdWithInterestCategories(userId)).willReturn(user);
 
         interestCommandService.updateUserInterests(new UpdateUserInterestsCommand(userId, interests));
 
         assertThat(user.getInterestCategories()).hasSize(1);
-        verify(userRepository).findByIdWithInterestCategories(userId);
+        verify(userReader).getByIdWithInterestCategories(userId);
         verifyPublishedEvent(userId);
     }
 
@@ -155,7 +154,7 @@ class InterestCommandServiceTest {
         List<UserInterestCommand> interests = List.of(
                 UserInterestCommand.builder().category("BACKEND").keywords(List.of("JAVA")).build()
         );
-        given(userRepository.findByIdWithInterestCategories(userId)).willReturn(Optional.empty());
+        given(userReader.getByIdWithInterestCategories(userId)).willThrow(new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
         assertThatThrownBy(() -> interestCommandService.updateUserInterests(new UpdateUserInterestsCommand(userId, interests)))
                 .isInstanceOf(GeneralException.class)
