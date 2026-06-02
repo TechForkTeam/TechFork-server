@@ -17,8 +17,8 @@
 | Activity | 서비스, repository, controller 테스트가 충분하고 `Bookmark`/`query` 용어 정리도 대부분 반영됨 | 4.1을 `Bookmark → ReadPost → SearchHistory` slice로 나눠 진행하기 좋음 |
 | Source / Ingestion | RSS reader, processor, writer, scheduler, crawling service 테스트가 잘 있음 | 파이프라인 보호 수준 좋음 |
 | Post / Content | 조회 API/repository는 강함. 도메인 엔티티/임베딩 테스트는 부족하고 `PostSummary*`는 아직 untracked | `Post = 기술 게시글` 애그리거트 테스트 필요 |
-| User Account | 온보딩/관심사/계정 프로필은 강함 | 사용자 계정 애그리거트와 온보딩 흐름은 비교적 잘 보호되어 있다 |
-| Personalization Profile | 기본 unit 안전망은 생겼지만 parsing edge case / trigger 검증은 더 필요 | `PersonalizationProfileService` 경계 보강 후 추천/검색 분리 리팩터링 가능 |
+| User Account | 온보딩/관심사/계정 프로필/탈퇴와 이벤트 발행이 강함 | 사용자 계정 애그리거트와 후처리 seam은 비교적 잘 보호되어 있다 |
+| Personalization Profile | 기본 unit 안전망과 User Account 이벤트 trigger 검증이 생김 | 다음 리스크는 `PersonalizationProfileService -> Recommendation` 직접 호출 분리와 parsing edge case 보강이다 |
 | Recommendation | 조회 쪽은 일부 있음. 추천 생성/후보 탐색/MMR/이력화 테스트는 부족 | DDD 전환 전 가장 큰 리스크 중 하나 |
 | Search | 일반 실행 테스트가 거의 없음. evaluation suite만 존재 | 일반 회귀 테스트 부재가 큼 |
 | Auth / Security | 토큰/필터/컨트롤러 테스트는 비교적 강함 | OAuth handler/OIDC 일부 보강 여지 |
@@ -31,7 +31,7 @@
 2. **LlmRecommendationService / MmrService 테스트 부재**
 3. **Post 애그리거트 단위 테스트 부재**
 4. **Post embedding pipeline 테스트 부재**
-5. **User aggregate 직접 테스트와 Personalization Profile edge-case/trigger 테스트 부족**
+5. **Personalization Profile edge-case와 추천 생성 분리 테스트 부족**
 
 ---
 
@@ -276,25 +276,28 @@ ContentChunkerServiceTest
 | `UserControllerIntegrationTest` | integration | 계정 프로필 조회/수정, 탈퇴 |
 | `UserRepositoryTest` | JPA | 관심사 fetch, 활성 사용자 조회, 탈퇴 사용자 제외 |
 | `UserInterestCategoryRepositoryTest` | JPA | 관심 카테고리/키워드 fetch, cascade, mapping |
-| `InterestCommandServiceTest` | unit/mock | 관심사 저장, 기존 관심사 clear, invalid keyword category |
-| `UserCommandServiceTest` | unit/mock | 온보딩, 계정 프로필 수정, 탈퇴 |
+| `InterestCommandServiceTest` | unit/mock | 관심사 저장, 기존 관심사 clear, invalid keyword category, 관심사 수정 이벤트 발행 |
+| `UserCommandServiceTest` | unit/mock | 온보딩, 계정 프로필 수정, 탈퇴, 온보딩/탈퇴 이벤트 발행 |
+| `PersonalizationProfileEventListenerTest` | unit/mock | 온보딩/관심사 변경 이벤트의 `AFTER_COMMIT` 개인화 프로필 생성 요청 |
+| `UserAuthCacheEventListenerTest` | unit/mock | 온보딩 `AFTER_COMMIT` 캐시 evict, 탈퇴 `BEFORE_COMMIT + AFTER_COMMIT` 캐시 evict |
+| `UserAccountAfterCommitEventIntegrationTest` | integration | 커밋 후 후처리 실행, 롤백 시 후처리 미실행, 탈퇴 evict 실패 시 트랜잭션 롤백 |
 | `UserQueryServiceTest` | unit/mock | 계정 프로필 조회 |
 | `PersonalizationProfileServiceTest` | unit/mock | 활동 데이터 수집, LLM parsing, fallback, 저장, 추천 실패 격리 |
 | `evaluation/search/setup/PersonalizationProfileServiceTest` | evaluation-setup | 테스트 사용자 개인화 프로필 생성용 setup |
 
 #### 평가
 
-- **User Account 쪽**은 온보딩, 관심사, 계정 프로필, 탈퇴 흐름이 비교적 잘 보호되어 있다.
-- 기존에는 **Personalization Profile 쪽** 일반 테스트 lane이 비어 있었지만, 이제 `PersonalizationProfileServiceTest` 기본 안전망이 추가되었다.
+- **User Account 쪽**은 온보딩, 관심사, 계정 프로필, 탈퇴 흐름과 이벤트 발행이 비교적 잘 보호되어 있다.
+- **Personalization Profile 쪽**은 `PersonalizationProfileServiceTest` 기본 안전망과 이벤트 리스너 trigger 테스트가 추가되었다.
+- **Auth cache seam**은 온보딩/탈퇴 이벤트 리스너 테스트와 통합 테스트로 보호한다. 탈퇴 캐시 evict 실패는 트랜잭션 롤백으로 검증한다.
 - evaluation setup용 `PersonalizationProfileServiceTest`는 여전히 별도 목적이므로, 일반 unit test lane과 구분해서 본다.
 
 #### 남은 갭
 
 | 우선순위 | 갭 | 이유 |
 |---|---|---|
-| P0 | LLM 응답 parsing 테스트 | `### PROFILE`, `### KEYWORDS` parsing 실패 시 품질/장애 영향 |
-| P0 | 관심사 변경 후 개인화 프로필 생성 트리거 검증 | `UserInterestsChanged` 이벤트 도입 전 현재 동작 보호 |
-| P1 | `UserTest` | User Account aggregate의 소셜 사용자 생성, 온보딩 ACTIVE, 탈퇴 anonymization, reactivate 규칙 보호 |
+| P0 | `PersonalizedProfileGenerated` 이벤트/포트 분리 테스트 | 개인화 프로필 생성과 추천 생성 직접 호출을 분리하기 전 현재 동작 보호 |
+| P1 | LLM 응답 parsing edge-case 테스트 | `### PROFILE`, `### KEYWORDS` 변형/누락 시 품질/장애 영향 |
 | P1 | `UserInterestCategory/UserInterestKeyword` 도메인 테스트 | 관심 키워드가 카테고리에 속해야 한다는 규칙 명시 |
 | P1 | `PersonalizationProfileSchedulerTest` | 매일 06:00 KST active user personalization profile regeneration 보호 |
 | P2 | `InterestQueryServiceTest` | 관심사 조회 변환 로직 보호 |

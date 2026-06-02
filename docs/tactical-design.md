@@ -1,7 +1,7 @@
 # TechFork 전술 설계
 
-> 애그리거트 루트 식별과 도메인 이벤트 후보를 정리한 문서입니다.  
-> 리팩터링, 이벤트 도입, 모델 구조 변경 작업 시 참조합니다.  
+> 애그리거트 루트 식별과 도메인 이벤트 후보를 정리한 문서입니다.
+> 리팩터링, 이벤트 도입, 모델 구조 변경 작업 시 참조합니다.
 > 관련 문서: [도메인 전략 설계](domain-strategy.md) | [유비쿼터스 언어](ubiquitous-language/README.md)
 
 ---
@@ -85,16 +85,18 @@ createSocialUser() → PENDING
 - `WITHDRAWN` 상태 사용자는 개인정보가 null 처리된다 (`nickName`, `email`, `profileImage`, `description`).
 - `ACTIVE` 상태가 아닌 사용자는 개인화 프로필 생성, 추천, 검색 결과 조회 시 차단된다.
 
-**누락된 도메인 메서드**
+**최근 정리된 도메인 메서드**
 
-- `replaceInterests(List<EInterestCategory> categories, List<EInterestKeyword> keywords)` — 관심사 교체 시 "키워드는 선택된 카테고리에 속해야 한다"는 불변식을 Aggregate 내에서 검증하고 단일 트랜잭션으로 처리해야 한다. 현재 `InterestCommandService`가 `UserInterestCategory`/`UserInterestKeyword` 리포지토리를 직접 조작하며 불변식 검증이 서비스 레이어에 산재되어 있다.
+- `replaceInterests(List<UserInterestSelection> interests)` — 관심사 교체 시 "키워드는 선택된 카테고리에 속해야 한다"는 불변식을 `User` aggregate 내부에서 검증하고 단일 트랜잭션으로 처리한다.
+- `UserInterestSelection`은 application input DTO가 아니라 도메인 값 객체로, 선택된 카테고리와 키워드 목록을 `User` aggregate에 전달하는 published 내부 언어 역할을 한다.
 
 #### `PersonalizationProfileDocument` / Personalization Profile
 
 - Personalization Profile 컨텍스트의 핵심 projection/read model.
 - 활동 데이터, 관심사, 게시글 신호를 바탕으로 검색/추천용 개인화 프로필을 생성한다.
 - 현재는 독립 write aggregate보다 `PersonalizationProfileService`가 생성하는 파생 모델에 가깝다.
-- 장기적으로는 `OnboardingCompleted`, `UserInterestsChanged`, `PersonalizedProfileGenerated` 이벤트 기반으로 분리할 후보다.
+- `OnboardingCompletedEvent`, `UserInterestsChangedEvent` 기반 프로필 생성 트리거는 1차 분리되었다.
+- `PersonalizedProfileGenerated` 이벤트로 프로필 생성과 추천 생성을 분리하는 작업은 후속 후보로 남아 있다.
 
 #### `ReadPost`, `Bookmark`, `SearchHistory`
 
@@ -142,7 +144,7 @@ createSocialUser() → PENDING
 
 ## 2. 도메인 이벤트 후보와 우선순위
 
-현재 코드에는 명시적인 Domain Event 객체가 없다. 아래 표는 향후 이벤트화할 때의 우선순위다.
+현재 코드에는 User Account 관련 1차 애플리케이션 이벤트가 도입되어 있다. 아래 표는 이미 도입된 이벤트와 향후 이벤트화할 후보의 우선순위다.
 
 우선순위 기준:
 
@@ -156,8 +158,8 @@ createSocialUser() → PENDING
 | P0 | 신규 기술 게시글이 저장됨 | `TechnicalPostSaved` | `PostBatchWriter` | Summary/Embedding pipeline | 수집과 요약/색인을 이벤트로 분리하면 크롤링 파이프라인 결합도를 줄일 수 있다. |
 | P0 | 기술 게시글 요약이 생성됨 | `TechnicalPostSummarized` | `PostSummaryProcessor`, `PostSummaryWriter` | Embedding/Indexing pipeline | 요약 완료 후 임베딩 생성이 가능해지는 핵심 상태 전이다. |
 | P0 | 기술 게시글이 색인됨 | `TechnicalPostIndexed` | `PostEmbeddingWriter` | Search, Recommendation | 검색/추천 가능한 콘텐츠가 되었음을 나타내는 핵심 이벤트다. |
-| P0 | 온보딩이 완료됨 | `OnboardingCompleted` | `UserCommandService.completeOnboarding` | 개인화 프로필 생성 | 사용자 상태가 ACTIVE가 되고 관심사가 저장되어 개인화 프로필 생성이 가능해진다. |
-| P0 | 사용자 관심사가 변경됨 | `UserInterestsChanged` | `InterestCommandService.updateUserInterests` | 개인화 프로필 재생성, 추천 재생성 | 현재도 관심사 변경 후 개인화 프로필 생성이 호출된다. 이벤트로 분리하기 좋은 지점이다. |
+| P0 | 온보딩이 완료됨 | `OnboardingCompletedEvent` | `UserCommandService.completeOnboarding` | 개인화 프로필 생성, 인증 캐시 무효화 | 사용자 상태가 ACTIVE가 되고 관심사가 저장되어 개인화 프로필 생성이 가능해진다. 현재 `AFTER_COMMIT` 리스너로 처리한다. |
+| P0 | 사용자 관심사가 변경됨 | `UserInterestsChangedEvent` | `InterestCommandService.updateUserInterests` | 개인화 프로필 재생성 | 관심사 변경과 개인화 프로필 재생성을 분리했다. 현재 `AFTER_COMMIT` 리스너로 처리한다. |
 | P0 | 개인화 프로필이 생성됨 | `PersonalizedProfileGenerated` | `PersonalizationProfileService.generatePersonalizationProfileSync` | 추천 생성, 개인화 검색 준비 완료 | 현재 `PersonalizationProfileService`가 추천 생성을 직접 호출한다. 이벤트 분리 우선순위가 높다. |
 | P0 | 추천이 생성됨 | `RecommendationsGenerated` | `LlmRecommendationService.generateRecommendationsForUser` | Notification, Analytics | 사용자에게 보여줄 현재 추천 목록이 바뀌는 핵심 이벤트다. |
 | P1 | 기술 게시글을 읽음 | `TechnicalPostRead` | `ReadPostCommandService.saveReadPost` | 개인화 프로필 갱신, 추천 정책 | 읽기 행동은 개인화 프로필과 읽은 게시글 제외 정책의 핵심 입력이다. |
@@ -169,20 +171,20 @@ createSocialUser() → PENDING
 | P2 | RSS 크롤링이 요청됨 | `RssCrawlingRequested` | `CrawlingService.executeCrawling` | 운영 모니터링 | 운영 추적과 중복 실행 분석에 유용하다. |
 | P2 | RSS 피드 수집에 실패함 | `RssFeedFetchFailed` | `RssFeedReader.fetchFeedSafely`, listener | 운영 알림, 운영 모니터링 | 운영 알림/장애 대응 이벤트다. |
 | P2 | 추천이 이력화됨 | `RecommendationsArchived` | 기존 `RecommendedPost` → `RecommendationHistory` | 추천 분석 | 추천 품질 분석과 장기 히스토리 분석에 유용하다. |
-| P2 | 사용자가 탈퇴함 | `UserWithdrawn` | `User.withdraw` | 인증 캐시 제거, 개인정보 정리, 알림 토큰 정리 | 개인정보 정리, 토큰 무효화, 알림 토큰 비활성화와 연결된다. |
+| P2 | 사용자가 탈퇴함 | `UserWithdrawnEvent` | `UserCommandService.withdrawUser` / `User.withdraw` | 인증 캐시 제거, 개인정보 정리, 알림 토큰 정리 | 개인정보 정리, 토큰 무효화, 알림 토큰 비활성화와 연결된다. 인증 캐시 제거는 보안 민감 후처리라 `BEFORE_COMMIT + AFTER_COMMIT`으로 처리한다. |
 | P3 | 기술 블로그가 등록됨 | `TechBlogRegistered` | `TechBlog.create` | 크롤링 스케줄 갱신 | 현재 초기 데이터 중심이라 낮은 우선순위지만 관리 기능이 생기면 중요해진다. |
 | P3 | 알림 토큰이 등록됨 | `NotificationTokenRegistered` | `NotificationToken` | 알림 발송 | 추천 알림 등 푸시 기능이 본격화되면 중요해진다. |
 | P3 | 알림 토큰이 비활성화됨 | `NotificationTokenDeactivated` | `NotificationToken` | 알림 발송 중단 | 사용자 탈퇴/토큰 교체 시 연결된다. |
 
 ### 이벤트 도입 1차 추천 범위
 
-1차로 도입한다면 다음 3개가 가장 효과가 크다.
+현재 1차 도입 상태와 다음 후보는 다음과 같다.
 
-1. `UserInterestsChanged`
+1. `OnboardingCompletedEvent` / `UserInterestsChangedEvent` / `UserWithdrawnEvent` — **도입 완료**
 2. `PersonalizedProfileGenerated`
 3. `TechnicalPostIndexed`
 
-이 세 이벤트는 각각 **개인화 프로필 재생성**, **추천 재생성**, **검색/추천 콘텐츠 준비 완료**를 분리할 수 있어 컨텍스트 결합도 감소 효과가 크다.
+User Account 관련 이벤트는 1차 도입되어 Personalization/Auth 후처리와 분리되었다. 남은 핵심 이벤트는 **개인화 프로필 생성과 추천 생성 분리**, **검색/추천 콘텐츠 준비 완료 명시화**에 집중한다.
 
 ---
 
@@ -237,16 +239,16 @@ createSocialUser() → PENDING
 
 | 규칙 | 예시 |
 |---|---|
-| PascalCase + 과거시제 동사구 | `UserInterestsChanged`, `TechnicalPostIndexed` |
-| 주어(Aggregate) + 동사(상태 변화) | `PersonalizedProfileGenerated`, `RecommendationsCreated` |
+| PascalCase + 과거시제 동사구 + `Event` 접미사 | `UserInterestsChangedEvent`, `TechnicalPostIndexedEvent` |
+| 주어(Aggregate) + 동사(상태 변화) | `PersonalizedProfileGeneratedEvent`, `RecommendationsCreatedEvent` |
 | 한글 설명은 이벤트 표 주석으로만 사용, 코드명은 영문 | 표 §2의 한글 이름은 설명용, 실제 클래스명은 영문 |
 
 ### 4.2 발행/구독 기술 규약 (Spring)
 
 ```java
-// 발행: 트랜잭션 커밋 후 발행 보장
-// ApplicationEventPublisher.publishEvent()는 같은 트랜잭션 내 동기 호출
-// → 반드시 @TransactionalEventListener(phase = AFTER_COMMIT) 리스너와 함께 사용
+// 발행: ApplicationEventPublisher.publishEvent()는 같은 트랜잭션 내 동기 호출
+// 커밋 이후에만 실행해야 하는 후처리는 @TransactionalEventListener(phase = AFTER_COMMIT)와 함께 사용
+// 커밋 전에 반드시 성공해야 하는 보안 민감 후처리는 BEFORE_COMMIT 예외를 둘 수 있음
 
 // 발행 지점 예시 (서비스 레이어)
 applicationEventPublisher.publishEvent(new PersonalizedProfileGeneratedEvent(userId));
@@ -258,11 +260,13 @@ public void handleProfileGenerated(PersonalizedProfileGeneratedEvent event) { ..
 ```
 
 핵심 규칙:
-- **모든 도메인 이벤트 리스너는 `@TransactionalEventListener(phase = AFTER_COMMIT)`을 사용한다.**  
-  이유: 트랜잭션 롤백 시 이벤트가 발행되지 않도록 보장해야 한다.
-- **비동기 리스너에는 반드시 `@Async`와 전용 `Executor`를 지정한다.**  
+- **기본 후처리 리스너는 `@TransactionalEventListener(phase = AFTER_COMMIT)`을 사용한다.**
+  이유: 트랜잭션 롤백 시 외부 후처리가 실행되지 않도록 보장해야 한다.
+- **보안 민감 후처리는 `BEFORE_COMMIT` 예외를 둘 수 있다.**
+  예: `UserWithdrawnEvent`의 인증 캐시 무효화는 실패 시 탈퇴 트랜잭션을 롤백해야 하므로 `BEFORE_COMMIT`에서 한 번 실행하고, 커밋 직전 재적재 race를 줄이기 위해 `AFTER_COMMIT`에서 한 번 더 실행한다.
+- **비동기 리스너에는 반드시 `@Async`와 전용 `Executor`를 지정한다.**
   이유: `@Async` 없이 `AFTER_COMMIT` 단독 사용 시 같은 스레드에서 동기 실행된다.
-- **이벤트 발행은 Aggregate 메서드 내부가 아닌 Application Service에서 수행한다.**  
+- **이벤트 발행은 Aggregate 메서드 내부가 아닌 Application Service에서 수행한다.**
   이유: Spring의 `ApplicationEventPublisher`는 인프라 의존성이므로 도메인 레이어에 주입하지 않는다.
 
 ### 4.3 Spring Batch 내 이벤트 발행 정책
@@ -289,11 +293,11 @@ public ExitStatus afterStep(StepExecution stepExecution) {
 
 **skip count가 있는 경우 주의사항**
 
-`ExitStatus.COMPLETED`여도 skip policy에 의해 일부 item이 건너뛰어진 경우 `stepExecution.getSkipCount() > 0`일 수 있다.  
+`ExitStatus.COMPLETED`여도 skip policy에 의해 일부 item이 건너뛰어진 경우 `stepExecution.getSkipCount() > 0`일 수 있다.
 skip이 허용 범위 내라면 COMPLETED로 끝나는 배치 특성상, 이 경우에도 이벤트를 발행할지 여부를 결정해야 한다.
 
-**현재 정책**: skip count 여부와 무관하게 `COMPLETED` 상태이면 이벤트를 발행한다.  
-이유: 색인 누락된 item은 `summaryAndEmbeddingJob` 재색인 잡이 복구하며, 이벤트 발행 억제보다 후속 재처리가 더 안전하다.  
+**현재 정책**: skip count 여부와 무관하게 `COMPLETED` 상태이면 이벤트를 발행한다.
+이유: 색인 누락된 item은 `summaryAndEmbeddingJob` 재색인 잡이 복구하며, 이벤트 발행 억제보다 후속 재처리가 더 안전하다.
 skip count 임계값 초과 시 Step을 `FAILED`로 끝내는 skip limit 설정으로 이상 상황을 조기에 차단하는 것을 권장한다.
 
 ### 4.4 Elasticsearch Projection 일관성 정책

@@ -34,12 +34,14 @@
 | 인증 필터 | `JwtAuthenticationFilter` | 요청에서 JWT를 읽어 인증 컨텍스트를 채우는 필터 |
 | OAuth 요청 저장소 | `HttpCookieOAuth2AuthorizationRequestRepository` | OAuth 인증 요청 상태를 쿠키로 보관하는 구성요소 |
 | 사용자 인증 캐시 | `UserAuthCacheService` | 로그인/토큰 갱신 이후 사용자 인증 조회를 보조하는 캐시 |
+| 인증 캐시 이벤트 리스너 | `UserAuthCacheEventListener` | User Account 이벤트를 받아 사용자 인증 캐시를 무효화하는 리스너 |
 
 ## 혼동 금지
 
 - `개발자 토큰`은 일반 사용자 액세스 토큰과 수명/용도가 다르다.
 - Auth / Security는 사용자 계정 소유 컨텍스트가 아니다. 사용자 생성/상태 전이는 User Account 컨텍스트가 소유하고, 개인화 프로필 생성은 Personalization Profile 컨텍스트가 맡는다.
 - `UserPrincipal`은 인증 컨텍스트 표현이지 `User` aggregate 그 자체가 아니다.
+- 온보딩 완료 캐시 무효화는 `AFTER_COMMIT` 후처리로 충분하지만, 회원 탈퇴 캐시 무효화는 보안 민감 seam이므로 `BEFORE_COMMIT`에서 실패 시 탈퇴 트랜잭션을 롤백하고 `AFTER_COMMIT`에서 한 번 더 무효화한다.
 
 ## 금지 표현 / 권장 표현
 
@@ -57,4 +59,6 @@
 - `src/main/java/com/techfork/global/security/config/SecurityConfig.java`
 - `src/main/java/com/techfork/global/security/jwt/JwtUtil.java`
 - `src/main/java/com/techfork/global/security/auth/service/RefreshTokenService.java`
+- `src/main/java/com/techfork/global/security/auth/service/UserAuthCacheService.java`
+- `src/main/java/com/techfork/global/security/auth/listener/UserAuthCacheEventListener.java`
 - `src/main/java/com/techfork/global/security/oauth/UserPrincipal.java`
