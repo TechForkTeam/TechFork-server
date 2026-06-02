@@ -7,8 +7,6 @@ import com.techfork.useraccount.application.event.OnboardingCompletedEvent;
 import com.techfork.useraccount.application.event.UserWithdrawnEvent;
 import com.techfork.useraccount.application.reader.UserReader;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.exception.UserErrorCode;
-import com.techfork.global.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -47,10 +45,6 @@ public class UserCommandService {
 
     public void withdrawUser(WithdrawUserCommand command) {
         User user = userReader.getById(command.userId());
-
-        if (user.isWithdrawn()) {
-            throw new GeneralException(UserErrorCode.ALREADY_WITHDRAWN);
-        }
 
         user.withdraw();
         eventPublisher.publishEvent(new UserWithdrawnEvent(command.userId()));
