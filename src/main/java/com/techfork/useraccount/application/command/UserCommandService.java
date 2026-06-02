@@ -3,13 +3,15 @@ package com.techfork.useraccount.application.command;
 import com.techfork.useraccount.application.command.input.CompleteOnboardingCommand;
 import com.techfork.useraccount.application.command.input.UpdateAccountProfileCommand;
 import com.techfork.useraccount.application.command.input.WithdrawUserCommand;
+import com.techfork.useraccount.application.event.OnboardingCompletedEvent;
+import com.techfork.useraccount.application.event.UserWithdrawnEvent;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.exception.GeneralException;
-import com.techfork.global.security.auth.service.UserAuthCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +23,7 @@ public class UserCommandService {
 
     private final InterestCommandService interestCommandService;
     private final UserRepository userRepository;
-    private final UserAuthCacheService userAuthCacheService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public void completeOnboarding(CompleteOnboardingCommand command) {
         User user = userRepository.findByIdWithInterestCategories(command.userId())
@@ -31,7 +33,7 @@ public class UserCommandService {
 
         interestCommandService.saveUserInterests(user, command.interests());
 
-        userAuthCacheService.evict(command.userId());
+        eventPublisher.publishEvent(new OnboardingCompletedEvent(command.userId()));
     }
 
     public void updateAccountProfile(UpdateAccountProfileCommand command) {
@@ -55,7 +57,7 @@ public class UserCommandService {
         }
 
         user.withdraw();
-        userAuthCacheService.evict(command.userId());
+        eventPublisher.publishEvent(new UserWithdrawnEvent(command.userId()));
 
         log.info("User withdrawn - status changed to WITHDRAWN and personal data anonymized");
     }

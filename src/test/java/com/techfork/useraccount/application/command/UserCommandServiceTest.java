@@ -1,23 +1,26 @@
 package com.techfork.useraccount.application.command;
 
+import com.techfork.global.exception.GeneralException;
 import com.techfork.useraccount.application.command.input.CompleteOnboardingCommand;
 import com.techfork.useraccount.application.command.input.UpdateAccountProfileCommand;
 import com.techfork.useraccount.application.command.input.UserInterestCommand;
 import com.techfork.useraccount.application.command.input.WithdrawUserCommand;
+import com.techfork.useraccount.application.event.OnboardingCompletedEvent;
+import com.techfork.useraccount.application.event.UserWithdrawnEvent;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.enums.UserStatus;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
 import com.techfork.useraccount.infrastructure.UserRepository;
-import com.techfork.global.exception.GeneralException;
-import com.techfork.global.security.auth.service.UserAuthCacheService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -28,7 +31,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class UserCommandServiceTest {
@@ -40,7 +44,7 @@ class UserCommandServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private UserAuthCacheService userAuthCacheService;
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private UserCommandService userCommandService;
@@ -65,7 +69,6 @@ class UserCommandServiceTest {
                 UserInterestCommand.builder().category("DATABASE").keywords(List.of("MYSQL", "REDIS")).build()
         );
         CompleteOnboardingCommand command = new CompleteOnboardingCommand(userId, "테크포크유저", "user@techfork.com", "백엔드 개발자입니다", interests);
-
         given(userRepository.findByIdWithInterestCategories(userId)).willReturn(Optional.of(mockUser));
 
         userCommandService.completeOnboarding(command);
@@ -75,7 +78,7 @@ class UserCommandServiceTest {
         assertThat(mockUser.getDescription()).isEqualTo("백엔드 개발자입니다");
         verify(userRepository).findByIdWithInterestCategories(userId);
         verify(interestCommandService).saveUserInterests(eq(mockUser), any());
-        verify(userAuthCacheService).evict(userId);
+        verifyPublishedEvent(OnboardingCompletedEvent.class, userId);
     }
 
     @Test
@@ -95,6 +98,7 @@ class UserCommandServiceTest {
                 .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
 
         verify(interestCommandService, never()).saveUserInterests(any(), any());
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
@@ -116,7 +120,7 @@ class UserCommandServiceTest {
         assertThat(mockUser.getEmail()).isEqualTo("user@techfork.com");
         assertThat(mockUser.getDescription()).isNull();
         verify(interestCommandService).saveUserInterests(eq(mockUser), any());
-        verify(userAuthCacheService).evict(userId);
+        verifyPublishedEvent(OnboardingCompletedEvent.class, userId);
     }
 
     @Test
@@ -135,7 +139,7 @@ class UserCommandServiceTest {
 
         assertThat(mockUser.getNickName()).isEqualTo("풀스택개발자");
         verify(interestCommandService).saveUserInterests(eq(mockUser), any());
-        verify(userAuthCacheService).evict(userId);
+        verifyPublishedEvent(OnboardingCompletedEvent.class, userId);
     }
 
     @Test
@@ -219,7 +223,7 @@ class UserCommandServiceTest {
         assertThat(testUser.getDescription()).isNull();
         assertThat(testUser.getSocialId()).isEqualTo(originalSocialId);
         verify(userRepository).findById(userId);
-        verify(userAuthCacheService).evict(userId);
+        verifyPublishedEvent(UserWithdrawnEvent.class, userId);
     }
 
     @Test
@@ -232,6 +236,7 @@ class UserCommandServiceTest {
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(UserErrorCode.USER_NOT_FOUND);
         verify(userRepository).findById(userId);
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
@@ -245,5 +250,25 @@ class UserCommandServiceTest {
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(UserErrorCode.ALREADY_WITHDRAWN);
         verify(userRepository).findById(userId);
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    private void verifyPublishedEvent(Class<?> eventType, Long expectedUserId) {
+        ArgumentCaptor<Object> eventCaptor = ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+
+        assertThat(eventCaptor.getValue()).isInstanceOf(eventType);
+        Long actualUserId = extractUserId(eventCaptor.getValue());
+        assertThat(actualUserId).isEqualTo(expectedUserId);
+    }
+
+    private Long extractUserId(Object event) {
+        if (event instanceof OnboardingCompletedEvent onboardingCompletedEvent) {
+            return onboardingCompletedEvent.userId();
+        }
+        if (event instanceof UserWithdrawnEvent userWithdrawnEvent) {
+            return userWithdrawnEvent.userId();
+        }
+        throw new IllegalArgumentException("지원하지 않는 이벤트 타입입니다: " + event.getClass());
     }
 }

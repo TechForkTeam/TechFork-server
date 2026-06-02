@@ -1,9 +1,9 @@
 package com.techfork.useraccount.application.command;
 
+import com.techfork.global.exception.GeneralException;
 import com.techfork.useraccount.application.command.input.UpdateUserInterestsCommand;
 import com.techfork.useraccount.application.command.input.UserInterestCommand;
-import com.techfork.domain.personalization.service.PersonalizationProfileService;
-import com.techfork.global.exception.GeneralException;
+import com.techfork.useraccount.application.event.UserInterestsChangedEvent;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.UserInterestCategory;
 import com.techfork.useraccount.domain.UserInterestKeyword;
@@ -15,9 +15,11 @@ import com.techfork.useraccount.infrastructure.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -25,8 +27,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -37,16 +39,15 @@ class InterestCommandServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private PersonalizationProfileService personalizationProfileService;
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private InterestCommandService interestCommandService;
 
     @Test
-    @DisplayName("관심사 저장 - 요청을 도메인 선택값으로 변환하고 개인화 프로필 생성을 트리거한다")
-    void saveUserInterests_ConvertsCommandAndTriggersProfileGeneration() {
-        Long userId = 1L;
-        User user = createUserWithId(userId);
+    @DisplayName("관심사 저장 - 요청을 도메인 선택값으로 변환한다")
+    void saveUserInterests_ConvertsCommand() {
+        User user = createUserWithId(1L);
         List<UserInterestCommand> interests = List.of(
                 UserInterestCommand.builder()
                         .category("BACKEND")
@@ -62,14 +63,13 @@ class InterestCommandServiceTest {
         assertThat(category.getKeywords())
                 .extracting(UserInterestKeyword::getKeyword)
                 .containsExactly(EInterestKeyword.JAVA, EInterestKeyword.SPRING);
-        verify(personalizationProfileService).generatePersonalizationProfile(userId);
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
-    @DisplayName("관심사 저장 - 키워드가 없는 요청도 카테고리만 저장하고 개인화 프로필 생성을 트리거한다")
-    void saveUserInterests_CategoryOnly_TriggersProfileGeneration() {
-        Long userId = 1L;
-        User user = createUserWithId(userId);
+    @DisplayName("관심사 저장 - 키워드가 없는 요청도 카테고리만 저장한다")
+    void saveUserInterests_CategoryOnly() {
+        User user = createUserWithId(1L);
         List<UserInterestCommand> interests = List.of(
                 UserInterestCommand.builder()
                         .category("AI_ML")
@@ -83,12 +83,12 @@ class InterestCommandServiceTest {
         assertThat(user.getInterestCategories()).hasSize(1);
         assertThat(category.getCategory()).isEqualTo(EInterestCategory.AI_ML);
         assertThat(category.getKeywords()).isEmpty();
-        verify(personalizationProfileService).generatePersonalizationProfile(userId);
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
-    @DisplayName("관심사 저장 - 잘못된 카테고리와 키워드 조합이면 개인화 프로필 생성을 트리거하지 않는다")
-    void saveUserInterests_InvalidKeywordCategory_SkipsProfileGeneration() {
+    @DisplayName("관심사 저장 - 잘못된 카테고리와 키워드 조합이면 이벤트를 발행하지 않는다")
+    void saveUserInterests_InvalidKeywordCategory_SkipsEventPublishing() {
         User user = createUserWithId(1L);
         List<UserInterestCommand> interests = List.of(
                 UserInterestCommand.builder().category("BACKEND").keywords(List.of("REACT")).build()
@@ -98,12 +98,12 @@ class InterestCommandServiceTest {
                 .isInstanceOf(GeneralException.class)
                 .hasFieldOrPropertyWithValue("code", UserErrorCode.INVALID_INTEREST_KEYWORD);
 
-        verify(personalizationProfileService, never()).generatePersonalizationProfile(any());
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
-    @DisplayName("관심사 저장 - 존재하지 않는 카테고리면 개인화 프로필 생성을 트리거하지 않는다")
-    void saveUserInterests_UnknownCategory_SkipsProfileGeneration() {
+    @DisplayName("관심사 저장 - 존재하지 않는 카테고리면 이벤트를 발행하지 않는다")
+    void saveUserInterests_UnknownCategory_SkipsEventPublishing() {
         User user = createUserWithId(1L);
         List<UserInterestCommand> interests = List.of(
                 UserInterestCommand.builder().category("UNKNOWN").keywords(List.of("JAVA")).build()
@@ -113,12 +113,12 @@ class InterestCommandServiceTest {
                 .isInstanceOf(GeneralException.class)
                 .hasFieldOrPropertyWithValue("code", UserErrorCode.INVALID_INTEREST_CATEGORY);
 
-        verify(personalizationProfileService, never()).generatePersonalizationProfile(any());
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
-    @DisplayName("관심사 저장 - 존재하지 않는 키워드면 개인화 프로필 생성을 트리거하지 않는다")
-    void saveUserInterests_UnknownKeyword_SkipsProfileGeneration() {
+    @DisplayName("관심사 저장 - 존재하지 않는 키워드면 이벤트를 발행하지 않는다")
+    void saveUserInterests_UnknownKeyword_SkipsEventPublishing() {
         User user = createUserWithId(1L);
         List<UserInterestCommand> interests = List.of(
                 UserInterestCommand.builder().category("BACKEND").keywords(List.of("UNKNOWN")).build()
@@ -128,11 +128,11 @@ class InterestCommandServiceTest {
                 .isInstanceOf(GeneralException.class)
                 .hasFieldOrPropertyWithValue("code", UserErrorCode.INVALID_INTEREST_KEYWORD);
 
-        verify(personalizationProfileService, never()).generatePersonalizationProfile(any());
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
-    @DisplayName("관심사 업데이트 - 사용자를 조회해 관심사를 교체하고 개인화 프로필 생성을 트리거한다")
+    @DisplayName("관심사 업데이트 - 사용자를 조회해 관심사를 교체하고 이벤트를 발행한다")
     void updateUserInterests_Success() {
         Long userId = 1L;
         User user = createUserWithId(userId);
@@ -145,11 +145,11 @@ class InterestCommandServiceTest {
 
         assertThat(user.getInterestCategories()).hasSize(1);
         verify(userRepository).findByIdWithInterestCategories(userId);
-        verify(personalizationProfileService).generatePersonalizationProfile(userId);
+        verifyPublishedEvent(userId);
     }
 
     @Test
-    @DisplayName("관심사 업데이트 - 사용자가 존재하지 않으면 예외가 발생하고 개인화 프로필 생성을 트리거하지 않는다")
+    @DisplayName("관심사 업데이트 - 사용자가 존재하지 않으면 예외가 발생하고 이벤트를 발행하지 않는다")
     void updateUserInterests_UserNotFound_ThrowsException() {
         Long userId = 999L;
         List<UserInterestCommand> interests = List.of(
@@ -161,12 +161,21 @@ class InterestCommandServiceTest {
                 .isInstanceOf(GeneralException.class)
                 .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
 
-        verify(personalizationProfileService, never()).generatePersonalizationProfile(any());
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     private User createUserWithId(Long userId) {
         User user = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", null);
         ReflectionTestUtils.setField(user, "id", userId);
         return user;
+    }
+
+    private void verifyPublishedEvent(Long expectedUserId) {
+        ArgumentCaptor<Object> eventCaptor = ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+
+        assertThat(eventCaptor.getValue()).isInstanceOf(UserInterestsChangedEvent.class);
+        UserInterestsChangedEvent event = (UserInterestsChangedEvent) eventCaptor.getValue();
+        assertThat(event.userId()).isEqualTo(expectedUserId);
     }
 }
