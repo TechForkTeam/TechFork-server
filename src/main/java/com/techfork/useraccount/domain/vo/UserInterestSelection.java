@@ -9,4 +9,7 @@ public record UserInterestSelection(
         EInterestCategory category,
         List<EInterestKeyword> keywords
 ) {
+    public UserInterestSelection {
+        keywords = keywords == null ? List.of() : List.copyOf(keywords);
+    }
 }

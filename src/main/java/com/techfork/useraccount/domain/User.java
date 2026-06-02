@@ -104,7 +104,7 @@ public class User extends BaseTimeEntity {
     private UserInterestCategory createInterestCategory(UserInterestSelection interest) {
         UserInterestCategory userInterestCategory = UserInterestCategory.create(this, interest.category());
 
-        if (interest.keywords() != null && !interest.keywords().isEmpty()) {
+        if (!interest.keywords().isEmpty()) {
             addKeywordsToCategory(userInterestCategory, interest);
         }
 

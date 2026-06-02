@@ -12,9 +12,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserTest {
@@ -86,6 +88,19 @@ class UserTest {
             assertThat(user.getInterestCategories()).hasSize(1);
             UserInterestCategory aiMl = findCategory(user, EInterestCategory.AI_ML);
             assertThat(aiMl.getKeywords()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("관심사 선택값은 키워드 목록을 빈 불변 리스트로 정규화한다")
+        void interestSelectionNormalizesKeywordsToImmutableList() {
+            List<EInterestKeyword> keywords = new ArrayList<>(List.of(EInterestKeyword.JAVA));
+
+            UserInterestSelection selection = new UserInterestSelection(EInterestCategory.BACKEND, keywords);
+            keywords.add(EInterestKeyword.SPRING);
+
+            assertThat(selection.keywords()).containsExactly(EInterestKeyword.JAVA);
+            assertThatExceptionOfType(UnsupportedOperationException.class)
+                    .isThrownBy(() -> selection.keywords().add(EInterestKeyword.SPRING));
         }
 
         @Test
