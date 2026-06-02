@@ -1,8 +1,8 @@
 package com.techfork.useraccount.presentation;
 
-import com.techfork.useraccount.application.command.CompleteOnboardingCommand;
-import com.techfork.useraccount.application.command.UpdateAccountProfileCommand;
-import com.techfork.useraccount.application.command.UserInterestCommand;
+import com.techfork.useraccount.application.command.input.CompleteOnboardingCommand;
+import com.techfork.useraccount.application.command.input.UpdateAccountProfileCommand;
+import com.techfork.useraccount.application.command.input.UserInterestCommand;
 import com.techfork.useraccount.application.query.result.GetAccountProfileResult;
 import com.techfork.useraccount.presentation.request.OnboardingRequest;
 import com.techfork.useraccount.presentation.request.UpdateAccountProfileRequest;

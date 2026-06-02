@@ -13,7 +13,10 @@ import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.UserInterestCategory;
 import com.techfork.useraccount.domain.enums.EInterestCategory;
+import com.techfork.useraccount.domain.enums.EInterestKeyword;
 import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.domain.vo.UserInterestSelection;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,6 +40,12 @@ class UserRepositoryTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserInterestCategoryRepository userInterestCategoryRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     @Autowired
     private ReadPostRepository readPostRepository;
@@ -110,6 +119,43 @@ class UserRepositoryTest {
 
         // Then
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("replaceInterests - flush 후 기존 관심사 row를 제거하고 새 관심사 graph를 저장")
+    void replaceInterests_FlushesOrphansAndPersistsNewGraph() {
+        // Given: 기존 관심사 graph 저장
+        testUser.replaceInterests(List.of(
+                new UserInterestSelection(EInterestCategory.BACKEND, List.of(EInterestKeyword.JAVA, EInterestKeyword.SPRING)),
+                new UserInterestSelection(EInterestCategory.DATABASE, List.of(EInterestKeyword.MYSQL))
+        ));
+        userRepository.saveAndFlush(testUser);
+        entityManager.clear();
+
+        List<Long> oldCategoryIds = userInterestCategoryRepository.findByUserIdWithKeywords(testUser.getId()).stream()
+                .map(UserInterestCategory::getId)
+                .toList();
+        List<Long> oldKeywordIds = findKeywordIdsByCategoryIds(oldCategoryIds);
+
+        User user = userRepository.findByIdWithInterestCategories(testUser.getId()).orElseThrow();
+
+        // When: 관심사를 새 graph로 완전히 교체하고 flush/clear
+        user.replaceInterests(List.of(
+                new UserInterestSelection(EInterestCategory.FRONTEND, List.of(EInterestKeyword.REACT))
+        ));
+        userRepository.flush();
+        entityManager.clear();
+
+        // Then: 기존 row는 orphanRemoval로 제거되고 새 graph만 남는다
+        assertThat(countCategoriesByIds(oldCategoryIds)).isZero();
+        assertThat(countKeywordsByIds(oldKeywordIds)).isZero();
+
+        List<UserInterestCategory> categories = userInterestCategoryRepository.findByUserIdWithKeywords(testUser.getId());
+        assertThat(categories).hasSize(1);
+        assertThat(categories.get(0).getCategory()).isEqualTo(EInterestCategory.FRONTEND);
+        assertThat(categories.get(0).getKeywords())
+                .extracting(keyword -> keyword.getKeyword())
+                .containsExactly(EInterestKeyword.REACT);
     }
 
     @Test
@@ -340,5 +386,35 @@ class UserRepositoryTest {
                 .crawledAt(LocalDateTime.now())
                 .techBlog(testTechBlog)
                 .build());
+    }
+
+    private List<Long> findKeywordIdsByCategoryIds(List<Long> categoryIds) {
+        return entityManager.createQuery("""
+                        SELECT keyword.id
+                        FROM UserInterestKeyword keyword
+                        WHERE keyword.userInterestCategory.id IN :categoryIds
+                        """, Long.class)
+                .setParameter("categoryIds", categoryIds)
+                .getResultList();
+    }
+
+    private Long countCategoriesByIds(List<Long> categoryIds) {
+        return entityManager.createQuery("""
+                        SELECT COUNT(category)
+                        FROM UserInterestCategory category
+                        WHERE category.id IN :categoryIds
+                        """, Long.class)
+                .setParameter("categoryIds", categoryIds)
+                .getSingleResult();
+    }
+
+    private Long countKeywordsByIds(List<Long> keywordIds) {
+        return entityManager.createQuery("""
+                        SELECT COUNT(keyword)
+                        FROM UserInterestKeyword keyword
+                        WHERE keyword.id IN :keywordIds
+                        """, Long.class)
+                .setParameter("keywordIds", keywordIds)
+                .getSingleResult();
     }
 }

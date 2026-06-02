@@ -1,5 +1,7 @@
 package com.techfork.useraccount.domain.enums;
 
+import com.techfork.global.exception.GeneralException;
+import com.techfork.useraccount.domain.exception.UserErrorCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -143,6 +145,14 @@ public enum EInterestKeyword {
 
     private final EInterestCategory category;
     private final String displayName;
+
+    public static EInterestKeyword from(String keywordName) {
+        try {
+            return EInterestKeyword.valueOf(keywordName);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new GeneralException(UserErrorCode.INVALID_INTEREST_KEYWORD);
+        }
+    }
 
     public static List<EInterestKeyword> getKeywordsByCategory(EInterestCategory category) {
         return Arrays.stream(values())

@@ -1,5 +1,9 @@
 package com.techfork.useraccount.application.command;
 
+import com.techfork.useraccount.application.command.input.CompleteOnboardingCommand;
+import com.techfork.useraccount.application.command.input.UpdateAccountProfileCommand;
+import com.techfork.useraccount.application.command.input.UserInterestCommand;
+import com.techfork.useraccount.application.command.input.WithdrawUserCommand;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.enums.UserStatus;

@@ -2,7 +2,7 @@ package com.techfork.useraccount.presentation;
 
 import com.techfork.useraccount.application.command.InterestCommandService;
 import com.techfork.useraccount.application.command.UserCommandService;
-import com.techfork.useraccount.application.command.WithdrawUserCommand;
+import com.techfork.useraccount.application.command.input.WithdrawUserCommand;
 import com.techfork.useraccount.application.query.GetAccountProfileQuery;
 import com.techfork.useraccount.application.query.GetUserInterestsQuery;
 import com.techfork.useraccount.application.query.InterestQueryService;

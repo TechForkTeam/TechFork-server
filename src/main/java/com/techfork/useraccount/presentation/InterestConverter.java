@@ -1,7 +1,7 @@
 package com.techfork.useraccount.presentation;
 
-import com.techfork.useraccount.application.command.UpdateUserInterestsCommand;
-import com.techfork.useraccount.application.command.UserInterestCommand;
+import com.techfork.useraccount.application.command.input.UpdateUserInterestsCommand;
+import com.techfork.useraccount.application.command.input.UserInterestCommand;
 import com.techfork.useraccount.application.query.result.GetInterestListResult;
 import com.techfork.useraccount.application.query.result.GetUserInterestsResult;
 import com.techfork.useraccount.presentation.request.SaveInterestRequest;

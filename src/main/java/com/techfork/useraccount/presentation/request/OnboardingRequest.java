@@ -1,5 +1,6 @@
 package com.techfork.useraccount.presentation.request;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -22,6 +23,6 @@ public record OnboardingRequest(
 
         @NotNull(message = "관심사 목록은 필수입니다.")
         @NotEmpty(message = "관심사를 최소 1개 이상 선택해주세요.")
-        List<UserInterestRequest> interests
+        List<@NotNull(message = "관심사 항목은 필수입니다.") @Valid UserInterestRequest> interests
 ) {
 }

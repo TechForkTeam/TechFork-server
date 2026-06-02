@@ -1,11 +1,12 @@
 package com.techfork.useraccount.application.command;
 
+import com.techfork.useraccount.application.command.input.UpdateUserInterestsCommand;
+import com.techfork.useraccount.application.command.input.UserInterestCommand;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.UserInterestCategory;
-import com.techfork.useraccount.domain.UserInterestKeyword;
 import com.techfork.useraccount.domain.enums.EInterestCategory;
 import com.techfork.useraccount.domain.enums.EInterestKeyword;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
+import com.techfork.useraccount.domain.vo.UserInterestSelection;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.domain.personalization.service.PersonalizationProfileService;
 import com.techfork.global.exception.GeneralException;
@@ -33,44 +34,28 @@ public class InterestCommandService {
     }
 
     void saveUserInterests(User user, List<UserInterestCommand> interests) {
-        user.getInterestCategories().clear();
-        List<UserInterestCategory> categories = createCategoriesFromRequest(user, interests);
-        user.getInterestCategories().addAll(categories);
+        List<UserInterestSelection> interestSelections = toInterestSelections(interests);
+        user.replaceInterests(interestSelections);
 
-        log.info("Saved {} interest categories for user {}", categories.size(), user.getId());
+        log.info("Saved {} interest categories for user {}", interestSelections.size(), user.getId());
 
         personalizationProfileService.generatePersonalizationProfile(user.getId());
     }
 
-    private List<UserInterestCategory> createCategoriesFromRequest(User user, List<UserInterestCommand> interests) {
+    private List<UserInterestSelection> toInterestSelections(List<UserInterestCommand> interests) {
         return interests.stream()
-                .map(dto -> createCategoryWithKeywords(user, dto))
+                .map(this::toInterestSelection)
                 .toList();
     }
 
-    private UserInterestCategory createCategoryWithKeywords(User user, UserInterestCommand command) {
-        EInterestCategory category = EInterestCategory.valueOf(command.category());
-        UserInterestCategory userCategory = UserInterestCategory.create(user, category);
+    private UserInterestSelection toInterestSelection(UserInterestCommand command) {
+        EInterestCategory category = EInterestCategory.from(command.category());
+        List<EInterestKeyword> keywords = command.keywords() == null
+                ? List.of()
+                : command.keywords().stream()
+                        .map(EInterestKeyword::from)
+                        .toList();
 
-        if (command.keywords() != null && !command.keywords().isEmpty()) {
-            addKeywordsToCategory(userCategory, category, command.keywords());
-        }
-
-        return userCategory;
-    }
-
-    private void addKeywordsToCategory(UserInterestCategory userCategory, EInterestCategory category, List<String> keywordNames) {
-        for (String keywordName : keywordNames) {
-            EInterestKeyword keyword = EInterestKeyword.valueOf(keywordName);
-            validateKeywordCategory(keyword, category);
-            UserInterestKeyword userInterestKeyword = UserInterestKeyword.create(userCategory, keyword);
-            userCategory.addKeyword(userInterestKeyword);
-        }
-    }
-
-    private void validateKeywordCategory(EInterestKeyword keyword, EInterestCategory category) {
-        if (keyword.getCategory() != category) {
-            throw new GeneralException(UserErrorCode.INVALID_INTEREST_KEYWORD);
-        }
+        return new UserInterestSelection(category, keywords);
     }
 }

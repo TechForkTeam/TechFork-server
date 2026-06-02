@@ -1,13 +1,23 @@
 package com.techfork.useraccount.domain;
 
+import com.techfork.global.exception.GeneralException;
+import com.techfork.useraccount.domain.enums.EInterestCategory;
+import com.techfork.useraccount.domain.enums.EInterestKeyword;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.enums.UserStatus;
+import com.techfork.useraccount.domain.exception.UserErrorCode;
+import com.techfork.useraccount.domain.vo.UserInterestSelection;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserTest {
 
@@ -34,6 +44,105 @@ class UserTest {
             assertThat(user.isActive()).isFalse();
             assertThat(user.isWithdrawn()).isFalse();
             assertThat(user.getInterestCategories()).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("replaceInterests")
+    class ReplaceInterests {
+
+        @Test
+        @DisplayName("관심사 교체 시 카테고리와 키워드를 함께 조립한다")
+        void replacesInterestsWithCategoriesAndKeywords() {
+            User user = activeUser();
+
+            user.replaceInterests(List.of(
+                    new UserInterestSelection(EInterestCategory.BACKEND, List.of(EInterestKeyword.JAVA, EInterestKeyword.SPRING)),
+                    new UserInterestSelection(EInterestCategory.DATABASE, List.of(EInterestKeyword.MYSQL, EInterestKeyword.REDIS))
+            ));
+
+            assertThat(user.getInterestCategories()).hasSize(2);
+            UserInterestCategory backend = findCategory(user, EInterestCategory.BACKEND);
+            assertThat(backend.getUser()).isSameAs(user);
+            assertThat(backend.getKeywords())
+                    .extracting(UserInterestKeyword::getKeyword)
+                    .containsExactly(EInterestKeyword.JAVA, EInterestKeyword.SPRING);
+            assertThat(backend.getKeywords())
+                    .allSatisfy(keyword -> assertThat(keyword.getUserInterestCategory()).isSameAs(backend));
+
+            UserInterestCategory database = findCategory(user, EInterestCategory.DATABASE);
+            assertThat(database.getKeywords())
+                    .extracting(UserInterestKeyword::getKeyword)
+                    .containsExactly(EInterestKeyword.MYSQL, EInterestKeyword.REDIS);
+        }
+
+        @Test
+        @DisplayName("키워드가 없으면 카테고리만 교체한다")
+        void replacesInterestsWithCategoryOnly() {
+            User user = activeUser();
+
+            user.replaceInterests(List.of(
+                    new UserInterestSelection(EInterestCategory.AI_ML, null)
+            ));
+
+            assertThat(user.getInterestCategories()).hasSize(1);
+            UserInterestCategory aiMl = findCategory(user, EInterestCategory.AI_ML);
+            assertThat(aiMl.getKeywords()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("관심사 선택값은 키워드 목록을 빈 불변 리스트로 정규화한다")
+        void interestSelectionNormalizesKeywordsToImmutableList() {
+            List<EInterestKeyword> keywords = new ArrayList<>(List.of(EInterestKeyword.JAVA));
+
+            UserInterestSelection selection = new UserInterestSelection(EInterestCategory.BACKEND, keywords);
+            keywords.add(EInterestKeyword.SPRING);
+
+            assertThat(selection.keywords()).containsExactly(EInterestKeyword.JAVA);
+            assertThatExceptionOfType(UnsupportedOperationException.class)
+                    .isThrownBy(() -> selection.keywords().add(EInterestKeyword.SPRING));
+        }
+
+        @Test
+        @DisplayName("기존 관심사를 제거하고 새 관심사로 교체한다")
+        void clearsExistingInterestsBeforeReplacing() {
+            User user = activeUser();
+            user.replaceInterests(List.of(
+                    new UserInterestSelection(EInterestCategory.BACKEND, List.of(EInterestKeyword.JAVA, EInterestKeyword.SPRING))
+            ));
+
+            user.replaceInterests(List.of(
+                    new UserInterestSelection(EInterestCategory.FRONTEND, List.of(EInterestKeyword.REACT))
+            ));
+
+            assertThat(user.getInterestCategories())
+                    .extracting(UserInterestCategory::getCategory)
+                    .containsExactly(EInterestCategory.FRONTEND);
+            assertThat(findCategory(user, EInterestCategory.FRONTEND).getKeywords())
+                    .extracting(UserInterestKeyword::getKeyword)
+                    .containsExactly(EInterestKeyword.REACT);
+        }
+
+        @Test
+        @DisplayName("키워드는 선택된 카테고리에 속해야 한다")
+        void rejectsKeywordThatDoesNotBelongToCategory() {
+            User user = activeUser();
+            user.replaceInterests(List.of(
+                    new UserInterestSelection(EInterestCategory.BACKEND, List.of(EInterestKeyword.JAVA))
+            ));
+
+            assertThatThrownBy(() -> user.replaceInterests(List.of(
+                    new UserInterestSelection(EInterestCategory.BACKEND, List.of(EInterestKeyword.REACT))
+            )))
+                    .isInstanceOf(GeneralException.class)
+                    .hasFieldOrPropertyWithValue("code", UserErrorCode.INVALID_INTEREST_KEYWORD);
+
+            assertThat(user.getInterestCategories())
+                    .extracting(UserInterestCategory::getCategory)
+                    .containsExactly(EInterestCategory.BACKEND);
+            assertThat(findCategory(user, EInterestCategory.BACKEND).getKeywords())
+                    .extracting(UserInterestKeyword::getKeyword)
+                    .containsExactly(EInterestKeyword.JAVA);
         }
     }
 
@@ -137,5 +246,12 @@ class UserTest {
         );
         user.updateUser("기존닉네임", "user@example.com", "기존 자기소개");
         return user;
+    }
+
+    private UserInterestCategory findCategory(User user, EInterestCategory category) {
+        return user.getInterestCategories().stream()
+                .filter(interestCategory -> interestCategory.getCategory() == category)
+                .findFirst()
+                .orElseThrow();
     }
 }

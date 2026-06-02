@@ -1,5 +1,7 @@
 package com.techfork.useraccount.domain.enums;
 
+import com.techfork.global.exception.GeneralException;
+import com.techfork.useraccount.domain.exception.UserErrorCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -41,4 +43,12 @@ public enum EInterestCategory {
     ARCHITECTURE("Architecture");
 
     private final String displayName;
+
+    public static EInterestCategory from(String categoryName) {
+        try {
+            return EInterestCategory.valueOf(categoryName);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new GeneralException(UserErrorCode.INVALID_INTEREST_CATEGORY);
+        }
+    }
 }
