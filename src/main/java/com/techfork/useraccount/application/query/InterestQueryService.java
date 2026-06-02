@@ -27,14 +27,7 @@ public class InterestQueryService {
     public GetInterestListResult getAllInterests() {
         return GetInterestListResult.builder()
                 .categories(Arrays.stream(EInterestCategory.values())
-                        .map(category -> GetInterestListResult.CategoryResult.builder()
-                                .category(category.name())
-                                .displayName(category.getDisplayName())
-                                .keywords(EInterestKeyword.getKeywordsByCategory(category)
-                                        .stream()
-                                        .map(keyword -> new GetInterestListResult.KeywordResult(keyword.name(), keyword.getDisplayName()))
-                                        .toList())
-                                .build())
+                        .map(this::toCategoryResult)
                         .toList())
                 .build();
     }
@@ -44,16 +37,35 @@ public class InterestQueryService {
 
         List<UserInterestCategory> categories = userInterestCategoryRepository.findByUserIdWithKeywords(user.getId());
         List<UserInterestResult> interests = categories.stream()
-                .map(category -> UserInterestResult.builder()
-                        .category(category.getCategory().name())
-                        .keywords(category.getKeywords().stream()
-                                .map(keyword -> keyword.getKeyword().name())
-                                .toList())
-                        .build())
+                .map(this::toUserInterestResult)
                 .toList();
 
         return GetUserInterestsResult.builder()
                 .interests(interests)
+                .build();
+    }
+
+    private GetInterestListResult.CategoryResult toCategoryResult(EInterestCategory category) {
+        return GetInterestListResult.CategoryResult.builder()
+                .category(category.name())
+                .displayName(category.getDisplayName())
+                .keywords(EInterestKeyword.getKeywordsByCategory(category)
+                        .stream()
+                        .map(this::toKeywordResult)
+                        .toList())
+                .build();
+    }
+
+    private GetInterestListResult.KeywordResult toKeywordResult(EInterestKeyword keyword) {
+        return new GetInterestListResult.KeywordResult(keyword.name(), keyword.getDisplayName());
+    }
+
+    private UserInterestResult toUserInterestResult(UserInterestCategory category) {
+        return UserInterestResult.builder()
+                .category(category.getCategory().name())
+                .keywords(category.getKeywords().stream()
+                        .map(keyword -> keyword.getKeyword().name())
+                        .toList())
                 .build();
     }
 }
