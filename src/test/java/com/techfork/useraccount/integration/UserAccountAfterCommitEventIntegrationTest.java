@@ -14,6 +14,7 @@ import com.techfork.useraccount.application.event.UserInterestsChangedEvent;
 import com.techfork.useraccount.application.event.UserWithdrawnEvent;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.domain.enums.UserStatus;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,6 +27,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.util.List;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -91,19 +96,36 @@ class UserAccountAfterCommitEventIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    @DisplayName("회원 탈퇴 이벤트는 실제 트랜잭션 커밋 이후 인증 캐시 무효화만 실행한다")
-    void withdrawUser_AfterCommit_EvictsAuthCacheOnly() {
+    @DisplayName("회원 탈퇴 이벤트는 실제 트랜잭션 커밋 전후로 인증 캐시 무효화만 실행한다")
+    void withdrawUser_BeforeAndAfterCommit_EvictsAuthCacheOnly() {
         User user = saveActiveUser();
 
         userCommandService.withdrawUser(new WithdrawUserCommand(user.getId()));
 
+        verify(userAuthCacheService, times(2)).evict(user.getId());
+        verifyNoInteractions(personalizationProfileService);
+    }
+
+    @Test
+    @DisplayName("회원 탈퇴 커밋 직전 인증 캐시 무효화에 실패하면 탈퇴 트랜잭션을 롤백한다")
+    void withdrawUser_BeforeCommitCacheEvictionFails_RollsBackWithdrawal() {
+        User user = saveActiveUser();
+        doThrow(new RuntimeException("redis eviction failed"))
+                .when(userAuthCacheService)
+                .evict(user.getId());
+
+        assertThatThrownBy(() -> userCommandService.withdrawUser(new WithdrawUserCommand(user.getId())))
+                .isInstanceOf(RuntimeException.class);
+
+        User savedUser = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(savedUser.getStatus()).isEqualTo(UserStatus.ACTIVE);
         verify(userAuthCacheService).evict(user.getId());
         verifyNoInteractions(personalizationProfileService);
     }
 
     @Test
-    @DisplayName("트랜잭션이 롤백되면 발행된 사용자 이벤트의 AFTER_COMMIT 후처리는 실행되지 않는다")
-    void publishedUserEvents_RolledBack_DoNotRunAfterCommitHandlers() {
+    @DisplayName("트랜잭션이 롤백되면 발행된 사용자 이벤트의 트랜잭션 후처리는 실행되지 않는다")
+    void publishedUserEvents_RolledBack_DoNotRunTransactionalHandlers() {
         Long userId = 1L;
 
         transactionTemplate.executeWithoutResult(status -> {

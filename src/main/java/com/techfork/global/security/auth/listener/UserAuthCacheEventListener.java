@@ -21,13 +21,18 @@ public class UserAuthCacheEventListener {
         evictUserAuthCache(event.userId(), "onboarding-completed");
     }
 
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    public void handleBeforeCommit(UserWithdrawnEvent event) {
+        evictUserAuthCache(event.userId(), "user-withdrawn-before-commit");
+    }
+
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handle(UserWithdrawnEvent event) {
-        evictUserAuthCache(event.userId(), "user-withdrawn");
+    public void handleAfterCommit(UserWithdrawnEvent event) {
+        evictUserAuthCache(event.userId(), "user-withdrawn-after-commit");
     }
 
     private void evictUserAuthCache(Long userId, String reason) {
         userAuthCacheService.evict(userId);
-        log.info("User auth cache eviction requested after commit - userId: {}, reason: {}", userId, reason);
+        log.info("User auth cache eviction requested - userId: {}, reason: {}", userId, reason);
     }
 }

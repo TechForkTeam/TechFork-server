@@ -35,28 +35,43 @@ class UserAuthCacheEventListenerTest {
     }
 
     @Test
-    @DisplayName("회원 탈퇴 이벤트 - 커밋 이후 인증 캐시를 무효화한다")
-    void handle_UserWithdrawnEvent_EvictsUserAuthCache() {
+    @DisplayName("회원 탈퇴 이벤트 - 커밋 직전 인증 캐시를 무효화한다")
+    void handleBeforeCommit_UserWithdrawnEvent_EvictsUserAuthCache() {
         Long userId = 1L;
 
-        listener.handle(new UserWithdrawnEvent(userId));
+        listener.handleBeforeCommit(new UserWithdrawnEvent(userId));
 
         verify(userAuthCacheService).evict(userId);
     }
 
     @Test
-    @DisplayName("인증 캐시 리스너는 AFTER_COMMIT 단계에서 실행된다")
-    void listenerMethods_RunAfterCommit() throws NoSuchMethodException {
-        assertAfterCommitListener("handle", OnboardingCompletedEvent.class);
-        assertAfterCommitListener("handle", UserWithdrawnEvent.class);
+    @DisplayName("회원 탈퇴 이벤트 - 커밋 이후 인증 캐시를 한 번 더 무효화한다")
+    void handleAfterCommit_UserWithdrawnEvent_EvictsUserAuthCache() {
+        Long userId = 1L;
+
+        listener.handleAfterCommit(new UserWithdrawnEvent(userId));
+
+        verify(userAuthCacheService).evict(userId);
     }
 
-    private void assertAfterCommitListener(String methodName, Class<?> eventType) throws NoSuchMethodException {
+    @Test
+    @DisplayName("인증 캐시 리스너는 이벤트별 트랜잭션 단계를 명시한다")
+    void listenerMethods_RunWithExpectedTransactionPhase() throws NoSuchMethodException {
+        assertTransactionalEventListenerPhase("handle", OnboardingCompletedEvent.class, TransactionPhase.AFTER_COMMIT);
+        assertTransactionalEventListenerPhase("handleBeforeCommit", UserWithdrawnEvent.class, TransactionPhase.BEFORE_COMMIT);
+        assertTransactionalEventListenerPhase("handleAfterCommit", UserWithdrawnEvent.class, TransactionPhase.AFTER_COMMIT);
+    }
+
+    private void assertTransactionalEventListenerPhase(
+            String methodName,
+            Class<?> eventType,
+            TransactionPhase expectedPhase
+    ) throws NoSuchMethodException {
         TransactionalEventListener annotation = UserAuthCacheEventListener.class
                 .getDeclaredMethod(methodName, eventType)
                 .getAnnotation(TransactionalEventListener.class);
 
         assertThat(annotation).isNotNull();
-        assertThat(annotation.phase()).isEqualTo(TransactionPhase.AFTER_COMMIT);
+        assertThat(annotation.phase()).isEqualTo(expectedPhase);
     }
 }
