@@ -1,9 +1,14 @@
 package com.techfork.useraccount.domain;
 
+import com.techfork.global.common.BaseTimeEntity;
+import com.techfork.global.exception.GeneralException;
+import com.techfork.useraccount.domain.enums.EInterestCategory;
+import com.techfork.useraccount.domain.enums.EInterestKeyword;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.enums.UserStatus;
-import com.techfork.global.common.BaseTimeEntity;
+import com.techfork.useraccount.domain.exception.UserErrorCode;
+import com.techfork.useraccount.domain.vo.UserInterestSelection;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -84,6 +89,38 @@ public class User extends BaseTimeEntity {
         }
         if (description != null) {
             this.description = description;
+        }
+    }
+
+    public void replaceInterests(List<UserInterestSelection> interests) {
+        List<UserInterestCategory> newInterestCategories = interests.stream()
+                .map(this::createInterestCategory)
+                .toList();
+
+        this.interestCategories.clear();
+        this.interestCategories.addAll(newInterestCategories);
+    }
+
+    private UserInterestCategory createInterestCategory(UserInterestSelection interest) {
+        UserInterestCategory userInterestCategory = UserInterestCategory.create(this, interest.category());
+
+        if (interest.keywords() != null && !interest.keywords().isEmpty()) {
+            addKeywordsToCategory(userInterestCategory, interest);
+        }
+
+        return userInterestCategory;
+    }
+
+    private void addKeywordsToCategory(UserInterestCategory userInterestCategory, UserInterestSelection interest) {
+        interest.keywords().forEach(keyword -> {
+            validateKeywordCategory(keyword, interest.category());
+            userInterestCategory.addKeyword(UserInterestKeyword.create(userInterestCategory, keyword));
+        });
+    }
+
+    private void validateKeywordCategory(EInterestKeyword keyword, EInterestCategory category) {
+        if (keyword.getCategory() != category) {
+            throw new GeneralException(UserErrorCode.INVALID_INTEREST_KEYWORD);
         }
     }
 
