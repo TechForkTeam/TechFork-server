@@ -1,18 +1,9 @@
 package com.techfork.personalization.application;
 
-import com.techfork.activity.bookmark.domain.Bookmark;
-import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
-import com.techfork.activity.readhistory.domain.SearchHistory;
-import com.techfork.activity.readhistory.infrastructure.SearchHistoryRepository;
-import com.techfork.activity.readpost.domain.ReadPost;
-import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
-import com.techfork.post.domain.PostKeyword;
 import com.techfork.domain.recommendation.service.RecommendationService;
 import com.techfork.personalization.infrastructure.PersonalizationProfileDocument;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.UserInterestCategory;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
-import com.techfork.useraccount.infrastructure.UserInterestCategoryRepository;
 import com.techfork.personalization.infrastructure.PersonalizationProfileDocumentRepository;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.exception.GeneralException;
@@ -20,7 +11,6 @@ import com.techfork.global.llm.EmbeddingClient;
 import com.techfork.global.llm.LlmClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,10 +24,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PersonalizationProfileService {
 
-    private final UserInterestCategoryRepository userInterestCategoryRepository;
-    private final ReadPostRepository readPostRepository;
-    private final BookmarkRepository bookmarkRepository;
-    private final SearchHistoryRepository searchHistoryRepository;
+    private final UserActivityCollector userActivityCollector;
     private final PersonalizationProfileDocumentRepository personalizationProfileDocumentRepository;
     private final UserRepository userRepository;
     private final RecommendationService recommendationService;
@@ -57,7 +44,7 @@ public class PersonalizationProfileService {
     @Transactional
     public void generatePersonalizationProfileSync(Long userId) {
         try {
-            UserActivityData activityData = collectUserActivityData(userId);
+            UserActivityData activityData = userActivityCollector.collect(userId);
             String llmResponse = generateProfileTextWithLLM(activityData);
 
             ProfileAndKeywords parsed = parseProfileAndKeywords(llmResponse);
@@ -67,7 +54,7 @@ public class PersonalizationProfileService {
                     userId,
                     parsed.profileText,
                     profileVector,
-                    activityData.interests,
+                    activityData.interests(),
                     parsed.keyKeywords
             );
 
@@ -100,43 +87,6 @@ public class PersonalizationProfileService {
         } catch (Exception e) {
             log.error("Failed to generate recommendations after personalization profile creation for userId: {}", userId, e);
         }
-    }
-
-    private UserActivityData collectUserActivityData(Long userId) {
-        List<UserInterestCategory> categories = userInterestCategoryRepository.findByUserIdWithKeywords(userId);
-        List<String> interests = categories.stream()
-                .flatMap(c -> c.getKeywords().stream())
-                .map(k -> k.getKeyword().getDisplayName())
-                .toList();
-
-        List<ReadPost> readPosts = readPostRepository.findRecentReadPostsByUserIdWithMinDuration(userId, PageRequest.of(0, 20));
-        List<PostData> readPostData = readPosts.stream()
-                .map(rp -> new PostData(
-                        rp.getPost().getTitle(),
-                        rp.getPost().getKeywords().stream()
-                                .map(PostKeyword::getKeyword)
-                                .toList(),
-                        convertReadingDurationToNaturalLanguage(rp.getReadDurationSeconds())
-                ))
-                .toList();
-
-        List<Bookmark> bookmarks = bookmarkRepository.findRecentBookmarksByUserId(userId, PageRequest.of(0, 20));
-        List<PostData> bookmarkedPostData = bookmarks.stream()
-                .map(sp -> new PostData(
-                        sp.getPost().getTitle(),
-                        sp.getPost().getKeywords().stream()
-                                .map(PostKeyword::getKeyword)
-                                .toList(),
-                        null
-                ))
-                .toList();
-
-        List<SearchHistory> searchHistories = searchHistoryRepository.findRecentSearchHistoriesByUserId(userId, PageRequest.of(0, 30));
-        List<String> searchQueries = searchHistories.stream()
-                .map(SearchHistory::getQuery)
-                .toList();
-
-        return new UserActivityData(interests, readPostData, bookmarkedPostData, searchQueries);
     }
 
     private String generateProfileTextWithLLM(UserActivityData data) {
@@ -191,10 +141,10 @@ public class PersonalizationProfileService {
 
                 데이터가 부족한 경우 관심 기술 스택을 기반으로 일반적인 프로필을 생성해주세요.
                 """,
-                formatList(data.interests),
-                formatPostDataList(data.readPostData),
-                formatPostDataList(data.bookmarkedPostData),
-                formatList(data.searchQueries)
+                formatList(data.interests()),
+                formatPostDataList(data.readPostData()),
+                formatPostDataList(data.bookmarkedPostData()),
+                formatList(data.searchQueries())
         );
     }
 
@@ -207,19 +157,19 @@ public class PersonalizationProfileService {
                 .collect(Collectors.joining("\n"));
     }
 
-    private String formatPostDataList(List<PostData> postDataList) {
+    private String formatPostDataList(List<PostActivityData> postDataList) {
         if (postDataList == null || postDataList.isEmpty()) {
             return "- (데이터 없음)";
         }
         return postDataList.stream()
                 .map(postData -> {
-                    String keywordsStr = postData.keywords.isEmpty()
+                    String keywordsStr = postData.keywords().isEmpty()
                             ? ""
-                            : " [키워드: " + String.join(", ", postData.keywords) + "]";
-                    String engagementStr = postData.readingEngagement != null
-                            ? " (" + postData.readingEngagement + ")"
+                            : " [키워드: " + String.join(", ", postData.keywords()) + "]";
+                    String engagementStr = postData.readingEngagement() != null
+                            ? " (" + postData.readingEngagement() + ")"
                             : "";
-                    return "- " + postData.title + keywordsStr + engagementStr;
+                    return "- " + postData.title() + keywordsStr + engagementStr;
                 })
                 .collect(Collectors.joining("\n"));
     }
@@ -232,24 +182,6 @@ public class PersonalizationProfileService {
             vector[i] = embedding.get(i);
         }
         return vector;
-    }
-
-    private String convertReadingDurationToNaturalLanguage(Integer durationSeconds) {
-        if (durationSeconds == null) {
-            return "읽음";
-        }
-
-        if (durationSeconds <= 30) {
-            return "가볍게 훑어봄";
-        } else if (durationSeconds <= 90) {
-            return "빠르게 읽음";
-        } else if (durationSeconds <= 300) {
-            return "읽음";
-        } else if (durationSeconds <= 600) {
-            return "정독함";
-        } else {
-            return "깊게 읽음";
-        }
     }
 
     private ProfileAndKeywords parseProfileAndKeywords(String llmResponse) {
@@ -289,16 +221,4 @@ public class PersonalizationProfileService {
 
     private record ProfileAndKeywords(String profileText, List<String> keyKeywords) {}
 
-    private record UserActivityData(
-            List<String> interests,
-            List<PostData> readPostData,
-            List<PostData> bookmarkedPostData,
-            List<String> searchQueries
-    ) {}
-
-    private record PostData(
-            String title,
-            List<String> keywords,
-            String readingEngagement
-    ) {}
 }

@@ -1,26 +1,13 @@
 package com.techfork.personalization.application;
 
-import com.techfork.activity.bookmark.domain.Bookmark;
-import com.techfork.activity.readpost.domain.ReadPost;
-import com.techfork.activity.readhistory.domain.SearchHistory;
-import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
-import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
-import com.techfork.activity.readhistory.infrastructure.SearchHistoryRepository;
-import com.techfork.post.domain.Post;
-import com.techfork.post.domain.PostKeyword;
 import com.techfork.domain.recommendation.service.RecommendationService;
-import com.techfork.personalization.infrastructure.PersonalizationProfileDocument;
-import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.UserInterestCategory;
-import com.techfork.useraccount.domain.UserInterestKeyword;
-import com.techfork.useraccount.domain.enums.EInterestCategory;
-import com.techfork.useraccount.domain.enums.EInterestKeyword;
-import com.techfork.useraccount.domain.enums.SocialType;
-import com.techfork.useraccount.infrastructure.UserInterestCategoryRepository;
-import com.techfork.personalization.infrastructure.PersonalizationProfileDocumentRepository;
-import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.llm.EmbeddingClient;
 import com.techfork.global.llm.LlmClient;
+import com.techfork.personalization.infrastructure.PersonalizationProfileDocument;
+import com.techfork.personalization.infrastructure.PersonalizationProfileDocumentRepository;
+import com.techfork.useraccount.domain.User;
+import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.infrastructure.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,17 +15,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -47,16 +31,7 @@ import static org.mockito.Mockito.verify;
 class PersonalizationProfileServiceTest {
 
     @Mock
-    private UserInterestCategoryRepository userInterestCategoryRepository;
-
-    @Mock
-    private ReadPostRepository readPostRepository;
-
-    @Mock
-    private BookmarkRepository bookmarkRepository;
-
-    @Mock
-    private SearchHistoryRepository searchHistoryRepository;
+    private UserActivityCollector userActivityCollector;
 
     @Mock
     private PersonalizationProfileDocumentRepository personalizationProfileDocumentRepository;
@@ -81,32 +56,21 @@ class PersonalizationProfileServiceTest {
     void generatePersonalizationProfileSync_CollectsActivityDataParsesAndSavesProfile() {
         Long userId = 1L;
         User user = createUser(userId);
-        List<ReadPost> readPosts = List.of(
-                readPost("30초 포스트", List.of("Java"), 20),
-                readPost("90초 포스트", List.of("Spring"), 60),
-                readPost("300초 포스트", List.of("JPA"), 200),
-                readPost("600초 포스트", List.of("Kafka"), 400),
-                readPost("601초 포스트", List.of("Docker"), 700),
-                readPost("null 포스트", List.of("Elastic"), null)
-        );
-        List<Bookmark> bookmarks = List.of(
-                bookmark("북마크 포스트", List.of("Kubernetes", "Helm"))
+        UserActivityData activityData = activityData(
+                List.of("Java", "Spring", "Docker"),
+                List.of(
+                        postActivityData("30초 포스트", List.of("Java"), "가볍게 훑어봄"),
+                        postActivityData("90초 포스트", List.of("Spring"), "빠르게 읽음"),
+                        postActivityData("300초 포스트", List.of("JPA"), "읽음"),
+                        postActivityData("600초 포스트", List.of("Kafka"), "정독함"),
+                        postActivityData("601초 포스트", List.of("Docker"), "깊게 읽음"),
+                        postActivityData("null 포스트", List.of("Elastic"), "읽음")
+                ),
+                List.of(postActivityData("북마크 포스트", List.of("Kubernetes", "Helm"), null)),
+                List.of("Spring Batch", "Elasticsearch vector")
         );
 
-        given(userInterestCategoryRepository.findByUserIdWithKeywords(userId))
-                .willReturn(List.of(
-                        interestCategory(user, EInterestCategory.BACKEND, EInterestKeyword.JAVA, EInterestKeyword.SPRING),
-                        interestCategory(user, EInterestCategory.DEVOPS, EInterestKeyword.DOCKER)
-                ));
-        given(readPostRepository.findRecentReadPostsByUserIdWithMinDuration(anyLong(), any()))
-                .willReturn(readPosts);
-        given(bookmarkRepository.findRecentBookmarksByUserId(anyLong(), any()))
-                .willReturn(bookmarks);
-        given(searchHistoryRepository.findRecentSearchHistoriesByUserId(anyLong(), any()))
-                .willReturn(List.of(
-                        SearchHistory.create(user, "Spring Batch", LocalDateTime.now()),
-                        SearchHistory.create(user, "Elasticsearch vector", LocalDateTime.now())
-                ));
+        given(userActivityCollector.collect(userId)).willReturn(activityData);
         given(llmClient.call(anyString(), anyString()))
                 .willReturn("""
                         ### PROFILE
@@ -158,12 +122,9 @@ class PersonalizationProfileServiceTest {
         assertThat(savedDocument.getKeyKeywords())
                 .containsExactly("Java", "Spring", "Docker", "Elasticsearch", "Batch");
 
+        verify(userActivityCollector).collect(userId);
         verify(userRepository).findById(userId);
         verify(recommendationService).generateRecommendationsForUser(user);
-        verify(userInterestCategoryRepository).findByUserIdWithKeywords(userId);
-        verify(readPostRepository).findRecentReadPostsByUserIdWithMinDuration(userId, PageRequest.of(0, 20));
-        verify(bookmarkRepository).findRecentBookmarksByUserId(userId, PageRequest.of(0, 20));
-        verify(searchHistoryRepository).findRecentSearchHistoriesByUserId(userId, PageRequest.of(0, 30));
     }
 
     @Test
@@ -173,10 +134,7 @@ class PersonalizationProfileServiceTest {
         User user = createUser(userId);
         String llmResponse = "섹션 없이도 전체 응답을 개인화 프로필로 저장해야 한다";
 
-        given(userInterestCategoryRepository.findByUserIdWithKeywords(userId)).willReturn(List.of());
-        given(readPostRepository.findRecentReadPostsByUserIdWithMinDuration(anyLong(), any())).willReturn(List.of());
-        given(bookmarkRepository.findRecentBookmarksByUserId(anyLong(), any())).willReturn(List.of());
-        given(searchHistoryRepository.findRecentSearchHistoriesByUserId(anyLong(), any())).willReturn(List.of());
+        given(userActivityCollector.collect(userId)).willReturn(emptyActivityData());
         given(llmClient.call(anyString(), anyString())).willReturn(llmResponse);
         given(embeddingClient.embed(llmResponse)).willReturn(List.of(1.0f, 2.0f));
         given(personalizationProfileDocumentRepository.save(any(PersonalizationProfileDocument.class)))
@@ -192,6 +150,7 @@ class PersonalizationProfileServiceTest {
         assertThat(savedDocument.getProfileText()).isEqualTo(llmResponse);
         assertThat(savedDocument.getKeyKeywords()).isEmpty();
         assertThat(savedDocument.getProfileVector()).containsExactly(1.0f, 2.0f);
+        verify(userActivityCollector).collect(userId);
     }
 
     @Test
@@ -200,10 +159,7 @@ class PersonalizationProfileServiceTest {
         Long userId = 4L;
         User user = createUser(userId);
 
-        given(userInterestCategoryRepository.findByUserIdWithKeywords(userId)).willReturn(List.of());
-        given(readPostRepository.findRecentReadPostsByUserIdWithMinDuration(anyLong(), any())).willReturn(List.of());
-        given(bookmarkRepository.findRecentBookmarksByUserId(anyLong(), any())).willReturn(List.of());
-        given(searchHistoryRepository.findRecentSearchHistoriesByUserId(anyLong(), any())).willReturn(List.of());
+        given(userActivityCollector.collect(userId)).willReturn(emptyActivityData());
         given(llmClient.call(anyString(), anyString()))
                 .willReturn("""
                         ### PROFILE
@@ -224,6 +180,7 @@ class PersonalizationProfileServiceTest {
 
         assertThat(documentCaptor.getValue().getKeyKeywords())
                 .containsExactly("Java", "Spring", "JPA", "Redis", "Kafka");
+        verify(userActivityCollector).collect(userId);
     }
 
     @Test
@@ -232,10 +189,7 @@ class PersonalizationProfileServiceTest {
         Long userId = 3L;
         User user = createUser(userId);
 
-        given(userInterestCategoryRepository.findByUserIdWithKeywords(userId)).willReturn(List.of());
-        given(readPostRepository.findRecentReadPostsByUserIdWithMinDuration(anyLong(), any())).willReturn(List.of());
-        given(bookmarkRepository.findRecentBookmarksByUserId(anyLong(), any())).willReturn(List.of());
-        given(searchHistoryRepository.findRecentSearchHistoriesByUserId(anyLong(), any())).willReturn(List.of());
+        given(userActivityCollector.collect(userId)).willReturn(emptyActivityData());
         given(llmClient.call(anyString(), anyString()))
                 .willReturn("""
                         ### PROFILE
@@ -255,57 +209,30 @@ class PersonalizationProfileServiceTest {
                 .doesNotThrowAnyException();
 
         verify(personalizationProfileDocumentRepository).save(any(PersonalizationProfileDocument.class));
+        verify(userActivityCollector).collect(userId);
         verify(recommendationService).generateRecommendationsForUser(user);
+    }
+
+    private UserActivityData activityData(
+            List<String> interests,
+            List<PostActivityData> readPostData,
+            List<PostActivityData> bookmarkedPostData,
+            List<String> searchQueries
+    ) {
+        return new UserActivityData(interests, readPostData, bookmarkedPostData, searchQueries);
+    }
+
+    private UserActivityData emptyActivityData() {
+        return activityData(List.of(), List.of(), List.of(), List.of());
+    }
+
+    private PostActivityData postActivityData(String title, List<String> keywords, String readingEngagement) {
+        return new PostActivityData(title, keywords, readingEngagement);
     }
 
     private User createUser(Long userId) {
         User user = User.createSocialUser(SocialType.KAKAO, "social-" + userId, "user" + userId + "@example.com", null);
         ReflectionTestUtils.setField(user, "id", userId);
         return user;
-    }
-
-    private UserInterestCategory interestCategory(User user, EInterestCategory category, EInterestKeyword... keywords) {
-        UserInterestCategory userInterestCategory = UserInterestCategory.create(user, category);
-        for (EInterestKeyword keyword : keywords) {
-            userInterestCategory.addKeyword(UserInterestKeyword.create(userInterestCategory, keyword));
-        }
-        return userInterestCategory;
-    }
-
-    private ReadPost readPost(String title, List<String> keywords, Integer durationSeconds) {
-        ReadPost readPost = org.mockito.Mockito.mock(ReadPost.class);
-        Post post = mockPost(title, keywords);
-
-        given(readPost.getPost()).willReturn(post);
-        given(readPost.getReadDurationSeconds()).willReturn(durationSeconds);
-
-        return readPost;
-    }
-
-    private Bookmark bookmark(String title, List<String> keywords) {
-        Bookmark bookmark = org.mockito.Mockito.mock(Bookmark.class);
-        Post post = mockPost(title, keywords);
-
-        given(bookmark.getPost()).willReturn(post);
-
-        return bookmark;
-    }
-
-    private Post mockPost(String title, List<String> keywords) {
-        Post post = org.mockito.Mockito.mock(Post.class);
-        List<PostKeyword> postKeywords = keywords.stream()
-                .map(this::mockPostKeyword)
-                .toList();
-
-        given(post.getTitle()).willReturn(title);
-        given(post.getKeywords()).willReturn(postKeywords);
-
-        return post;
-    }
-
-    private PostKeyword mockPostKeyword(String keyword) {
-        PostKeyword postKeyword = org.mockito.Mockito.mock(PostKeyword.class);
-        given(postKeyword.getKeyword()).willReturn(keyword);
-        return postKeyword;
     }
 }
