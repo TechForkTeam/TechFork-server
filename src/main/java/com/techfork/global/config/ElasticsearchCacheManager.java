@@ -5,7 +5,7 @@ import co.elastic.clients.elasticsearch._types.KnnSearch;
 import co.elastic.clients.json.JsonData;
 import com.techfork.post.domain.projection.PostDocument;
 import com.techfork.domain.recommendation.config.RecommendationProperties;
-import com.techfork.domain.personalization.document.PersonalizationProfileDocument;
+import com.techfork.personalization.infrastructure.PersonalizationProfileDocument;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;

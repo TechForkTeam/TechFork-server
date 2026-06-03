@@ -1,6 +1,5 @@
-package com.techfork.domain.personalization.repository;
+package com.techfork.personalization.infrastructure;
 
-import com.techfork.domain.personalization.document.PersonalizationProfileDocument;
 import java.util.Optional;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 

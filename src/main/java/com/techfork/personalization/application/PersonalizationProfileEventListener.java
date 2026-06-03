@@ -1,6 +1,5 @@
-package com.techfork.domain.personalization.listener;
+package com.techfork.personalization.application;
 
-import com.techfork.domain.personalization.service.PersonalizationProfileService;
 import com.techfork.useraccount.application.event.OnboardingCompletedEvent;
 import com.techfork.useraccount.application.event.UserInterestsChangedEvent;
 import lombok.RequiredArgsConstructor;

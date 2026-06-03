@@ -1,4 +1,4 @@
-package com.techfork.domain.personalization.service;
+package com.techfork.personalization.application;
 
 import com.techfork.activity.bookmark.domain.Bookmark;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
@@ -8,12 +8,12 @@ import com.techfork.activity.readpost.domain.ReadPost;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.post.domain.PostKeyword;
 import com.techfork.domain.recommendation.service.RecommendationService;
-import com.techfork.domain.personalization.document.PersonalizationProfileDocument;
+import com.techfork.personalization.infrastructure.PersonalizationProfileDocument;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.UserInterestCategory;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
 import com.techfork.useraccount.infrastructure.UserInterestCategoryRepository;
-import com.techfork.domain.personalization.repository.PersonalizationProfileDocumentRepository;
+import com.techfork.personalization.infrastructure.PersonalizationProfileDocumentRepository;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.global.llm.EmbeddingClient;

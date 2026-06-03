@@ -1,8 +1,8 @@
-package com.techfork.domain.personalization.scheduler;
+package com.techfork.personalization.scheduler;
 
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.infrastructure.UserRepository;
-import com.techfork.domain.personalization.service.PersonalizationProfileService;
+import com.techfork.personalization.application.PersonalizationProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

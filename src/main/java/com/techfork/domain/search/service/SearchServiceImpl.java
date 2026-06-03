@@ -13,8 +13,8 @@ import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.domain.search.config.GeneralSearchProperties;
 import com.techfork.domain.search.dto.SearchResult;
 
-import com.techfork.domain.personalization.document.PersonalizationProfileDocument;
-import com.techfork.domain.personalization.repository.PersonalizationProfileDocumentRepository;
+import com.techfork.personalization.infrastructure.PersonalizationProfileDocument;
+import com.techfork.personalization.infrastructure.PersonalizationProfileDocumentRepository;
 import com.techfork.global.llm.EmbeddingClient;
 import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import com.techfork.global.util.RrfScorer;

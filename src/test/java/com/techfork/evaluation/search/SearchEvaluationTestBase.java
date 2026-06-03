@@ -11,7 +11,7 @@ import com.techfork.domain.search.dto.SearchResult;
 import com.techfork.domain.search.config.GeneralSearchProperties;
 import com.techfork.domain.search.service.SearchService;
 import com.techfork.domain.search.service.SearchServiceImpl;
-import com.techfork.domain.personalization.repository.PersonalizationProfileDocumentRepository;
+import com.techfork.personalization.infrastructure.PersonalizationProfileDocumentRepository;
 import com.techfork.evaluation.search.util.GroundTruthItem;
 import com.techfork.evaluation.search.util.SearchQualityService;
 import com.techfork.global.config.CloudflareThirdPartyThumbnailOptimizationProperties;

@@ -1,6 +1,6 @@
 package com.techfork.useraccount.integration;
 
-import com.techfork.domain.personalization.service.PersonalizationProfileService;
+import com.techfork.personalization.application.PersonalizationProfileService;
 import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.global.security.auth.service.UserAuthCacheService;
 import com.techfork.useraccount.application.command.InterestCommandService;
