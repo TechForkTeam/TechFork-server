@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 public class PersonalizationProfileAnalyzer {
 
     private static final String SYSTEM_PROMPT = "당신은 테크 블로그 플랫폼의 사용자 프로필 분석 전문가입니다. 사용자의 활동 데이터를 분석하여 검색 고도화와 포스트 추천에 최적화된 프로필을 생성합니다.";
+    private static final String PROFILE_SECTION_MARKER = "### PROFILE";
+    private static final String KEYWORDS_SECTION_MARKER = "### KEYWORDS";
 
     private final LlmClient llmClient;
 
@@ -47,7 +49,7 @@ public class PersonalizationProfileAnalyzer {
 
                 반드시 아래 형식으로 응답해주세요:
 
-                ### PROFILE
+                %s
                 사용자의 기술적 관심사, 학습 패턴, 선호도를 의미 밀도 높고 풍부하게 표현한 텍스트를 작성하세요 (200-300자 정도).
 
                 다음 내용을 모두 포함하되 자연스러운 문장으로 작성:
@@ -62,7 +64,7 @@ public class PersonalizationProfileAnalyzer {
                 - 구체적인 기술 용어를 많이 사용하여 임베딩 품질 향상
                 - "관심이 있습니다", "선호합니다" 같은 메타 표현 대신 직접적인 기술 용어 나열
 
-                ### KEYWORDS
+                %s
                 사용자의 현재 관심사를 가장 잘 대표하는 핵심 키워드 3-5개를 쉼표로 구분하여 나열하세요.
                 - 구체적이고 검색 의도가 명확한 키워드만 선택
                 - BM25 검색에 사용되므로 검색어로 자주 쓰일 만한 용어 선택
@@ -74,7 +76,9 @@ public class PersonalizationProfileAnalyzer {
                 formatList(data.interests()),
                 formatPostDataList(data.readPostData()),
                 formatPostDataList(data.bookmarkedPostData()),
-                formatList(data.searchQueries())
+                formatList(data.searchQueries()),
+                PROFILE_SECTION_MARKER,
+                KEYWORDS_SECTION_MARKER
         );
     }
 
@@ -110,14 +114,14 @@ public class PersonalizationProfileAnalyzer {
 
         try {
             // PROFILE 섹션 추출
-            int profileStart = llmResponse.indexOf("### PROFILE");
-            int keywordsStart = llmResponse.indexOf("### KEYWORDS");
+            int profileStart = llmResponse.indexOf(PROFILE_SECTION_MARKER);
+            int keywordsStart = llmResponse.indexOf(KEYWORDS_SECTION_MARKER);
 
             if (profileStart != -1 && keywordsStart != -1) {
-                profileText = llmResponse.substring(profileStart + "### PROFILE".length(), keywordsStart)
+                profileText = llmResponse.substring(profileStart + PROFILE_SECTION_MARKER.length(), keywordsStart)
                         .trim();
 
-                String keywordsSection = llmResponse.substring(keywordsStart + "### KEYWORDS".length())
+                String keywordsSection = llmResponse.substring(keywordsStart + KEYWORDS_SECTION_MARKER.length())
                         .trim();
 
                 // 쉼표로 구분된 키워드 파싱
