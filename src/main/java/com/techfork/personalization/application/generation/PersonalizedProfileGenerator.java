@@ -1,6 +1,8 @@
-package com.techfork.personalization.application;
+package com.techfork.personalization.application.generation;
 
 import com.techfork.global.llm.EmbeddingClient;
+import com.techfork.personalization.application.activity.UserActivityCollector;
+import com.techfork.personalization.application.activity.UserActivityData;
 import com.techfork.personalization.infrastructure.PersonalizationProfileDocument;
 import com.techfork.personalization.infrastructure.PersonalizationProfileDocumentRepository;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.techfork.personalization.application;
+package com.techfork.personalization.application.generation;
 
 import java.util.List;
 

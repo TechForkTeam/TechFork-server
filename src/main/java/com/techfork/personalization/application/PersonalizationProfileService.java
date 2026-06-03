@@ -1,10 +1,9 @@
 package com.techfork.personalization.application;
 
 import com.techfork.domain.recommendation.service.RecommendationService;
-import com.techfork.global.exception.GeneralException;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.exception.UserErrorCode;
-import com.techfork.useraccount.infrastructure.UserRepository;
+import com.techfork.personalization.application.generation.PersonalizedProfileGenerator;
+import com.techfork.useraccount.application.query.lookup.UserLookupService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -17,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PersonalizationProfileService {
 
     private final PersonalizedProfileGenerator personalizedProfileGenerator;
-    private final UserRepository userRepository;
+    private final UserLookupService userLookupService;
     private final RecommendationService recommendationService;
 
     @Async
@@ -51,8 +50,7 @@ public class PersonalizationProfileService {
      */
     private void generateRecommendationsAfterProfile(Long userId) {
         try {
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
+            User user = userLookupService.getUserOrThrow(userId);
 
             int recommendationCount = recommendationService.generateRecommendationsForUser(user);
 

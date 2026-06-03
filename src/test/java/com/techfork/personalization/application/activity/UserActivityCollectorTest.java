@@ -1,4 +1,4 @@
-package com.techfork.personalization.application;
+package com.techfork.personalization.application.activity;
 
 import com.techfork.activity.bookmark.application.query.lookup.BookmarkLookupService;
 import com.techfork.activity.bookmark.application.query.lookup.BookmarkPostLookupItem;

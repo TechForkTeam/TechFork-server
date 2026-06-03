@@ -1,6 +1,8 @@
-package com.techfork.personalization.application;
+package com.techfork.personalization.application.generation;
 
 import com.techfork.global.llm.LlmClient;
+import com.techfork.personalization.application.activity.PostActivityData;
+import com.techfork.personalization.application.activity.UserActivityData;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;

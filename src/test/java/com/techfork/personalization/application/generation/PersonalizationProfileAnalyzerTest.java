@@ -1,5 +1,7 @@
-package com.techfork.personalization.application;
+package com.techfork.personalization.application.generation;
 
+import com.techfork.personalization.application.activity.PostActivityData;
+import com.techfork.personalization.application.activity.UserActivityData;
 import com.techfork.global.llm.LlmClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -3,7 +3,8 @@ package com.techfork.personalization.application;
 import com.techfork.domain.recommendation.service.RecommendationService;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.SocialType;
-import com.techfork.useraccount.infrastructure.UserRepository;
+import com.techfork.personalization.application.generation.PersonalizedProfileGenerator;
+import com.techfork.useraccount.application.query.lookup.UserLookupService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,8 +12,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -27,7 +26,7 @@ class PersonalizationProfileServiceTest {
     private PersonalizedProfileGenerator personalizedProfileGenerator;
 
     @Mock
-    private UserRepository userRepository;
+    private UserLookupService userLookupService;
 
     @Mock
     private RecommendationService recommendationService;
@@ -40,13 +39,13 @@ class PersonalizationProfileServiceTest {
     void generatePersonalizationProfileSync_GeneratesProfileAndRecommendations() {
         Long userId = 1L;
         User user = createUser(userId);
-        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(userLookupService.getUserOrThrow(userId)).willReturn(user);
         given(recommendationService.generateRecommendationsForUser(user)).willReturn(5);
 
         personalizationProfileService.generatePersonalizationProfileSync(userId);
 
         verify(personalizedProfileGenerator).generate(userId);
-        verify(userRepository).findById(userId);
+        verify(userLookupService).getUserOrThrow(userId);
         verify(recommendationService).generateRecommendationsForUser(user);
     }
 
@@ -61,7 +60,7 @@ class PersonalizationProfileServiceTest {
                 .isSameAs(failure);
 
         verify(personalizedProfileGenerator).generate(userId);
-        verifyNoInteractions(userRepository, recommendationService);
+        verifyNoInteractions(userLookupService, recommendationService);
     }
 
     @Test
@@ -69,7 +68,7 @@ class PersonalizationProfileServiceTest {
     void generatePersonalizationProfileSync_RecommendationFailureDoesNotBreakProfileSave() {
         Long userId = 3L;
         User user = createUser(userId);
-        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(userLookupService.getUserOrThrow(userId)).willReturn(user);
         given(recommendationService.generateRecommendationsForUser(user))
                 .willThrow(new RuntimeException("recommendation failure"));
 
