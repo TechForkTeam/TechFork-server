@@ -31,5 +31,5 @@
 - 유비쿼터스 언어 문서는 **바운디드 컨텍스트 기준**으로 나눈다.
 - 패키지는 참고 경로일 뿐, 문서의 1차 분리 기준이 아니다.
 - 전략 문서와 glossary에서는 `User Account`와 `Personalization Profile`을 개념적으로 분리한다.
-- 현재 구현도 `useraccount`와 `domain/personalization`으로 물리 분리되어 있다.
+- 현재 구현도 `useraccount`와 `personalization` 최상위 패키지로 물리 분리되어 있다.
 - `Auth`는 문서 표준에서 **`Auth / Security`** 로 표기해 `global/security`까지 포함하는 실제 경계를 반영한다.

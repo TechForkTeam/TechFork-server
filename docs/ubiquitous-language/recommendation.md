@@ -24,6 +24,8 @@
 | 시간 감쇠 | `TimeDecayStrategy` | 발행일에 따라 후보 점수에 가중치를 부여하는 전략 |
 | 일일 추천 생성 | `RecommendationScheduler` | 매일 07:00 KST 활성 사용자 대상으로 추천 생성 |
 | 추천 재생성 | `regenerateRecommendations` | 사용자가 요청하거나 프로필 갱신 후 추천을 다시 생성하는 행위 |
+| 프로필 생성 이벤트 수신 | `PersonalizedProfileGeneratedEventListener` | 개인화 프로필 생성 완료 이벤트를 받아 추천 생성을 시작하는 경계 |
+| 이벤트 스냅샷 추천 생성 | `generateRecommendationsForUser(user, profileVector, keyKeywords)` | ES refresh 가시성에 의존하지 않고 이벤트 payload 기반으로 추천을 생성하는 경로 |
 
 ## 용어 정합성 결정
 
@@ -41,12 +43,15 @@
 | 후보 모델 | `MmrCandidate` | 추천 후보 탐색 후 MMR 입력으로 쓰이는 모델 |
 | 랭킹 결과 | `MmrResult` | MMR 계산 후 선택된 순위 결과 |
 | 추천 제외 정책 | `createExcludeFilter(readPostIds)` | 이미 읽은 게시글을 추천에서 빼는 정책 |
+| 프로필 생성 이벤트 리스너 | `PersonalizedProfileGeneratedEventListener` | Personalization Profile 이벤트를 `AFTER_COMMIT`에서 받아 추천 생성을 트리거한다 |
 
 ## 혼동 금지
 
 - `추천 게시글`은 현재 노출 중인 결과 한 건이고, `추천 목록`은 사용자 기준 전체 묶음이다.
 - `유사도 점수`와 `MMR 점수`는 다르다. 전자는 관련성, 후자는 다양성까지 반영한 선택 점수다.
 - 추천의 `keyKeywords` 활용은 Search의 `SearchQuery`와 같은 것이 아니다. 하나는 프로필 파생 키워드, 다른 하나는 사용자의 직접 입력이다.
+- Recommendation은 `PersonalizationProfileDocument`와 `PersonalizedProfileGeneratedEvent` payload를 소비하지만, 개인화 프로필 생성/저장 모델을 소유하지 않는다.
+- 프로필 생성 직후 자동 추천은 `PersonalizedProfileGeneratedEvent` 이후 후처리이며, 프로필 저장 트랜잭션 결과와 분리한다.
 
 ## 금지 표현 / 권장 표현
 
@@ -64,3 +69,4 @@
 - `src/main/java/com/techfork/domain/recommendation/entity/RecommendedPost.java`
 - `src/main/java/com/techfork/domain/recommendation/entity/RecommendationHistory.java`
 - `src/main/java/com/techfork/domain/recommendation/scheduler/RecommendationScheduler.java`
+- `src/main/java/com/techfork/domain/recommendation/listener/PersonalizedProfileGeneratedEventListener.java`

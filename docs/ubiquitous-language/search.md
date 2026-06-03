@@ -5,7 +5,7 @@
 ## Owning packages
 
 - `src/main/java/com/techfork/domain/search`
-- 관련 read model: `src/main/java/com/techfork/post/domain/projection`, `src/main/java/com/techfork/domain/personalization/document`
+- 관련 read model: `src/main/java/com/techfork/post/domain/projection`, `src/main/java/com/techfork/personalization/infrastructure`
 
 ## 표준 용어
 
@@ -30,6 +30,7 @@
 - Search는 **aggregate 중심이 아니라 query/read model 중심** 컨텍스트다.
 - `SearchQuery`는 사용자가 입력한 문자열만 가리킨다. `keyKeywords`, `PostKeyword`와 혼용하지 않는다.
 - 북마크 여부 조합은 조회 조합 책임으로 본다.
+- 개인화 검색은 `PersonalizationProfileDocument`를 소비하지만, 개인화 프로필 생성/소유 책임은 Personalization Profile 컨텍스트에 둔다.
 
 ## 내부 glossary
 
@@ -45,7 +46,7 @@
 ## 혼동 금지
 
 - `검색 결과`는 저장되는 aggregate가 아니라 계산된 응답이다.
-- Search가 `PostDocument`, `PersonalizationProfileDocument`를 읽는다고 해서 Post/User aggregate를 소유하는 것은 아니다.
+- Search가 `PostDocument`, `PersonalizationProfileDocument`를 읽는다고 해서 Post나 Personalization Profile 모델을 소유하는 것은 아니다.
 - `검색어(SearchQuery)`와 추천의 `keyKeywords`는 둘 다 문자열이지만 생성 주체가 다르다.
 
 ## 금지 표현 / 권장 표현
