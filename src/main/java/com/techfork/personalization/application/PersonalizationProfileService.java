@@ -1,4 +1,4 @@
-package com.techfork.domain.personalization.service;
+package com.techfork.personalization.application;
 
 import com.techfork.activity.bookmark.domain.Bookmark;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;

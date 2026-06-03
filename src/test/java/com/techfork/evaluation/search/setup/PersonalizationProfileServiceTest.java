@@ -6,7 +6,7 @@ import com.techfork.useraccount.domain.enums.EInterestCategory;
 import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.infrastructure.UserInterestCategoryRepository;
 import com.techfork.useraccount.infrastructure.UserRepository;
-import com.techfork.domain.personalization.service.PersonalizationProfileService;
+import com.techfork.personalization.application.PersonalizationProfileService;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;

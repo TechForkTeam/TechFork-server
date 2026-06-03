@@ -6,7 +6,7 @@ import com.techfork.personalization.infrastructure.PersonalizationProfileDocumen
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.EInterestCategory;
 import com.techfork.personalization.infrastructure.PersonalizationProfileDocumentRepository;
-import com.techfork.domain.personalization.service.PersonalizationProfileService;
+import com.techfork.personalization.application.PersonalizationProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Disabled;
