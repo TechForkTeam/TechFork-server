@@ -2,13 +2,9 @@ package com.techfork.personalization.application;
 
 import com.techfork.domain.recommendation.service.RecommendationService;
 import com.techfork.global.exception.GeneralException;
-import com.techfork.global.llm.EmbeddingClient;
-import com.techfork.personalization.infrastructure.PersonalizationProfileDocument;
-import com.techfork.personalization.infrastructure.PersonalizationProfileDocumentRepository;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
 import com.techfork.useraccount.infrastructure.UserRepository;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -20,12 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class PersonalizationProfileService {
 
-    private final UserActivityCollector userActivityCollector;
-    private final PersonalizationProfileAnalyzer personalizationProfileAnalyzer;
-    private final PersonalizationProfileDocumentRepository personalizationProfileDocumentRepository;
+    private final PersonalizedProfileGenerator personalizedProfileGenerator;
     private final UserRepository userRepository;
     private final RecommendationService recommendationService;
-    private final EmbeddingClient embeddingClient;
 
     @Async
     @Transactional
@@ -40,19 +33,7 @@ public class PersonalizationProfileService {
     @Transactional
     public void generatePersonalizationProfileSync(Long userId) {
         try {
-            UserActivityData activityData = userActivityCollector.collect(userId);
-            PersonalizationProfileAnalysis analysis = personalizationProfileAnalyzer.analyze(activityData);
-            float[] profileVector = generateEmbeddingVector(analysis.profileText());
-
-            PersonalizationProfileDocument profileDocument = PersonalizationProfileDocument.create(
-                    userId,
-                    analysis.profileText(),
-                    profileVector,
-                    activityData.interests(),
-                    analysis.keyKeywords()
-            );
-
-            personalizationProfileDocumentRepository.save(profileDocument);
+            personalizedProfileGenerator.generate(userId);
 
             log.info("Personalization profile generated successfully for userId: {}", userId);
 
@@ -81,15 +62,5 @@ public class PersonalizationProfileService {
         } catch (Exception e) {
             log.error("Failed to generate recommendations after personalization profile creation for userId: {}", userId, e);
         }
-    }
-
-    private float[] generateEmbeddingVector(String profileText) {
-        List<Float> embedding = embeddingClient.embed(profileText);
-
-        float[] vector = new float[embedding.size()];
-        for (int i = 0; i < embedding.size(); i++) {
-            vector[i] = embedding.get(i);
-        }
-        return vector;
     }
 }
