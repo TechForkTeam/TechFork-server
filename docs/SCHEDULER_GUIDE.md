@@ -2,12 +2,12 @@
 
 ## 개요
 
-TechFork의 RSS 크롤링 스케줄러는 1시간마다 자동으로 RSS 피드를 수집하고, 실행 이력을 기록하며, 실패 시 알림을 전송합니다.
+TechFork의 RSS 크롤링 스케줄러는 매일 05:00 KST에 자동으로 RSS 피드를 수집하고, 실행 이력을 기록하며, 실패 시 알림을 전송합니다.
 
 ## 주요 기능
 
-### 1. 자동 크롤링 (매 시간 정각)
-- **스케줄**: 매 시간 정각 (00분)
+### 1. 자동 크롤링 (매일 05:00 KST)
+- **스케줄**: 매일 05:00 KST
 - **동작**: RSS 피드를 자동으로 수집하여 데이터베이스에 저장
 - **중복 방지**: Redis 분산 락을 사용하여 동시 실행 방지
 
@@ -83,17 +83,17 @@ grep "RSS crawling failed" application.log
 스케줄을 변경하려면 `RssCrawlingScheduler.java`의 `@Scheduled` 어노테이션을 수정하세요:
 
 ```java
-// 현재: 매 시간 정각
-@Scheduled(cron = "0 0 * * * *")
+// 현재: 매일 05:00 KST
+@Scheduled(cron = "0 0 5 * * *", zone = "Asia/Seoul")
 
 // 예시: 30분마다
-@Scheduled(cron = "0 */30 * * * *")
+@Scheduled(cron = "0 */30 * * * *", zone = "Asia/Seoul")
 
-// 예시: 매일 오전 9시
-@Scheduled(cron = "0 0 9 * * *")
+// 예시: 매일 오전 9시 KST
+@Scheduled(cron = "0 0 9 * * *", zone = "Asia/Seoul")
 
-// 예시: 평일 오전 9시~오후 6시, 매 시간
-@Scheduled(cron = "0 0 9-18 * * MON-FRI")
+// 예시: 평일 오전 9시~오후 6시 KST, 매 시간
+@Scheduled(cron = "0 0 9-18 * * MON-FRI", zone = "Asia/Seoul")
 ```
 
 ### Cron 표현식 형식

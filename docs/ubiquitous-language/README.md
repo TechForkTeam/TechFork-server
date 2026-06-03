@@ -9,7 +9,7 @@
 
 - **기준 단위는 패키지가 아니라 바운디드 컨텍스트다.** 다만 각 문서에 현재 owning package를 함께 적어 코드 탐색 경로를 명확히 한다.
 - **유비쿼터스 언어 문서는 도메인 전략과 왕복한다.** 새 용어가 나오면 먼저 이 문서를 고치고, 경계가 바뀌면 `domain-strategy.md`를 함께 조정한다.
-- **전략 문서에서는 `User Account`와 `Personalization Profile`을 별도 컨텍스트로 본다.** 현재 구현도 `useraccount`와 `domain/personalization`으로 물리 분리되어 있다.
+- **전략 문서에서는 `User Account`와 `Personalization Profile`을 별도 컨텍스트로 본다.** 현재 구현도 `useraccount`와 `personalization` 최상위 패키지로 물리 분리되어 있다.
 - 레거시 코드명(`ScrabPost`, `searchWord`, `markAsisClicked`)은 허용하되, 문서/PR/API에서는 표준 용어를 우선 사용한다.
 - 각 컨텍스트 문서는 가능하면 아래 다섯 블록을 유지한다.
   1. 표준 용어
@@ -27,7 +27,7 @@
 | Source / Ingestion | [`source-ingestion.md`](./source-ingestion.md) | `src/main/java/com/techfork/domain/source` | RSS 수집, 소스 블로그, 파이프라인 시작점 |
 | Post / Content | [`post-content.md`](./post-content.md) | `src/main/java/com/techfork/post` | 기술 게시글 본문, 요약, 키워드, 검색 projection |
 | User Account | [`user-account.md`](./user-account.md) | `src/main/java/com/techfork/useraccount` | 계정, 온보딩, 관심사, 계정 프로필 |
-| Personalization Profile | [`personalization-profile.md`](./personalization-profile.md) | `src/main/java/com/techfork/domain/personalization` | 개인화 프로필 생성, 벡터, 핵심 키워드, 재생성 |
+| Personalization Profile | [`personalization-profile.md`](./personalization-profile.md) | `src/main/java/com/techfork/personalization` | 개인화 프로필 생성, 벡터, 핵심 키워드, 재생성, 생성 완료 이벤트 |
 | Activity | [`activity.md`](./activity.md) | `src/main/java/com/techfork/activity` | 읽기/검색/북마크 행동 기록 |
 | Search | [`search.md`](./search.md) | `src/main/java/com/techfork/domain/search` | query service / read model 중심 컨텍스트 |
 | Recommendation | [`recommendation.md`](./recommendation.md) | `src/main/java/com/techfork/domain/recommendation` | 추천 후보 탐색, 랭킹, 현재 추천 목록 |
@@ -58,7 +58,7 @@
 
 - 문서/PR/API에서 **“프로필” 단독 표현은 지양**한다.
 - UI/설정 화면은 `계정 프로필 수정`, 추천/검색 준비 상태는 `개인화 프로필 생성/재생성`으로 쓴다.
-- `PersonalizationProfileDocument`는 `domain/personalization` 패키지의 read model/projection이다.
+- `PersonalizationProfileDocument`는 `personalization` 컨텍스트의 Elasticsearch read model/projection이다.
 
 ---
 
@@ -76,6 +76,8 @@
 | `Post viewCount` SQL atomic UPDATE 경로 정리 | [`post-content.md`](./post-content.md) | 반영 | `first_read_posts` 기반 dedupe ledger와 함께 유지 |
 | `ReadPost` 최초 읽기 dedupe / 조회수 증가 롤백 보호 | [`activity.md`](./activity.md), [`../tactical-design.md`](../tactical-design.md) | 반영 | `first_read_at` 의미 정교화가 필요하면 별도 검토 |
 | `EDifficultyLevel` 제거 | [`post-content.md`](./post-content.md) | 반영 | 필요 시 정책과 함께 재도입 검토 |
+| `Personalization Profile` 최상위 컨텍스트 승격 | [`personalization-profile.md`](./personalization-profile.md) | 반영 | Search/Recommendation 소비 경계는 계속 문서화 |
+| `PersonalizedProfileGeneratedEvent`로 추천 생성 트리거 분리 | [`personalization-profile.md`](./personalization-profile.md), [`recommendation.md`](./recommendation.md) | 반영 | outbox/retry 필요성은 후속 검토 |
 
 ---
 
