@@ -1,11 +1,11 @@
 package com.techfork.personalization.application;
 
-import com.techfork.domain.recommendation.service.RecommendationService;
-import com.techfork.useraccount.domain.User;
+import com.techfork.personalization.application.event.PersonalizedProfileGeneratedEvent;
 import com.techfork.personalization.application.generation.PersonalizedProfileGenerator;
-import com.techfork.useraccount.application.query.lookup.UserLookupService;
+import com.techfork.personalization.infrastructure.PersonalizationProfileDocument;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,8 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PersonalizationProfileService {
 
     private final PersonalizedProfileGenerator personalizedProfileGenerator;
-    private final UserLookupService userLookupService;
-    private final RecommendationService recommendationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Async
     @Transactional
@@ -32,33 +31,18 @@ public class PersonalizationProfileService {
     @Transactional
     public void generatePersonalizationProfileSync(Long userId) {
         try {
-            personalizedProfileGenerator.generate(userId);
+            PersonalizationProfileDocument profileDocument = personalizedProfileGenerator.generate(userId);
+            eventPublisher.publishEvent(new PersonalizedProfileGeneratedEvent(
+                    userId,
+                    profileDocument.getProfileVector(),
+                    profileDocument.getKeyKeywords()
+            ));
 
             log.info("Personalization profile generated successfully for userId: {}", userId);
-
-            generateRecommendationsAfterProfile(userId);
 
         } catch (Exception e) {
             log.error("Failed to generate personalization profile for userId: {}", userId, e);
             throw e;
-        }
-    }
-
-    /**
-     * 개인화 프로필 생성 완료 후 추천 생성
-     * 온보딩 또는 관심사 변경 시 새 개인화 프로필 기반으로 추천을 갱신합니다.
-     */
-    private void generateRecommendationsAfterProfile(Long userId) {
-        try {
-            User user = userLookupService.getUserOrThrow(userId);
-
-            int recommendationCount = recommendationService.generateRecommendationsForUser(user);
-
-            log.info("Recommendations generated after personalization profile creation for userId: {} - {} recommendations created",
-                    userId, recommendationCount);
-
-        } catch (Exception e) {
-            log.error("Failed to generate recommendations after personalization profile creation for userId: {}", userId, e);
         }
     }
 }

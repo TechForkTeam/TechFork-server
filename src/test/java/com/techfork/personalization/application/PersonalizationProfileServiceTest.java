@@ -1,19 +1,19 @@
 package com.techfork.personalization.application;
 
-import com.techfork.domain.recommendation.service.RecommendationService;
-import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.personalization.application.event.PersonalizedProfileGeneratedEvent;
 import com.techfork.personalization.application.generation.PersonalizedProfileGenerator;
-import com.techfork.useraccount.application.query.lookup.UserLookupService;
+import com.techfork.personalization.infrastructure.PersonalizationProfileDocument;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.context.ApplicationEventPublisher;
 
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -26,32 +26,39 @@ class PersonalizationProfileServiceTest {
     private PersonalizedProfileGenerator personalizedProfileGenerator;
 
     @Mock
-    private UserLookupService userLookupService;
-
-    @Mock
-    private RecommendationService recommendationService;
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private PersonalizationProfileService personalizationProfileService;
 
     @Test
-    @DisplayName("개인화 프로필 생성을 요청한 뒤 추천을 생성한다")
-    void generatePersonalizationProfileSync_GeneratesProfileAndRecommendations() {
+    @DisplayName("개인화 프로필 생성 성공 후 프로필 생성 이벤트를 발행한다")
+    void generatePersonalizationProfileSync_PublishesProfileGeneratedEventAfterProfileGeneration() {
         Long userId = 1L;
-        User user = createUser(userId);
-        given(userLookupService.getUserOrThrow(userId)).willReturn(user);
-        given(recommendationService.generateRecommendationsForUser(user)).willReturn(5);
+        float[] profileVector = new float[]{0.1f, 0.2f};
+        PersonalizationProfileDocument profileDocument = PersonalizationProfileDocument.create(
+                userId,
+                "Spring과 JPA 기반 백엔드 관심 프로필",
+                profileVector,
+                List.of("Backend"),
+                List.of("Spring", "JPA")
+        );
+        given(personalizedProfileGenerator.generate(userId)).willReturn(profileDocument);
 
         personalizationProfileService.generatePersonalizationProfileSync(userId);
 
+        ArgumentCaptor<PersonalizedProfileGeneratedEvent> eventCaptor = ArgumentCaptor.forClass(PersonalizedProfileGeneratedEvent.class);
         verify(personalizedProfileGenerator).generate(userId);
-        verify(userLookupService).getUserOrThrow(userId);
-        verify(recommendationService).generateRecommendationsForUser(user);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        PersonalizedProfileGeneratedEvent event = eventCaptor.getValue();
+        assertThat(event.userId()).isEqualTo(userId);
+        assertThat(event.profileVector()).containsExactly(0.1f, 0.2f);
+        assertThat(event.keyKeywords()).containsExactly("Spring", "JPA");
     }
 
     @Test
-    @DisplayName("개인화 프로필 생성이 실패하면 예외를 전파하고 추천을 시도하지 않는다")
-    void generatePersonalizationProfileSync_ProfileGenerationFailurePropagatesException() {
+    @DisplayName("개인화 프로필 생성이 실패하면 예외를 전파하고 이벤트를 발행하지 않는다")
+    void generatePersonalizationProfileSync_ProfileGenerationFailurePropagatesExceptionAndDoesNotPublishEvent() {
         Long userId = 2L;
         RuntimeException failure = new RuntimeException("profile generation failure");
         given(personalizedProfileGenerator.generate(userId)).willThrow(failure);
@@ -60,28 +67,6 @@ class PersonalizationProfileServiceTest {
                 .isSameAs(failure);
 
         verify(personalizedProfileGenerator).generate(userId);
-        verifyNoInteractions(userLookupService, recommendationService);
-    }
-
-    @Test
-    @DisplayName("추천 생성이 실패해도 개인화 프로필 저장은 유지된다")
-    void generatePersonalizationProfileSync_RecommendationFailureDoesNotBreakProfileSave() {
-        Long userId = 3L;
-        User user = createUser(userId);
-        given(userLookupService.getUserOrThrow(userId)).willReturn(user);
-        given(recommendationService.generateRecommendationsForUser(user))
-                .willThrow(new RuntimeException("recommendation failure"));
-
-        assertThatCode(() -> personalizationProfileService.generatePersonalizationProfileSync(userId))
-                .doesNotThrowAnyException();
-
-        verify(personalizedProfileGenerator).generate(userId);
-        verify(recommendationService).generateRecommendationsForUser(user);
-    }
-
-    private User createUser(Long userId) {
-        User user = User.createSocialUser(SocialType.KAKAO, "social-" + userId, "user" + userId + "@example.com", null);
-        ReflectionTestUtils.setField(user, "id", userId);
-        return user;
+        verifyNoInteractions(eventPublisher);
     }
 }
