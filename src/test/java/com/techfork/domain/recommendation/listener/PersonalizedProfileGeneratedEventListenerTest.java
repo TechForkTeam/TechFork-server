@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class PersonalizedProfileGeneratedEventListenerTest {
@@ -59,6 +60,20 @@ class PersonalizedProfileGeneratedEventListenerTest {
 
         verify(userLookupService).getUserOrThrow(userId);
         verify(recommendationService).generateRecommendationsForUser(user);
+    }
+
+    @Test
+    @DisplayName("사용자 조회가 실패해도 예외를 전파하지 않고 추천을 시도하지 않는다")
+    void handle_UserLookupFailureDoesNotPropagateExceptionAndSkipsRecommendation() {
+        Long userId = 3L;
+        given(userLookupService.getUserOrThrow(userId))
+                .willThrow(new RuntimeException("user lookup failure"));
+
+        assertThatCode(() -> listener.handle(new PersonalizedProfileGeneratedEvent(userId)))
+                .doesNotThrowAnyException();
+
+        verify(userLookupService).getUserOrThrow(userId);
+        verifyNoInteractions(recommendationService);
     }
 
     @Test
