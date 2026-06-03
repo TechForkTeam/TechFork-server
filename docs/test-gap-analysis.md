@@ -2,7 +2,7 @@
 
 > 목적: DDD 전환과 테스트 개선 로드맵을 실행하기 전에, 현재 테스트가 어떤 영역을 보호하고 있고 어떤 영역이 비어 있는지 분석한다.  
 > 관련 문서: [`docs/ubiquitous-language/README.md`](./ubiquitous-language/README.md), [`docs/ddd-test-refactoring-roadmap.md`](./ddd-test-refactoring-roadmap.md)  
-> 기준 시점: **2026-04-28 working tree**
+> 기준 시점: **2026-06-03, #411 병합 후 `docs/#412` 시작 시점**
 
 ## 1. 분석 요약
 
@@ -16,22 +16,22 @@
 |---|---|---|
 | Activity | 서비스, repository, controller 테스트가 충분하고 `Bookmark`/`query` 용어 정리도 대부분 반영됨 | 4.1을 `Bookmark → ReadPost → SearchHistory` slice로 나눠 진행하기 좋음 |
 | Source / Ingestion | RSS reader, processor, writer, scheduler, crawling service 테스트가 잘 있음 | 파이프라인 보호 수준 좋음 |
-| Post / Content | 조회 API/repository는 강함. 도메인 엔티티/임베딩 테스트는 부족하고 `PostSummary*`는 아직 untracked | `Post = 기술 게시글` 애그리거트 테스트 필요 |
+| Post / Content | 조회 API/repository, aggregate, summary/embedding pipeline 테스트가 tracked 상태로 보강됨 | 후속은 ContentChunker, rollback/운영 edge case 중심 |
 | User Account | 온보딩/관심사/계정 프로필/탈퇴와 이벤트 발행이 강함 | 사용자 계정 애그리거트와 후처리 seam은 비교적 잘 보호되어 있다 |
-| Personalization Profile | 기본 unit 안전망과 User Account 이벤트 trigger 검증이 생김 | 다음 리스크는 `PersonalizationProfileService -> Recommendation` 직접 호출 분리와 parsing edge case 보강이다 |
-| Recommendation | 조회 쪽은 일부 있음. 추천 생성/후보 탐색/MMR/이력화 테스트는 부족 | DDD 전환 전 가장 큰 리스크 중 하나 |
-| Search | 일반 실행 테스트가 거의 없음. evaluation suite만 존재 | 일반 회귀 테스트 부재가 큼 |
+| Personalization Profile | 활동 수집/분석/생성/이벤트 발행/AFTER_COMMIT 경계 테스트가 보강됨 | 다음 리스크는 parsing edge case와 재시도/outbox 같은 운영 복구 정책 |
+| Recommendation | 조회, 이벤트 리스너, LlmRecommendationService 핵심 흐름 테스트가 생김 | MMR 단위 테스트, command/scheduler/history/repository 정책 보강 필요 |
+| Search | `SearchServiceImplTest`로 일반/개인화 검색 핵심 회귀가 일부 보호됨 | controller/API contract와 추가 ranking edge case 보강 필요 |
 | Auth / Security | 토큰/필터/컨트롤러 테스트는 비교적 강함 | OAuth handler/OIDC 일부 보강 여지 |
 | Notification | 엔티티만 있고 테스트/기능이 약함 | 현재는 낮은 우선순위 |
 | Admin / Ops | 개발자 토큰 중심 테스트 있음 | 배치 수동 실행 API 커버 보강 필요 |
 
 가장 중요한 갭은 다음 5개다.
 
-1. **SearchServiceImpl 일반 회귀 테스트 부재**
-2. **LlmRecommendationService / MmrService 테스트 부재**
-3. **Post 애그리거트 단위 테스트 부재**
-4. **Post embedding pipeline 테스트 부재**
-5. **Personalization Profile edge-case와 추천 생성 분리 테스트 부족**
+1. **MmrService 단위 테스트 부재**
+2. **Recommendation command/scheduler/history/repository 정책 테스트 부족**
+3. **Search controller/API contract와 ranking edge-case 테스트 부족**
+4. **Personalization Profile parsing edge-case와 운영 복구 정책 테스트 부족**
+5. **TechnicalPostIndexed 같은 후속 이벤트 contract 테스트 부재**
 
 ---
 
@@ -71,40 +71,36 @@
 
 | 영역 | 파일 수 | `@Test`/`@ParameterizedTest` 수 | 비고 |
 |---|---:|---:|---|
-| domain/activity | 7 | 51 | Controller, service, repository 커버 좋음 + `SearchHistoryRequestTest` 포함 |
+| activity | 20 | 69 | Bookmark/ReadPost/SearchHistory slice와 첫 읽기 정책까지 커버 |
 | domain/admin | 1 | 6 | 개발자 토큰 중심 |
 | domain/auth | 3 | 30 | AuthService, KakaoOAuthService, AuthController integration |
-| domain/post | 4 | 72 | tracked 기준 controller/repository/query service 중심. batch 테스트 3개는 아직 untracked |
-| domain/recommendation | 3 | 8 | 조회/컨버터 중심, 생성 로직 부족 |
+| post | 20 | 118 | aggregate, query, summary/embedding pipeline까지 tracked 테스트로 보강됨 |
+| domain/recommendation | 5 | 17 | 조회/컨버터 + 이벤트 리스너 + LlmRecommendationService 핵심 흐름 |
+| domain/search | 1 | 2 | SearchServiceImpl 핵심 회귀 일부 |
 | domain/source | 10 | 38 | RSS/배치/스케줄러/락/웹훅 커버 좋음 |
-| useraccount + domain/personalization | 8 | 61 | User Account service/controller/repository 커버 + Personalization Profile 기본 unit 안전망 확보 |
-| global | 6 | 32 | Security, cache, util, integration base |
-| evaluation | 28 | 16 | 검색/추천 품질 평가 및 fixture setup |
+| useraccount | 14 | 93 | User Account service/controller/repository/event seam 커버 |
+| personalization | 8 | 18 | 활동 수집/분석/생성/이벤트/스케줄러 경계 커버 |
+| global | 9 | 36 | Security, cache, util, integration base |
+| evaluation | 27 | 16 | 검색/추천 품질 평가 및 fixture setup |
 
-### 3.2 untracked 테스트 주의사항
+### 3.2 tracked 테스트 주의사항
 
-현재 working tree에는 다음 untracked 테스트 디렉터리가 있다.
+Post summary/embedding pipeline 테스트는 현재 tracked 상태로 포함되어 있다.
 
-```text
-src/test/java/com/techfork/post/application/batch/
-src/test/java/com/techfork/post/infrastructure/batch/
-```
-
-포함 파일:
+대표 파일:
 
 ```text
-PostSummaryProcessorTest.java
-PostSummaryReaderTest.java
-PostSummaryWriterTest.java
+src/test/java/com/techfork/post/application/batch/PostSummaryProcessorTest.java
+src/test/java/com/techfork/post/infrastructure/batch/PostSummaryReaderTest.java
+src/test/java/com/techfork/post/infrastructure/batch/PostSummaryWriterTest.java
+src/test/java/com/techfork/post/application/batch/PostEmbeddingProcessorTest.java
+src/test/java/com/techfork/post/infrastructure/batch/PostEmbeddingWriterTest.java
 ```
-
-이 파일들은 현재 Git tracked 상태가 아니므로, 테스트 갭 분석에서는 **작성 중이거나 커밋되지 않은 테스트**로 본다.
 
 의미:
 
-- Post summary pipeline의 일부 갭은 이미 작업 중일 수 있다.
-- 하지만 main branch/PR 기준 안전망으로 보려면 tracked 상태로 포함되어야 한다.
-- 이 문서에서는 “untracked 보강 후보”로 별도 표기한다.
+- Post summary/embedding pipeline은 DDD 리팩터링 기본 안전망으로 볼 수 있다.
+- 남은 갭은 `ContentChunkerService`, rollback/운영 edge case, 후속 이벤트 contract 중심으로 이동했다.
 
 ---
 
@@ -282,13 +278,20 @@ ContentChunkerServiceTest
 | `UserAuthCacheEventListenerTest` | unit/mock | 온보딩 `AFTER_COMMIT` 캐시 evict, 탈퇴 `BEFORE_COMMIT + AFTER_COMMIT` 캐시 evict |
 | `UserAccountAfterCommitEventIntegrationTest` | integration | 커밋 후 후처리 실행, 롤백 시 후처리 미실행, 탈퇴 evict 실패 시 트랜잭션 롤백 |
 | `UserQueryServiceTest` | unit/mock | 계정 프로필 조회 |
-| `PersonalizationProfileServiceTest` | unit/mock | 활동 데이터 수집, LLM parsing, fallback, 저장, 추천 실패 격리 |
+| `PersonalizationProfileServiceTest` | unit/mock | 프로필 생성 성공 시 이벤트 발행, 생성 실패 시 이벤트 미발행 |
+| `UserActivityCollectorTest` | unit/mock | 관심사/읽은 글/북마크/검색 기록 활동 데이터 수집 |
+| `PersonalizationProfileAnalyzerTest` | unit/mock | LLM 응답 profileText/keyKeywords 분석 |
+| `PersonalizedProfileGeneratorTest` | unit/mock | 활동 수집, 분석, 임베딩, projection 저장 orchestration |
+| `PersonalizedProfileGeneratedEventTest` | unit | 이벤트 payload defensive copy / null normalization |
+| `PersonalizedProfileGeneratedAfterCommitIntegrationTest` | lightweight integration | 커밋 후 추천 리스너 실행, 롤백 시 미실행 |
+| `PersonalizationProfileSchedulerTest` | unit/mock | 활성 사용자 대상 주기 재생성 요청 |
 | `evaluation/search/setup/PersonalizationProfileServiceTest` | evaluation-setup | 테스트 사용자 개인화 프로필 생성용 setup |
 
 #### 평가
 
 - **User Account 쪽**은 온보딩, 관심사, 계정 프로필, 탈퇴 흐름과 이벤트 발행이 비교적 잘 보호되어 있다.
-- **Personalization Profile 쪽**은 `PersonalizationProfileServiceTest` 기본 안전망과 이벤트 리스너 trigger 테스트가 추가되었다.
+- **Personalization Profile 쪽**은 활동 수집/분석/생성 orchestration과 이벤트 발행/커밋 후 경계 테스트가 추가되었다.
+- **Personalization → Recommendation seam**은 `PersonalizedProfileGeneratedEvent` publisher/listener/lightweight integration test로 보호한다.
 - **Auth cache seam**은 온보딩/탈퇴 이벤트 리스너 테스트와 통합 테스트로 보호한다. 탈퇴 캐시 evict 실패는 트랜잭션 롤백으로 검증한다.
 - evaluation setup용 `PersonalizationProfileServiceTest`는 여전히 별도 목적이므로, 일반 unit test lane과 구분해서 본다.
 
@@ -296,23 +299,21 @@ ContentChunkerServiceTest
 
 | 우선순위 | 갭 | 이유 |
 |---|---|---|
-| P0 | `PersonalizedProfileGenerated` 이벤트/포트 분리 테스트 | 개인화 프로필 생성과 추천 생성 직접 호출을 분리하기 전 현재 동작 보호 |
+| 완료 | `PersonalizedProfileGeneratedEvent` publisher/listener/integration test | 개인화 프로필 생성과 추천 생성 이벤트 경계 보호 |
 | P1 | LLM 응답 parsing edge-case 테스트 | `### PROFILE`, `### KEYWORDS` 변형/누락 시 품질/장애 영향 |
 | P1 | `UserInterestCategory/UserInterestKeyword` 도메인 테스트 | 관심 키워드가 카테고리에 속해야 한다는 규칙 명시 |
-| P1 | `PersonalizationProfileSchedulerTest` | 매일 06:00 KST active user personalization profile regeneration 보호 |
+| 완료 | `PersonalizationProfileSchedulerTest` | 매일 06:00 KST active user personalization profile regeneration 보호 |
 | P2 | `InterestQueryServiceTest` | 관심사 조회 변환 로직 보호 |
 
 #### 추천 추가 테스트
 
 ```text
-PersonalizationProfileServiceTest
-- 관심사, 읽은 게시글, 북마크, 검색 기록을 활동 데이터로 수집한다.
-- 읽은 시간은 읽기 몰입도 자연어로 변환된다.
-- LLM 응답에서 profileText와 keyKeywords를 파싱한다.
-- 파싱 실패 시 fallback 정책을 따른다.
-- profileText를 임베딩하여 PersonalizationProfileDocument를 저장한다.
-- 개인화 프로필 생성 후 추천 생성을 호출한다.
-- 추천 생성 실패가 개인화 프로필 저장을 깨뜨리지 않는지 정책을 검증한다.
+PersonalizationProfileServiceTest / PersonalizedProfileGenerated* tests
+- 개인화 프로필 생성 성공 후 `PersonalizedProfileGeneratedEvent`를 발행한다.
+- 개인화 프로필 생성 실패 시 이벤트를 발행하지 않는다.
+- 이벤트 payload는 profileVector/keyKeywords 스냅샷을 보존한다.
+- 이벤트 리스너는 커밋 후 Recommendation 생성을 트리거하고, 롤백 시 실행되지 않는다.
+- 추천 생성 실패는 Recommendation 리스너 안에서 격리되어 프로필 저장 결과를 깨뜨리지 않는다.
 ```
 
 ```text
@@ -335,20 +336,21 @@ UserTest
 | `RecommendationControllerIntegrationTest` | integration | 추천 목록 조회, 랭킹 순서, 북마크 상태 조합 |
 | `RecommendationQueryServiceTest` | unit/mock | 추천 목록 조회, 북마크 상태 조합, 빈 목록 |
 | `RecommendationConverterTest` | unit/mock | thumbnail optimization |
+| `PersonalizedProfileGeneratedEventListenerTest` | unit/mock | 이벤트 수신 후 스냅샷 기반 추천 생성, 예외 격리, AFTER_COMMIT annotation |
+| `LlmRecommendationServiceTest` | unit/mock | 프로필 없음/벡터 없음, 읽은 글 제외, RRF/MMR 흐름, 기존 추천 이력화, 새 추천 저장 |
 | evaluation recommendation tests | evaluation | K, lambda, MMR candidate size, title/summary ratio 품질 비교 |
 
 #### 평가
 
-조회 쪽은 일부 보호되어 있지만, 핵심인 **추천 생성 로직이 거의 비어 있다.**  
-`LlmRecommendationService`는 Personalization Profile(`PersonalizationProfileDocument`), Elasticsearch, Post, Activity, RRF, MMR, time decay, history 저장을 모두 다루므로 DDD 리팩터링 전 반드시 테스트가 필요하다.
+조회 쪽과 `LlmRecommendationService` 핵심 흐름은 일부 보호되었다.
+다만 `MmrService` 단위 테스트, 추천 command/scheduler/history/repository 정책 테스트는 아직 부족하다.
 
 #### 남은 갭
 
 | 우선순위 | 갭 | 이유 |
 |---|---|---|
 | P0 | `MmrServiceTest` | 추천 다양성/관련성 알고리즘의 핵심 |
-| P0 | `LlmRecommendationServiceTest` | 추천 생성, 읽은 글 제외, RRF, 기존 추천 이력화, 새 추천 저장 보호 |
-| P0 | 추천 생성 실패/빈 후보/프로필 없음 정책 테스트 | 장애 시 사용자 경험과 batch 안정성에 중요 |
+| P1 | `LlmRecommendationServiceTest` edge-case 확장 | 기본 흐름은 보호되었고, 실패/빈 후보/time-decay 세부 정책은 추가 보강 여지 |
 | P1 | `RecommendationCommandServiceTest` | 수동 재생성 API 흐름 보호 |
 | P1 | `RecommendationSchedulerTest` | 매일 07:00 KST active user 추천 생성 보호 |
 | P1 | `RecommendedPostRepositoryTest` | rank order, deleteByUser, unique user-post 보호 |
@@ -370,12 +372,12 @@ MmrServiceTest
 LlmRecommendationServiceTest
 - 사용자 개인화 프로필이 없으면 0을 반환한다.
 - profileVector가 없으면 0을 반환한다.
+- 이벤트 스냅샷 경로는 ES refresh 직후 프로필 재조회에 의존하지 않는다.
 - 읽은 게시글은 후보 검색 filter에 포함된다.
 - vectorHits와 keywordHits를 RRF로 합친다.
-- time decay가 similarityScore에 반영된다.
 - 기존 추천은 RecommendationHistory로 저장된다.
 - 기존 추천은 삭제되고 새 추천이 저장된다.
-- Elasticsearch 검색 실패 시 정책대로 empty/failure 처리한다.
+- Elasticsearch 검색 실패/빈 후보/time decay 세부 정책은 추가 보강 여지다.
 ```
 
 ---
@@ -384,13 +386,9 @@ LlmRecommendationServiceTest
 
 #### 현재 테스트
 
-일반 domain/search 테스트 디렉터리는 없다.
+`src/test/java/com/techfork/domain/search/service/SearchServiceImplTest.java`가 추가되어 일반/개인화 검색 핵심 회귀 일부를 보호한다.
 
-```text
-src/test/java/com/techfork/domain/search  // 없음
-```
-
-대신 evaluation suite가 있다.
+evaluation suite도 별도로 유지한다.
 
 | 테스트 | 성격 | 주요 커버 |
 |---|---|---|
@@ -402,16 +400,16 @@ src/test/java/com/techfork/domain/search  // 없음
 
 #### 평가
 
-Search는 현재 **품질 평가 테스트는 있지만 일반 회귀 테스트가 없다.**  
-evaluation suite는 무겁고 runtime/profile/fixture 의존이 강하므로 DDD 리팩터링 안전망으로 쓰기 어렵다.
+Search는 이제 `SearchServiceImplTest`로 빠른 일반 회귀 일부를 확보했다.
+evaluation suite는 무겁고 runtime/profile/fixture 의존이 강하므로 품질 튜닝용으로 분리 유지한다.
 
 #### 남은 갭
 
 | 우선순위 | 갭 | 이유 |
 |---|---|---|
-| P0 | `SearchServiceImplTest` 일반 단위 테스트 | 일반 검색/개인화 검색 핵심 흐름 보호 필요 |
-| P0 | RRF 결합 테스트 | 검색 결과 순위 품질과 직접 연결 |
-| P0 | 개인화 fallback/reranking 테스트 | Personalization Profile(`PersonalizationProfileDocument`) 경계 정리 전 필요 |
+| 완료 | `SearchServiceImplTest` 기본 단위 테스트 | 일반 검색/개인화 검색 핵심 흐름 일부 보호 |
+| P1 | RRF/ranking edge-case 테스트 | 검색 결과 순위 품질과 직접 연결 |
+| P1 | 개인화 fallback/reranking 확장 테스트 | Personalization Profile projection 소비 경계 보강 |
 | P1 | BM25 query builder 구조 테스트 | dis_max/exact/fuzzy/chunk 구조 회귀 방지 |
 | P1 | Semantic KNN field/boost 테스트 | title/summary/chunk embedding field 회귀 방지 |
 | P1 | metadata attachment 테스트 | viewCount, isBookmarked 조합 보호 |
@@ -521,9 +519,9 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 | 애그리거트 / 모델 | 현재 테스트 | 갭 |
 |---|---|---|
 | `TechBlog` | `TechBlogTest` 있음 | URL uniqueness repository 테스트 보강 정도 |
-| `Post` | 직접 `PostTest` 없음 | 기술 게시글 생성/요약/키워드/조회수 테스트 필요 |
-| `PostKeyword` | 직접 테스트 없음 | `Post` 내부 엔티티로 테스트하면 충분 |
-| `User` | `UserCommandServiceTest` 중심 | User Account aggregate 관점의 직접 `UserTest` 필요 |
+| `Post` | `PostTest`, `PostViewCountCommandServiceTest`, query/batch tests | 기술 게시글 생성/요약/키워드/조회수 기본 보호 완료. 후속은 chunking/운영 edge case 중심 |
+| `PostKeyword` | `PostTest`, `PostKeywordLookupServiceTest` | Post 내부 엔티티와 조회 조합 경로로 기본 보호 |
+| `User` | `UserTest`, `UserCommandServiceTest` 중심 | 상태 전이 기본 보호 완료. 추가 VO/ID reference 전환 시 보강 |
 | `UserInterestCategory/Keyword` | repository/service 중심 | User Account 도메인 규칙 테스트 보강 필요 |
 | `PersonalizationProfileDocument` | `PersonalizationProfileServiceTest` + evaluation setup | projection 자체 직접 테스트/세부 parsing 검증은 더 보강 가능 |
 | `ReadPost` | `ReadPostTest`, `ReadPostFirstReadPolicyTest`, `ReadPostCommandServiceTest`, `ReadPostQueryServiceTest`, `ReadPostRepositoryTest`, `ReadPostIntegrationTest` | 패키지 slice와 첫 읽기 정책까지 분리되었고, 이후 관심사는 동시성/ID reference 같은 별도 이슈다 |
@@ -541,14 +539,13 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 
 | 테스트 | 목적 | 선행/연결 작업 |
 |---|---|---|
-| `PostTest` | `Post = 기술 게시글` 애그리거트 보호 | Post 용어 정리, EDifficultyLevel 제거 |
-| `PersonalizationProfileServiceTest` edge-case 보강 | parsing/fallback/trigger 경계 강화 | User Account / Personalization Profile 경계 정리 |
 | `MmrServiceTest` | 추천 알고리즘 핵심 보호 | Recommendation DDD 전환 |
-| `LlmRecommendationServiceTest` | 추천 생성/이력화/읽은 글 제외 보호 | `PersonalizedProfileGenerated` 이벤트 도입 전 |
-| `SearchServiceImplTest` | 검색 일반 회귀 안전망 | Search read model/adapter 분리 전 |
-| `PostEmbeddingProcessorTest` | 임베딩 문서 생성 보호 | `TechnicalPostIndexed` 이벤트 도입 전 |
-| `PostEmbeddingWriterTest` | ES 색인 + embeddedAt update 보호 | embedding pipeline 리팩터링 전 |
-| Activity 4.1 후속 slice 회귀 유지 | Bookmark / ReadPost / SearchHistory 분할 리팩터링 보호 | Activity 4.1 진행 |
+| `RecommendationCommandServiceTest` | 수동 추천 재생성 use case 보호 | Recommendation application 경계 정리 |
+| `RecommendationSchedulerTest` | 일일 추천 생성 스케줄 보호 | 운영 배치 안정화 |
+| `RecommendedPostRepositoryTest` | rank order/delete/unique 보호 | RecommendationSet 도입 전 |
+| `RecommendationHistoryTest` | 이력화/click 기록 보호 | 추천 이력 모델 정리 |
+| `SearchControllerIntegrationTest` | 검색 API contract 보호 | Search API 경계 정리 |
+| `TechnicalPostIndexed` event contract tests | 색인 완료 후속 이벤트 보호 | Phase 6 후속 이벤트 도입 |
 
 ### P1. DDD 전환 중 보강
 
@@ -556,13 +553,7 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 |---|---|
 | `ContentChunkerServiceTest` | semantic search 품질 입력 보호 |
 | `PostSummaryWriter` rollback integration test | summary/keyword JDBC write 원자성 보호 |
-| `UserTest` | 사용자 애그리거트 상태 전이 보호 |
-| `RecommendationCommandServiceTest` | 추천 재생성 use case 보호 |
-| `RecommendationSchedulerTest` | 일일 추천 생성 스케줄 보호 |
-| `RecommendedPostRepositoryTest` | rank order/delete/unique 보호 |
-| `RecommendationHistoryTest` | 이력화/click 기록 보호 |
-| `PersonalizationProfileSchedulerTest` | 일일 개인화 프로필 재생성 보호 |
-| `SearchControllerIntegrationTest` | 검색 API contract 보호 |
+| `Search/RRF ranking edge-case tests` | 검색 순위 정책 확장 보호 |
 | `PostKeywordRepositoryTest` | 키워드 조회 조합 보호 |
 
 ### P2. 안정화/운영 보강
@@ -590,16 +581,12 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 `docs/ddd-test-refactoring-roadmap.md`의 실행 순서를 테스트 관점으로 더 구체화하면 다음과 같다.
 
 ```text
-1. 현재 Activity 테스트 통과 확인
-2. Activity 4.1 후속 정리 (Bookmark → ReadPost → SearchHistory)
-3. PostTest 작성
-4. Post embedding pipeline 테스트 작성
-5. PersonalizationProfileServiceTest edge-case/trigger 보강
-6. MmrServiceTest 작성
-7. LlmRecommendationServiceTest 작성
-8. SearchServiceImplTest 작성
-9. RecommendationCommand/Scheduler/History 테스트 보강
-10. Source 이벤트 contract 테스트 준비
+1. 현재 문서/테스트 인벤토리와 DDD 경계 최신화 유지
+2. MmrServiceTest 작성
+3. RecommendationCommand/Scheduler/History/Repository 테스트 보강
+4. SearchControllerIntegrationTest 및 ranking edge-case 테스트 보강
+5. PersonalizationProfile parsing edge-case와 outbox/retry 필요성 검토
+6. TechnicalPostIndexed 이벤트 contract 테스트 준비
 ```
 
 가장 먼저 시작할 실제 작업 단위는 다음이 좋다.
@@ -612,21 +599,21 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 - Bookmark aggregate 테스트 보강 여부 결정
 - SearchHistory query/searchWord 호환 범위 기록
 
-작업 2: Post 애그리거트 테스트
-- PostTest 추가
-- EDifficultyLevel 제거 후 문서 정리 및 회귀 확인
-
-작업 3: Personalization Profile 테스트
-- PersonalizationProfileServiceTest 보강
-- LLM/Embedding/RecommendationService는 mock 처리
-
-작업 4: 추천 생성 테스트
+작업 2: 추천 알고리즘 테스트
 - MmrServiceTest 추가
-- LlmRecommendationServiceTest 추가
+- LlmRecommendationServiceTest edge-case 확장
 
-작업 5: 검색 회귀 테스트
-- SearchServiceImplTest 추가
-- evaluation suite와 별개로 빠른 단위 테스트 구성
+작업 3: 추천 application/영속성 테스트
+- RecommendationCommandServiceTest 추가
+- RecommendationSchedulerTest 추가
+- RecommendedPostRepositoryTest / RecommendationHistoryTest 추가
+
+작업 4: 검색 API/순위 edge-case 테스트
+- SearchControllerIntegrationTest 추가
+- SearchServiceImplTest ranking/fallback edge-case 확장
+
+작업 5: 후속 이벤트 contract 테스트
+- TechnicalPostIndexed 이벤트 도입 전 publisher/subscriber contract test 준비
 ```
 
 ---
