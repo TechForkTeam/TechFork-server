@@ -1,0 +1,74 @@
+package com.techfork.domain.recommendation.listener;
+
+import com.techfork.domain.recommendation.service.RecommendationService;
+import com.techfork.personalization.application.event.PersonalizedProfileGeneratedEvent;
+import com.techfork.useraccount.application.query.lookup.UserLookupService;
+import com.techfork.useraccount.domain.User;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
+@ExtendWith(MockitoExtension.class)
+class PersonalizedProfileGeneratedEventListenerTest {
+
+    @Mock
+    private UserLookupService userLookupService;
+
+    @Mock
+    private RecommendationService recommendationService;
+
+    @InjectMocks
+    private PersonalizedProfileGeneratedEventListener listener;
+
+    @Test
+    @DisplayName("프로필 생성 이벤트를 받으면 추천을 생성한다")
+    void handle_GeneratesRecommendationsWhenProfileGeneratedEventIsReceived() {
+        Long userId = 1L;
+        User user = mock(User.class);
+        given(userLookupService.getUserOrThrow(userId)).willReturn(user);
+        given(recommendationService.generateRecommendationsForUser(user)).willReturn(5);
+
+        listener.handle(new PersonalizedProfileGeneratedEvent(userId));
+
+        verify(userLookupService).getUserOrThrow(userId);
+        verify(recommendationService).generateRecommendationsForUser(user);
+    }
+
+    @Test
+    @DisplayName("추천 생성이 실패해도 예외를 전파하지 않는다")
+    void handle_RecommendationFailureDoesNotPropagateException() {
+        Long userId = 2L;
+        User user = mock(User.class);
+        given(userLookupService.getUserOrThrow(userId)).willReturn(user);
+        given(recommendationService.generateRecommendationsForUser(user))
+                .willThrow(new RuntimeException("recommendation failure"));
+
+        assertThatCode(() -> listener.handle(new PersonalizedProfileGeneratedEvent(userId)))
+                .doesNotThrowAnyException();
+
+        verify(userLookupService).getUserOrThrow(userId);
+        verify(recommendationService).generateRecommendationsForUser(user);
+    }
+
+    @Test
+    @DisplayName("프로필 생성 이벤트 리스너는 AFTER_COMMIT 단계에서 실행된다")
+    void listenerMethod_RunsAfterCommit() throws NoSuchMethodException {
+        TransactionalEventListener annotation = PersonalizedProfileGeneratedEventListener.class
+                .getDeclaredMethod("handle", PersonalizedProfileGeneratedEvent.class)
+                .getAnnotation(TransactionalEventListener.class);
+
+        assertThat(annotation).isNotNull();
+        assertThat(annotation.phase()).isEqualTo(TransactionPhase.AFTER_COMMIT);
+    }
+}
