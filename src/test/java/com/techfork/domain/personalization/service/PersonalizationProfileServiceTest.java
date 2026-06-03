@@ -28,6 +28,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
@@ -159,6 +160,10 @@ class PersonalizationProfileServiceTest {
 
         verify(userRepository).findById(userId);
         verify(recommendationService).generateRecommendationsForUser(user);
+        verify(userInterestCategoryRepository).findByUserIdWithKeywords(userId);
+        verify(readPostRepository).findRecentReadPostsByUserIdWithMinDuration(userId, PageRequest.of(0, 20));
+        verify(bookmarkRepository).findRecentBookmarksByUserId(userId, PageRequest.of(0, 20));
+        verify(searchHistoryRepository).findRecentSearchHistoriesByUserId(userId, PageRequest.of(0, 30));
     }
 
     @Test
@@ -187,6 +192,38 @@ class PersonalizationProfileServiceTest {
         assertThat(savedDocument.getProfileText()).isEqualTo(llmResponse);
         assertThat(savedDocument.getKeyKeywords()).isEmpty();
         assertThat(savedDocument.getProfileVector()).containsExactly(1.0f, 2.0f);
+    }
+
+    @Test
+    @DisplayName("LLM 응답의 핵심 키워드는 최대 5개까지만 저장한다")
+    void generatePersonalizationProfileSync_LimitsKeyKeywordsToFive() {
+        Long userId = 4L;
+        User user = createUser(userId);
+
+        given(userInterestCategoryRepository.findByUserIdWithKeywords(userId)).willReturn(List.of());
+        given(readPostRepository.findRecentReadPostsByUserIdWithMinDuration(anyLong(), any())).willReturn(List.of());
+        given(bookmarkRepository.findRecentBookmarksByUserId(anyLong(), any())).willReturn(List.of());
+        given(searchHistoryRepository.findRecentSearchHistoriesByUserId(anyLong(), any())).willReturn(List.of());
+        given(llmClient.call(anyString(), anyString()))
+                .willReturn("""
+                        ### PROFILE
+                        Java와 Spring 기반 백엔드 성능 최적화에 집중하는 사용자
+
+                        ### KEYWORDS
+                        Java, Spring, JPA, Redis, Kafka, Kubernetes, Elasticsearch
+                        """);
+        given(embeddingClient.embed(anyString())).willReturn(List.of(0.4f, 0.5f));
+        given(personalizationProfileDocumentRepository.save(any(PersonalizationProfileDocument.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+        personalizationProfileService.generatePersonalizationProfileSync(userId);
+
+        ArgumentCaptor<PersonalizationProfileDocument> documentCaptor = ArgumentCaptor.forClass(PersonalizationProfileDocument.class);
+        verify(personalizationProfileDocumentRepository).save(documentCaptor.capture());
+
+        assertThat(documentCaptor.getValue().getKeyKeywords())
+                .containsExactly("Java", "Spring", "JPA", "Redis", "Kafka");
     }
 
     @Test
