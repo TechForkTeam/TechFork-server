@@ -1,7 +1,7 @@
 package com.techfork.global.common;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import com.techfork.domain.personalization.repository.PersonalizationProfileDocumentRepository;
+import com.techfork.personalization.infrastructure.PersonalizationProfileDocumentRepository;
 import com.techfork.post.infrastructure.PostDocumentRepository;
 import com.techfork.evaluation.recommendation.RecommendationEvaluationService;
 import com.techfork.global.configuration.MySqlRedisIntegrationTestConfig;
