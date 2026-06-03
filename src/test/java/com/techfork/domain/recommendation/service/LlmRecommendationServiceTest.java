@@ -43,6 +43,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -172,7 +173,7 @@ class LlmRecommendationServiceTest {
         assertThat(candidatesCaptor.getValue())
                 .extracting(MmrService.MmrCandidate::getPostId)
                 .containsExactly(501L, 502L);
-        verify(personalizationProfileDocumentRepository, times(2)).findByUserId(userId);
+        verify(personalizationProfileDocumentRepository, times(1)).findByUserId(userId);
         verify(vectorQueryBuilder).createKnnSearches(
                 eq("titleEmbedding"),
                 eq("summaryEmbedding"),
@@ -186,6 +187,43 @@ class LlmRecommendationServiceTest {
                 same(filterQuery)
         );
         verify(vectorQueryBuilder).createBm25Query(List.of("Spring", "JPA"), 0.6f, 0.2f, 0.2f);
+    }
+
+    @Test
+    @DisplayName("프로필 스냅샷 기반 추천 생성은 PersonalizationProfileDocument를 다시 조회하지 않는다")
+    void generateRecommendationsForUser_WithProfileSnapshot_DoesNotReadPersonalizationProfileProjection() throws IOException {
+        Long userId = 10L;
+        User user = createUser(userId);
+        float[] profileVector = new float[]{0.1f, 0.2f};
+        List<String> keyKeywords = List.of("Spring", "JPA");
+        Query filterQuery = Query.of(query -> query.matchAll(matchAll -> matchAll));
+        Query bm25Query = Query.of(query -> query.matchAll(matchAll -> matchAll));
+
+        given(readPostRepository.findRecentReadPostsByUserIdWithMinDuration(userId, PageRequest.of(0, 1000)))
+                .willReturn(List.of());
+        given(vectorQueryBuilder.createExcludeFilter(Set.of())).willReturn(filterQuery);
+        given(vectorQueryBuilder.createKnnSearches(
+                eq("titleEmbedding"),
+                eq("summaryEmbedding"),
+                eq("contentChunks.embedding"),
+                same(profileVector),
+                eq(0.6f),
+                eq(0.2f),
+                eq(0.2f),
+                eq(50),
+                eq(150),
+                same(filterQuery)
+        )).willReturn(List.of());
+        given(vectorQueryBuilder.createBm25Query(keyKeywords, 0.6f, 0.2f, 0.2f))
+                .willReturn(bm25Query);
+        given(elasticsearchClient.search(searchRequestBuilder(), eq(PostDocument.class)))
+                .willReturn(emptySearchResponse(), emptySearchResponse());
+
+        int createdCount = llmRecommendationService.generateRecommendationsForUser(user, profileVector, keyKeywords);
+
+        assertThat(createdCount).isZero();
+        verify(personalizationProfileDocumentRepository, never()).findByUserId(any());
+        verify(vectorQueryBuilder).createBm25Query(keyKeywords, 0.6f, 0.2f, 0.2f);
     }
 
     @Test
@@ -282,6 +320,19 @@ class LlmRecommendationServiceTest {
                         .failed(0)
                 )
                 .hits(hits -> hits.hits(hit))
+        );
+    }
+
+    private SearchResponse<PostDocument> emptySearchResponse() {
+        return SearchResponse.of(response -> response
+                .took(1)
+                .timedOut(false)
+                .shards(shards -> shards
+                        .total(1)
+                        .successful(1)
+                        .failed(0)
+                )
+                .hits(hits -> hits.hits(List.of()))
         );
     }
 

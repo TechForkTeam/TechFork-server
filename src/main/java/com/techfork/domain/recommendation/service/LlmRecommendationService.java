@@ -67,8 +67,6 @@ public class LlmRecommendationService implements RecommendationService {
 
     @Override
     public int generateRecommendationsForUser(User user) {
-        log.info("사용자 {} 추천 생성 시작", user.getId());
-
         Optional<PersonalizationProfileDocument> personalizationProfileOpt =
                 personalizationProfileDocumentRepository.findByUserId(user.getId());
         if (personalizationProfileOpt.isEmpty() || personalizationProfileOpt.get().getProfileVector() == null) {
@@ -77,11 +75,27 @@ public class LlmRecommendationService implements RecommendationService {
         }
 
         PersonalizationProfileDocument personalizationProfile = personalizationProfileOpt.get();
-        float[] personalizationProfileVector = personalizationProfile.getProfileVector();
+        return generateRecommendationsForUser(
+                user,
+                personalizationProfile.getProfileVector(),
+                personalizationProfile.getKeyKeywords()
+        );
+    }
+
+    @Override
+    public int generateRecommendationsForUser(User user, float[] personalizationProfileVector, List<String> keyKeywords) {
+        log.info("사용자 {} 추천 생성 시작", user.getId());
+
+        if (personalizationProfileVector == null) {
+            log.warn("사용자 {}의 개인화 프로필 벡터를 찾을 수 없음. 추천 생성 스킵.", user.getId());
+            return 0;
+        }
+
+        List<String> safeKeyKeywords = keyKeywords == null ? List.of() : keyKeywords;
 
         try {
             // 2. k-NN 검색으로 초기 후보군 가져오기
-            List<MmrCandidate> candidates = searchCandidates(personalizationProfileVector, user);
+            List<MmrCandidate> candidates = searchCandidates(personalizationProfileVector, safeKeyKeywords, user);
 
             if (candidates.isEmpty()) {
                 log.info("사용자 {}의 추천 후보군을 찾을 수 없음", user.getId());
@@ -119,17 +133,15 @@ public class LlmRecommendationService implements RecommendationService {
         }
     }
 
-    private List<MmrCandidate> searchCandidates(float[] personalizationProfileVector, User user) throws IOException {
+    private List<MmrCandidate> searchCandidates(
+            float[] personalizationProfileVector,
+            List<String> keyKeywords,
+            User user
+    ) throws IOException {
         Set<Long> readPostIds = readPostRepository.findRecentReadPostsByUserIdWithMinDuration(user.getId(), PageRequest.of(0, 1000))
                 .stream()
                 .map(readPost -> readPost.getPost().getId())
                 .collect(Collectors.toSet());
-
-        Optional<PersonalizationProfileDocument> personalizationProfileOpt =
-                personalizationProfileDocumentRepository.findByUserId(user.getId());
-        List<String> keyKeywords = personalizationProfileOpt
-                .map(PersonalizationProfileDocument::getKeyKeywords)
-                .orElse(List.of());
 
         RecommendationProperties.EmbeddingWeights weights = properties.getEmbeddingWeights();
         Query filterQuery = vectorQueryBuilder.createExcludeFilter(readPostIds);

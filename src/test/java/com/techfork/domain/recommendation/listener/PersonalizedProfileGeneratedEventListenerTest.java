@@ -13,8 +13,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -37,13 +43,23 @@ class PersonalizedProfileGeneratedEventListenerTest {
     void handle_GeneratesRecommendationsWhenProfileGeneratedEventIsReceived() {
         Long userId = 1L;
         User user = mock(User.class);
+        float[] profileVector = new float[]{0.1f, 0.2f};
+        List<String> keyKeywords = List.of("Spring", "JPA");
         given(userLookupService.getUserOrThrow(userId)).willReturn(user);
-        given(recommendationService.generateRecommendationsForUser(user)).willReturn(5);
+        given(recommendationService.generateRecommendationsForUser(
+                eq(user),
+                any(float[].class),
+                eq(keyKeywords)
+        )).willReturn(5);
 
-        listener.handle(new PersonalizedProfileGeneratedEvent(userId));
+        listener.handle(new PersonalizedProfileGeneratedEvent(userId, profileVector, keyKeywords));
 
         verify(userLookupService).getUserOrThrow(userId);
-        verify(recommendationService).generateRecommendationsForUser(user);
+        verify(recommendationService).generateRecommendationsForUser(
+                eq(user),
+                argThat(vector -> Arrays.equals(vector, profileVector)),
+                eq(keyKeywords)
+        );
     }
 
     @Test
@@ -51,15 +67,25 @@ class PersonalizedProfileGeneratedEventListenerTest {
     void handle_RecommendationFailureDoesNotPropagateException() {
         Long userId = 2L;
         User user = mock(User.class);
+        float[] profileVector = new float[]{0.1f, 0.2f};
+        List<String> keyKeywords = List.of("Spring", "JPA");
         given(userLookupService.getUserOrThrow(userId)).willReturn(user);
-        given(recommendationService.generateRecommendationsForUser(user))
+        given(recommendationService.generateRecommendationsForUser(
+                eq(user),
+                any(float[].class),
+                eq(keyKeywords)
+        ))
                 .willThrow(new RuntimeException("recommendation failure"));
 
-        assertThatCode(() -> listener.handle(new PersonalizedProfileGeneratedEvent(userId)))
+        assertThatCode(() -> listener.handle(new PersonalizedProfileGeneratedEvent(userId, profileVector, keyKeywords)))
                 .doesNotThrowAnyException();
 
         verify(userLookupService).getUserOrThrow(userId);
-        verify(recommendationService).generateRecommendationsForUser(user);
+        verify(recommendationService).generateRecommendationsForUser(
+                eq(user),
+                argThat(vector -> Arrays.equals(vector, profileVector)),
+                eq(keyKeywords)
+        );
     }
 
     @Test
@@ -69,7 +95,7 @@ class PersonalizedProfileGeneratedEventListenerTest {
         given(userLookupService.getUserOrThrow(userId))
                 .willThrow(new RuntimeException("user lookup failure"));
 
-        assertThatCode(() -> listener.handle(new PersonalizedProfileGeneratedEvent(userId)))
+        assertThatCode(() -> listener.handle(new PersonalizedProfileGeneratedEvent(userId, new float[]{0.1f}, List.of("Spring"))))
                 .doesNotThrowAnyException();
 
         verify(userLookupService).getUserOrThrow(userId);

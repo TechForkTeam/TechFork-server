@@ -24,7 +24,11 @@ public class PersonalizedProfileGeneratedEventListener {
 
         try {
             User user = userLookupService.getUserOrThrow(userId);
-            int recommendationCount = recommendationService.generateRecommendationsForUser(user);
+            int recommendationCount = recommendationService.generateRecommendationsForUser(
+                    user,
+                    event.profileVector(),
+                    event.keyKeywords()
+            );
 
             log.info("Recommendations generated after personalization profile creation for userId: {} - {} recommendations created",
                     userId, recommendationCount);

@@ -2,6 +2,7 @@ package com.techfork.personalization.application;
 
 import com.techfork.personalization.application.event.PersonalizedProfileGeneratedEvent;
 import com.techfork.personalization.application.generation.PersonalizedProfileGenerator;
+import com.techfork.personalization.infrastructure.PersonalizationProfileDocument;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -30,8 +31,12 @@ public class PersonalizationProfileService {
     @Transactional
     public void generatePersonalizationProfileSync(Long userId) {
         try {
-            personalizedProfileGenerator.generate(userId);
-            eventPublisher.publishEvent(new PersonalizedProfileGeneratedEvent(userId));
+            PersonalizationProfileDocument profileDocument = personalizedProfileGenerator.generate(userId);
+            eventPublisher.publishEvent(new PersonalizedProfileGeneratedEvent(
+                    userId,
+                    profileDocument.getProfileVector(),
+                    profileDocument.getKeyKeywords()
+            ));
 
             log.info("Personalization profile generated successfully for userId: {}", userId);
 

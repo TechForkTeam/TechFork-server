@@ -2,6 +2,8 @@ package com.techfork.personalization.application;
 
 import com.techfork.personalization.application.event.PersonalizedProfileGeneratedEvent;
 import com.techfork.personalization.application.generation.PersonalizedProfileGenerator;
+import com.techfork.personalization.infrastructure.PersonalizationProfileDocument;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,13 +35,25 @@ class PersonalizationProfileServiceTest {
     @DisplayName("개인화 프로필 생성 성공 후 프로필 생성 이벤트를 발행한다")
     void generatePersonalizationProfileSync_PublishesProfileGeneratedEventAfterProfileGeneration() {
         Long userId = 1L;
+        float[] profileVector = new float[]{0.1f, 0.2f};
+        PersonalizationProfileDocument profileDocument = PersonalizationProfileDocument.create(
+                userId,
+                "Spring과 JPA 기반 백엔드 관심 프로필",
+                profileVector,
+                List.of("Backend"),
+                List.of("Spring", "JPA")
+        );
+        given(personalizedProfileGenerator.generate(userId)).willReturn(profileDocument);
 
         personalizationProfileService.generatePersonalizationProfileSync(userId);
 
         ArgumentCaptor<PersonalizedProfileGeneratedEvent> eventCaptor = ArgumentCaptor.forClass(PersonalizedProfileGeneratedEvent.class);
         verify(personalizedProfileGenerator).generate(userId);
         verify(eventPublisher).publishEvent(eventCaptor.capture());
-        assertThat(eventCaptor.getValue().userId()).isEqualTo(userId);
+        PersonalizedProfileGeneratedEvent event = eventCaptor.getValue();
+        assertThat(event.userId()).isEqualTo(userId);
+        assertThat(event.profileVector()).containsExactly(0.1f, 0.2f);
+        assertThat(event.keyKeywords()).containsExactly("Spring", "JPA");
     }
 
     @Test
