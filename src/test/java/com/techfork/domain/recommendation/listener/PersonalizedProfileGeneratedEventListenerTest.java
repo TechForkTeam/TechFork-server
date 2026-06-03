@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -39,8 +40,8 @@ class PersonalizedProfileGeneratedEventListenerTest {
     private PersonalizedProfileGeneratedEventListener listener;
 
     @Test
-    @DisplayName("프로필 생성 이벤트를 받으면 추천을 생성한다")
-    void handle_GeneratesRecommendationsWhenProfileGeneratedEventIsReceived() {
+    @DisplayName("프로필 생성 이벤트를 받으면 이벤트 스냅샷으로 추천을 생성한다")
+    void handle_GeneratesRecommendationsWithEventSnapshotWhenProfileGeneratedEventIsReceived() {
         Long userId = 1L;
         User user = mock(User.class);
         float[] profileVector = new float[]{0.1f, 0.2f};
@@ -60,6 +61,7 @@ class PersonalizedProfileGeneratedEventListenerTest {
                 argThat(vector -> Arrays.equals(vector, profileVector)),
                 eq(keyKeywords)
         );
+        verify(recommendationService, never()).generateRecommendationsForUser(user);
     }
 
     @Test
@@ -86,6 +88,7 @@ class PersonalizedProfileGeneratedEventListenerTest {
                 argThat(vector -> Arrays.equals(vector, profileVector)),
                 eq(keyKeywords)
         );
+        verify(recommendationService, never()).generateRecommendationsForUser(user);
     }
 
     @Test
