@@ -1,8 +1,7 @@
 package com.techfork.personalization.scheduler;
 
-import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.personalization.application.PersonalizationProfileService;
+import com.techfork.useraccount.application.query.lookup.UserLookupService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,7 +15,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PersonalizationProfileScheduler {
 
-    private final UserRepository userRepository;
+    private final UserLookupService userLookupService;
     private final PersonalizationProfileService personalizationProfileService;
 
     /**
@@ -28,18 +27,18 @@ public class PersonalizationProfileScheduler {
         log.info("Starting daily personalization profile regeneration for active users");
 
         LocalDateTime since = LocalDateTime.now().minusHours(24);
-        List<User> activeUsers = userRepository.findActiveUsersSince(since);
+        List<Long> activeUserIds = userLookupService.getActiveUserIdsSince(since);
 
-        log.info("Found {} active users in the last 24 hours", activeUsers.size());
+        log.info("Found {} active users in the last 24 hours", activeUserIds.size());
 
-        activeUsers.forEach(user -> {
+        activeUserIds.forEach(userId -> {
             try {
-                personalizationProfileService.generatePersonalizationProfile(user.getId());
+                personalizationProfileService.generatePersonalizationProfile(userId);
             } catch (Exception e) {
-                log.error("Failed to generate personalization profile for user: {}", user.getId(), e);
+                log.error("Failed to generate personalization profile for user: {}", userId, e);
             }
         });
 
-        log.info("Completed daily personalization profile regeneration for {} active users", activeUsers.size());
+        log.info("Completed daily personalization profile regeneration for {} active users", activeUserIds.size());
     }
 }
