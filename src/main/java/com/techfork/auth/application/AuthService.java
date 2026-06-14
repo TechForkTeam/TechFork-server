@@ -1,13 +1,10 @@
 package com.techfork.auth.application;
 
 import com.techfork.auth.application.dto.DeveloperTokenResponse;
-import com.techfork.auth.application.dto.KakaoLoginResponse;
 import com.techfork.auth.application.dto.TokenRefreshResponse;
-import com.techfork.auth.application.dto.kakao.KakaoUserInfoResponse;
 import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
-import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.global.security.auth.service.RefreshTokenService;
@@ -36,7 +33,6 @@ public class AuthService {
     private final UserRepository userRepository;
     private final JwtProperties jwtProperties;
     private final AuthConverter authConverter;
-    private final KakaoOAuthService kakaoOAuthService;
     private final UserAuthCacheService userAuthCacheService;
 
     @Value("${server.domain}")
@@ -86,28 +82,6 @@ public class AuthService {
         log.info("Developer token (long-lived access token) generated for admin userId: {}", userId);
 
         return authConverter.toDeveloperTokenResponse(longLivedAccessToken);
-    }
-
-    public KakaoLoginResponse kakaoLogin(String kakaoAccessToken, HttpServletResponse response) {
-        KakaoUserInfoResponse kakaoUserInfo = kakaoOAuthService.getUserInfo(kakaoAccessToken);
-
-        String socialId = kakaoUserInfo.id().toString();
-        String email = kakaoUserInfo.kakaoAccount().email();
-        String profileImageUrl = kakaoUserInfo.kakaoAccount().profile().profileImageUrl();
-
-        User user = userRepository.findBySocialTypeAndSocialId(SocialType.KAKAO, socialId)
-                .orElseGet(() -> {
-                    User newUser = User.createSocialUser(SocialType.KAKAO, socialId, email, profileImageUrl);
-                    return userRepository.save(newUser);
-                });
-
-        JwtDTO tokens = jwtUtil.generateTokens(user.getId(), user.getRole());
-        long expiration = jwtProperties.getRefreshTokenExpiration();
-        saveAndSetRefreshToken(response, user.getId(), tokens.refreshToken(), expiration);
-
-        log.info("Kakao login successful - userId: {}, isRegistered: {}", user.getId(), user.isActive());
-
-        return authConverter.toKakaoLoginResponse(tokens.accessToken(), user);
     }
 
     private void validateRefreshTokenRequest(String refreshToken) {

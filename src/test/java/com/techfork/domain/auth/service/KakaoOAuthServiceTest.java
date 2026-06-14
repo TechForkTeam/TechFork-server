@@ -1,7 +1,7 @@
 package com.techfork.domain.auth.service;
 
-import com.techfork.auth.application.KakaoOAuthService;
-import com.techfork.auth.application.dto.kakao.KakaoUserInfoResponse;
+import com.techfork.auth.infrastructure.kakao.KakaoOAuthService;
+import com.techfork.auth.infrastructure.kakao.dto.KakaoUserInfoResponse;
 import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.global.exception.GeneralException;
 import org.junit.jupiter.api.BeforeEach;
