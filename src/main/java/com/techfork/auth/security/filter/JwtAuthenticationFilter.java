@@ -4,14 +4,14 @@ import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.UserStatus;
 import com.techfork.useraccount.infrastructure.UserRepository;
-import com.techfork.global.constant.Constants;
+import com.techfork.auth.security.AuthSecurityConstants;
 import com.techfork.global.constant.MdcKey;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.auth.security.service.UserAuthCacheService;
 import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.jwt.JwtUtil;
 import com.techfork.auth.security.oauth.UserPrincipal;
-import com.techfork.global.util.HeaderUtil;
+import com.techfork.auth.security.util.HeaderUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -51,7 +51,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         try {
-            String jwt = HeaderUtil.refineHeader(request, Constants.AUTHORIZATION_HEADER, Constants.BEARER_PREFIX)
+            String jwt = HeaderUtil.refineHeader(request, AuthSecurityConstants.AUTHORIZATION_HEADER, AuthSecurityConstants.BEARER_PREFIX)
                     .orElse(null);
 
             if (jwt != null) {
@@ -87,7 +87,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         } catch (Exception e) {
             SecurityContextHolder.clearContext();
-            request.setAttribute(Constants.JWT_EXCEPTION_ATTRIBUTE, e);
+            request.setAttribute(AuthSecurityConstants.JWT_EXCEPTION_ATTRIBUTE, e);
         }
 
         filterChain.doFilter(request, response);

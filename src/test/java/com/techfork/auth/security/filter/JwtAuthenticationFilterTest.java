@@ -1,7 +1,7 @@
 package com.techfork.auth.security.filter;
 
 import com.techfork.auth.domain.exception.AuthErrorCode;
-import com.techfork.global.constant.Constants;
+import com.techfork.auth.security.AuthSecurityConstants;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
@@ -379,11 +379,11 @@ class JwtAuthenticationFilterTest {
     }
 
     private void verifyJwtExceptionAttribute(Exception expectedException) {
-        verify(request).setAttribute(Constants.JWT_EXCEPTION_ATTRIBUTE, expectedException);
+        verify(request).setAttribute(AuthSecurityConstants.JWT_EXCEPTION_ATTRIBUTE, expectedException);
     }
 
     private void verifyJwtExceptionAttribute(AuthErrorCode expectedErrorCode) {
-        verify(request).setAttribute(eq(Constants.JWT_EXCEPTION_ATTRIBUTE), argThat(exception ->
+        verify(request).setAttribute(eq(AuthSecurityConstants.JWT_EXCEPTION_ATTRIBUTE), argThat(exception ->
                 exception instanceof GeneralException generalException
                         && generalException.getCode() == expectedErrorCode
         ));

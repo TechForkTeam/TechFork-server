@@ -72,9 +72,11 @@
 - `src/main/java/com/techfork/auth/presentation/converter/`
 - `src/main/java/com/techfork/auth/infrastructure/kakao/KakaoOAuthService.java`
 - `src/main/java/com/techfork/auth/infrastructure/kakao/response/KakaoUserInfoResponse.java`
+- `src/main/java/com/techfork/auth/security/AuthSecurityConstants.java`
 - `src/main/java/com/techfork/auth/security/config/SecurityConfig.java`
 - `src/main/java/com/techfork/auth/security/jwt/JwtUtil.java`
 - `src/main/java/com/techfork/auth/security/service/RefreshTokenService.java`
 - `src/main/java/com/techfork/auth/security/service/UserAuthCacheService.java`
+- `src/main/java/com/techfork/auth/security/util/HeaderUtil.java`
 - `src/main/java/com/techfork/auth/security/listener/UserAuthCacheEventListener.java`
 - `src/main/java/com/techfork/auth/security/oauth/UserPrincipal.java`
