@@ -3,6 +3,7 @@ package com.techfork.auth.presentation.controller;
 import com.techfork.auth.application.command.KakaoLoginCommandService;
 import com.techfork.auth.application.command.input.KakaoLoginCommand;
 import com.techfork.auth.application.command.result.KakaoLoginResult;
+import com.techfork.auth.presentation.annotation.AuthApi;
 import com.techfork.auth.presentation.converter.KakaoLoginConverter;
 import com.techfork.auth.presentation.request.KakaoLoginRequest;
 import com.techfork.auth.presentation.response.KakaoLoginResponse;
@@ -10,7 +11,6 @@ import com.techfork.auth.security.util.CookieUtil;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Auth", description = "인증 API")
+@AuthApi
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/auth/kakao")

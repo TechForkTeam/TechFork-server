@@ -68,6 +68,7 @@
 - `src/main/java/com/techfork/auth/presentation/controller/AuthController.java`
 - `src/main/java/com/techfork/auth/presentation/controller/KakaoLoginController.java`
 - `src/main/java/com/techfork/auth/presentation/controller/DeveloperTokenController.java`
+- `src/main/java/com/techfork/auth/presentation/annotation/AuthApi.java`
 - `src/main/java/com/techfork/auth/presentation/converter/`
 - `src/main/java/com/techfork/auth/infrastructure/kakao/KakaoOAuthService.java`
 - `src/main/java/com/techfork/auth/infrastructure/kakao/response/KakaoUserInfoResponse.java`

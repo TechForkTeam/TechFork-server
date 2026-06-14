@@ -4,13 +4,13 @@ import com.techfork.auth.application.command.AuthCommandService;
 import com.techfork.auth.application.command.input.LogoutCommand;
 import com.techfork.auth.application.command.input.RefreshTokenCommand;
 import com.techfork.auth.application.command.result.TokenRefreshResult;
+import com.techfork.auth.presentation.annotation.AuthApi;
 import com.techfork.auth.presentation.converter.AuthTokenConverter;
 import com.techfork.auth.presentation.response.TokenRefreshResponse;
 import com.techfork.auth.security.util.CookieUtil;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Auth", description = "인증 API")
+@AuthApi
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/auth")
