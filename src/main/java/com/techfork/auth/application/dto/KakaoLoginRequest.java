@@ -1,4 +1,4 @@
-package com.techfork.domain.auth.dto;
+package com.techfork.auth.application.dto;
 
 import jakarta.validation.constraints.NotBlank;
 

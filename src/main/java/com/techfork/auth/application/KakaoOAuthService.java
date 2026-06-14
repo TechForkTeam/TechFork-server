@@ -1,7 +1,7 @@
-package com.techfork.domain.auth.service;
+package com.techfork.auth.application;
 
-import com.techfork.domain.auth.dto.kakao.KakaoUserInfoResponse;
-import com.techfork.domain.auth.exception.AuthErrorCode;
+import com.techfork.auth.application.dto.kakao.KakaoUserInfoResponse;
+import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.global.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

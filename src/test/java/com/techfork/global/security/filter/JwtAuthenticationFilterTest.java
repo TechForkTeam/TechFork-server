@@ -1,6 +1,6 @@
 package com.techfork.global.security.filter;
 
-import com.techfork.domain.auth.exception.AuthErrorCode;
+import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.global.constant.Constants;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.useraccount.domain.User;

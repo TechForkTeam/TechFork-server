@@ -1,6 +1,6 @@
 package com.techfork.global.security.jwt;
 
-import com.techfork.domain.auth.exception.AuthErrorCode;
+import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.global.exception.GeneralException;
 import io.jsonwebtoken.*;

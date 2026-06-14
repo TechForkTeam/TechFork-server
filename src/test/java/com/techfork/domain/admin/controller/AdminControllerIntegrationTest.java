@@ -1,7 +1,7 @@
 package com.techfork.domain.admin.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.techfork.domain.auth.exception.AuthErrorCode;
+import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.SocialType;

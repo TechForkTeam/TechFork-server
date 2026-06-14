@@ -1,4 +1,4 @@
-package com.techfork.domain.auth.exception;
+package com.techfork.auth.domain.exception;
 
 import com.techfork.global.common.code.BaseCode;
 import com.techfork.global.response.ReasonDTO;

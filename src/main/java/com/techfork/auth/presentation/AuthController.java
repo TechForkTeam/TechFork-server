@@ -1,9 +1,9 @@
-package com.techfork.domain.auth.controller;
+package com.techfork.auth.presentation;
 
-import com.techfork.domain.auth.dto.KakaoLoginRequest;
-import com.techfork.domain.auth.dto.KakaoLoginResponse;
-import com.techfork.domain.auth.dto.TokenRefreshResponse;
-import com.techfork.domain.auth.service.AuthService;
+import com.techfork.auth.application.dto.KakaoLoginRequest;
+import com.techfork.auth.application.dto.KakaoLoginResponse;
+import com.techfork.auth.application.dto.TokenRefreshResponse;
+import com.techfork.auth.application.AuthService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;

@@ -1,11 +1,10 @@
-package com.techfork.domain.auth.service;
+package com.techfork.auth.application;
 
-import com.techfork.domain.auth.converter.AuthConverter;
-import com.techfork.domain.auth.dto.DeveloperTokenResponse;
-import com.techfork.domain.auth.dto.KakaoLoginResponse;
-import com.techfork.domain.auth.dto.TokenRefreshResponse;
-import com.techfork.domain.auth.dto.kakao.KakaoUserInfoResponse;
-import com.techfork.domain.auth.exception.AuthErrorCode;
+import com.techfork.auth.application.dto.DeveloperTokenResponse;
+import com.techfork.auth.application.dto.KakaoLoginResponse;
+import com.techfork.auth.application.dto.TokenRefreshResponse;
+import com.techfork.auth.application.dto.kakao.KakaoUserInfoResponse;
+import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.SocialType;
