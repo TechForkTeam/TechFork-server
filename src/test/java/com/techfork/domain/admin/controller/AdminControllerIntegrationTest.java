@@ -1,14 +1,14 @@
 package com.techfork.domain.admin.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.techfork.domain.auth.exception.AuthErrorCode;
+import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.common.IntegrationTestBase;
-import com.techfork.global.security.jwt.JwtDTO;
-import com.techfork.global.security.jwt.JwtUtil;
+import com.techfork.auth.security.jwt.JwtDTO;
+import com.techfork.auth.security.jwt.JwtUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

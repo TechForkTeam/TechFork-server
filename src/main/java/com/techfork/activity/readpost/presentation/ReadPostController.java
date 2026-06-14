@@ -7,7 +7,7 @@ import com.techfork.activity.readpost.application.query.GetReadPostsResult;
 import com.techfork.activity.readpost.application.query.ReadPostQueryService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
-import com.techfork.global.security.oauth.UserPrincipal;
+import com.techfork.auth.security.oauth.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

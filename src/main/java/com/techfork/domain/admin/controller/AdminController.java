@@ -1,11 +1,11 @@
 package com.techfork.domain.admin.controller;
 
-import com.techfork.domain.auth.dto.DeveloperTokenResponse;
-import com.techfork.domain.auth.service.AuthService;
+import com.techfork.auth.application.dto.DeveloperTokenResponse;
+import com.techfork.auth.application.AuthService;
 import com.techfork.domain.source.service.CrawlingService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
-import com.techfork.global.security.oauth.UserPrincipal;
+import com.techfork.auth.security.oauth.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

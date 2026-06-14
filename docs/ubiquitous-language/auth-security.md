@@ -4,8 +4,15 @@
 
 ## Owning packages
 
-- `src/main/java/com/techfork/domain/auth`
-- `src/main/java/com/techfork/global/security`
+- `src/main/java/com/techfork/auth`
+
+주요 하위 패키지:
+
+- `auth/presentation`: 인증 API 진입점
+- `auth/application`: 토큰 갱신, 로그아웃, iOS 직접 로그인 등 인증 use case
+- `auth/domain`: Auth / Security 전용 도메인 오류와 정책 표현
+- `auth/infrastructure/kakao`: Kakao API 연동 adapter
+- `auth/security`: JWT/OAuth/filter/config/cookie/cache 등 앱 전역 인증/인가 shared kernel
 
 ## 표준 용어
 
@@ -21,8 +28,8 @@
 
 ## 경계 메모
 
-- 이 컨텍스트는 `domain/auth` **패키지만으로 닫히지 않는다.**
-- JWT/OAuth/filter/config/cookie 처리의 실제 소유권은 `global/security`까지 포함한다.
+- Auth / Security의 현재 물리 경계는 최상위 `auth` 패키지다.
+- `auth/security`는 Auth / Security 내부에 있지만, `UserPrincipal`, JWT 필터, OAuth 핸들러처럼 여러 컨텍스트가 기대는 앱 전역 인증/인가 shared kernel 역할을 한다.
 - `User` aggregate 자체는 User Account 컨텍스트 소속이며, Auth / Security는 필요한 최소 사용자 식별/권한 정보만 공유한다.
 
 ## 내부 glossary
@@ -47,18 +54,21 @@
 
 | 금지/비권장 표현 | 권장 표현 | 이유 |
 |---|---|---|
-| Auth | Auth / Security | 실제 소유 범위가 `global/security`까지 포함되기 때문 |
+| Auth | Auth / Security | 인증 API뿐 아니라 `auth/security`의 JWT/OAuth/filter/config/cookie/cache 표면까지 포함하기 때문 |
 | 유저 객체 | 사용자 주체 / `UserPrincipal` / `User` | 인증 컨텍스트 객체와 aggregate를 구분해야 한다 |
 | 로그인 토큰 | 액세스 토큰 / 리프레시 토큰 | 토큰 수명과 역할을 구분해야 한다 |
 | 관리자 JWT | 개발자 토큰 | 현재 운영 기능의 명칭과 맞춘다 |
 
 ## 주요 근거 파일
 
-- `src/main/java/com/techfork/domain/auth/service/AuthService.java`
-- `src/main/java/com/techfork/domain/auth/controller/AuthController.java`
-- `src/main/java/com/techfork/global/security/config/SecurityConfig.java`
-- `src/main/java/com/techfork/global/security/jwt/JwtUtil.java`
-- `src/main/java/com/techfork/global/security/auth/service/RefreshTokenService.java`
-- `src/main/java/com/techfork/global/security/auth/service/UserAuthCacheService.java`
-- `src/main/java/com/techfork/global/security/auth/listener/UserAuthCacheEventListener.java`
-- `src/main/java/com/techfork/global/security/oauth/UserPrincipal.java`
+- `src/main/java/com/techfork/auth/application/AuthService.java`
+- `src/main/java/com/techfork/auth/application/KakaoLoginService.java`
+- `src/main/java/com/techfork/auth/presentation/AuthController.java`
+- `src/main/java/com/techfork/auth/presentation/KakaoLoginController.java`
+- `src/main/java/com/techfork/auth/infrastructure/kakao/KakaoOAuthService.java`
+- `src/main/java/com/techfork/auth/security/config/SecurityConfig.java`
+- `src/main/java/com/techfork/auth/security/jwt/JwtUtil.java`
+- `src/main/java/com/techfork/auth/security/service/RefreshTokenService.java`
+- `src/main/java/com/techfork/auth/security/service/UserAuthCacheService.java`
+- `src/main/java/com/techfork/auth/security/listener/UserAuthCacheEventListener.java`
+- `src/main/java/com/techfork/auth/security/oauth/UserPrincipal.java`

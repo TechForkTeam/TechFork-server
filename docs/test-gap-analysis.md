@@ -73,14 +73,14 @@
 |---|---:|---:|---|
 | activity | 20 | 69 | Bookmark/ReadPost/SearchHistory slice와 첫 읽기 정책까지 커버 |
 | domain/admin | 1 | 6 | 개발자 토큰 중심 |
-| domain/auth | 3 | 30 | AuthService, KakaoOAuthService, AuthController integration |
+| auth | 12 | 79 | AuthService, KakaoLoginService, KakaoOAuthService, Auth/Security integration |
 | post | 20 | 118 | aggregate, query, summary/embedding pipeline까지 tracked 테스트로 보강됨 |
 | domain/recommendation | 5 | 17 | 조회/컨버터 + 이벤트 리스너 + LlmRecommendationService 핵심 흐름 |
 | domain/search | 1 | 2 | SearchServiceImpl 핵심 회귀 일부 |
 | domain/source | 10 | 38 | RSS/배치/스케줄러/락/웹훅 커버 좋음 |
 | useraccount | 14 | 93 | User Account service/controller/repository/event seam 커버 |
 | personalization | 8 | 18 | 활동 수집/분석/생성/이벤트/스케줄러 경계 커버 |
-| global | 9 | 36 | Security, cache, util, integration base |
+| global | 5 | 6 | shared test base/configuration/util; Auth/Security 테스트는 `auth`로 이동 |
 | evaluation | 27 | 16 | 검색/추천 품질 평가 및 fixture setup |
 
 ### 3.2 tracked 테스트 주의사항
@@ -442,12 +442,18 @@ SearchControllerIntegrationTest
 
 | 테스트 | 성격 | 주요 커버 |
 |---|---|---|
-| `AuthServiceTest` | unit/mock | refresh, logout, developer token, kakao login |
+| `AuthServiceTest` | unit/mock | refresh, logout, developer token |
+| `KakaoLoginServiceTest` | unit/mock | iOS 직접 Kakao login 신규/기존 사용자 |
 | `KakaoOAuthServiceTest` | unit/mock | Kakao user info success/failure |
 | `AuthControllerIntegrationTest` | integration | refresh/logout/kakao login API |
 | `SecurityIntegrationTest` | integration | 인증/인가, 토큰 오류, 권한, 탈퇴 사용자 |
 | `JwtAuthenticationFilterTest` | unit/mock | access token filter, cache hit/miss, invalid token |
+| `OAuth2AuthenticationSuccessHandlerTest` | unit/mock | OIDC 로그인 성공 redirect/cookie |
+| `OAuth2AuthenticationFailureHandlerTest` | unit/mock | OIDC 로그인 실패 redirect |
+| `CustomOidcUserServiceTest` | unit/mock | Kakao/Apple OIDC 사용자 생성/재사용/재활성화 |
+| `HttpCookieOAuth2AuthorizationRequestRepositoryTest` | unit/mock | OAuth authorization request cookie 저장/로드/삭제 |
 | `UserAuthCacheServiceTest` | unit/mock | auth cache serialization/deserialization |
+| `UserAuthCacheEventListenerTest` | unit/mock | User Account 이벤트 기반 auth cache eviction |
 
 #### 평가
 
@@ -458,9 +464,9 @@ DDD 전환의 핵심 경로는 아니지만, User 컨텍스트 리팩터링 시 
 
 | 우선순위 | 갭 | 이유 |
 |---|---|---|
-| P1 | Apple/OIDC success/failure handler 테스트 | 실제 인증 표면은 `global/security`에 있으므로 회귀 보호 필요 |
-| P1 | withdraw/reactivate 이후 auth cache/token 정책 테스트 | User 상태 전환과 보안 정책 연결 |
-| P2 | Cookie OAuth2 authorization request repository 테스트 | OAuth edge case 보호 |
+| P1 | Auth/Security 통합 테스트의 경량 MySQL+Redis 기반 검증 경로 | 현재 `IntegrationTestBase`는 Elasticsearch까지 기동하므로 auth-only 검증 비용이 크다 |
+| P1 | withdraw/reactivate 이후 refresh token/auth cache 통합 정책 테스트 | User 상태 전환과 보안 정책 연결 |
+| P2 | Cookie 속성(SameSite/Secure/Domain/Max-Age) 통합 검증 | 프론트 연동에 직접 영향이 있는 보안 쿠키 계약 보호 |
 
 ---
 
