@@ -23,6 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -218,6 +219,38 @@ class JwtAuthenticationFilterTest {
         @DisplayName("JWT 인증 실패 - 유효하지 않은 토큰")
         void doFilterInternal_Fail_InvalidToken() throws Exception {
             // Given
+            String invalidToken = "invalid.token";
+            RuntimeException invalidTokenException = new RuntimeException("Invalid token");
+            given(request.getHeader("Authorization")).willReturn("Bearer " + invalidToken);
+            willThrow(invalidTokenException).given(jwtUtil).validateToken(invalidToken);
+
+            // When
+            jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+            // Then
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            assertThat(authentication).isNull();
+
+            verify(jwtUtil).validateToken(invalidToken);
+            verify(userRepository, never()).findById(anyLong());
+            verifyJwtExceptionAttribute(invalidTokenException);
+            verify(filterChain).doFilter(request, response);
+        }
+
+        @Test
+        @DisplayName("JWT 인증 실패 - 기존 SecurityContext가 있어도 유효하지 않은 토큰이면 인증을 제거한다")
+        void doFilterInternal_Fail_InvalidToken_ClearsExistingAuthentication() throws Exception {
+            // Given
+            UserPrincipal stalePrincipal = UserPrincipal.builder()
+                    .id(userId)
+                    .role(Role.ADMIN)
+                    .status(UserStatus.ACTIVE)
+                    .email("admin@example.com")
+                    .build();
+            SecurityContextHolder.getContext().setAuthentication(
+                    new UsernamePasswordAuthenticationToken(stalePrincipal, null, stalePrincipal.getAuthorities())
+            );
+
             String invalidToken = "invalid.token";
             RuntimeException invalidTokenException = new RuntimeException("Invalid token");
             given(request.getHeader("Authorization")).willReturn("Bearer " + invalidToken);

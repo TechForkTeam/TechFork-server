@@ -86,6 +86,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 log.debug("Set authentication for user: {}", userId);
             }
         } catch (Exception e) {
+            SecurityContextHolder.clearContext();
             request.setAttribute(Constants.JWT_EXCEPTION_ATTRIBUTE, e);
         }
 
