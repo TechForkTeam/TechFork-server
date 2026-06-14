@@ -1,22 +1,21 @@
 package com.techfork.auth.application;
 
+import com.techfork.auth.application.command.LogoutCommand;
+import com.techfork.auth.application.command.RefreshTokenCommand;
 import com.techfork.auth.application.dto.DeveloperTokenResponse;
-import com.techfork.auth.application.dto.TokenRefreshResponse;
+import com.techfork.auth.application.result.TokenRefreshResult;
 import com.techfork.auth.domain.exception.AuthErrorCode;
-import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.enums.Role;
-import com.techfork.useraccount.infrastructure.UserRepository;
-import com.techfork.global.exception.GeneralException;
-import com.techfork.auth.security.service.RefreshTokenService;
-import com.techfork.auth.security.service.UserAuthCacheService;
 import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.jwt.JwtUtil;
-import com.techfork.auth.security.util.CookieUtil;
-import jakarta.servlet.http.HttpServletResponse;
+import com.techfork.auth.security.service.RefreshTokenService;
+import com.techfork.auth.security.service.UserAuthCacheService;
+import com.techfork.global.exception.GeneralException;
+import com.techfork.useraccount.domain.User;
+import com.techfork.useraccount.domain.enums.Role;
+import com.techfork.useraccount.infrastructure.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,10 +34,8 @@ public class AuthService {
     private final AuthConverter authConverter;
     private final UserAuthCacheService userAuthCacheService;
 
-    @Value("${server.domain}")
-    private String domain;
-
-    public TokenRefreshResponse refreshToken(String refreshToken, HttpServletResponse response) {
+    public TokenRefreshResult refreshToken(RefreshTokenCommand command) {
+        String refreshToken = command.refreshToken();
         validateRefreshTokenRequest(refreshToken);
 
         Long userId = jwtUtil.getUserIdFromToken(refreshToken);
@@ -49,22 +46,25 @@ public class AuthService {
 
         JwtDTO newTokens = jwtUtil.generateTokens(userId, user.getRole());
         long expiration = jwtProperties.getRefreshTokenExpiration();
-        saveAndSetRefreshToken(response, userId, newTokens.refreshToken(), expiration);
+        saveRefreshToken(userId, newTokens.refreshToken(), expiration);
 
         userAuthCacheService.put(userId, user, jwtProperties.getAccessTokenExpiration());
 
         log.info("Token refreshed");
 
-        return TokenRefreshResponse.builder()
+        return TokenRefreshResult.builder()
                 .accessToken(newTokens.accessToken())
+                .refreshToken(newTokens.refreshToken())
+                .refreshTokenExpiration(expiration)
                 .build();
     }
 
-    public void logout(String refreshToken, HttpServletResponse response) {
+    public void logout(LogoutCommand command) {
+        String refreshToken = command.refreshToken();
         validateRefreshTokenRequest(refreshToken);
 
         Long userId = jwtUtil.getUserIdFromToken(refreshToken);
-        deleteRefreshToken(response, userId);
+        deleteRefreshToken(userId);
 
         log.info("User logged out - userId: {}", userId);
     }
@@ -102,13 +102,11 @@ public class AuthService {
         }
     }
 
-    private void saveAndSetRefreshToken(HttpServletResponse response, Long userId, String refreshToken, long expiration) {
+    private void saveRefreshToken(Long userId, String refreshToken, long expiration) {
         refreshTokenService.saveRefreshToken(userId, refreshToken, expiration);
-        CookieUtil.addRefreshTokenCookie(response, domain, refreshToken, expiration);
     }
 
-    private void deleteRefreshToken(HttpServletResponse response, Long userId) {
+    private void deleteRefreshToken(Long userId) {
         refreshTokenService.deleteRefreshToken(userId);
-        CookieUtil.deleteRefreshTokenCookie(response, domain);
     }
 }

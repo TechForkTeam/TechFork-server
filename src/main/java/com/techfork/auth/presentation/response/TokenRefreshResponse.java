@@ -1,8 +1,7 @@
-package com.techfork.auth.application.dto;
+package com.techfork.auth.presentation.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
-
 
 @Builder
 @Schema(description = "토큰 갱신 응답")

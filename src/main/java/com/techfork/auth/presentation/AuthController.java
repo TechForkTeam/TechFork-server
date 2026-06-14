@@ -1,7 +1,11 @@
 package com.techfork.auth.presentation;
 
 import com.techfork.auth.application.AuthService;
-import com.techfork.auth.application.dto.TokenRefreshResponse;
+import com.techfork.auth.application.command.LogoutCommand;
+import com.techfork.auth.application.command.RefreshTokenCommand;
+import com.techfork.auth.application.result.TokenRefreshResult;
+import com.techfork.auth.presentation.response.TokenRefreshResponse;
+import com.techfork.auth.security.util.CookieUtil;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,8 +13,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Auth", description = "인증 API")
 @Slf4j
@@ -20,6 +28,10 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final AuthTokenConverter authTokenConverter;
+
+    @Value("${server.domain}")
+    private String domain;
 
     @Operation(
             summary = "토큰 갱신",
@@ -30,7 +42,11 @@ public class AuthController {
             @CookieValue(name = "refreshToken", required = false) String refreshToken,
             HttpServletResponse response
     ) {
-        TokenRefreshResponse tokenResponse = authService.refreshToken(refreshToken, response);
+        RefreshTokenCommand command = authTokenConverter.toRefreshTokenCommand(refreshToken);
+        TokenRefreshResult result = authService.refreshToken(command);
+        CookieUtil.addRefreshTokenCookie(response, domain, result.refreshToken(), result.refreshTokenExpiration());
+
+        TokenRefreshResponse tokenResponse = authTokenConverter.toTokenRefreshResponse(result);
         return BaseResponse.of(SuccessCode.OK, tokenResponse);
     }
 
@@ -43,7 +59,9 @@ public class AuthController {
             @CookieValue(name = "refreshToken", required = false) String refreshToken,
             HttpServletResponse response
     ) {
-        authService.logout(refreshToken, response);
+        LogoutCommand command = authTokenConverter.toLogoutCommand(refreshToken);
+        authService.logout(command);
+        CookieUtil.deleteRefreshTokenCookie(response, domain);
         return BaseResponse.of(SuccessCode.OK);
     }
 }
