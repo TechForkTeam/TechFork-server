@@ -1,4 +1,4 @@
-package com.techfork.auth.application.command;
+package com.techfork.auth.application.command.input;
 
 public record LogoutCommand(
         String refreshToken

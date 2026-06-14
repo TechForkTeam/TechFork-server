@@ -1,4 +1,4 @@
-package com.techfork.auth.application.result;
+package com.techfork.auth.application.command.result;
 
 import lombok.Builder;
 

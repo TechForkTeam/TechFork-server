@@ -1,8 +1,8 @@
 package com.techfork.auth.presentation;
 
-import com.techfork.auth.application.command.LogoutCommand;
-import com.techfork.auth.application.command.RefreshTokenCommand;
-import com.techfork.auth.application.result.TokenRefreshResult;
+import com.techfork.auth.application.command.input.LogoutCommand;
+import com.techfork.auth.application.command.input.RefreshTokenCommand;
+import com.techfork.auth.application.command.result.TokenRefreshResult;
 import com.techfork.auth.presentation.response.TokenRefreshResponse;
 import org.springframework.stereotype.Component;
 

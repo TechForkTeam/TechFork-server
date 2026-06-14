@@ -1,7 +1,7 @@
 package com.techfork.domain.admin.controller;
 
 import com.techfork.auth.application.dto.DeveloperTokenResponse;
-import com.techfork.auth.application.AuthService;
+import com.techfork.auth.application.command.AuthCommandService;
 import com.techfork.domain.source.service.CrawlingService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
@@ -31,7 +31,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AdminController {
 
-    private final AuthService authService;
+    private final AuthCommandService authCommandService;
     private final JobLauncher jobLauncher;
     private final Job summaryAndEmbeddingJob;
     private final CrawlingService crawlingService;
@@ -44,7 +44,7 @@ public class AdminController {
     public ResponseEntity<BaseResponse<DeveloperTokenResponse>> generateDeveloperToken(
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        DeveloperTokenResponse response = authService.generateDeveloperToken(userPrincipal.getId());
+        DeveloperTokenResponse response = authCommandService.generateDeveloperToken(userPrincipal.getId());
         return BaseResponse.of(SuccessCode.OK, response);
     }
 

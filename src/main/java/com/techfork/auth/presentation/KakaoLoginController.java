@@ -1,8 +1,8 @@
 package com.techfork.auth.presentation;
 
-import com.techfork.auth.application.KakaoLoginService;
-import com.techfork.auth.application.command.KakaoLoginCommand;
-import com.techfork.auth.application.result.KakaoLoginResult;
+import com.techfork.auth.application.command.KakaoLoginCommandService;
+import com.techfork.auth.application.command.input.KakaoLoginCommand;
+import com.techfork.auth.application.command.result.KakaoLoginResult;
 import com.techfork.auth.presentation.request.KakaoLoginRequest;
 import com.techfork.auth.presentation.response.KakaoLoginResponse;
 import com.techfork.auth.security.util.CookieUtil;
@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class KakaoLoginController {
 
-    private final KakaoLoginService kakaoLoginService;
+    private final KakaoLoginCommandService kakaoLoginCommandService;
     private final KakaoLoginConverter kakaoLoginConverter;
 
     @Value("${server.domain}")
@@ -44,7 +44,7 @@ public class KakaoLoginController {
             HttpServletResponse response
     ) {
         KakaoLoginCommand command = kakaoLoginConverter.toKakaoLoginCommand(request);
-        KakaoLoginResult result = kakaoLoginService.login(command);
+        KakaoLoginResult result = kakaoLoginCommandService.login(command);
         CookieUtil.addRefreshTokenCookie(response, domain, result.refreshToken(), result.refreshTokenExpiration());
 
         KakaoLoginResponse loginResponse = kakaoLoginConverter.toKakaoLoginResponse(result);

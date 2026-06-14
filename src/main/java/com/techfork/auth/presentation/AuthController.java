@@ -1,9 +1,9 @@
 package com.techfork.auth.presentation;
 
-import com.techfork.auth.application.AuthService;
-import com.techfork.auth.application.command.LogoutCommand;
-import com.techfork.auth.application.command.RefreshTokenCommand;
-import com.techfork.auth.application.result.TokenRefreshResult;
+import com.techfork.auth.application.command.AuthCommandService;
+import com.techfork.auth.application.command.input.LogoutCommand;
+import com.techfork.auth.application.command.input.RefreshTokenCommand;
+import com.techfork.auth.application.command.result.TokenRefreshResult;
 import com.techfork.auth.presentation.response.TokenRefreshResponse;
 import com.techfork.auth.security.util.CookieUtil;
 import com.techfork.global.common.code.SuccessCode;
@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService authService;
+    private final AuthCommandService authCommandService;
     private final AuthTokenConverter authTokenConverter;
 
     @Value("${server.domain}")
@@ -43,7 +43,7 @@ public class AuthController {
             HttpServletResponse response
     ) {
         RefreshTokenCommand command = authTokenConverter.toRefreshTokenCommand(refreshToken);
-        TokenRefreshResult result = authService.refreshToken(command);
+        TokenRefreshResult result = authCommandService.refreshToken(command);
         CookieUtil.addRefreshTokenCookie(response, domain, result.refreshToken(), result.refreshTokenExpiration());
 
         TokenRefreshResponse tokenResponse = authTokenConverter.toTokenRefreshResponse(result);
@@ -60,7 +60,7 @@ public class AuthController {
             HttpServletResponse response
     ) {
         LogoutCommand command = authTokenConverter.toLogoutCommand(refreshToken);
-        authService.logout(command);
+        authCommandService.logout(command);
         CookieUtil.deleteRefreshTokenCookie(response, domain);
         return BaseResponse.of(SuccessCode.OK);
     }

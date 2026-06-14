@@ -1,7 +1,7 @@
-package com.techfork.auth.application;
+package com.techfork.auth.application.command;
 
-import com.techfork.auth.application.command.KakaoLoginCommand;
-import com.techfork.auth.application.result.KakaoLoginResult;
+import com.techfork.auth.application.command.input.KakaoLoginCommand;
+import com.techfork.auth.application.command.result.KakaoLoginResult;
 import com.techfork.auth.infrastructure.kakao.KakaoOAuthService;
 import com.techfork.auth.infrastructure.kakao.dto.KakaoUserInfoResponse;
 import com.techfork.auth.security.jwt.JwtDTO;
@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class KakaoLoginService {
+public class KakaoLoginCommandService {
 
     private final KakaoOAuthService kakaoOAuthService;
     private final UserRepository userRepository;

@@ -1,9 +1,10 @@
-package com.techfork.auth.application;
+package com.techfork.auth.application.command;
 
-import com.techfork.auth.application.command.LogoutCommand;
-import com.techfork.auth.application.command.RefreshTokenCommand;
+import com.techfork.auth.application.command.input.LogoutCommand;
+import com.techfork.auth.application.command.input.RefreshTokenCommand;
+import com.techfork.auth.application.AuthConverter;
 import com.techfork.auth.application.dto.DeveloperTokenResponse;
-import com.techfork.auth.application.result.TokenRefreshResult;
+import com.techfork.auth.application.command.result.TokenRefreshResult;
 import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtProperties;
@@ -25,7 +26,7 @@ import static com.techfork.auth.security.jwt.JwtConstants.TOKEN_TYPE_REFRESH;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class AuthService {
+public class AuthCommandService {
 
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;

@@ -1,7 +1,7 @@
-package com.techfork.auth.application;
+package com.techfork.auth.application.command;
 
-import com.techfork.auth.application.command.KakaoLoginCommand;
-import com.techfork.auth.application.result.KakaoLoginResult;
+import com.techfork.auth.application.command.input.KakaoLoginCommand;
+import com.techfork.auth.application.command.result.KakaoLoginResult;
 import com.techfork.auth.infrastructure.kakao.KakaoOAuthService;
 import com.techfork.auth.infrastructure.kakao.dto.KakaoUserInfoResponse;
 import com.techfork.auth.security.jwt.JwtDTO;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class KakaoLoginServiceTest {
+class KakaoLoginCommandServiceTest {
 
     @Mock
     private KakaoOAuthService kakaoOAuthService;
@@ -51,7 +51,7 @@ class KakaoLoginServiceTest {
     private RefreshTokenService refreshTokenService;
 
     @InjectMocks
-    private KakaoLoginService kakaoLoginService;
+    private KakaoLoginCommandService kakaoLoginCommandService;
 
     private String newAccessToken;
     private String newRefreshToken;
@@ -90,7 +90,7 @@ class KakaoLoginServiceTest {
         given(jwtProperties.getRefreshTokenExpiration()).willReturn(refreshTokenExpiration);
 
         // When
-        KakaoLoginResult result = kakaoLoginService.login(new KakaoLoginCommand(kakaoAccessToken));
+        KakaoLoginResult result = kakaoLoginCommandService.login(new KakaoLoginCommand(kakaoAccessToken));
 
         // Then
         assertThat(result.accessToken()).isEqualTo(newAccessToken);
@@ -132,7 +132,7 @@ class KakaoLoginServiceTest {
         given(jwtProperties.getRefreshTokenExpiration()).willReturn(refreshTokenExpiration);
 
         // When
-        KakaoLoginResult result = kakaoLoginService.login(new KakaoLoginCommand(kakaoAccessToken));
+        KakaoLoginResult result = kakaoLoginCommandService.login(new KakaoLoginCommand(kakaoAccessToken));
 
         // Then
         assertThat(result.accessToken()).isEqualTo(newAccessToken);
