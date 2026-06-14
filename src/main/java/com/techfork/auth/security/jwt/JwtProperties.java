@@ -1,4 +1,4 @@
-package com.techfork.global.security.jwt;
+package com.techfork.auth.security.jwt;
 
 import lombok.Getter;
 import lombok.Setter;

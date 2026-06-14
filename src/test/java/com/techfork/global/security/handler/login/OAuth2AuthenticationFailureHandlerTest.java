@@ -1,6 +1,6 @@
 package com.techfork.global.security.handler.login;
 
-import com.techfork.global.security.jwt.JwtProperties;
+import com.techfork.auth.security.jwt.JwtProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

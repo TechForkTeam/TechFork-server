@@ -1,4 +1,4 @@
-package com.techfork.global.security.jwt;
+package com.techfork.auth.security.jwt;
 
 public final class JwtConstants {
     private JwtConstants() {}

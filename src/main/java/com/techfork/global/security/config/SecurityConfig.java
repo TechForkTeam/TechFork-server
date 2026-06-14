@@ -1,9 +1,9 @@
 package com.techfork.global.security.config;
 
 import com.techfork.global.constant.Constants;
-import com.techfork.global.security.filter.JwtAuthenticationFilter;
-import com.techfork.global.security.handler.exception.CustomAccessDeniedHandler;
-import com.techfork.global.security.handler.exception.JwtAuthenticationEntryPoint;
+import com.techfork.auth.security.filter.JwtAuthenticationFilter;
+import com.techfork.auth.security.handler.exception.CustomAccessDeniedHandler;
+import com.techfork.auth.security.handler.exception.JwtAuthenticationEntryPoint;
 import com.techfork.global.security.oauth.CustomOidcUserService;
 import com.techfork.global.security.handler.login.OAuth2AuthenticationFailureHandler;
 import com.techfork.global.security.handler.login.OAuth2AuthenticationSuccessHandler;

@@ -1,4 +1,4 @@
-package com.techfork.global.security.jwt;
+package com.techfork.auth.security.jwt;
 
 import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.useraccount.domain.enums.Role;
@@ -13,7 +13,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
-import static com.techfork.global.security.jwt.JwtConstants.*;
+import static com.techfork.auth.security.jwt.JwtConstants.*;
 
 @Slf4j
 @Component

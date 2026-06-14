@@ -1,4 +1,4 @@
-package com.techfork.global.security.handler.exception;
+package com.techfork.auth.security.handler.exception;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techfork.auth.domain.exception.AuthErrorCode;

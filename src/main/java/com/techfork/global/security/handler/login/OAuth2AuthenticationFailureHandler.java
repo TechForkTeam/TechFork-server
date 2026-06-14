@@ -1,6 +1,6 @@
 package com.techfork.global.security.handler.login;
 
-import com.techfork.global.security.jwt.JwtProperties;
+import com.techfork.auth.security.jwt.JwtProperties;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

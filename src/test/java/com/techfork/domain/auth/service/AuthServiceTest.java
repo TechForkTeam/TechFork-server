@@ -12,9 +12,9 @@ import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.global.security.auth.service.RefreshTokenService;
 import com.techfork.global.security.auth.service.UserAuthCacheService;
-import com.techfork.global.security.jwt.JwtDTO;
-import com.techfork.global.security.jwt.JwtProperties;
-import com.techfork.global.security.jwt.JwtUtil;
+import com.techfork.auth.security.jwt.JwtDTO;
+import com.techfork.auth.security.jwt.JwtProperties;
+import com.techfork.auth.security.jwt.JwtUtil;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,7 +27,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
 
-import static com.techfork.global.security.jwt.JwtConstants.TOKEN_TYPE_REFRESH;
+import static com.techfork.auth.security.jwt.JwtConstants.TOKEN_TYPE_REFRESH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;

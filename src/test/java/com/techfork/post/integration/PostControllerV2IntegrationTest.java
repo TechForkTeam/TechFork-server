@@ -9,7 +9,7 @@ import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.common.IntegrationTestBase;
-import com.techfork.global.security.jwt.JwtUtil;
+import com.techfork.auth.security.jwt.JwtUtil;
 import com.techfork.post.domain.Post;
 import com.techfork.post.infrastructure.PostRepository;
 import java.time.LocalDate;

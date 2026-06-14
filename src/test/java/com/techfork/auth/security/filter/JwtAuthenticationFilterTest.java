@@ -1,4 +1,4 @@
-package com.techfork.global.security.filter;
+package com.techfork.auth.security.filter;
 
 import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.global.constant.Constants;
@@ -9,8 +9,8 @@ import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.enums.UserStatus;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.security.auth.service.UserAuthCacheService;
-import com.techfork.global.security.jwt.JwtProperties;
-import com.techfork.global.security.jwt.JwtUtil;
+import com.techfork.auth.security.jwt.JwtProperties;
+import com.techfork.auth.security.jwt.JwtUtil;
 import com.techfork.global.security.oauth.UserPrincipal;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,7 +29,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
 
-import static com.techfork.global.security.jwt.JwtConstants.TOKEN_TYPE_ACCESS;
+import static com.techfork.auth.security.jwt.JwtConstants.TOKEN_TYPE_ACCESS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.*;
 

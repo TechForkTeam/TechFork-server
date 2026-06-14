@@ -1,4 +1,4 @@
-package com.techfork.global.security.filter;
+package com.techfork.auth.security.filter;
 
 import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.useraccount.domain.User;
@@ -8,8 +8,8 @@ import com.techfork.global.constant.Constants;
 import com.techfork.global.constant.MdcKey;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.global.security.auth.service.UserAuthCacheService;
-import com.techfork.global.security.jwt.JwtProperties;
-import com.techfork.global.security.jwt.JwtUtil;
+import com.techfork.auth.security.jwt.JwtProperties;
+import com.techfork.auth.security.jwt.JwtUtil;
 import com.techfork.global.security.oauth.UserPrincipal;
 import com.techfork.global.util.HeaderUtil;
 import jakarta.servlet.FilterChain;
@@ -28,7 +28,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-import static com.techfork.global.security.jwt.JwtConstants.TOKEN_TYPE_ACCESS;
+import static com.techfork.auth.security.jwt.JwtConstants.TOKEN_TYPE_ACCESS;
 
 /**
  * JWT 인증 필터

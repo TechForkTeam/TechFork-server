@@ -1,4 +1,4 @@
-package com.techfork.global.security;
+package com.techfork.auth.security;
 
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
@@ -7,8 +7,8 @@ import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.global.llm.EmbeddingClient;
 import com.techfork.global.llm.LlmClient;
-import com.techfork.global.security.jwt.JwtDTO;
-import com.techfork.global.security.jwt.JwtUtil;
+import com.techfork.auth.security.jwt.JwtDTO;
+import com.techfork.auth.security.jwt.JwtUtil;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.AfterEach;
