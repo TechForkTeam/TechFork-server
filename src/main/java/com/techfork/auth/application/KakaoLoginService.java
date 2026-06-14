@@ -1,20 +1,18 @@
 package com.techfork.auth.application;
 
-import com.techfork.auth.application.dto.KakaoLoginResponse;
+import com.techfork.auth.application.command.KakaoLoginCommand;
+import com.techfork.auth.application.result.KakaoLoginResult;
 import com.techfork.auth.infrastructure.kakao.KakaoOAuthService;
 import com.techfork.auth.infrastructure.kakao.dto.KakaoUserInfoResponse;
-import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.enums.SocialType;
-import com.techfork.useraccount.infrastructure.UserRepository;
-import com.techfork.auth.security.service.RefreshTokenService;
 import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.jwt.JwtUtil;
-import com.techfork.auth.security.util.CookieUtil;
-import jakarta.servlet.http.HttpServletResponse;
+import com.techfork.auth.security.service.RefreshTokenService;
+import com.techfork.useraccount.domain.User;
+import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.infrastructure.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,13 +27,9 @@ public class KakaoLoginService {
     private final JwtUtil jwtUtil;
     private final JwtProperties jwtProperties;
     private final RefreshTokenService refreshTokenService;
-    private final AuthConverter authConverter;
 
-    @Value("${server.domain}")
-    private String domain;
-
-    public KakaoLoginResponse login(String kakaoAccessToken, HttpServletResponse response) {
-        KakaoUserInfoResponse kakaoUserInfo = kakaoOAuthService.getUserInfo(kakaoAccessToken);
+    public KakaoLoginResult login(KakaoLoginCommand command) {
+        KakaoUserInfoResponse kakaoUserInfo = kakaoOAuthService.getUserInfo(command.accessToken());
 
         String socialId = kakaoUserInfo.id().toString();
         String email = kakaoUserInfo.kakaoAccount().email();
@@ -50,10 +44,15 @@ public class KakaoLoginService {
         JwtDTO tokens = jwtUtil.generateTokens(user.getId(), user.getRole());
         long expiration = jwtProperties.getRefreshTokenExpiration();
         refreshTokenService.saveRefreshToken(user.getId(), tokens.refreshToken(), expiration);
-        CookieUtil.addRefreshTokenCookie(response, domain, tokens.refreshToken(), expiration);
 
         log.info("Direct Kakao login successful - userId: {}, isRegistered: {}", user.getId(), user.isActive());
 
-        return authConverter.toKakaoLoginResponse(tokens.accessToken(), user);
+        return KakaoLoginResult.builder()
+                .accessToken(tokens.accessToken())
+                .refreshToken(tokens.refreshToken())
+                .refreshTokenExpiration(expiration)
+                .userId(user.getId())
+                .isRegistered(user.isActive())
+                .build();
     }
 }

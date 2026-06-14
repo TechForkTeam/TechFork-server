@@ -1,8 +1,6 @@
 package com.techfork.auth.application;
 
 import com.techfork.auth.application.dto.DeveloperTokenResponse;
-import com.techfork.auth.application.dto.KakaoLoginResponse;
-import com.techfork.useraccount.domain.User;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -14,11 +12,4 @@ public class AuthConverter {
                 .build();
     }
 
-    public KakaoLoginResponse toKakaoLoginResponse(String accessToken, User user) {
-        return KakaoLoginResponse.builder()
-                .accessToken(accessToken)
-                .userId(user.getId())
-                .isRegistered(user.isActive())
-                .build();
-    }
 }

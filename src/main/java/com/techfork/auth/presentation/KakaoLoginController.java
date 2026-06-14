@@ -1,8 +1,11 @@
 package com.techfork.auth.presentation;
 
 import com.techfork.auth.application.KakaoLoginService;
-import com.techfork.auth.application.dto.KakaoLoginRequest;
-import com.techfork.auth.application.dto.KakaoLoginResponse;
+import com.techfork.auth.application.command.KakaoLoginCommand;
+import com.techfork.auth.application.result.KakaoLoginResult;
+import com.techfork.auth.presentation.request.KakaoLoginRequest;
+import com.techfork.auth.presentation.response.KakaoLoginResponse;
+import com.techfork.auth.security.util.CookieUtil;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,6 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,6 +29,10 @@ import org.springframework.web.bind.annotation.RestController;
 public class KakaoLoginController {
 
     private final KakaoLoginService kakaoLoginService;
+    private final KakaoLoginConverter kakaoLoginConverter;
+
+    @Value("${server.domain}")
+    private String domain;
 
     @Operation(
             summary = "카카오 로그인",
@@ -35,7 +43,11 @@ public class KakaoLoginController {
             @Valid @RequestBody KakaoLoginRequest request,
             HttpServletResponse response
     ) {
-        KakaoLoginResponse loginResponse = kakaoLoginService.login(request.accessToken(), response);
+        KakaoLoginCommand command = kakaoLoginConverter.toKakaoLoginCommand(request);
+        KakaoLoginResult result = kakaoLoginService.login(command);
+        CookieUtil.addRefreshTokenCookie(response, domain, result.refreshToken(), result.refreshTokenExpiration());
+
+        KakaoLoginResponse loginResponse = kakaoLoginConverter.toKakaoLoginResponse(result);
         return BaseResponse.of(SuccessCode.OK, loginResponse);
     }
 }

@@ -3,7 +3,7 @@ package com.techfork.auth.integration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.techfork.auth.application.dto.KakaoLoginRequest;
+import com.techfork.auth.presentation.request.KakaoLoginRequest;
 import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
