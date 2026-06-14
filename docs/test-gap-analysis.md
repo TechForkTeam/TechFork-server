@@ -72,8 +72,8 @@
 | 영역 | 파일 수 | `@Test`/`@ParameterizedTest` 수 | 비고 |
 |---|---:|---:|---|
 | activity | 20 | 69 | Bookmark/ReadPost/SearchHistory slice와 첫 읽기 정책까지 커버 |
-| domain/admin | 1 | 6 | 개발자 토큰 중심 |
-| auth | 12 | 79 | AuthService, KakaoLoginService, KakaoOAuthService, Auth/Security integration |
+| domain/admin | 0 | 0 | 개발자 토큰 테스트는 Auth / Security로 이동 |
+| auth | 13 | 85 | AuthCommandService, KakaoLoginCommandService, DeveloperTokenController, KakaoOAuthService, Auth/Security integration |
 | post | 20 | 118 | aggregate, query, summary/embedding pipeline까지 tracked 테스트로 보강됨 |
 | domain/recommendation | 5 | 17 | 조회/컨버터 + 이벤트 리스너 + LlmRecommendationService 핵심 흐름 |
 | domain/search | 1 | 2 | SearchServiceImpl 핵심 회귀 일부 |
@@ -442,10 +442,11 @@ SearchControllerIntegrationTest
 
 | 테스트 | 성격 | 주요 커버 |
 |---|---|---|
-| `AuthServiceTest` | unit/mock | refresh, logout, developer token |
-| `KakaoLoginServiceTest` | unit/mock | iOS 직접 Kakao login 신규/기존 사용자 |
-| `KakaoOAuthServiceTest` | unit/mock | Kakao user info success/failure |
+| `AuthCommandServiceTest` | unit/mock | refresh, logout, developer token command use cases |
+| `KakaoLoginCommandServiceTest` | unit/mock | iOS 직접 Kakao login 신규/기존 사용자 |
+| `KakaoOAuthServiceTest` | unit/mock | Kakao user info response mapping success/failure |
 | `AuthControllerIntegrationTest` | integration | refresh/logout/kakao login API |
+| `DeveloperTokenControllerIntegrationTest` | integration | developer token 생성, 권한/인증 실패 |
 | `SecurityIntegrationTest` | integration | 인증/인가, 토큰 오류, 권한, 탈퇴 사용자 |
 | `JwtAuthenticationFilterTest` | unit/mock | access token filter, cache hit/miss, invalid token |
 | `OAuth2AuthenticationSuccessHandlerTest` | unit/mock | OIDC 로그인 성공 redirect/cookie |
@@ -476,13 +477,12 @@ DDD 전환의 핵심 경로는 아니지만, User 컨텍스트 리팩터링 시 
 
 | 테스트 | 성격 | 주요 커버 |
 |---|---|---|
-| `AdminControllerIntegrationTest` | integration | developer token 생성, 권한/인증 실패 |
 | Source tests | unit/integration | crawling service, job, scheduler, webhook |
 
 #### 평가
 
-AdminController의 개발자 토큰 API는 테스트되어 있다.  
-하지만 수동 배치 실행 API는 상대적으로 약하다.
+개발자 토큰 API는 Auth / Security 소유 테스트로 이동했다.
+AdminController의 수동 배치 실행 API는 상대적으로 약하다.
 
 #### 남은 갭
 

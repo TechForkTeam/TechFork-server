@@ -1,7 +1,10 @@
-package com.techfork.auth.application;
+package com.techfork.auth.application.command;
 
-import com.techfork.auth.application.dto.DeveloperTokenResponse;
-import com.techfork.auth.application.dto.TokenRefreshResponse;
+import com.techfork.auth.application.command.input.LogoutCommand;
+import com.techfork.auth.application.command.input.RefreshTokenCommand;
+import com.techfork.auth.application.command.input.GenerateDeveloperTokenCommand;
+import com.techfork.auth.application.command.result.TokenRefreshResult;
+import com.techfork.auth.application.command.result.DeveloperTokenResult;
 import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
@@ -13,7 +16,6 @@ import com.techfork.auth.security.service.UserAuthCacheService;
 import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.jwt.JwtUtil;
-import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +35,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class AuthServiceTest {
+class AuthCommandServiceTest {
 
     @Mock
     private JwtUtil jwtUtil;
@@ -47,17 +49,13 @@ class AuthServiceTest {
     @Mock
     private JwtProperties jwtProperties;
 
-    @Mock
-    private HttpServletResponse response;
 
-    @Mock
-    private AuthConverter authConverter;
 
     @Mock
     private UserAuthCacheService userAuthCacheService;
 
     @InjectMocks
-    private AuthService authService;
+    private AuthCommandService authCommandService;
 
     private String validRefreshToken;
     private String newAccessToken;
@@ -67,8 +65,6 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(authService, "domain", "localhost");
-
         validRefreshToken = "valid.refresh.token";
         newAccessToken = "new.access.token";
         newRefreshToken = "new.refresh.token";
@@ -95,22 +91,23 @@ class AuthServiceTest {
         given(jwtProperties.getAccessTokenExpiration()).willReturn(180000L);
 
         // When
-        TokenRefreshResponse result = authService.refreshToken(validRefreshToken, response);
+        TokenRefreshResult result = authCommandService.refreshToken(new RefreshTokenCommand(validRefreshToken));
 
         // Then
         assertThat(result.accessToken()).isEqualTo(newAccessToken);
+        assertThat(result.refreshToken()).isEqualTo(newRefreshToken);
+        assertThat(result.refreshTokenExpiration()).isEqualTo(900000L);
         verify(jwtUtil).isValidToken(validRefreshToken);
         verify(jwtUtil).validateTokenType(validRefreshToken, TOKEN_TYPE_REFRESH);
         verify(refreshTokenService).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
         verify(userAuthCacheService).put(eq(userId), eq(user), eq(180000L));
-        verify(response).addHeader(eq("Set-Cookie"), anyString());
     }
 
     @Test
     @DisplayName("토큰 갱신 실패 - 리프레시 토큰이 null")
     void refreshToken_Fail_TokenIsNull() {
         // When & Then
-        assertThatThrownBy(() -> authService.refreshToken(null, response))
+        assertThatThrownBy(() -> authCommandService.refreshToken(new RefreshTokenCommand(null)))
                 .isInstanceOf(GeneralException.class)
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(AuthErrorCode.REFRESH_TOKEN_MISSING);
@@ -120,7 +117,7 @@ class AuthServiceTest {
     @DisplayName("토큰 갱신 실패 - 리프레시 토큰이 빈 문자열")
     void refreshToken_Fail_TokenIsEmpty() {
         // When & Then
-        assertThatThrownBy(() -> authService.refreshToken("", response))
+        assertThatThrownBy(() -> authCommandService.refreshToken(new RefreshTokenCommand("")))
                 .isInstanceOf(GeneralException.class)
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(AuthErrorCode.REFRESH_TOKEN_MISSING);
@@ -133,7 +130,7 @@ class AuthServiceTest {
         given(jwtUtil.isValidToken(validRefreshToken)).willReturn(false);
 
         // When & Then
-        assertThatThrownBy(() -> authService.refreshToken(validRefreshToken, response))
+        assertThatThrownBy(() -> authCommandService.refreshToken(new RefreshTokenCommand(validRefreshToken)))
                 .isInstanceOf(GeneralException.class)
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(AuthErrorCode.INVALID_REFRESH_TOKEN);
@@ -148,7 +145,7 @@ class AuthServiceTest {
         given(refreshTokenService.validateRefreshToken(userId, validRefreshToken)).willReturn(false);
 
         // When & Then
-        assertThatThrownBy(() -> authService.refreshToken(validRefreshToken, response))
+        assertThatThrownBy(() -> authCommandService.refreshToken(new RefreshTokenCommand(validRefreshToken)))
                 .isInstanceOf(GeneralException.class)
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(AuthErrorCode.REFRESH_TOKEN_MISMATCH);
@@ -167,7 +164,7 @@ class AuthServiceTest {
         given(userRepository.findById(userId)).willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> authService.refreshToken(validRefreshToken, response))
+        assertThatThrownBy(() -> authCommandService.refreshToken(new RefreshTokenCommand(validRefreshToken)))
                 .isInstanceOf(GeneralException.class)
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(AuthErrorCode.USER_NOT_FOUND);
@@ -183,20 +180,19 @@ class AuthServiceTest {
         given(jwtUtil.getUserIdFromToken(validRefreshToken)).willReturn(userId);
 
         // When
-        authService.logout(validRefreshToken, response);
+        authCommandService.logout(new LogoutCommand(validRefreshToken));
 
         // Then
         verify(jwtUtil).isValidToken(validRefreshToken);
         verify(jwtUtil).validateTokenType(validRefreshToken, TOKEN_TYPE_REFRESH);
         verify(refreshTokenService).deleteRefreshToken(userId);
-        verify(response).addHeader(eq("Set-Cookie"), anyString());
     }
 
     @Test
     @DisplayName("로그아웃 실패 - 리프레시 토큰이 null")
     void logout_Fail_TokenIsNull() {
         // When & Then
-        assertThatThrownBy(() -> authService.logout(null, response))
+        assertThatThrownBy(() -> authCommandService.logout(new LogoutCommand(null)))
                 .isInstanceOf(GeneralException.class)
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(AuthErrorCode.REFRESH_TOKEN_MISSING);
@@ -206,7 +202,7 @@ class AuthServiceTest {
     @DisplayName("로그아웃 실패 - 리프레시 토큰이 빈 문자열")
     void logout_Fail_TokenIsEmpty() {
         // When & Then
-        assertThatThrownBy(() -> authService.logout("", response))
+        assertThatThrownBy(() -> authCommandService.logout(new LogoutCommand("")))
                 .isInstanceOf(GeneralException.class)
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(AuthErrorCode.REFRESH_TOKEN_MISSING);
@@ -219,7 +215,7 @@ class AuthServiceTest {
         given(jwtUtil.isValidToken(validRefreshToken)).willReturn(false);
 
         // When & Then
-        assertThatThrownBy(() -> authService.logout(validRefreshToken, response))
+        assertThatThrownBy(() -> authCommandService.logout(new LogoutCommand(validRefreshToken)))
                 .isInstanceOf(GeneralException.class)
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(AuthErrorCode.INVALID_REFRESH_TOKEN);
@@ -240,22 +236,17 @@ class AuthServiceTest {
         ReflectionTestUtils.setField(adminUser, "id", userId);
 
         String developerToken = "long.lived.access.token";
-        DeveloperTokenResponse expectedResponse = DeveloperTokenResponse.builder()
-                .developerToken(developerToken)
-                .build();
 
         given(userRepository.findById(userId)).willReturn(Optional.of(adminUser));
         given(jwtUtil.generateLongLivedAccessToken(userId, Role.ADMIN)).willReturn(developerToken);
-        given(authConverter.toDeveloperTokenResponse(developerToken)).willReturn(expectedResponse);
 
         // When
-        DeveloperTokenResponse result = authService.generateDeveloperToken(userId);
+        DeveloperTokenResult result = authCommandService.generateDeveloperToken(new GenerateDeveloperTokenCommand(userId));
 
         // Then
         assertThat(result.developerToken()).isEqualTo(developerToken);
         verify(userRepository).findById(userId);
         verify(jwtUtil).generateLongLivedAccessToken(userId, Role.ADMIN);
-        verify(authConverter).toDeveloperTokenResponse(developerToken);
     }
 
     @Test
@@ -265,7 +256,7 @@ class AuthServiceTest {
         given(userRepository.findById(userId)).willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> authService.generateDeveloperToken(userId))
+        assertThatThrownBy(() -> authCommandService.generateDeveloperToken(new GenerateDeveloperTokenCommand(userId)))
                 .isInstanceOf(GeneralException.class)
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(AuthErrorCode.USER_NOT_FOUND);
@@ -284,7 +275,7 @@ class AuthServiceTest {
         given(userRepository.findById(userId)).willReturn(Optional.of(normalUser));
 
         // When & Then
-        assertThatThrownBy(() -> authService.generateDeveloperToken(userId))
+        assertThatThrownBy(() -> authCommandService.generateDeveloperToken(new GenerateDeveloperTokenCommand(userId)))
                 .isInstanceOf(GeneralException.class)
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(AuthErrorCode.FORBIDDEN_INSUFFICIENT_PERMISSIONS);

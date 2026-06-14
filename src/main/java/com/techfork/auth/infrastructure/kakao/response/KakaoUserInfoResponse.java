@@ -1,4 +1,4 @@
-package com.techfork.auth.infrastructure.kakao.dto;
+package com.techfork.auth.infrastructure.kakao.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

@@ -3,7 +3,7 @@ package com.techfork.auth.security.handler.exception;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.global.common.code.BaseCode;
-import com.techfork.global.constant.Constants;
+import com.techfork.auth.security.AuthSecurityConstants;
 import com.techfork.global.exception.CommonErrorCode;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.global.response.BaseResponse;
@@ -32,7 +32,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
-        Exception jwtException = (Exception) request.getAttribute(Constants.JWT_EXCEPTION_ATTRIBUTE);
+        Exception jwtException = (Exception) request.getAttribute(AuthSecurityConstants.JWT_EXCEPTION_ATTRIBUTE);
         BaseCode errorCode = determineErrorCode(jwtException);
 
         if (jwtException != null) {

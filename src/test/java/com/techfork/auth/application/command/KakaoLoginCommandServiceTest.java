@@ -1,18 +1,18 @@
-package com.techfork.auth.application;
+package com.techfork.auth.application.command;
 
-import com.techfork.auth.application.dto.KakaoLoginResponse;
+import com.techfork.auth.application.command.input.KakaoLoginCommand;
+import com.techfork.auth.application.command.result.KakaoLoginResult;
 import com.techfork.auth.infrastructure.kakao.KakaoOAuthService;
-import com.techfork.auth.infrastructure.kakao.dto.KakaoUserInfoResponse;
+import com.techfork.auth.infrastructure.kakao.response.KakaoUserInfoResponse;
+import com.techfork.auth.security.jwt.JwtDTO;
+import com.techfork.auth.security.jwt.JwtProperties;
+import com.techfork.auth.security.jwt.JwtUtil;
+import com.techfork.auth.security.service.RefreshTokenService;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.enums.UserStatus;
 import com.techfork.useraccount.infrastructure.UserRepository;
-import com.techfork.auth.security.service.RefreshTokenService;
-import com.techfork.auth.security.jwt.JwtDTO;
-import com.techfork.auth.security.jwt.JwtProperties;
-import com.techfork.auth.security.jwt.JwtUtil;
-import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,12 +25,15 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class KakaoLoginServiceTest {
+class KakaoLoginCommandServiceTest {
 
     @Mock
     private KakaoOAuthService kakaoOAuthService;
@@ -47,14 +50,8 @@ class KakaoLoginServiceTest {
     @Mock
     private RefreshTokenService refreshTokenService;
 
-    @Mock
-    private AuthConverter authConverter;
-
-    @Mock
-    private HttpServletResponse response;
-
     @InjectMocks
-    private KakaoLoginService kakaoLoginService;
+    private KakaoLoginCommandService kakaoLoginCommandService;
 
     private String newAccessToken;
     private String newRefreshToken;
@@ -62,8 +59,6 @@ class KakaoLoginServiceTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(kakaoLoginService, "domain", "localhost");
-
         newAccessToken = "new.access.token";
         newRefreshToken = "new.refresh.token";
         userId = 1L;
@@ -77,6 +72,7 @@ class KakaoLoginServiceTest {
         String socialId = "12345";
         String email = "newuser@kakao.com";
         String profileImageUrl = "test.png";
+        long refreshTokenExpiration = 900000L;
 
         KakaoUserInfoResponse.Profile profile = new KakaoUserInfoResponse.Profile("https://example.com/profile.jpg");
         KakaoUserInfoResponse.KakaoAccount kakaoAccount = new KakaoUserInfoResponse.KakaoAccount(email, profile);
@@ -86,24 +82,20 @@ class KakaoLoginServiceTest {
         ReflectionTestUtils.setField(newUser, "id", userId);
 
         JwtDTO tokens = JwtDTO.of(newAccessToken, newRefreshToken);
-        KakaoLoginResponse expectedResponse = KakaoLoginResponse.builder()
-                .accessToken(newAccessToken)
-                .userId(userId)
-                .isRegistered(false)
-                .build();
 
         given(kakaoOAuthService.getUserInfo(kakaoAccessToken)).willReturn(kakaoUserInfo);
         given(userRepository.findBySocialTypeAndSocialId(SocialType.KAKAO, socialId)).willReturn(Optional.empty());
         given(userRepository.save(any(User.class))).willReturn(newUser);
         given(jwtUtil.generateTokens(userId, Role.USER)).willReturn(tokens);
-        given(jwtProperties.getRefreshTokenExpiration()).willReturn(900000L);
-        given(authConverter.toKakaoLoginResponse(newAccessToken, newUser)).willReturn(expectedResponse);
+        given(jwtProperties.getRefreshTokenExpiration()).willReturn(refreshTokenExpiration);
 
         // When
-        KakaoLoginResponse result = kakaoLoginService.login(kakaoAccessToken, response);
+        KakaoLoginResult result = kakaoLoginCommandService.login(new KakaoLoginCommand(kakaoAccessToken));
 
         // Then
         assertThat(result.accessToken()).isEqualTo(newAccessToken);
+        assertThat(result.refreshToken()).isEqualTo(newRefreshToken);
+        assertThat(result.refreshTokenExpiration()).isEqualTo(refreshTokenExpiration);
         assertThat(result.userId()).isEqualTo(userId);
         assertThat(result.isRegistered()).isFalse();
 
@@ -112,8 +104,6 @@ class KakaoLoginServiceTest {
         verify(userRepository).save(any(User.class));
         verify(jwtUtil).generateTokens(userId, Role.USER);
         verify(refreshTokenService).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
-        verify(response).addHeader(eq("Set-Cookie"), anyString());
-        verify(authConverter).toKakaoLoginResponse(newAccessToken, newUser);
     }
 
     @Test
@@ -124,6 +114,7 @@ class KakaoLoginServiceTest {
         String socialId = "12345";
         String email = "existinguser@kakao.com";
         String profileImageUrl = "test.png";
+        long refreshTokenExpiration = 900000L;
 
         KakaoUserInfoResponse.Profile profile = new KakaoUserInfoResponse.Profile("https://example.com/profile.jpg");
         KakaoUserInfoResponse.KakaoAccount kakaoAccount = new KakaoUserInfoResponse.KakaoAccount(email, profile);
@@ -134,23 +125,19 @@ class KakaoLoginServiceTest {
         ReflectionTestUtils.setField(existingUser, "status", UserStatus.ACTIVE);
 
         JwtDTO tokens = JwtDTO.of(newAccessToken, newRefreshToken);
-        KakaoLoginResponse expectedResponse = KakaoLoginResponse.builder()
-                .accessToken(newAccessToken)
-                .userId(userId)
-                .isRegistered(true)
-                .build();
 
         given(kakaoOAuthService.getUserInfo(kakaoAccessToken)).willReturn(kakaoUserInfo);
         given(userRepository.findBySocialTypeAndSocialId(SocialType.KAKAO, socialId)).willReturn(Optional.of(existingUser));
         given(jwtUtil.generateTokens(userId, Role.USER)).willReturn(tokens);
-        given(jwtProperties.getRefreshTokenExpiration()).willReturn(900000L);
-        given(authConverter.toKakaoLoginResponse(newAccessToken, existingUser)).willReturn(expectedResponse);
+        given(jwtProperties.getRefreshTokenExpiration()).willReturn(refreshTokenExpiration);
 
         // When
-        KakaoLoginResponse result = kakaoLoginService.login(kakaoAccessToken, response);
+        KakaoLoginResult result = kakaoLoginCommandService.login(new KakaoLoginCommand(kakaoAccessToken));
 
         // Then
         assertThat(result.accessToken()).isEqualTo(newAccessToken);
+        assertThat(result.refreshToken()).isEqualTo(newRefreshToken);
+        assertThat(result.refreshTokenExpiration()).isEqualTo(refreshTokenExpiration);
         assertThat(result.userId()).isEqualTo(userId);
         assertThat(result.isRegistered()).isTrue();
 
@@ -159,7 +146,5 @@ class KakaoLoginServiceTest {
         verify(userRepository, never()).save(any(User.class));
         verify(jwtUtil).generateTokens(userId, Role.USER);
         verify(refreshTokenService).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
-        verify(response).addHeader(eq("Set-Cookie"), anyString());
-        verify(authConverter).toKakaoLoginResponse(newAccessToken, existingUser);
     }
 }

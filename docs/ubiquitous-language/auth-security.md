@@ -9,9 +9,9 @@
 주요 하위 패키지:
 
 - `auth/presentation`: 인증 API 진입점
-- `auth/application`: 토큰 갱신, 로그아웃, iOS 직접 로그인 등 인증 use case
+- `auth/application/command`: 토큰 갱신, 로그아웃, 개발자 토큰, iOS 직접 로그인 등 인증 command use case
 - `auth/domain`: Auth / Security 전용 도메인 오류와 정책 표현
-- `auth/infrastructure/kakao`: Kakao API 연동 adapter
+- `auth/infrastructure/kakao`: Kakao API 연동 adapter와 외부 Kakao response mapping
 - `auth/security`: JWT/OAuth/filter/config/cookie/cache 등 앱 전역 인증/인가 shared kernel
 
 ## 표준 용어
@@ -23,7 +23,7 @@
 | 리프레시 토큰 | `refreshToken` | 액세스 토큰 재발급용 토큰. Cookie와 Redis 저장소를 사용한다. |
 | 토큰 갱신 | `refreshToken` API | 리프레시 토큰을 검증하고 새 액세스/리프레시 토큰을 발급하는 행위 |
 | 로그아웃 | `logout` | 리프레시 토큰을 삭제하고 쿠키를 제거하는 행위 |
-| 개발자 토큰 | `DeveloperTokenResponse` | 관리자 API에서 발급하는 장기 액세스 토큰 성격의 토큰 |
+| 개발자 토큰 | `DeveloperTokenResult` / `DeveloperTokenResponse` | 관리자 API에서 발급하는 장기 액세스 토큰 성격의 토큰 |
 | 사용자 주체 | `UserPrincipal` | Spring Security 인증 컨텍스트에서 사용자를 나타내는 객체 |
 
 ## 경계 메모
@@ -61,14 +61,22 @@
 
 ## 주요 근거 파일
 
-- `src/main/java/com/techfork/auth/application/AuthService.java`
-- `src/main/java/com/techfork/auth/application/KakaoLoginService.java`
-- `src/main/java/com/techfork/auth/presentation/AuthController.java`
-- `src/main/java/com/techfork/auth/presentation/KakaoLoginController.java`
+- `src/main/java/com/techfork/auth/application/command/AuthCommandService.java`
+- `src/main/java/com/techfork/auth/application/command/KakaoLoginCommandService.java`
+- `src/main/java/com/techfork/auth/application/command/input/`
+- `src/main/java/com/techfork/auth/application/command/result/`
+- `src/main/java/com/techfork/auth/presentation/controller/AuthController.java`
+- `src/main/java/com/techfork/auth/presentation/controller/KakaoLoginController.java`
+- `src/main/java/com/techfork/auth/presentation/controller/DeveloperTokenController.java`
+- `src/main/java/com/techfork/auth/presentation/annotation/AuthApi.java`
+- `src/main/java/com/techfork/auth/presentation/converter/`
 - `src/main/java/com/techfork/auth/infrastructure/kakao/KakaoOAuthService.java`
+- `src/main/java/com/techfork/auth/infrastructure/kakao/response/KakaoUserInfoResponse.java`
+- `src/main/java/com/techfork/auth/security/AuthSecurityConstants.java`
 - `src/main/java/com/techfork/auth/security/config/SecurityConfig.java`
 - `src/main/java/com/techfork/auth/security/jwt/JwtUtil.java`
 - `src/main/java/com/techfork/auth/security/service/RefreshTokenService.java`
 - `src/main/java/com/techfork/auth/security/service/UserAuthCacheService.java`
+- `src/main/java/com/techfork/auth/security/util/HeaderUtil.java`
 - `src/main/java/com/techfork/auth/security/listener/UserAuthCacheEventListener.java`
 - `src/main/java/com/techfork/auth/security/oauth/UserPrincipal.java`

@@ -1,4 +1,4 @@
-package com.techfork.global.util;
+package com.techfork.auth.security.util;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.util.StringUtils;

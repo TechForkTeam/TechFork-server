@@ -3,7 +3,7 @@ package com.techfork.auth.integration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.techfork.auth.application.dto.KakaoLoginRequest;
+import com.techfork.auth.presentation.request.KakaoLoginRequest;
 import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
@@ -26,8 +26,10 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -110,6 +112,10 @@ class AuthControllerIntegrationTest extends IntegrationTestBase {
         userRepository.deleteAll();
     }
 
+    private String refreshTokenMaxAgeSeconds() {
+        return String.valueOf(jwtProperties.getRefreshTokenExpiration() / 1000);
+    }
+
     // ===== 토큰 갱신 성공 테스트 =====
 
     @Test
@@ -121,7 +127,14 @@ class AuthControllerIntegrationTest extends IntegrationTestBase {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.isSuccess").value(true))
-                .andExpect(jsonPath("$.data.accessToken").exists());
+                .andExpect(jsonPath("$.data.accessToken").exists())
+                .andExpect(header().string("Set-Cookie", containsString("refreshToken=")))
+                .andExpect(header().string("Set-Cookie", containsString("Path=/")))
+                .andExpect(header().string("Set-Cookie", containsString("Domain=localhost")))
+                .andExpect(header().string("Set-Cookie", containsString("Max-Age=" + refreshTokenMaxAgeSeconds())))
+                .andExpect(header().string("Set-Cookie", containsString("Secure")))
+                .andExpect(header().string("Set-Cookie", containsString("HttpOnly")))
+                .andExpect(header().string("Set-Cookie", containsString("SameSite=None")));
     }
 
     // ===== 토큰 불일치 시 세션 무효화 테스트 =====
@@ -200,7 +213,14 @@ class AuthControllerIntegrationTest extends IntegrationTestBase {
                         .cookie(new Cookie("refreshToken", validRefreshToken)))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.isSuccess").value(true));
+                .andExpect(jsonPath("$.isSuccess").value(true))
+                .andExpect(header().string("Set-Cookie", containsString("refreshToken=")))
+                .andExpect(header().string("Set-Cookie", containsString("Path=/")))
+                .andExpect(header().string("Set-Cookie", containsString("Domain=localhost")))
+                .andExpect(header().string("Set-Cookie", containsString("Max-Age=0")))
+                .andExpect(header().string("Set-Cookie", containsString("Secure")))
+                .andExpect(header().string("Set-Cookie", containsString("HttpOnly")))
+                .andExpect(header().string("Set-Cookie", containsString("SameSite=None")));
 
         // Redis에서 토큰이 삭제되었는지 검증
         boolean isTokenValid = refreshTokenService.validateRefreshToken(userId, validRefreshToken);
@@ -255,7 +275,14 @@ class AuthControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.isSuccess").value(true))
                 .andExpect(jsonPath("$.data.accessToken").exists())
                 .andExpect(jsonPath("$.data.userId").exists())
-                .andExpect(jsonPath("$.data.isRegistered").value(false)); // 신규 가입
+                .andExpect(jsonPath("$.data.isRegistered").value(false)) // 신규 가입
+                .andExpect(header().string("Set-Cookie", containsString("refreshToken=")))
+                .andExpect(header().string("Set-Cookie", containsString("Path=/")))
+                .andExpect(header().string("Set-Cookie", containsString("Domain=localhost")))
+                .andExpect(header().string("Set-Cookie", containsString("Max-Age=" + refreshTokenMaxAgeSeconds())))
+                .andExpect(header().string("Set-Cookie", containsString("Secure")))
+                .andExpect(header().string("Set-Cookie", containsString("HttpOnly")))
+                .andExpect(header().string("Set-Cookie", containsString("SameSite=None")));
 
         // DB에 사용자가 생성되었는지 검증
         User savedUser = userRepository.findBySocialTypeAndSocialId(SocialType.KAKAO, "12345")
@@ -308,7 +335,14 @@ class AuthControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.isSuccess").value(true))
                 .andExpect(jsonPath("$.data.accessToken").exists())
                 .andExpect(jsonPath("$.data.userId").exists())
-                .andExpect(jsonPath("$.data.isRegistered").value(true)); // 기존 회원
+                .andExpect(jsonPath("$.data.isRegistered").value(true)) // 기존 회원
+                .andExpect(header().string("Set-Cookie", containsString("refreshToken=")))
+                .andExpect(header().string("Set-Cookie", containsString("Path=/")))
+                .andExpect(header().string("Set-Cookie", containsString("Domain=localhost")))
+                .andExpect(header().string("Set-Cookie", containsString("Max-Age=" + refreshTokenMaxAgeSeconds())))
+                .andExpect(header().string("Set-Cookie", containsString("Secure")))
+                .andExpect(header().string("Set-Cookie", containsString("HttpOnly")))
+                .andExpect(header().string("Set-Cookie", containsString("SameSite=None")));
 
         // WireMock 호출 검증
         verify(getRequestedFor(urlEqualTo("/v2/user/me"))

@@ -1,6 +1,6 @@
 package com.techfork.auth.security.config;
 
-import com.techfork.global.constant.Constants;
+import com.techfork.auth.security.AuthSecurityConstants;
 import com.techfork.auth.security.filter.JwtAuthenticationFilter;
 import com.techfork.auth.security.handler.exception.CustomAccessDeniedHandler;
 import com.techfork.auth.security.handler.exception.JwtAuthenticationEntryPoint;
@@ -49,8 +49,8 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(Constants.ADMIN_ENDPOINTS).hasRole("ADMIN")
-                        .requestMatchers(Constants.PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(AuthSecurityConstants.ADMIN_ENDPOINTS).hasRole("ADMIN")
+                        .requestMatchers(AuthSecurityConstants.PUBLIC_ENDPOINTS).permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

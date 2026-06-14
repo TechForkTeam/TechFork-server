@@ -1,6 +1,6 @@
 package com.techfork.auth.security.util;
 
-import com.techfork.global.constant.Constants;
+import com.techfork.auth.security.AuthSecurityConstants;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseCookie;
 
@@ -8,7 +8,7 @@ public final class CookieUtil {
     private CookieUtil() {}
 
     public static void addRefreshTokenCookie(HttpServletResponse response, String domain, String token, long maxAge) {
-        ResponseCookie cookie = ResponseCookie.from(Constants.REFRESH_TOKEN_COOKIE_NAME, token)
+        ResponseCookie cookie = ResponseCookie.from(AuthSecurityConstants.REFRESH_TOKEN_COOKIE_NAME, token)
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
@@ -21,7 +21,7 @@ public final class CookieUtil {
     }
 
     public static void deleteRefreshTokenCookie(HttpServletResponse response, String domain) {
-        ResponseCookie cookie = ResponseCookie.from(Constants.REFRESH_TOKEN_COOKIE_NAME, "")
+        ResponseCookie cookie = ResponseCookie.from(AuthSecurityConstants.REFRESH_TOKEN_COOKIE_NAME, "")
                 .httpOnly(true)
                 .secure(true)
                 .path("/")

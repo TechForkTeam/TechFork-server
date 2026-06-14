@@ -1,7 +1,7 @@
-package com.techfork.global.constant;
+package com.techfork.auth.security;
 
-public final class Constants {
-    private Constants() {}
+public final class AuthSecurityConstants {
+    private AuthSecurityConstants() {}
 
     public static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
 
