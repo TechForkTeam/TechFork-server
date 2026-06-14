@@ -1,6 +1,5 @@
-package com.techfork.domain.auth.service;
+package com.techfork.auth.infrastructure.kakao;
 
-import com.techfork.auth.infrastructure.kakao.KakaoOAuthService;
 import com.techfork.auth.infrastructure.kakao.dto.KakaoUserInfoResponse;
 import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.global.exception.GeneralException;

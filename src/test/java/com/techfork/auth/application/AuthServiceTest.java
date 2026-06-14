@@ -1,7 +1,5 @@
-package com.techfork.domain.auth.service;
+package com.techfork.auth.application;
 
-import com.techfork.auth.application.AuthConverter;
-import com.techfork.auth.application.AuthService;
 import com.techfork.auth.application.dto.DeveloperTokenResponse;
 import com.techfork.auth.application.dto.TokenRefreshResponse;
 import com.techfork.auth.domain.exception.AuthErrorCode;

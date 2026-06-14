@@ -1,7 +1,5 @@
-package com.techfork.domain.auth.service;
+package com.techfork.auth.application;
 
-import com.techfork.auth.application.AuthConverter;
-import com.techfork.auth.application.KakaoLoginService;
 import com.techfork.auth.application.dto.KakaoLoginResponse;
 import com.techfork.auth.infrastructure.kakao.KakaoOAuthService;
 import com.techfork.auth.infrastructure.kakao.dto.KakaoUserInfoResponse;

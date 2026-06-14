@@ -1,4 +1,4 @@
-package com.techfork.domain.auth.controller;
+package com.techfork.auth.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
