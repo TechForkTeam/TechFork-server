@@ -1,4 +1,4 @@
-package com.techfork.domain.admin.controller;
+package com.techfork.auth.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techfork.auth.domain.exception.AuthErrorCode;
@@ -24,12 +24,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * AdminController 통합 테스트
+ * DeveloperTokenController 통합 테스트
  * - 개발자 토큰 발급 API 테스트
  * - ADMIN 권한 검증
  * - 실제 JWT 토큰 사용으로 전체 인증 흐름 테스트
  */
-class AdminControllerIntegrationTest extends IntegrationTestBase {
+class DeveloperTokenControllerIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;
