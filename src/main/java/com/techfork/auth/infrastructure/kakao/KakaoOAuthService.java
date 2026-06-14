@@ -1,6 +1,6 @@
 package com.techfork.auth.infrastructure.kakao;
 
-import com.techfork.auth.infrastructure.kakao.dto.KakaoUserInfoResponse;
+import com.techfork.auth.infrastructure.kakao.response.KakaoUserInfoResponse;
 import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.global.exception.GeneralException;
 import lombok.RequiredArgsConstructor;

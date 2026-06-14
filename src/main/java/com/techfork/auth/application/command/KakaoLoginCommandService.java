@@ -3,7 +3,7 @@ package com.techfork.auth.application.command;
 import com.techfork.auth.application.command.input.KakaoLoginCommand;
 import com.techfork.auth.application.command.result.KakaoLoginResult;
 import com.techfork.auth.infrastructure.kakao.KakaoOAuthService;
-import com.techfork.auth.infrastructure.kakao.dto.KakaoUserInfoResponse;
+import com.techfork.auth.infrastructure.kakao.response.KakaoUserInfoResponse;
 import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.jwt.JwtUtil;
