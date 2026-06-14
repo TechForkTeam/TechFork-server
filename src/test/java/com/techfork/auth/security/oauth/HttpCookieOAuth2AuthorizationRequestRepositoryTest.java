@@ -1,4 +1,4 @@
-package com.techfork.global.security.oauth;
+package com.techfork.auth.security.oauth;
 
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
@@ -10,7 +10,7 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequ
 import java.util.Map;
 import java.util.Set;
 
-import static com.techfork.global.security.oauth.HttpCookieOAuth2AuthorizationRequestRepository.OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME;
+import static com.techfork.auth.security.oauth.HttpCookieOAuth2AuthorizationRequestRepository.OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class HttpCookieOAuth2AuthorizationRequestRepositoryTest {

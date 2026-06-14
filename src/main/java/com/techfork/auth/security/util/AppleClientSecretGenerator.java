@@ -1,4 +1,4 @@
-package com.techfork.global.security.util;
+package com.techfork.auth.security.util;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;

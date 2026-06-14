@@ -1,4 +1,4 @@
-package com.techfork.global.security.oauth;
+package com.techfork.auth.security.oauth;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;

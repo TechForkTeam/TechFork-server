@@ -4,7 +4,7 @@ import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.UserStatus;
 import com.techfork.global.constant.RedisKey;
-import com.techfork.global.security.oauth.UserPrincipal;
+import com.techfork.auth.security.oauth.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;

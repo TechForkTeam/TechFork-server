@@ -11,7 +11,7 @@ import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.security.auth.service.UserAuthCacheService;
 import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.jwt.JwtUtil;
-import com.techfork.global.security.oauth.UserPrincipal;
+import com.techfork.auth.security.oauth.UserPrincipal;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

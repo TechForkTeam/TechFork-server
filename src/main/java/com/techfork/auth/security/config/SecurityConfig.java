@@ -1,13 +1,13 @@
-package com.techfork.global.security.config;
+package com.techfork.auth.security.config;
 
 import com.techfork.global.constant.Constants;
 import com.techfork.auth.security.filter.JwtAuthenticationFilter;
 import com.techfork.auth.security.handler.exception.CustomAccessDeniedHandler;
 import com.techfork.auth.security.handler.exception.JwtAuthenticationEntryPoint;
-import com.techfork.global.security.oauth.CustomOidcUserService;
-import com.techfork.global.security.handler.login.OAuth2AuthenticationFailureHandler;
-import com.techfork.global.security.handler.login.OAuth2AuthenticationSuccessHandler;
-import com.techfork.global.security.oauth.HttpCookieOAuth2AuthorizationRequestRepository;
+import com.techfork.auth.security.oauth.CustomOidcUserService;
+import com.techfork.auth.security.handler.login.OAuth2AuthenticationFailureHandler;
+import com.techfork.auth.security.handler.login.OAuth2AuthenticationSuccessHandler;
+import com.techfork.auth.security.oauth.HttpCookieOAuth2AuthorizationRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

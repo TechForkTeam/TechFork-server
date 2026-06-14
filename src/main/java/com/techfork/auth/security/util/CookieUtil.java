@@ -1,4 +1,4 @@
-package com.techfork.global.security.util;
+package com.techfork.auth.security.util;
 
 import com.techfork.global.constant.Constants;
 import jakarta.servlet.http.HttpServletResponse;

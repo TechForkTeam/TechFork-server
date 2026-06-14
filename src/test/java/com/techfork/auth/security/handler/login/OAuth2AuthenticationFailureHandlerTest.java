@@ -1,4 +1,4 @@
-package com.techfork.global.security.handler.login;
+package com.techfork.auth.security.handler.login;
 
 import com.techfork.auth.security.jwt.JwtProperties;
 import org.junit.jupiter.api.BeforeEach;

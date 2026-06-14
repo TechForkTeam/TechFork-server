@@ -1,6 +1,6 @@
-package com.techfork.global.security.config;
+package com.techfork.auth.security.config;
 
-import com.techfork.global.security.util.AppleClientSecretGenerator;
+import com.techfork.auth.security.util.AppleClientSecretGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;

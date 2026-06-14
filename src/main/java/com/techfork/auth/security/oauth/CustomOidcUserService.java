@@ -1,4 +1,4 @@
-package com.techfork.global.security.oauth;
+package com.techfork.auth.security.oauth;
 
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.SocialType;
