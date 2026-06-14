@@ -1,5 +1,8 @@
 package com.techfork.global.security.filter;
 
+import com.techfork.domain.auth.exception.AuthErrorCode;
+import com.techfork.global.constant.Constants;
+import com.techfork.global.exception.GeneralException;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.SocialType;
@@ -216,8 +219,9 @@ class JwtAuthenticationFilterTest {
         void doFilterInternal_Fail_InvalidToken() throws Exception {
             // Given
             String invalidToken = "invalid.token";
+            RuntimeException invalidTokenException = new RuntimeException("Invalid token");
             given(request.getHeader("Authorization")).willReturn("Bearer " + invalidToken);
-            willThrow(new RuntimeException("Invalid token")).given(jwtUtil).validateToken(invalidToken);
+            willThrow(invalidTokenException).given(jwtUtil).validateToken(invalidToken);
 
             // When
             jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -228,6 +232,7 @@ class JwtAuthenticationFilterTest {
 
             verify(jwtUtil).validateToken(invalidToken);
             verify(userRepository, never()).findById(anyLong());
+            verifyJwtExceptionAttribute(invalidTokenException);
             verify(filterChain).doFilter(request, response);
         }
 
@@ -236,9 +241,10 @@ class JwtAuthenticationFilterTest {
         void doFilterInternal_Fail_RefreshTokenUsed() throws Exception {
             // Given
             String refreshToken = "refresh.token";
+            RuntimeException tokenTypeMismatchException = new RuntimeException("Token type mismatch");
             given(request.getHeader("Authorization")).willReturn("Bearer " + refreshToken);
             willDoNothing().given(jwtUtil).validateToken(refreshToken);
-            doThrow(new RuntimeException("Token type mismatch"))
+            doThrow(tokenTypeMismatchException)
                     .when(jwtUtil).validateTokenType(refreshToken, TOKEN_TYPE_ACCESS);
 
             // When
@@ -251,6 +257,7 @@ class JwtAuthenticationFilterTest {
             verify(jwtUtil).validateToken(refreshToken);
             verify(jwtUtil).validateTokenType(refreshToken, TOKEN_TYPE_ACCESS);
             verify(userRepository, never()).findById(anyLong());
+            verifyJwtExceptionAttribute(tokenTypeMismatchException);
             verify(filterChain).doFilter(request, response);
         }
 
@@ -275,6 +282,7 @@ class JwtAuthenticationFilterTest {
             verify(jwtUtil).validateToken(deletedUserToken);
             verify(jwtUtil).validateTokenType(deletedUserToken, TOKEN_TYPE_ACCESS);
             verify(userRepository).findById(999L);
+            verifyJwtExceptionAttribute(AuthErrorCode.USER_NOT_FOUND);
             verify(filterChain).doFilter(request, response);
         }
 
@@ -303,6 +311,7 @@ class JwtAuthenticationFilterTest {
 
             verify(userRepository).findById(userId);
             verify(userAuthCacheService, never()).put(anyLong(), any(), anyLong()); // 탈퇴 유저는 캐시 저장 안 함
+            verifyJwtExceptionAttribute(AuthErrorCode.WITHDRAWN_USER);
             verify(filterChain).doFilter(request, response);
         }
 
@@ -331,8 +340,19 @@ class JwtAuthenticationFilterTest {
             assertThat(authentication).isNull();
 
             verify(userRepository, never()).findById(anyLong()); // 캐시 히트이므로 DB 조회 없음
+            verifyJwtExceptionAttribute(AuthErrorCode.WITHDRAWN_USER);
             verify(filterChain).doFilter(request, response);
         }
     }
-}
 
+    private void verifyJwtExceptionAttribute(Exception expectedException) {
+        verify(request).setAttribute(Constants.JWT_EXCEPTION_ATTRIBUTE, expectedException);
+    }
+
+    private void verifyJwtExceptionAttribute(AuthErrorCode expectedErrorCode) {
+        verify(request).setAttribute(eq(Constants.JWT_EXCEPTION_ATTRIBUTE), argThat(exception ->
+                exception instanceof GeneralException generalException
+                        && generalException.getCode() == expectedErrorCode
+        ));
+    }
+}
