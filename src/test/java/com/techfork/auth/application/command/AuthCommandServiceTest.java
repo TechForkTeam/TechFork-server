@@ -2,9 +2,9 @@ package com.techfork.auth.application.command;
 
 import com.techfork.auth.application.command.input.LogoutCommand;
 import com.techfork.auth.application.command.input.RefreshTokenCommand;
-import com.techfork.auth.application.AuthConverter;
-import com.techfork.auth.application.dto.DeveloperTokenResponse;
+import com.techfork.auth.application.command.input.GenerateDeveloperTokenCommand;
 import com.techfork.auth.application.command.result.TokenRefreshResult;
+import com.techfork.auth.application.command.result.DeveloperTokenResult;
 import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
@@ -50,8 +50,6 @@ class AuthCommandServiceTest {
     private JwtProperties jwtProperties;
 
 
-    @Mock
-    private AuthConverter authConverter;
 
     @Mock
     private UserAuthCacheService userAuthCacheService;
@@ -238,22 +236,17 @@ class AuthCommandServiceTest {
         ReflectionTestUtils.setField(adminUser, "id", userId);
 
         String developerToken = "long.lived.access.token";
-        DeveloperTokenResponse expectedResponse = DeveloperTokenResponse.builder()
-                .developerToken(developerToken)
-                .build();
 
         given(userRepository.findById(userId)).willReturn(Optional.of(adminUser));
         given(jwtUtil.generateLongLivedAccessToken(userId, Role.ADMIN)).willReturn(developerToken);
-        given(authConverter.toDeveloperTokenResponse(developerToken)).willReturn(expectedResponse);
 
         // When
-        DeveloperTokenResponse result = authCommandService.generateDeveloperToken(userId);
+        DeveloperTokenResult result = authCommandService.generateDeveloperToken(new GenerateDeveloperTokenCommand(userId));
 
         // Then
         assertThat(result.developerToken()).isEqualTo(developerToken);
         verify(userRepository).findById(userId);
         verify(jwtUtil).generateLongLivedAccessToken(userId, Role.ADMIN);
-        verify(authConverter).toDeveloperTokenResponse(developerToken);
     }
 
     @Test
@@ -263,7 +256,7 @@ class AuthCommandServiceTest {
         given(userRepository.findById(userId)).willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> authCommandService.generateDeveloperToken(userId))
+        assertThatThrownBy(() -> authCommandService.generateDeveloperToken(new GenerateDeveloperTokenCommand(userId)))
                 .isInstanceOf(GeneralException.class)
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(AuthErrorCode.USER_NOT_FOUND);
@@ -282,7 +275,7 @@ class AuthCommandServiceTest {
         given(userRepository.findById(userId)).willReturn(Optional.of(normalUser));
 
         // When & Then
-        assertThatThrownBy(() -> authCommandService.generateDeveloperToken(userId))
+        assertThatThrownBy(() -> authCommandService.generateDeveloperToken(new GenerateDeveloperTokenCommand(userId)))
                 .isInstanceOf(GeneralException.class)
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(AuthErrorCode.FORBIDDEN_INSUFFICIENT_PERMISSIONS);

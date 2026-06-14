@@ -1,9 +1,9 @@
 package com.techfork.auth.application.command;
 
+import com.techfork.auth.application.command.input.GenerateDeveloperTokenCommand;
 import com.techfork.auth.application.command.input.LogoutCommand;
 import com.techfork.auth.application.command.input.RefreshTokenCommand;
-import com.techfork.auth.application.AuthConverter;
-import com.techfork.auth.application.dto.DeveloperTokenResponse;
+import com.techfork.auth.application.command.result.DeveloperTokenResult;
 import com.techfork.auth.application.command.result.TokenRefreshResult;
 import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.auth.security.jwt.JwtDTO;
@@ -32,7 +32,6 @@ public class AuthCommandService {
     private final RefreshTokenService refreshTokenService;
     private final UserRepository userRepository;
     private final JwtProperties jwtProperties;
-    private final AuthConverter authConverter;
     private final UserAuthCacheService userAuthCacheService;
 
     public TokenRefreshResult refreshToken(RefreshTokenCommand command) {
@@ -70,7 +69,8 @@ public class AuthCommandService {
         log.info("User logged out - userId: {}", userId);
     }
 
-    public DeveloperTokenResponse generateDeveloperToken(Long userId) {
+    public DeveloperTokenResult generateDeveloperToken(GenerateDeveloperTokenCommand command) {
+        Long userId = command.userId();
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(AuthErrorCode.USER_NOT_FOUND));
 
@@ -82,7 +82,9 @@ public class AuthCommandService {
 
         log.info("Developer token (long-lived access token) generated for admin userId: {}", userId);
 
-        return authConverter.toDeveloperTokenResponse(longLivedAccessToken);
+        return DeveloperTokenResult.builder()
+                .developerToken(longLivedAccessToken)
+                .build();
     }
 
     private void validateRefreshTokenRequest(String refreshToken) {

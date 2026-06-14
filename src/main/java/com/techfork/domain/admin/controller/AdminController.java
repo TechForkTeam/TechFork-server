@@ -1,7 +1,10 @@
 package com.techfork.domain.admin.controller;
 
-import com.techfork.auth.application.dto.DeveloperTokenResponse;
 import com.techfork.auth.application.command.AuthCommandService;
+import com.techfork.auth.application.command.input.GenerateDeveloperTokenCommand;
+import com.techfork.auth.application.command.result.DeveloperTokenResult;
+import com.techfork.auth.presentation.DeveloperTokenConverter;
+import com.techfork.auth.presentation.response.DeveloperTokenResponse;
 import com.techfork.domain.source.service.CrawlingService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
@@ -21,8 +24,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
-import java.util.Map;
 
 @Tag(name = "Admin", description = "관리자 API")
 @Slf4j
@@ -32,6 +33,7 @@ import java.util.Map;
 public class AdminController {
 
     private final AuthCommandService authCommandService;
+    private final DeveloperTokenConverter developerTokenConverter;
     private final JobLauncher jobLauncher;
     private final Job summaryAndEmbeddingJob;
     private final CrawlingService crawlingService;
@@ -44,7 +46,9 @@ public class AdminController {
     public ResponseEntity<BaseResponse<DeveloperTokenResponse>> generateDeveloperToken(
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        DeveloperTokenResponse response = authCommandService.generateDeveloperToken(userPrincipal.getId());
+        GenerateDeveloperTokenCommand command = developerTokenConverter.toGenerateDeveloperTokenCommand(userPrincipal.getId());
+        DeveloperTokenResult result = authCommandService.generateDeveloperToken(command);
+        DeveloperTokenResponse response = developerTokenConverter.toDeveloperTokenResponse(result);
         return BaseResponse.of(SuccessCode.OK, response);
     }
 

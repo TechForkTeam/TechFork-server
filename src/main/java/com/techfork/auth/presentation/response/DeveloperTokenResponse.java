@@ -1,4 +1,4 @@
-package com.techfork.auth.application.dto;
+package com.techfork.auth.presentation.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
