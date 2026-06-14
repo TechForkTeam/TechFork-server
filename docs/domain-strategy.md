@@ -73,7 +73,7 @@ TechFork의 비즈니스 도메인은 다음으로 정의할 수 있다.
 
 | 하위 도메인 | 관련 컨텍스트/모듈 | 왜 일반인가 |
 |---|---|---|
-| 인증/인가 | Auth / Security, `global/security` | OAuth, JWT, refresh token, 권한 처리는 대부분 서비스에서 필요한 범용 문제다. |
+| 인증/인가 | Auth / Security, `auth/security` | OAuth, JWT, refresh token, 권한 처리는 대부분 서비스에서 필요한 범용 문제다. |
 | 외부 LLM/Embedding Provider 연동 | `global/llm` | 모델 제공자 호출, retry/rate limit 등은 범용 integration 문제다. 단, 프롬프트와 개인화/요약 정책은 핵심/지원 도메인에 속한다. |
 | 검색 엔진 연동 | Elasticsearch repository/client | Elasticsearch client, index read/write 자체는 범용 인프라다. 단, 검색 랭킹 정책은 핵심 도메인이다. |
 | 분산 락/캐시/배치 인프라 | Redis, Spring Batch, scheduler infra | 동시 실행 제어, 캐시, batch metadata는 범용 기술 문제다. |
@@ -90,7 +90,7 @@ TechFork의 비즈니스 도메인은 다음으로 정의할 수 있다.
 
 | 현재 위치 | DDD 해석 | 기본 처리 원칙 |
 |---|---|---|
-| `global/security/*` | `Auth / Security`의 실제 구현 표면 | Auth / Security 리팩터링 시 컨텍스트로 승격/회수 |
+| `auth/security/*` | `Auth / Security`의 앱 전역 인증/인가 shared kernel | Auth / Security 컨텍스트 내부에 두되, 여러 컨텍스트가 기대는 보안 계약임을 명시 |
 | `global/llm/*` | 범용 provider adapter / AI integration | provider adapter는 shared로 유지, 프롬프트/정책은 owning context로 분리 |
 | `global/elasticsearch/query/*` | Search / Recommendation 후보 탐색 정책 support | Search / Recommendation 리팩터링 시 owning context로 회수 |
 | `global/util/LinearTimeDecayStrategy` | Recommendation 정책 | Recommendation 컨텍스트로 회수 |
@@ -111,7 +111,7 @@ TechFork의 비즈니스 도메인은 다음으로 정의할 수 있다.
 - `Search` 컨텍스트에서 Elasticsearch 호출 자체는 일반 하위 도메인이지만, BM25/semantic/RRF/personal reranking 조합 정책은 핵심 하위 도메인이다.
 - `Recommendation` 컨텍스트는 거의 전체가 핵심 하위 도메인이다. 다만 executor, repository plumbing 같은 기술 요소는 일반/지원으로 볼 수 있다.
 - `global`은 문서상 독립 컨텍스트로 다루지 않는다.
-  - `global/security`처럼 실제 컨텍스트 소유권이 분명한 코드는 해당 컨텍스트로 승격한다.
+  - 실제 컨텍스트 소유권이 분명한 코드는 해당 컨텍스트로 승격한다.
   - `BaseEntity`, `BaseResponse`, `GlobalExceptionHandler`, infra config처럼 진짜 공통 지원 코드는 shared/platform support로 유지한다.
 
 

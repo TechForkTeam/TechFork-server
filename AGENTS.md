@@ -27,7 +27,7 @@ TechFork is a Spring Boot 3.5.9 / Java 17 backend that crawls Korean tech blogs,
 | Crawl pipeline | `src/main/java/com/techfork/domain/source/` | Child AGENTS covers job/scheduler invariants |
 | Initial seed data | `src/main/java/com/techfork/global/config/InitialDataConfig.java` | Seeds tech blogs in `local`, `local-tunnel`, `dev` |
 | Response / errors | `src/main/java/com/techfork/global/response/`, `global/exception/`, `global/common/code/` | `BaseResponse.of(...)`, `BaseCode`, `GeneralException` |
-| Security / auth | `src/main/java/com/techfork/global/security/` | Real JWT/OAuth ownership lives here, not only `domain/auth` |
+| Security / auth | `src/main/java/com/techfork/auth/` | Auth / Security owns JWT/OAuth/filter/cookie/cache under `auth/security` |
 | Search hot path | `src/main/java/com/techfork/domain/search/` | `SearchServiceImpl` is one of the largest main-code files |
 | Deployment topology | `docker/`, `scripts/deploy.sh`, `.github/workflows/cd.yml` | Blue-green + nginx upstream switching |
 | Infra provisioning | `infra/` | AWS + Oracle stacks, committed state artifacts |
@@ -37,7 +37,7 @@ TechFork is a Spring Boot 3.5.9 / Java 17 backend that crawls Korean tech blogs,
 ## CONVENTIONS
 - Default runtime profile is `local-tunnel`; `application.yml` imports `.env` directly.
 - Controllers return `BaseResponse.of(code[, data])`; raw controller bodies are non-standard here.
-- Domain packages follow bounded contexts (`domain/<context>/controller|service|repository|dto|entity|converter|enums|exception`).
+- Domain packages follow bounded contexts; newer slices use top-level context packages such as `auth`, `activity`, `post`, `useraccount`, and `personalization`, while legacy slices may still live under `domain/<context>`.
 - Entities use protected no-args constructors plus static `create(...)` factories.
 - Spring Batch schema is managed via Flyway files under `src/main/resources/db/migration/`, not auto-init in production-style profiles.
 - Test execution is tag-split in Gradle: `test`, `integrationTest`, `evaluationTest`, `evaluationSetup`.
@@ -45,7 +45,7 @@ TechFork is a Spring Boot 3.5.9 / Java 17 backend that crawls Korean tech blogs,
 
 ## ANTI-PATTERNS (THIS PROJECT)
 - Never commit or casually edit `.env`, `keys/`, `infra/terraform.tfstate`, `infra/*.tfvars`.
-- Do not treat `domain/auth` as the full auth surface; JWT, OAuth handlers, filters, and cookies live under `global/security`.
+- Do not treat `auth/application` or `auth/presentation` as the full auth surface; JWT, OAuth handlers, filters, cookies, and auth cache live under `auth/security`.
 - Do not duplicate `CLAUDE.md` or `docs/source-package.md` into child AGENTS files; summarize and point.
 - Do not edit only one of `docker-compose.blue.yml` / `docker-compose.green.yml` unless the asymmetry is intentional.
 - Do not run evaluation-heavy suites as if they were ordinary integration tests; they have separate tags, profiles, fixtures, and runtime cost.

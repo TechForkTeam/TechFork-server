@@ -31,7 +31,7 @@
 | Activity | [`activity.md`](./activity.md) | `src/main/java/com/techfork/activity` | 읽기/검색/북마크 행동 기록 |
 | Search | [`search.md`](./search.md) | `src/main/java/com/techfork/domain/search` | query service / read model 중심 컨텍스트 |
 | Recommendation | [`recommendation.md`](./recommendation.md) | `src/main/java/com/techfork/domain/recommendation` | 추천 후보 탐색, 랭킹, 현재 추천 목록 |
-| Auth / Security | [`auth-security.md`](./auth-security.md) | `src/main/java/com/techfork/domain/auth`, `src/main/java/com/techfork/global/security` | 인증 애플리케이션 서비스 + 보안 인프라 |
+| Auth / Security | [`auth-security.md`](./auth-security.md) | `src/main/java/com/techfork/auth` | 인증 애플리케이션 서비스 + 보안 인프라 |
 | Notification | [`notification.md`](./notification.md) | `src/main/java/com/techfork/domain/notification` | 알림 토큰 저장과 활성화 상태 |
 | Admin / Ops | [`admin-ops.md`](./admin-ops.md) | `src/main/java/com/techfork/domain/admin` | 운영자 진입점, 수동 배치 실행, 운영 알림 연계 |
 

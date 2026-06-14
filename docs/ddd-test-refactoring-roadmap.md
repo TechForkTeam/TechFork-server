@@ -846,7 +846,7 @@ global/lock/DistributedLock
 대표 예시는 다음과 같다.
 
 ```text
-global/security/*                   -> Auth / Security
+auth/security/*                     -> Auth / Security
 global/elasticsearch/query/*        -> Search / Recommendation
 global/util/LinearTimeDecayStrategy -> Recommendation
 global/config/InitialDataConfig     -> Source / Ingestion
@@ -859,14 +859,15 @@ global/util/ContentCleaner          -> Source / Post shared content support 후�
 
 ```text
 1. User Account 4.3
-   - 필요 시 global/security shared seam(UserAuthCacheService, UserPrincipal)만 함께 정리
-   - 하지만 Auth / Security 전체 승격은 아직 하지 않는다
+   - 필요 시 Auth / Security shared seam(UserAuthCacheService, UserPrincipal)만 함께 정리
+   - Auth / Security 전체 경계 이동은 별도 이슈에서 진행한다
 
 2. Personalization Profile 4.4
    - User Account와의 직접 호출 책임을 먼저 정리
 
 3. Auth / Security
-   - global/security를 실제 컨텍스트 표면으로 승격/정리
+   - `auth` 최상위 컨텍스트와 `auth/security` shared kernel로 정리
+   - 이후 문서/테스트 경로가 현재 구조를 따르도록 유지
 
 4. Recommendation / Search
    - VectorQueryBuilder, LinearTimeDecayStrategy, RRF/검색 정책 support를 owning context로 회수
