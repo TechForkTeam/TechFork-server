@@ -88,6 +88,40 @@ class CustomOidcUserServiceTest {
         }
 
         @Test
+        @DisplayName("신규 Kakao OIDC 사용자를 생성하고 UserPrincipal을 반환한다")
+        void loadUser_NewKakaoOidcUser_CreatesKakaoUserAndReturnsPrincipal() {
+            String kakaoSocialId = "kakao-sub-456";
+            String kakaoEmail = "kakao-user@example.com";
+            String kakaoProfileImage = "https://cdn.example.com/kakao-user.png";
+            given(userRepository.findBySocialTypeAndSocialId(SocialType.KAKAO, kakaoSocialId))
+                    .willReturn(Optional.empty());
+            given(userRepository.save(any(User.class))).willAnswer(invocation -> {
+                User savedUser = invocation.getArgument(0);
+                ReflectionTestUtils.setField(savedUser, "id", 4L);
+                return savedUser;
+            });
+
+            OidcUser oidcUser = customOidcUserService.loadUser(
+                    userRequest("kakao", claims(kakaoSocialId, kakaoEmail, kakaoProfileImage))
+            );
+
+            assertThat(oidcUser).isInstanceOf(UserPrincipal.class);
+            UserPrincipal principal = (UserPrincipal) oidcUser;
+            assertThat(principal.getId()).isEqualTo(4L);
+            assertThat(principal.getRole()).isEqualTo(Role.USER);
+            assertThat(principal.getStatus()).isEqualTo(UserStatus.PENDING);
+            assertThat(principal.getEmail()).isEqualTo(kakaoEmail);
+
+            ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+            verify(userRepository).save(userCaptor.capture());
+            User savedUser = userCaptor.getValue();
+            assertThat(savedUser.getSocialType()).isEqualTo(SocialType.KAKAO);
+            assertThat(savedUser.getSocialId()).isEqualTo(kakaoSocialId);
+            assertThat(savedUser.getEmail()).isEqualTo(kakaoEmail);
+            assertThat(savedUser.getProfileImage()).isEqualTo(kakaoProfileImage);
+        }
+
+        @Test
         @DisplayName("기존 Apple 사용자를 재사용하고 새 사용자를 저장하지 않는다")
         void loadUser_ExistingAppleUser_ReusesUserWithoutSaving() {
             User existingUser = appleUser(2L, EMAIL, PROFILE_IMAGE);
@@ -166,6 +200,10 @@ class CustomOidcUserServiceTest {
     }
 
     private OidcUserRequest userRequest(Map<String, Object> claims) {
+        return userRequest("apple", claims);
+    }
+
+    private OidcUserRequest userRequest(String registrationId, Map<String, Object> claims) {
         Instant issuedAt = Instant.now();
         Instant expiresAt = issuedAt.plusSeconds(300);
         OidcIdToken idToken = new OidcIdToken("id-token", issuedAt, expiresAt, claims);
@@ -177,23 +215,23 @@ class CustomOidcUserServiceTest {
                 Set.of("openid")
         );
 
-        return new OidcUserRequest(clientRegistration(), accessToken, idToken);
+        return new OidcUserRequest(clientRegistration(registrationId), accessToken, idToken);
     }
 
-    private ClientRegistration clientRegistration() {
-        return ClientRegistration.withRegistrationId("apple")
+    private ClientRegistration clientRegistration(String registrationId) {
+        return ClientRegistration.withRegistrationId(registrationId)
                 .clientId("techfork-client")
                 .clientSecret("techfork-secret")
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                .redirectUri("https://techfork.site/login/oauth2/code/apple")
+                .redirectUri("https://techfork.site/login/oauth2/code/" + registrationId)
                 .scope("openid")
-                .authorizationUri("https://appleid.apple.com/auth/authorize")
-                .tokenUri("https://appleid.apple.com/auth/token")
-                .jwkSetUri("https://appleid.apple.com/auth/keys")
-                .issuerUri("https://appleid.apple.com")
+                .authorizationUri("https://auth.example.com/oauth/authorize")
+                .tokenUri("https://auth.example.com/oauth/token")
+                .jwkSetUri("https://auth.example.com/oauth/keys")
+                .issuerUri("https://auth.example.com")
                 .userNameAttributeName("sub")
-                .clientName("Apple")
+                .clientName(registrationId)
                 .build();
     }
 
