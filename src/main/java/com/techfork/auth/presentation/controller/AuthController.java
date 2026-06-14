@@ -1,9 +1,10 @@
-package com.techfork.auth.presentation;
+package com.techfork.auth.presentation.controller;
 
 import com.techfork.auth.application.command.AuthCommandService;
 import com.techfork.auth.application.command.input.LogoutCommand;
 import com.techfork.auth.application.command.input.RefreshTokenCommand;
 import com.techfork.auth.application.command.result.TokenRefreshResult;
+import com.techfork.auth.presentation.converter.AuthTokenConverter;
 import com.techfork.auth.presentation.response.TokenRefreshResponse;
 import com.techfork.auth.security.util.CookieUtil;
 import com.techfork.global.common.code.SuccessCode;

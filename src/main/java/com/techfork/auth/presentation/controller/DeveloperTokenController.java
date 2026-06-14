@@ -1,8 +1,9 @@
-package com.techfork.auth.presentation;
+package com.techfork.auth.presentation.controller;
 
 import com.techfork.auth.application.command.AuthCommandService;
 import com.techfork.auth.application.command.input.GenerateDeveloperTokenCommand;
 import com.techfork.auth.application.command.result.DeveloperTokenResult;
+import com.techfork.auth.presentation.converter.DeveloperTokenConverter;
 import com.techfork.auth.presentation.response.DeveloperTokenResponse;
 import com.techfork.auth.security.oauth.UserPrincipal;
 import com.techfork.global.common.code.SuccessCode;

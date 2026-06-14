@@ -1,4 +1,4 @@
-package com.techfork.auth.presentation;
+package com.techfork.auth.presentation.converter;
 
 import com.techfork.auth.application.command.input.GenerateDeveloperTokenCommand;
 import com.techfork.auth.application.command.result.DeveloperTokenResult;

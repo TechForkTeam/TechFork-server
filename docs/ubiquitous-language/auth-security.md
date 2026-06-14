@@ -65,9 +65,10 @@
 - `src/main/java/com/techfork/auth/application/command/KakaoLoginCommandService.java`
 - `src/main/java/com/techfork/auth/application/command/input/`
 - `src/main/java/com/techfork/auth/application/command/result/`
-- `src/main/java/com/techfork/auth/presentation/AuthController.java`
-- `src/main/java/com/techfork/auth/presentation/KakaoLoginController.java`
-- `src/main/java/com/techfork/auth/presentation/DeveloperTokenController.java`
+- `src/main/java/com/techfork/auth/presentation/controller/AuthController.java`
+- `src/main/java/com/techfork/auth/presentation/controller/KakaoLoginController.java`
+- `src/main/java/com/techfork/auth/presentation/controller/DeveloperTokenController.java`
+- `src/main/java/com/techfork/auth/presentation/converter/`
 - `src/main/java/com/techfork/auth/infrastructure/kakao/KakaoOAuthService.java`
 - `src/main/java/com/techfork/auth/infrastructure/kakao/response/KakaoUserInfoResponse.java`
 - `src/main/java/com/techfork/auth/security/config/SecurityConfig.java`

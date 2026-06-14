@@ -1,8 +1,9 @@
-package com.techfork.auth.presentation;
+package com.techfork.auth.presentation.controller;
 
 import com.techfork.auth.application.command.KakaoLoginCommandService;
 import com.techfork.auth.application.command.input.KakaoLoginCommand;
 import com.techfork.auth.application.command.result.KakaoLoginResult;
+import com.techfork.auth.presentation.converter.KakaoLoginConverter;
 import com.techfork.auth.presentation.request.KakaoLoginRequest;
 import com.techfork.auth.presentation.response.KakaoLoginResponse;
 import com.techfork.auth.security.util.CookieUtil;
