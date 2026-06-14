@@ -1,4 +1,4 @@
-package com.techfork.global.security.auth.service;
+package com.techfork.auth.security.service;
 
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;

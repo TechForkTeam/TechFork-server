@@ -2,7 +2,7 @@ package com.techfork.useraccount.integration;
 
 import com.techfork.personalization.application.PersonalizationProfileService;
 import com.techfork.global.common.IntegrationTestBase;
-import com.techfork.global.security.auth.service.UserAuthCacheService;
+import com.techfork.auth.security.service.UserAuthCacheService;
 import com.techfork.useraccount.application.command.InterestCommandService;
 import com.techfork.useraccount.application.command.UserCommandService;
 import com.techfork.useraccount.application.command.input.CompleteOnboardingCommand;

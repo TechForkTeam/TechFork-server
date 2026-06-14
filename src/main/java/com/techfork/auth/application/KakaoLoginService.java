@@ -6,7 +6,7 @@ import com.techfork.auth.infrastructure.kakao.dto.KakaoUserInfoResponse;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.infrastructure.UserRepository;
-import com.techfork.global.security.auth.service.RefreshTokenService;
+import com.techfork.auth.security.service.RefreshTokenService;
 import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.jwt.JwtUtil;

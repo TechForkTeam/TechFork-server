@@ -1,6 +1,6 @@
-package com.techfork.global.security.auth.listener;
+package com.techfork.auth.security.listener;
 
-import com.techfork.global.security.auth.service.UserAuthCacheService;
+import com.techfork.auth.security.service.UserAuthCacheService;
 import com.techfork.useraccount.application.event.OnboardingCompletedEvent;
 import com.techfork.useraccount.application.event.UserWithdrawnEvent;
 import lombok.RequiredArgsConstructor;

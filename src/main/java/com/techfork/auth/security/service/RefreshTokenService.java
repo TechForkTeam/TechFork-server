@@ -1,4 +1,4 @@
-package com.techfork.global.security.auth.service;
+package com.techfork.auth.security.service;
 
 import com.techfork.global.constant.RedisKey;
 import lombok.RequiredArgsConstructor;

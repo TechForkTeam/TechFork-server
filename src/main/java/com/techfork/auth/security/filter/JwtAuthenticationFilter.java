@@ -7,7 +7,7 @@ import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.constant.Constants;
 import com.techfork.global.constant.MdcKey;
 import com.techfork.global.exception.GeneralException;
-import com.techfork.global.security.auth.service.UserAuthCacheService;
+import com.techfork.auth.security.service.UserAuthCacheService;
 import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.jwt.JwtUtil;
 import com.techfork.auth.security.oauth.UserPrincipal;
