@@ -38,10 +38,10 @@ class UserAuthCacheEventListenerTest {
 
         @Test
         @DisplayName("커밋 이후 인증 캐시를 무효화한다")
-        void handle_EvictsUserAuthCacheAfterCommit() {
+        void evictOnOnboardingCompletedAfterCommit_EvictsUserAuthCache() {
             Long userId = 1L;
 
-            listener.handle(new OnboardingCompletedEvent(userId));
+            listener.evictOnOnboardingCompletedAfterCommit(new OnboardingCompletedEvent(userId));
 
             verify(userAuthCacheService).evict(userId);
         }
@@ -59,10 +59,10 @@ class UserAuthCacheEventListenerTest {
 
         @Test
         @DisplayName("커밋 이후 인증 캐시를 무효화한다")
-        void handle_EvictsUserAuthCacheAfterCommit() {
+        void evictOnUserReactivatedAfterCommit_EvictsUserAuthCache() {
             Long userId = 1L;
 
-            listener.handle(new UserReactivatedEvent(userId));
+            listener.evictOnUserReactivatedAfterCommit(new UserReactivatedEvent(userId));
 
             verify(userAuthCacheService).evict(userId);
         }
@@ -80,20 +80,20 @@ class UserAuthCacheEventListenerTest {
 
         @Test
         @DisplayName("커밋 직전 인증 캐시를 무효화한다")
-        void handleBeforeCommit_EvictsUserAuthCache() {
+        void evictOnUserWithdrawnBeforeCommit_EvictsUserAuthCache() {
             Long userId = 1L;
 
-            listener.handleBeforeCommit(new UserWithdrawnEvent(userId));
+            listener.evictOnUserWithdrawnBeforeCommit(new UserWithdrawnEvent(userId));
 
             verify(userAuthCacheService).evict(userId);
         }
 
         @Test
         @DisplayName("커밋 이후 인증 캐시를 한 번 더 무효화한다")
-        void handleAfterCommit_EvictsUserAuthCache() {
+        void evictOnUserWithdrawnAfterCommit_EvictsUserAuthCache() {
             Long userId = 1L;
 
-            listener.handleAfterCommit(new UserWithdrawnEvent(userId));
+            listener.evictOnUserWithdrawnAfterCommit(new UserWithdrawnEvent(userId));
 
             verify(userAuthCacheService).evict(userId);
         }
@@ -110,12 +110,12 @@ class UserAuthCacheEventListenerTest {
 
         @Test
         @DisplayName("커밋 직전 인증 캐시 무효화 실패는 예외를 전파한다")
-        void handleBeforeCommit_PropagatesEvictionFailure() {
+        void evictOnUserWithdrawnBeforeCommit_PropagatesEvictionFailure() {
             Long userId = 1L;
             RuntimeException evictionFailure = new RuntimeException("redis eviction failed");
             doThrow(evictionFailure).when(userAuthCacheService).evict(userId);
 
-            assertThatThrownBy(() -> listener.handleBeforeCommit(new UserWithdrawnEvent(userId)))
+            assertThatThrownBy(() -> listener.evictOnUserWithdrawnBeforeCommit(new UserWithdrawnEvent(userId)))
                     .isSameAs(evictionFailure);
         }
     }

@@ -15,26 +15,35 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class UserAuthCacheEventListener {
 
+    private static final String ONBOARDING_COMPLETED_AFTER_COMMIT = "onboarding-completed-after-commit";
+    private static final String USER_REACTIVATED_AFTER_COMMIT = "user-reactivated-after-commit";
+    private static final String USER_WITHDRAWN_BEFORE_COMMIT = "user-withdrawn-before-commit";
+    private static final String USER_WITHDRAWN_AFTER_COMMIT = "user-withdrawn-after-commit";
+
     private final UserAuthCacheService userAuthCacheService;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handle(OnboardingCompletedEvent event) {
-        evictUserAuthCache(event.userId(), "onboarding-completed");
+    public void evictOnOnboardingCompletedAfterCommit(OnboardingCompletedEvent event) {
+        evictUserAuthCache(event.userId(), ONBOARDING_COMPLETED_AFTER_COMMIT);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handle(UserReactivatedEvent event) {
-        evictUserAuthCache(event.userId(), "user-reactivated");
+    public void evictOnUserReactivatedAfterCommit(UserReactivatedEvent event) {
+        evictUserAuthCache(event.userId(), USER_REACTIVATED_AFTER_COMMIT);
     }
 
+    /**
+     * 탈퇴 전 캐시 무효화는 탈퇴 사용자 인증 차단을 위한 커밋 게이트다.
+     * 실패하면 탈퇴 트랜잭션을 롤백해야 하므로 예외를 잡거나 완화하지 않는다.
+     */
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
-    public void handleBeforeCommit(UserWithdrawnEvent event) {
-        evictUserAuthCache(event.userId(), "user-withdrawn-before-commit");
+    public void evictOnUserWithdrawnBeforeCommit(UserWithdrawnEvent event) {
+        evictUserAuthCache(event.userId(), USER_WITHDRAWN_BEFORE_COMMIT);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleAfterCommit(UserWithdrawnEvent event) {
-        evictUserAuthCache(event.userId(), "user-withdrawn-after-commit");
+    public void evictOnUserWithdrawnAfterCommit(UserWithdrawnEvent event) {
+        evictUserAuthCache(event.userId(), USER_WITHDRAWN_AFTER_COMMIT);
     }
 
     private void evictUserAuthCache(Long userId, String reason) {
