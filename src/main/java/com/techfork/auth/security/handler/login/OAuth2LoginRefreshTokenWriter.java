@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class OAuth2LoginRefreshTokenWriter {
+class OAuth2LoginRefreshTokenWriter {
 
     private final RefreshTokenService refreshTokenService;
 

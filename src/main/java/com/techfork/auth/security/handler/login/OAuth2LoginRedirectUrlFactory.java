@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 
 @Component
 @RequiredArgsConstructor
-public class OAuth2LoginRedirectUrlFactory {
+class OAuth2LoginRedirectUrlFactory {
 
     private static final String PUBLIC_FAILURE_ERROR_CODE = "oauth_failed";
 

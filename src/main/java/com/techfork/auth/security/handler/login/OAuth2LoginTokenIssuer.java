@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class OAuth2LoginTokenIssuer {
+class OAuth2LoginTokenIssuer {
 
     private final JwtUtil jwtUtil;
     private final JwtProperties jwtProperties;
