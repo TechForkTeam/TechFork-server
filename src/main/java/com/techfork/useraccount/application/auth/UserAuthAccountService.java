@@ -1,10 +1,12 @@
 package com.techfork.useraccount.application.auth;
 
+import com.techfork.useraccount.application.event.UserReactivatedEvent;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserAuthAccountService {
 
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public Optional<UserAuthProfile> findAuthProfileById(Long userId) {
         return userRepository.findById(userId)
@@ -42,6 +45,7 @@ public class UserAuthAccountService {
     private User reactivateIfWithdrawn(User user, String email, String profileImage) {
         if (user.isWithdrawn()) {
             user.reactivate(email, profileImage);
+            eventPublisher.publishEvent(new UserReactivatedEvent(user.getId()));
         }
         return user;
     }

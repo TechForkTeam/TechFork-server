@@ -2,6 +2,7 @@ package com.techfork.auth.security.listener;
 
 import com.techfork.auth.security.service.UserAuthCacheService;
 import com.techfork.useraccount.application.event.OnboardingCompletedEvent;
+import com.techfork.useraccount.application.event.UserReactivatedEvent;
 import com.techfork.useraccount.application.event.UserWithdrawnEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,11 @@ public class UserAuthCacheEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(OnboardingCompletedEvent event) {
         evictUserAuthCache(event.userId(), "onboarding-completed");
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handle(UserReactivatedEvent event) {
+        evictUserAuthCache(event.userId(), "user-reactivated");
     }
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)

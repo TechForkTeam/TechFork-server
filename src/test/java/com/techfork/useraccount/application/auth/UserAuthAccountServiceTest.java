@@ -1,5 +1,6 @@
 package com.techfork.useraccount.application.auth;
 
+import com.techfork.useraccount.application.event.UserReactivatedEvent;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.SocialType;
@@ -14,6 +15,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,6 +34,9 @@ class UserAuthAccountServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private UserAuthAccountService userAuthAccountService;
@@ -102,6 +107,7 @@ class UserAuthAccountServiceTest {
             assertThat(newUser.getSocialId()).isEqualTo(SOCIAL_ID);
             assertThat(newUser.getEmail()).isEqualTo(EMAIL);
             assertThat(newUser.getProfileImage()).isEqualTo(PROFILE_IMAGE);
+            verify(eventPublisher, never()).publishEvent(any());
         }
 
         @Test
@@ -122,6 +128,7 @@ class UserAuthAccountServiceTest {
             assertThat(result.status()).isEqualTo(UserStatus.ACTIVE);
             assertThat(result.active()).isTrue();
             verify(userRepository, never()).save(any(User.class));
+            verify(eventPublisher, never()).publishEvent(any());
         }
 
         @Test
@@ -147,6 +154,9 @@ class UserAuthAccountServiceTest {
             assertThat(withdrawnUser.getProfileImage()).isEqualTo(PROFILE_IMAGE);
             assertThat(withdrawnUser.getStatus()).isEqualTo(UserStatus.PENDING);
             verify(userRepository, never()).save(any(User.class));
+            ArgumentCaptor<UserReactivatedEvent> eventCaptor = ArgumentCaptor.forClass(UserReactivatedEvent.class);
+            verify(eventPublisher).publishEvent(eventCaptor.capture());
+            assertThat(eventCaptor.getValue().userId()).isEqualTo(USER_ID);
         }
     }
 

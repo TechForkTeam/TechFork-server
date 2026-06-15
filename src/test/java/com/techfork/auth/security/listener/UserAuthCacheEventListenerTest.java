@@ -2,6 +2,7 @@ package com.techfork.auth.security.listener;
 
 import com.techfork.auth.security.service.UserAuthCacheService;
 import com.techfork.useraccount.application.event.OnboardingCompletedEvent;
+import com.techfork.useraccount.application.event.UserReactivatedEvent;
 import com.techfork.useraccount.application.event.UserWithdrawnEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,16 @@ class UserAuthCacheEventListenerTest {
     }
 
     @Test
+    @DisplayName("회원 재활성화 이벤트 - 커밋 이후 인증 캐시를 무효화한다")
+    void handle_UserReactivatedEvent_EvictsUserAuthCache() {
+        Long userId = 1L;
+
+        listener.handle(new UserReactivatedEvent(userId));
+
+        verify(userAuthCacheService).evict(userId);
+    }
+
+    @Test
     @DisplayName("회원 탈퇴 이벤트 - 커밋 직전 인증 캐시를 무효화한다")
     void handleBeforeCommit_UserWithdrawnEvent_EvictsUserAuthCache() {
         Long userId = 1L;
@@ -58,6 +69,7 @@ class UserAuthCacheEventListenerTest {
     @DisplayName("인증 캐시 리스너는 이벤트별 트랜잭션 단계를 명시한다")
     void listenerMethods_RunWithExpectedTransactionPhase() throws NoSuchMethodException {
         assertTransactionalEventListenerPhase("handle", OnboardingCompletedEvent.class, TransactionPhase.AFTER_COMMIT);
+        assertTransactionalEventListenerPhase("handle", UserReactivatedEvent.class, TransactionPhase.AFTER_COMMIT);
         assertTransactionalEventListenerPhase("handleBeforeCommit", UserWithdrawnEvent.class, TransactionPhase.BEFORE_COMMIT);
         assertTransactionalEventListenerPhase("handleAfterCommit", UserWithdrawnEvent.class, TransactionPhase.AFTER_COMMIT);
     }
