@@ -54,10 +54,18 @@ class HttpCookieOAuth2AuthorizationRequestRepositoryTest {
             repository.saveAuthorizationRequest(null, request, response);
 
             Cookie deleteCookie = response.getCookie(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME);
-            assertThat(deleteCookie).isNotNull();
-            assertThat(deleteCookie.getValue()).isEmpty();
-            assertThat(deleteCookie.getPath()).isEqualTo("/");
-            assertThat(deleteCookie.getMaxAge()).isZero();
+            assertDeleteCookie(deleteCookie);
+        }
+
+        @Test
+        @DisplayName("null request를 넘겨도 기존 쿠키가 없으면 삭제 쿠키를 추가하지 않는다")
+        void nullRequest_DoesNotAddDeleteCookieWhenCookieDoesNotExist() {
+            MockHttpServletRequest request = new MockHttpServletRequest();
+            MockHttpServletResponse response = new MockHttpServletResponse();
+
+            repository.saveAuthorizationRequest(null, request, response);
+
+            assertThat(response.getCookie(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME)).isNull();
         }
     }
 
@@ -116,11 +124,27 @@ class HttpCookieOAuth2AuthorizationRequestRepositoryTest {
             assertThat(removed).isNotNull();
             assertThat(removed.getState()).isEqualTo(original.getState());
             Cookie deleteCookie = removeResponse.getCookie(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME);
-            assertThat(deleteCookie).isNotNull();
-            assertThat(deleteCookie.getValue()).isEmpty();
-            assertThat(deleteCookie.getPath()).isEqualTo("/");
-            assertThat(deleteCookie.getMaxAge()).isZero();
+            assertDeleteCookie(deleteCookie);
         }
+
+        @Test
+        @DisplayName("기존 쿠키가 없으면 null을 반환하고 삭제 쿠키를 추가하지 않는다")
+        void withoutCookie_ReturnsNullAndDoesNotAddDeleteCookie() {
+            MockHttpServletRequest request = new MockHttpServletRequest();
+            MockHttpServletResponse response = new MockHttpServletResponse();
+
+            OAuth2AuthorizationRequest removed = repository.removeAuthorizationRequest(request, response);
+
+            assertThat(removed).isNull();
+            assertThat(response.getCookie(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME)).isNull();
+        }
+    }
+
+    private void assertDeleteCookie(Cookie deleteCookie) {
+        assertThat(deleteCookie).isNotNull();
+        assertThat(deleteCookie.getValue()).isEmpty();
+        assertThat(deleteCookie.getPath()).isEqualTo("/");
+        assertThat(deleteCookie.getMaxAge()).isZero();
     }
 
     private OAuth2AuthorizationRequest authorizationRequest() {
