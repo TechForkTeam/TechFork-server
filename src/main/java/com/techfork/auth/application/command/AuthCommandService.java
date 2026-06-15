@@ -12,9 +12,9 @@ import com.techfork.auth.security.jwt.JwtUtil;
 import com.techfork.auth.security.service.RefreshTokenService;
 import com.techfork.auth.security.service.UserAuthCacheService;
 import com.techfork.global.exception.GeneralException;
-import com.techfork.useraccount.domain.User;
+import com.techfork.useraccount.application.auth.UserAuthAccountService;
+import com.techfork.useraccount.application.auth.UserAuthProfile;
 import com.techfork.useraccount.domain.enums.Role;
-import com.techfork.useraccount.infrastructure.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,7 +30,7 @@ public class AuthCommandService {
 
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
-    private final UserRepository userRepository;
+    private final UserAuthAccountService userAuthAccountService;
     private final JwtProperties jwtProperties;
     private final UserAuthCacheService userAuthCacheService;
 
@@ -41,14 +41,14 @@ public class AuthCommandService {
         Long userId = jwtUtil.getUserIdFromToken(refreshToken);
         validateRefreshTokenInRedis(userId, refreshToken);
 
-        User user = userRepository.findById(userId)
+        UserAuthProfile userAuthProfile = userAuthAccountService.findAuthProfileById(userId)
                 .orElseThrow(() -> new GeneralException(AuthErrorCode.USER_NOT_FOUND));
 
-        JwtDTO newTokens = jwtUtil.generateTokens(userId, user.getRole());
+        JwtDTO newTokens = jwtUtil.generateTokens(userId, userAuthProfile.role());
         long expiration = jwtProperties.getRefreshTokenExpiration();
         saveRefreshToken(userId, newTokens.refreshToken(), expiration);
 
-        userAuthCacheService.put(userId, user, jwtProperties.getAccessTokenExpiration());
+        userAuthCacheService.put(userId, userAuthProfile, jwtProperties.getAccessTokenExpiration());
 
         log.info("Token refreshed");
 
@@ -71,14 +71,14 @@ public class AuthCommandService {
 
     public DeveloperTokenResult generateDeveloperToken(GenerateDeveloperTokenCommand command) {
         Long userId = command.userId();
-        User user = userRepository.findById(userId)
+        UserAuthProfile userAuthProfile = userAuthAccountService.findAuthProfileById(userId)
                 .orElseThrow(() -> new GeneralException(AuthErrorCode.USER_NOT_FOUND));
 
-        if (user.getRole() != Role.ADMIN) {
+        if (userAuthProfile.role() != Role.ADMIN) {
             throw new GeneralException(AuthErrorCode.FORBIDDEN_INSUFFICIENT_PERMISSIONS);
         }
 
-        String longLivedAccessToken = jwtUtil.generateLongLivedAccessToken(userId, user.getRole());
+        String longLivedAccessToken = jwtUtil.generateLongLivedAccessToken(userId, userAuthProfile.role());
 
         log.info("Developer token (long-lived access token) generated for admin userId: {}", userId);
 

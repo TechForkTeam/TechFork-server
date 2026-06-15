@@ -1,5 +1,6 @@
 package com.techfork.auth.security.service;
 
+import com.techfork.useraccount.application.auth.UserAuthProfile;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.UserStatus;
@@ -32,8 +33,12 @@ public class UserAuthCacheService {
     }
 
     public void put(Long userId, User user, long ttlMillis) {
+        put(userId, UserAuthProfile.from(user), ttlMillis);
+    }
+
+    public void put(Long userId, UserAuthProfile userAuthProfile, long ttlMillis) {
         String key = buildKey(userId);
-        String value = serialize(user);
+        String value = serialize(userAuthProfile);
         redisTemplate.opsForValue().set(key, value, ttlMillis, TimeUnit.MILLISECONDS);
         log.debug("User auth cached for userId: {}", userId);
     }
@@ -48,11 +53,11 @@ public class UserAuthCacheService {
         return RedisKey.USER_AUTH_PREFIX + userId;
     }
 
-    private String serialize(User user) {
-        return user.getId()
-                + DELIMITER + user.getRole().name()
-                + DELIMITER + user.getStatus().name()
-                + DELIMITER + (user.getEmail() != null ? user.getEmail() : "");
+    private String serialize(UserAuthProfile userAuthProfile) {
+        return userAuthProfile.id()
+                + DELIMITER + userAuthProfile.role().name()
+                + DELIMITER + userAuthProfile.status().name()
+                + DELIMITER + (userAuthProfile.email() != null ? userAuthProfile.email() : "");
     }
 
     private UserPrincipal deserialize(String value) {

@@ -1,5 +1,6 @@
 package com.techfork.auth.security.service;
 
+import com.techfork.useraccount.application.auth.UserAuthProfile;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.SocialType;
@@ -133,6 +134,27 @@ class UserAuthCacheServiceTest {
 
         // Then
         verify(valueOperations).set(CACHE_KEY, "1|USER|PENDING|", 180000L, TimeUnit.MILLISECONDS);
+    }
+
+    @Test
+    @DisplayName("put - 인증 프로필 직렬화 후 저장")
+    void put_WithAuthProfile_SerializesAndSaves() {
+        // Given
+        UserAuthProfile userAuthProfile = new UserAuthProfile(
+                USER_ID,
+                Role.ADMIN,
+                UserStatus.ACTIVE,
+                "admin@example.com",
+                true
+        );
+
+        given(redisTemplate.opsForValue()).willReturn(valueOperations);
+
+        // When
+        userAuthCacheService.put(USER_ID, userAuthProfile, 180000L);
+
+        // Then
+        verify(valueOperations).set(CACHE_KEY, "1|ADMIN|ACTIVE|admin@example.com", 180000L, TimeUnit.MILLISECONDS);
     }
 
     // ===== evict 테스트 =====

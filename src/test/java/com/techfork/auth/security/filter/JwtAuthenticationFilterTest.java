@@ -134,7 +134,7 @@ class JwtAuthenticationFilterTest {
             assertThat(authentication.getPrincipal()).isEqualTo(cachedPrincipal);
 
             verify(userRepository, never()).findById(anyLong());
-            verify(userAuthCacheService, never()).put(anyLong(), any(), anyLong());
+            verify(userAuthCacheService, never()).put(anyLong(), any(User.class), anyLong());
             verify(filterChain).doFilter(request, response);
         }
 
@@ -343,7 +343,7 @@ class JwtAuthenticationFilterTest {
             assertThat(authentication).isNull();
 
             verify(userRepository).findById(userId);
-            verify(userAuthCacheService, never()).put(anyLong(), any(), anyLong()); // 탈퇴 유저는 캐시 저장 안 함
+            verify(userAuthCacheService, never()).put(anyLong(), any(User.class), anyLong()); // 탈퇴 유저는 캐시 저장 안 함
             verifyJwtExceptionAttribute(AuthErrorCode.WITHDRAWN_USER);
             verify(filterChain).doFilter(request, response);
         }
