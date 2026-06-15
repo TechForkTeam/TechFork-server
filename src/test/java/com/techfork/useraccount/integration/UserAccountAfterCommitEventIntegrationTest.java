@@ -140,6 +140,9 @@ class UserAccountAfterCommitEventIntegrationTest extends IntegrationTestBase {
 
         User savedUser = userRepository.findById(user.getId()).orElseThrow();
         assertThat(savedUser.getStatus()).isEqualTo(UserStatus.ACTIVE);
+        assertThat(savedUser.getNickName()).isEqualTo("테스트유저");
+        assertThat(savedUser.getEmail()).isEqualTo("active@example.com");
+        assertThat(savedUser.getDescription()).isEqualTo("백엔드 개발자입니다");
         verify(userAuthCacheService).evict(user.getId());
         verifyNoInteractions(personalizationProfileService);
     }
