@@ -3,11 +3,14 @@ package com.techfork.auth.security.oauth;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.util.SerializationUtils;
 
+import java.time.Duration;
 import java.util.Base64;
 
 /**
@@ -19,6 +22,8 @@ public class HttpCookieOAuth2AuthorizationRequestRepository implements Authoriza
 
     public static final String OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME = "oauth2_auth_request";
     private static final int COOKIE_EXPIRE_SECONDS = 180; // 3분
+    private static final String COOKIE_PATH = "/";
+    private static final String COOKIE_SAME_SITE = "None";
 
     @Override
     public OAuth2AuthorizationRequest loadAuthorizationRequest(HttpServletRequest request) {
@@ -34,11 +39,7 @@ public class HttpCookieOAuth2AuthorizationRequestRepository implements Authoriza
             return;
         }
 
-        Cookie cookie = new Cookie(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME, serialize(authorizationRequest));
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);
-        cookie.setMaxAge(COOKIE_EXPIRE_SECONDS);
-        response.addCookie(cookie);
+        addAuthorizationRequestCookie(response, serialize(authorizationRequest), COOKIE_EXPIRE_SECONDS);
     }
 
     @Override
@@ -51,11 +52,20 @@ public class HttpCookieOAuth2AuthorizationRequestRepository implements Authoriza
     public void removeAuthorizationRequestCookies(HttpServletRequest request, HttpServletResponse response) {
         getCookie(request, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME)
                 .ifPresent(cookie -> {
-                    Cookie deleteCookie = new Cookie(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME, "");
-                    deleteCookie.setPath("/");
-                    deleteCookie.setMaxAge(0);
-                    response.addCookie(deleteCookie);
+                    addAuthorizationRequestCookie(response, "", 0);
                 });
+    }
+
+    private void addAuthorizationRequestCookie(HttpServletResponse response, String value, long maxAge) {
+        ResponseCookie cookie = ResponseCookie.from(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME, value)
+                .httpOnly(true)
+                .secure(true)
+                .path(COOKIE_PATH)
+                .maxAge(Duration.ofSeconds(maxAge))
+                .sameSite(COOKIE_SAME_SITE)
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
     private java.util.Optional<Cookie> getCookie(HttpServletRequest request, String name) {
