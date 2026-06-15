@@ -3,7 +3,7 @@ package com.techfork.useraccount.application.query;
 import com.techfork.useraccount.application.query.result.GetInterestListResult;
 import com.techfork.useraccount.application.query.result.GetUserInterestsResult;
 import com.techfork.useraccount.application.query.result.UserInterestResult;
-import com.techfork.useraccount.application.reader.UserReader;
+import com.techfork.useraccount.application.reader.UserAggregateReader;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.UserInterestCategory;
 import com.techfork.useraccount.domain.enums.EInterestCategory;
@@ -21,7 +21,7 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class InterestQueryService {
 
-    private final UserReader userReader;
+    private final UserAggregateReader userAggregateReader;
     private final UserInterestCategoryRepository userInterestCategoryRepository;
 
     public GetInterestListResult getAllInterests() {
@@ -33,7 +33,7 @@ public class InterestQueryService {
     }
 
     public GetUserInterestsResult getUserInterests(GetUserInterestsQuery query) {
-        User user = userReader.getById(query.userId());
+        User user = userAggregateReader.getById(query.userId());
 
         List<UserInterestCategory> categories = userInterestCategoryRepository.findByUserIdWithKeywords(user.getId());
         List<UserInterestResult> interests = categories.stream()

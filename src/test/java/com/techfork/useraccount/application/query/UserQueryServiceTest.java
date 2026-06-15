@@ -1,7 +1,7 @@
 package com.techfork.useraccount.application.query;
 
 import com.techfork.useraccount.application.query.result.GetAccountProfileResult;
-import com.techfork.useraccount.application.reader.UserReader;
+import com.techfork.useraccount.application.reader.UserAggregateReader;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
@@ -24,7 +24,7 @@ import static org.mockito.Mockito.verify;
 class UserQueryServiceTest {
 
     @Mock
-    private UserReader userReader;
+    private UserAggregateReader userAggregateReader;
 
     @InjectMocks
     private UserQueryService userQueryService;
@@ -43,7 +43,7 @@ class UserQueryServiceTest {
     @Test
     @DisplayName("계정 프로필 조회 성공")
     void getAccountProfile_Success() {
-        given(userReader.getById(userId)).willReturn(testUser);
+        given(userAggregateReader.getById(userId)).willReturn(testUser);
 
         GetAccountProfileResult result = userQueryService.getAccountProfile(new GetAccountProfileQuery(userId));
 
@@ -52,18 +52,18 @@ class UserQueryServiceTest {
         assertThat(result.nickName()).isEqualTo("테스트유저");
         assertThat(result.email()).isEqualTo("test@example.com");
         assertThat(result.description()).isEqualTo("백엔드 개발자입니다.");
-        verify(userReader).getById(userId);
+        verify(userAggregateReader).getById(userId);
     }
 
     @Test
     @DisplayName("계정 프로필 조회 실패 - 사용자를 찾을 수 없음")
     void getAccountProfile_Fail_UserNotFound() {
-        given(userReader.getById(userId)).willThrow(new GeneralException(UserErrorCode.USER_NOT_FOUND));
+        given(userAggregateReader.getById(userId)).willThrow(new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
         assertThatThrownBy(() -> userQueryService.getAccountProfile(new GetAccountProfileQuery(userId)))
                 .isInstanceOf(GeneralException.class)
                 .extracting(ex -> ((GeneralException) ex).getCode())
                 .isEqualTo(UserErrorCode.USER_NOT_FOUND);
-        verify(userReader).getById(userId);
+        verify(userAggregateReader).getById(userId);
     }
 }

@@ -1,7 +1,7 @@
 package com.techfork.useraccount.application.query;
 
 import com.techfork.useraccount.application.query.result.GetAccountProfileResult;
-import com.techfork.useraccount.application.reader.UserReader;
+import com.techfork.useraccount.application.reader.UserAggregateReader;
 import com.techfork.useraccount.domain.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,10 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserQueryService {
 
-    private final UserReader userReader;
+    private final UserAggregateReader userAggregateReader;
 
     public GetAccountProfileResult getAccountProfile(GetAccountProfileQuery query) {
-        User user = userReader.getById(query.userId());
+        User user = userAggregateReader.getById(query.userId());
 
         log.info("Account profile retrieved for userId: {}", query.userId());
 

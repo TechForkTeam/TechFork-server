@@ -4,7 +4,7 @@ import com.techfork.global.exception.GeneralException;
 import com.techfork.useraccount.application.command.input.UpdateUserInterestsCommand;
 import com.techfork.useraccount.application.command.input.UserInterestCommand;
 import com.techfork.useraccount.application.event.UserInterestsChangedEvent;
-import com.techfork.useraccount.application.reader.UserReader;
+import com.techfork.useraccount.application.reader.UserAggregateReader;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.UserInterestCategory;
 import com.techfork.useraccount.domain.UserInterestKeyword;
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.verify;
 class InterestCommandServiceTest {
 
     @Mock
-    private UserReader userReader;
+    private UserAggregateReader userAggregateReader;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -138,12 +138,12 @@ class InterestCommandServiceTest {
         List<UserInterestCommand> interests = List.of(
                 UserInterestCommand.builder().category("AI_ML").keywords(List.of("TENSORFLOW", "PYTORCH")).build()
         );
-        given(userReader.getByIdWithInterestCategories(userId)).willReturn(user);
+        given(userAggregateReader.getByIdWithInterestCategories(userId)).willReturn(user);
 
         interestCommandService.updateUserInterests(new UpdateUserInterestsCommand(userId, interests));
 
         assertThat(user.getInterestCategories()).hasSize(1);
-        verify(userReader).getByIdWithInterestCategories(userId);
+        verify(userAggregateReader).getByIdWithInterestCategories(userId);
         verifyPublishedEvent(userId);
     }
 
@@ -154,7 +154,7 @@ class InterestCommandServiceTest {
         List<UserInterestCommand> interests = List.of(
                 UserInterestCommand.builder().category("BACKEND").keywords(List.of("JAVA")).build()
         );
-        given(userReader.getByIdWithInterestCategories(userId)).willThrow(new GeneralException(UserErrorCode.USER_NOT_FOUND));
+        given(userAggregateReader.getByIdWithInterestCategories(userId)).willThrow(new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
         assertThatThrownBy(() -> interestCommandService.updateUserInterests(new UpdateUserInterestsCommand(userId, interests)))
                 .isInstanceOf(GeneralException.class)
