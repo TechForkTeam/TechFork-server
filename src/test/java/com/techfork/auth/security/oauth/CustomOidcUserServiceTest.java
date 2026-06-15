@@ -46,7 +46,7 @@ class CustomOidcUserServiceTest {
 
     @BeforeEach
     void setUp() {
-        customOidcUserService = new CustomOidcUserService(userAuthAccountService);
+        customOidcUserService = new CustomOidcUserService(userAuthAccountService, new OidcSocialIdentityExtractor());
         customOidcUserService.setRetrieveUserInfo(request -> false);
     }
 
