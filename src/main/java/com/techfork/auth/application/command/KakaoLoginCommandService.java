@@ -3,6 +3,7 @@ package com.techfork.auth.application.command;
 import com.techfork.auth.application.command.input.KakaoLoginCommand;
 import com.techfork.auth.application.command.result.KakaoLoginResult;
 import com.techfork.auth.infrastructure.kakao.KakaoOAuthService;
+import com.techfork.auth.infrastructure.kakao.KakaoSocialId;
 import com.techfork.auth.infrastructure.kakao.response.KakaoUserInfoResponse;
 import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtProperties;
@@ -31,7 +32,7 @@ public class KakaoLoginCommandService {
     public KakaoLoginResult login(KakaoLoginCommand command) {
         KakaoUserInfoResponse kakaoUserInfo = kakaoOAuthService.getUserInfo(command.accessToken());
 
-        String socialId = kakaoUserInfo.id().toString();
+        String socialId = KakaoSocialId.fromRestUserId(kakaoUserInfo.id());
         String email = kakaoUserInfo.kakaoAccount().email();
         String profileImageUrl = kakaoUserInfo.kakaoAccount().profile().profileImageUrl();
 

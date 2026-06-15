@@ -1,5 +1,6 @@
 package com.techfork.auth.security.oauth;
 
+import com.techfork.auth.infrastructure.kakao.KakaoSocialId;
 import com.techfork.useraccount.application.auth.UserAuthAccountService;
 import com.techfork.useraccount.application.auth.UserAuthProfile;
 import com.techfork.useraccount.domain.enums.SocialType;
@@ -27,10 +28,7 @@ public class CustomOidcUserService extends OidcUserService {
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
         SocialType socialType = SocialType.fromRegistrationId(registrationId);
 
-        String socialId = oidcUser.getAttribute("sub");
-        if (socialId == null) {
-            throw new OAuth2AuthenticationException("socialId(sub) not found");
-        }
+        String socialId = resolveSocialId(socialType, oidcUser);
         String email = oidcUser.getAttribute("email");
         if (email == null) {
             throw new OAuth2AuthenticationException("email not found");
@@ -48,5 +46,16 @@ public class CustomOidcUserService extends OidcUserService {
                 userAuthProfile.id(), email, socialType);
 
         return UserPrincipal.from(userAuthProfile);
+    }
+
+    private String resolveSocialId(SocialType socialType, OidcUser oidcUser) {
+        String subject = oidcUser.getAttribute("sub");
+        if (subject == null) {
+            throw new OAuth2AuthenticationException("socialId(sub) not found");
+        }
+        if (socialType == SocialType.KAKAO) {
+            return KakaoSocialId.fromOidcSubject(subject);
+        }
+        return subject;
     }
 }

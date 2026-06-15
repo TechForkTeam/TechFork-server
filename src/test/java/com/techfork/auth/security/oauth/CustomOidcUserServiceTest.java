@@ -82,21 +82,21 @@ class CustomOidcUserServiceTest {
         }
 
         @Test
-        @DisplayName("신규 Kakao OIDC 인증 프로필을 UserPrincipal로 반환한다")
+        @DisplayName("Kakao OIDC sub를 REST id와 같은 service user ID socialId로 사용한다")
         void loadUser_NewKakaoOidcUser_ReturnsPrincipal() {
-            String kakaoSocialId = "kakao-sub-456";
+            String kakaoServiceUserId = "12345";
             String kakaoEmail = "kakao-user@example.com";
             String kakaoProfileImage = "https://cdn.example.com/kakao-user.png";
             UserAuthProfile userAuthProfile = new UserAuthProfile(4L, Role.USER, UserStatus.PENDING, kakaoEmail, false);
             given(userAuthAccountService.getOrCreateSocialAuthProfile(
                     SocialType.KAKAO,
-                    kakaoSocialId,
+                    kakaoServiceUserId,
                     kakaoEmail,
                     kakaoProfileImage
             )).willReturn(userAuthProfile);
 
             OidcUser oidcUser = customOidcUserService.loadUser(
-                    userRequest("kakao", claims(kakaoSocialId, kakaoEmail, kakaoProfileImage))
+                    userRequest("kakao", claims(kakaoServiceUserId, kakaoEmail, kakaoProfileImage))
             );
 
             assertThat(oidcUser).isInstanceOf(UserPrincipal.class);
@@ -107,7 +107,7 @@ class CustomOidcUserServiceTest {
             assertThat(principal.getEmail()).isEqualTo(kakaoEmail);
             verify(userAuthAccountService).getOrCreateSocialAuthProfile(
                     SocialType.KAKAO,
-                    kakaoSocialId,
+                    kakaoServiceUserId,
                     kakaoEmail,
                     kakaoProfileImage
             );

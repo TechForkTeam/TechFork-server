@@ -60,23 +60,24 @@ class KakaoLoginCommandServiceTest {
     }
 
     @Test
-    @DisplayName("iOS 카카오 로그인 성공 - 신규 회원 가입")
+    @DisplayName("iOS 카카오 로그인 성공 - REST id를 Kakao service user ID socialId로 사용해 신규 회원 가입")
     void login_Success_NewUser() {
         // Given
         String kakaoAccessToken = "kakao.access.token";
-        String socialId = "12345";
+        Long kakaoRestUserId = 12345L;
+        String kakaoServiceUserId = "12345";
         String email = "newuser@kakao.com";
         String profileImageUrl = "https://example.com/profile.jpg";
         long refreshTokenExpiration = 900000L;
 
-        KakaoUserInfoResponse kakaoUserInfo = kakaoUserInfo(email, profileImageUrl);
+        KakaoUserInfoResponse kakaoUserInfo = kakaoUserInfo(kakaoRestUserId, email, profileImageUrl);
         UserAuthProfile newUserProfile = new UserAuthProfile(userId, Role.USER, UserStatus.PENDING, email, false);
         JwtDTO tokens = JwtDTO.of(newAccessToken, newRefreshToken);
 
         given(kakaoOAuthService.getUserInfo(kakaoAccessToken)).willReturn(kakaoUserInfo);
         given(userAuthAccountService.getOrCreateSocialAuthProfile(
                 SocialType.KAKAO,
-                socialId,
+                kakaoServiceUserId,
                 email,
                 profileImageUrl
         )).willReturn(newUserProfile);
@@ -94,7 +95,12 @@ class KakaoLoginCommandServiceTest {
         assertThat(result.isRegistered()).isFalse();
 
         verify(kakaoOAuthService).getUserInfo(kakaoAccessToken);
-        verify(userAuthAccountService).getOrCreateSocialAuthProfile(SocialType.KAKAO, socialId, email, profileImageUrl);
+        verify(userAuthAccountService).getOrCreateSocialAuthProfile(
+                SocialType.KAKAO,
+                kakaoServiceUserId,
+                email,
+                profileImageUrl
+        );
         verify(jwtUtil).generateTokens(userId, Role.USER);
         verify(refreshTokenService).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
     }
@@ -104,19 +110,20 @@ class KakaoLoginCommandServiceTest {
     void login_Success_ExistingUser() {
         // Given
         String kakaoAccessToken = "kakao.access.token";
-        String socialId = "12345";
+        Long kakaoRestUserId = 12345L;
+        String kakaoServiceUserId = "12345";
         String email = "existinguser@kakao.com";
         String profileImageUrl = "https://example.com/profile.jpg";
         long refreshTokenExpiration = 900000L;
 
-        KakaoUserInfoResponse kakaoUserInfo = kakaoUserInfo(email, profileImageUrl);
+        KakaoUserInfoResponse kakaoUserInfo = kakaoUserInfo(kakaoRestUserId, email, profileImageUrl);
         UserAuthProfile existingUserProfile = new UserAuthProfile(userId, Role.USER, UserStatus.ACTIVE, email, true);
         JwtDTO tokens = JwtDTO.of(newAccessToken, newRefreshToken);
 
         given(kakaoOAuthService.getUserInfo(kakaoAccessToken)).willReturn(kakaoUserInfo);
         given(userAuthAccountService.getOrCreateSocialAuthProfile(
                 SocialType.KAKAO,
-                socialId,
+                kakaoServiceUserId,
                 email,
                 profileImageUrl
         )).willReturn(existingUserProfile);
@@ -134,14 +141,19 @@ class KakaoLoginCommandServiceTest {
         assertThat(result.isRegistered()).isTrue();
 
         verify(kakaoOAuthService).getUserInfo(kakaoAccessToken);
-        verify(userAuthAccountService).getOrCreateSocialAuthProfile(SocialType.KAKAO, socialId, email, profileImageUrl);
+        verify(userAuthAccountService).getOrCreateSocialAuthProfile(
+                SocialType.KAKAO,
+                kakaoServiceUserId,
+                email,
+                profileImageUrl
+        );
         verify(jwtUtil).generateTokens(userId, Role.USER);
         verify(refreshTokenService).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
     }
 
-    private KakaoUserInfoResponse kakaoUserInfo(String email, String profileImageUrl) {
+    private KakaoUserInfoResponse kakaoUserInfo(Long kakaoRestUserId, String email, String profileImageUrl) {
         KakaoUserInfoResponse.Profile profile = new KakaoUserInfoResponse.Profile(profileImageUrl);
         KakaoUserInfoResponse.KakaoAccount kakaoAccount = new KakaoUserInfoResponse.KakaoAccount(email, profile);
-        return new KakaoUserInfoResponse(12345L, kakaoAccount);
+        return new KakaoUserInfoResponse(kakaoRestUserId, kakaoAccount);
     }
 }
