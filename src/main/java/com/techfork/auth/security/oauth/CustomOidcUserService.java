@@ -1,9 +1,7 @@
 package com.techfork.auth.security.oauth;
 
-import com.techfork.auth.infrastructure.kakao.KakaoSocialId;
 import com.techfork.useraccount.application.auth.UserAuthAccountService;
 import com.techfork.useraccount.application.auth.UserAuthProfile;
-import com.techfork.useraccount.domain.enums.SocialType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
@@ -19,43 +17,24 @@ import org.springframework.transaction.annotation.Transactional;
 public class CustomOidcUserService extends OidcUserService {
 
     private final UserAuthAccountService userAuthAccountService;
+    private final OidcSocialIdentityExtractor socialIdentityExtractor;
 
     @Override
     @Transactional
     public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
         OidcUser oidcUser = super.loadUser(userRequest);
-
-        String registrationId = userRequest.getClientRegistration().getRegistrationId();
-        SocialType socialType = SocialType.fromRegistrationId(registrationId);
-
-        String socialId = resolveSocialId(socialType, oidcUser);
-        String email = oidcUser.getAttribute("email");
-        if (email == null) {
-            throw new OAuth2AuthenticationException("email not found");
-        }
-        String profileImage = oidcUser.getAttribute("picture");
+        OidcSocialIdentity socialIdentity = socialIdentityExtractor.extract(userRequest, oidcUser);
 
         UserAuthProfile userAuthProfile = userAuthAccountService.getOrCreateSocialAuthProfile(
-                socialType,
-                socialId,
-                email,
-                profileImage
+                socialIdentity.socialType(),
+                socialIdentity.socialId(),
+                socialIdentity.email(),
+                socialIdentity.profileImage()
         );
 
         log.info("CustomOAuth2UserService - loaded user: id={}, email={}, socialType={}",
-                userAuthProfile.id(), email, socialType);
+                userAuthProfile.id(), socialIdentity.email(), socialIdentity.socialType());
 
         return UserPrincipal.from(userAuthProfile);
-    }
-
-    private String resolveSocialId(SocialType socialType, OidcUser oidcUser) {
-        String subject = oidcUser.getAttribute("sub");
-        if (subject == null) {
-            throw new OAuth2AuthenticationException("socialId(sub) not found");
-        }
-        if (socialType == SocialType.KAKAO) {
-            return KakaoSocialId.fromOidcSubject(subject);
-        }
-        return subject;
     }
 }

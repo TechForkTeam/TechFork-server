@@ -1,6 +1,5 @@
 package com.techfork.auth.security.handler.login;
 
-import com.techfork.auth.security.jwt.JwtProperties;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -9,7 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 
@@ -22,7 +20,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
-    private final JwtProperties jwtProperties;
+    private final OAuth2LoginRedirectUrlFactory redirectUrlFactory;
 
     @Override
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
@@ -30,11 +28,7 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
 
         log.error("OAuth2 login failed - Error: {}", exception.getMessage(), exception);
 
-        // 프론트엔드 에러 페이지로 리다이렉트 (에러 메시지 포함)
-        String targetUrl = UriComponentsBuilder.fromUriString(jwtProperties.getLoginFailureRedirectUri())
-                .queryParam("error", exception.getLocalizedMessage())
-                .build()
-                .toUriString();
+        String targetUrl = redirectUrlFactory.createFailureRedirectUrl();
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
