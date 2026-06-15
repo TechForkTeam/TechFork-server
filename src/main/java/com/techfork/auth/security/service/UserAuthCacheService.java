@@ -27,7 +27,11 @@ public class UserAuthCacheService {
         if (cached == null) {
             return null;
         }
-        return deserialize(cached);
+        UserAuthProfile userAuthProfile = deserializeAuthProfile(cached);
+        if (userAuthProfile == null) {
+            return null;
+        }
+        return UserPrincipal.from(userAuthProfile);
     }
 
     public void put(Long userId, UserAuthProfile userAuthProfile, long ttlMillis) {
@@ -54,17 +58,19 @@ public class UserAuthCacheService {
                 + DELIMITER + (userAuthProfile.email() != null ? userAuthProfile.email() : "");
     }
 
-    private UserPrincipal deserialize(String value) {
+    private UserAuthProfile deserializeAuthProfile(String value) {
         String[] parts = value.split("\\" + DELIMITER, FIELD_COUNT);
         if (parts.length != FIELD_COUNT) {
             log.warn("Invalid user auth cache format: {}", value);
             return null;
         }
-        return UserPrincipal.builder()
-                .id(Long.parseLong(parts[0]))
-                .role(Role.valueOf(parts[1]))
-                .status(UserStatus.valueOf(parts[2]))
-                .email(parts[3].isEmpty() ? null : parts[3])
-                .build();
+        UserStatus status = UserStatus.valueOf(parts[2]);
+        return new UserAuthProfile(
+                Long.parseLong(parts[0]),
+                Role.valueOf(parts[1]),
+                status,
+                parts[3].isEmpty() ? null : parts[3],
+                status == UserStatus.ACTIVE
+        );
     }
 }
