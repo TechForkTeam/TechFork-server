@@ -1,6 +1,5 @@
 package com.techfork.auth.security.handler.login;
 
-import com.techfork.useraccount.domain.enums.UserStatus;
 import com.techfork.auth.security.service.RefreshTokenService;
 import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtProperties;
@@ -16,10 +15,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriUtils;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Component
@@ -29,6 +26,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final JwtUtil jwtUtil;
     private final JwtProperties jwtProperties;
     private final RefreshTokenService refreshTokenService;
+    private final OAuth2LoginRedirectUrlFactory redirectUrlFactory;
 
     @Value("${server.domain}")
     private String domain;
@@ -45,13 +43,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         log.info("OAuth2 login success - userId: {}, role: {}, status: {}, email: {}",
                 userPrincipal.getId(), userPrincipal.getRole(), userPrincipal.getStatus(), userPrincipal.getEmail());
 
-        // 온보딩 완료 여부에 따라 리다이렉트
-        boolean isRegistered = userPrincipal.getStatus() == UserStatus.ACTIVE;
-        String email = userPrincipal.getEmail() != null ?
-                UriUtils.encode(userPrincipal.getEmail(), StandardCharsets.UTF_8) : "";
-
-        String targetUrl = String.format(jwtProperties.getRedirectUri(),
-                isRegistered, tokens.accessToken(), email);
+        String targetUrl = redirectUrlFactory.createSuccessRedirectUrl(userPrincipal, tokens.accessToken());
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
@@ -61,4 +53,3 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         CookieUtil.addRefreshTokenCookie(response, domain, refreshToken, expiration);
     }
 }
-
