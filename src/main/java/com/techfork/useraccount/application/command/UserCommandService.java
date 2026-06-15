@@ -5,7 +5,7 @@ import com.techfork.useraccount.application.command.input.UpdateAccountProfileCo
 import com.techfork.useraccount.application.command.input.WithdrawUserCommand;
 import com.techfork.useraccount.application.event.OnboardingCompletedEvent;
 import com.techfork.useraccount.application.event.UserWithdrawnEvent;
-import com.techfork.useraccount.application.reader.UserReader;
+import com.techfork.useraccount.application.reader.UserAggregateReader;
 import com.techfork.useraccount.domain.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,11 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserCommandService {
 
     private final InterestCommandService interestCommandService;
-    private final UserReader userReader;
+    private final UserAggregateReader userAggregateReader;
     private final ApplicationEventPublisher eventPublisher;
 
     public void completeOnboarding(CompleteOnboardingCommand command) {
-        User user = userReader.getByIdWithInterestCategories(command.userId());
+        User user = userAggregateReader.getByIdWithInterestCategories(command.userId());
 
         user.updateUser(command.nickname(), command.email(), command.description());
         interestCommandService.saveUserInterests(user, command.interests());
@@ -33,7 +33,7 @@ public class UserCommandService {
     }
 
     public void updateAccountProfile(UpdateAccountProfileCommand command) {
-        User user = userReader.getById(command.userId());
+        User user = userAggregateReader.getById(command.userId());
 
         user.updateProfile(command.nickName(), command.description());
 
@@ -44,7 +44,7 @@ public class UserCommandService {
     }
 
     public void withdrawUser(WithdrawUserCommand command) {
-        User user = userReader.getById(command.userId());
+        User user = userAggregateReader.getById(command.userId());
 
         user.withdraw();
         eventPublisher.publishEvent(new UserWithdrawnEvent(command.userId()));

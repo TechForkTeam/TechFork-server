@@ -1,10 +1,10 @@
 package com.techfork.auth.security.service;
 
-import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.enums.Role;
-import com.techfork.useraccount.domain.enums.SocialType;
-import com.techfork.useraccount.domain.enums.UserStatus;
 import com.techfork.auth.security.oauth.UserPrincipal;
+import com.techfork.useraccount.application.auth.UserAuthProfile;
+import com.techfork.useraccount.domain.enums.Role;
+import com.techfork.useraccount.domain.enums.UserStatus;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,9 +13,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -103,33 +100,42 @@ class UserAuthCacheServiceTest {
     // ===== put 테스트 =====
 
     @Test
-    @DisplayName("put - email이 있는 유저 직렬화 후 저장")
-    void put_WithEmail_SerializesAndSaves() {
+    @DisplayName("put - 인증 프로필 직렬화 후 저장")
+    void put_WithAuthProfile_SerializesAndSaves() {
         // Given
-        User user = User.createSocialUser(SocialType.KAKAO, "socialId", "test@example.com", null);
-        ReflectionTestUtils.setField(user, "id", USER_ID);
-        ReflectionTestUtils.setField(user, "status", UserStatus.ACTIVE);
+        UserAuthProfile userAuthProfile = new UserAuthProfile(
+                USER_ID,
+                Role.ADMIN,
+                UserStatus.ACTIVE,
+                "admin@example.com",
+                true
+        );
 
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
 
         // When
-        userAuthCacheService.put(USER_ID, user, 180000L);
+        userAuthCacheService.put(USER_ID, userAuthProfile, 180000L);
 
         // Then
-        verify(valueOperations).set(CACHE_KEY, "1|USER|ACTIVE|test@example.com", 180000L, TimeUnit.MILLISECONDS);
+        verify(valueOperations).set(CACHE_KEY, "1|ADMIN|ACTIVE|admin@example.com", 180000L, TimeUnit.MILLISECONDS);
     }
 
     @Test
-    @DisplayName("put - email이 null인 유저 직렬화 후 저장")
+    @DisplayName("put - email이 null인 인증 프로필은 빈 email로 저장")
     void put_WithNullEmail_SerializesEmptyEmail() {
         // Given
-        User user = User.createSocialUser(SocialType.KAKAO, "socialId", null, null);
-        ReflectionTestUtils.setField(user, "id", USER_ID);
+        UserAuthProfile userAuthProfile = new UserAuthProfile(
+                USER_ID,
+                Role.USER,
+                UserStatus.PENDING,
+                null,
+                false
+        );
 
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
 
         // When
-        userAuthCacheService.put(USER_ID, user, 180000L);
+        userAuthCacheService.put(USER_ID, userAuthProfile, 180000L);
 
         // Then
         verify(valueOperations).set(CACHE_KEY, "1|USER|PENDING|", 180000L, TimeUnit.MILLISECONDS);

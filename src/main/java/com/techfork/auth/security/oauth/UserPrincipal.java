@@ -1,8 +1,11 @@
 package com.techfork.auth.security.oauth;
 
-import com.techfork.useraccount.domain.User;
+import com.techfork.useraccount.application.auth.UserAuthProfile;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.UserStatus;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
@@ -11,10 +14,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
 
 /**
  * Spring Security 인증 주체 (Principal)
@@ -27,7 +26,6 @@ import java.util.Map;
  * - role: 권한 (ADMIN, USER)
  * - status: 계정 상태 (PENDING, ACTIVE)
  * - email: 사용자 이메일
- * - profileImage: 프로필 이미지 URL
  * - attributes: OAuth2 로그인용 속성 (일반 JWT에서는 null)
  */
 @Getter
@@ -107,12 +105,12 @@ public class UserPrincipal implements UserDetails, OidcUser {
         return null;
     }
 
-    public static UserPrincipal buildUserPrincipal(User user) {
+    public static UserPrincipal from(UserAuthProfile userAuthProfile) {
         return UserPrincipal.builder()
-                .id(user.getId())
-                .role(user.getRole())
-                .status(user.getStatus())
-                .email(user.getEmail())
+                .id(userAuthProfile.id())
+                .role(userAuthProfile.role())
+                .status(userAuthProfile.status())
+                .email(userAuthProfile.email())
                 .build();
     }
 }

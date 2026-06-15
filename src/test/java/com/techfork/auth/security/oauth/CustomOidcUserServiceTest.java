@@ -1,16 +1,19 @@
 package com.techfork.auth.security.oauth;
 
-import com.techfork.useraccount.domain.User;
+import com.techfork.useraccount.application.auth.UserAuthAccountService;
+import com.techfork.useraccount.application.auth.UserAuthProfile;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.enums.UserStatus;
-import com.techfork.useraccount.infrastructure.UserRepository;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
@@ -21,13 +24,6 @@ import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -44,13 +40,13 @@ class CustomOidcUserServiceTest {
     private static final String PROFILE_IMAGE = "https://cdn.example.com/apple-user.png";
 
     @Mock
-    private UserRepository userRepository;
+    private UserAuthAccountService userAuthAccountService;
 
     private CustomOidcUserService customOidcUserService;
 
     @BeforeEach
     void setUp() {
-        customOidcUserService = new CustomOidcUserService(userRepository);
+        customOidcUserService = new CustomOidcUserService(userAuthAccountService);
         customOidcUserService.setRetrieveUserInfo(request -> false);
     }
 
@@ -59,15 +55,15 @@ class CustomOidcUserServiceTest {
     class Success {
 
         @Test
-        @DisplayName("신규 Apple 사용자를 생성하고 UserPrincipal을 반환한다")
-        void loadUser_NewAppleUser_CreatesUserAndReturnsPrincipal() {
-            given(userRepository.findBySocialTypeAndSocialId(SocialType.APPLE, SOCIAL_ID))
-                    .willReturn(Optional.empty());
-            given(userRepository.save(any(User.class))).willAnswer(invocation -> {
-                User savedUser = invocation.getArgument(0);
-                ReflectionTestUtils.setField(savedUser, "id", 1L);
-                return savedUser;
-            });
+        @DisplayName("신규 Apple 인증 프로필을 UserPrincipal로 반환한다")
+        void loadUser_NewAppleUser_ReturnsPrincipal() {
+            UserAuthProfile userAuthProfile = new UserAuthProfile(1L, Role.USER, UserStatus.PENDING, EMAIL, false);
+            given(userAuthAccountService.getOrCreateSocialAuthProfile(
+                    SocialType.APPLE,
+                    SOCIAL_ID,
+                    EMAIL,
+                    PROFILE_IMAGE
+            )).willReturn(userAuthProfile);
 
             OidcUser oidcUser = customOidcUserService.loadUser(userRequest(claims(SOCIAL_ID, EMAIL, PROFILE_IMAGE)));
 
@@ -77,32 +73,30 @@ class CustomOidcUserServiceTest {
             assertThat(principal.getRole()).isEqualTo(Role.USER);
             assertThat(principal.getStatus()).isEqualTo(UserStatus.PENDING);
             assertThat(principal.getEmail()).isEqualTo(EMAIL);
-
-            ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-            verify(userRepository).save(userCaptor.capture());
-            User savedUser = userCaptor.getValue();
-            assertThat(savedUser.getSocialType()).isEqualTo(SocialType.APPLE);
-            assertThat(savedUser.getSocialId()).isEqualTo(SOCIAL_ID);
-            assertThat(savedUser.getEmail()).isEqualTo(EMAIL);
-            assertThat(savedUser.getProfileImage()).isEqualTo(PROFILE_IMAGE);
+            verify(userAuthAccountService).getOrCreateSocialAuthProfile(
+                    SocialType.APPLE,
+                    SOCIAL_ID,
+                    EMAIL,
+                    PROFILE_IMAGE
+            );
         }
 
         @Test
-        @DisplayName("신규 Kakao OIDC 사용자를 생성하고 UserPrincipal을 반환한다")
-        void loadUser_NewKakaoOidcUser_CreatesKakaoUserAndReturnsPrincipal() {
-            String kakaoSocialId = "kakao-sub-456";
+        @DisplayName("Kakao OIDC sub를 REST id와 같은 service user ID socialId로 사용한다")
+        void loadUser_NewKakaoOidcUser_ReturnsPrincipal() {
+            String kakaoServiceUserId = "12345";
             String kakaoEmail = "kakao-user@example.com";
             String kakaoProfileImage = "https://cdn.example.com/kakao-user.png";
-            given(userRepository.findBySocialTypeAndSocialId(SocialType.KAKAO, kakaoSocialId))
-                    .willReturn(Optional.empty());
-            given(userRepository.save(any(User.class))).willAnswer(invocation -> {
-                User savedUser = invocation.getArgument(0);
-                ReflectionTestUtils.setField(savedUser, "id", 4L);
-                return savedUser;
-            });
+            UserAuthProfile userAuthProfile = new UserAuthProfile(4L, Role.USER, UserStatus.PENDING, kakaoEmail, false);
+            given(userAuthAccountService.getOrCreateSocialAuthProfile(
+                    SocialType.KAKAO,
+                    kakaoServiceUserId,
+                    kakaoEmail,
+                    kakaoProfileImage
+            )).willReturn(userAuthProfile);
 
             OidcUser oidcUser = customOidcUserService.loadUser(
-                    userRequest("kakao", claims(kakaoSocialId, kakaoEmail, kakaoProfileImage))
+                    userRequest("kakao", claims(kakaoServiceUserId, kakaoEmail, kakaoProfileImage))
             );
 
             assertThat(oidcUser).isInstanceOf(UserPrincipal.class);
@@ -111,23 +105,24 @@ class CustomOidcUserServiceTest {
             assertThat(principal.getRole()).isEqualTo(Role.USER);
             assertThat(principal.getStatus()).isEqualTo(UserStatus.PENDING);
             assertThat(principal.getEmail()).isEqualTo(kakaoEmail);
-
-            ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-            verify(userRepository).save(userCaptor.capture());
-            User savedUser = userCaptor.getValue();
-            assertThat(savedUser.getSocialType()).isEqualTo(SocialType.KAKAO);
-            assertThat(savedUser.getSocialId()).isEqualTo(kakaoSocialId);
-            assertThat(savedUser.getEmail()).isEqualTo(kakaoEmail);
-            assertThat(savedUser.getProfileImage()).isEqualTo(kakaoProfileImage);
+            verify(userAuthAccountService).getOrCreateSocialAuthProfile(
+                    SocialType.KAKAO,
+                    kakaoServiceUserId,
+                    kakaoEmail,
+                    kakaoProfileImage
+            );
         }
 
         @Test
-        @DisplayName("기존 Apple 사용자를 재사용하고 새 사용자를 저장하지 않는다")
-        void loadUser_ExistingAppleUser_ReusesUserWithoutSaving() {
-            User existingUser = appleUser(2L, EMAIL, PROFILE_IMAGE);
-            existingUser.updateUser("기존사용자", EMAIL, "온보딩 완료 사용자");
-            given(userRepository.findBySocialTypeAndSocialId(SocialType.APPLE, SOCIAL_ID))
-                    .willReturn(Optional.of(existingUser));
+        @DisplayName("기존 Apple 인증 프로필을 UserPrincipal로 반환한다")
+        void loadUser_ExistingAppleUser_ReturnsPrincipal() {
+            UserAuthProfile existingUserProfile = new UserAuthProfile(2L, Role.USER, UserStatus.ACTIVE, EMAIL, true);
+            given(userAuthAccountService.getOrCreateSocialAuthProfile(
+                    SocialType.APPLE,
+                    SOCIAL_ID,
+                    EMAIL,
+                    PROFILE_IMAGE
+            )).willReturn(existingUserProfile);
 
             OidcUser oidcUser = customOidcUserService.loadUser(userRequest(claims(SOCIAL_ID, EMAIL, PROFILE_IMAGE)));
 
@@ -135,17 +130,24 @@ class CustomOidcUserServiceTest {
             assertThat(principal.getId()).isEqualTo(2L);
             assertThat(principal.getStatus()).isEqualTo(UserStatus.ACTIVE);
             assertThat(principal.getEmail()).isEqualTo(EMAIL);
-            verify(userRepository, never()).save(any(User.class));
+            verify(userAuthAccountService).getOrCreateSocialAuthProfile(
+                    SocialType.APPLE,
+                    SOCIAL_ID,
+                    EMAIL,
+                    PROFILE_IMAGE
+            );
         }
 
         @Test
-        @DisplayName("탈퇴 Apple 사용자를 재활성화하고 PENDING principal을 반환한다")
-        void loadUser_WithdrawnAppleUser_ReactivatesUserAndReturnsPendingPrincipal() {
-            User withdrawnUser = appleUser(3L, "old@example.com", "https://cdn.example.com/old.png");
-            withdrawnUser.updateUser("탈퇴사용자", "old@example.com", "탈퇴 전 설명");
-            withdrawnUser.withdraw();
-            given(userRepository.findBySocialTypeAndSocialId(SocialType.APPLE, SOCIAL_ID))
-                    .willReturn(Optional.of(withdrawnUser));
+        @DisplayName("탈퇴 Apple 사용자의 재활성화된 PENDING 인증 프로필을 UserPrincipal로 반환한다")
+        void loadUser_WithdrawnAppleUser_ReturnsReactivatedPendingPrincipal() {
+            UserAuthProfile reactivatedUserProfile = new UserAuthProfile(3L, Role.USER, UserStatus.PENDING, EMAIL, false);
+            given(userAuthAccountService.getOrCreateSocialAuthProfile(
+                    SocialType.APPLE,
+                    SOCIAL_ID,
+                    EMAIL,
+                    PROFILE_IMAGE
+            )).willReturn(reactivatedUserProfile);
 
             OidcUser oidcUser = customOidcUserService.loadUser(userRequest(claims(SOCIAL_ID, EMAIL, PROFILE_IMAGE)));
 
@@ -153,10 +155,12 @@ class CustomOidcUserServiceTest {
             assertThat(principal.getId()).isEqualTo(3L);
             assertThat(principal.getStatus()).isEqualTo(UserStatus.PENDING);
             assertThat(principal.getEmail()).isEqualTo(EMAIL);
-            assertThat(withdrawnUser.getEmail()).isEqualTo(EMAIL);
-            assertThat(withdrawnUser.getProfileImage()).isEqualTo(PROFILE_IMAGE);
-            assertThat(withdrawnUser.getStatus()).isEqualTo(UserStatus.PENDING);
-            verify(userRepository, never()).save(any(User.class));
+            verify(userAuthAccountService).getOrCreateSocialAuthProfile(
+                    SocialType.APPLE,
+                    SOCIAL_ID,
+                    EMAIL,
+                    PROFILE_IMAGE
+            );
         }
     }
 
@@ -173,12 +177,11 @@ class CustomOidcUserServiceTest {
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("sub");
 
-            verify(userRepository, never()).findBySocialTypeAndSocialId(any(), any());
-            verify(userRepository, never()).save(any(User.class));
+            verify(userAuthAccountService, never()).getOrCreateSocialAuthProfile(any(), any(), any(), any());
         }
 
         @Test
-        @DisplayName("email 클레임이 없으면 예외를 던지고 사용자를 저장하지 않는다")
+        @DisplayName("email 클레임이 없으면 예외를 던지고 인증 프로필을 조회하지 않는다")
         void loadUser_MissingEmail_ThrowsOAuth2AuthenticationException() {
             Map<String, Object> claims = claims(SOCIAL_ID, null, PROFILE_IMAGE);
 
@@ -188,15 +191,8 @@ class CustomOidcUserServiceTest {
                             .getError()
                             .getErrorCode()).isEqualTo("email not found"));
 
-            verify(userRepository, never()).findBySocialTypeAndSocialId(any(), any());
-            verify(userRepository, never()).save(any(User.class));
+            verify(userAuthAccountService, never()).getOrCreateSocialAuthProfile(any(), any(), any(), any());
         }
-    }
-
-    private User appleUser(Long id, String email, String profileImage) {
-        User user = User.createSocialUser(SocialType.APPLE, SOCIAL_ID, email, profileImage);
-        ReflectionTestUtils.setField(user, "id", id);
-        return user;
     }
 
     private OidcUserRequest userRequest(Map<String, Object> claims) {

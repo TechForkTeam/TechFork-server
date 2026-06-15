@@ -20,13 +20,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class UserReaderTest {
+class UserAggregateReaderTest {
 
     @Mock
     private UserRepository userRepository;
 
     @InjectMocks
-    private UserReader userReader;
+    private UserAggregateReader userAggregateReader;
 
     @Test
     @DisplayName("ID로 사용자를 조회한다")
@@ -35,7 +35,7 @@ class UserReaderTest {
         User user = mock(User.class);
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
 
-        User result = userReader.getById(userId);
+        User result = userAggregateReader.getById(userId);
 
         assertThat(result).isSameAs(user);
         verify(userRepository).findById(userId);
@@ -47,7 +47,7 @@ class UserReaderTest {
         Long userId = 999L;
         given(userRepository.findById(userId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> userReader.getById(userId))
+        assertThatThrownBy(() -> userAggregateReader.getById(userId))
                 .isInstanceOf(GeneralException.class)
                 .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
         verify(userRepository).findById(userId);
@@ -60,7 +60,7 @@ class UserReaderTest {
         User user = mock(User.class);
         given(userRepository.findByIdWithInterestCategories(userId)).willReturn(Optional.of(user));
 
-        User result = userReader.getByIdWithInterestCategories(userId);
+        User result = userAggregateReader.getByIdWithInterestCategories(userId);
 
         assertThat(result).isSameAs(user);
         verify(userRepository).findByIdWithInterestCategories(userId);
@@ -72,7 +72,7 @@ class UserReaderTest {
         Long userId = 999L;
         given(userRepository.findByIdWithInterestCategories(userId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> userReader.getByIdWithInterestCategories(userId))
+        assertThatThrownBy(() -> userAggregateReader.getByIdWithInterestCategories(userId))
                 .isInstanceOf(GeneralException.class)
                 .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
         verify(userRepository).findByIdWithInterestCategories(userId);

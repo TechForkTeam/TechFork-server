@@ -9,8 +9,10 @@ import com.techfork.useraccount.application.command.input.CompleteOnboardingComm
 import com.techfork.useraccount.application.command.input.UpdateUserInterestsCommand;
 import com.techfork.useraccount.application.command.input.UserInterestCommand;
 import com.techfork.useraccount.application.command.input.WithdrawUserCommand;
+import com.techfork.useraccount.application.auth.UserAuthAccountService;
 import com.techfork.useraccount.application.event.OnboardingCompletedEvent;
 import com.techfork.useraccount.application.event.UserInterestsChangedEvent;
+import com.techfork.useraccount.application.event.UserReactivatedEvent;
 import com.techfork.useraccount.application.event.UserWithdrawnEvent;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.SocialType;
@@ -38,6 +40,9 @@ class UserAccountAfterCommitEventIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private UserCommandService userCommandService;
+
+    @Autowired
+    private UserAuthAccountService userAuthAccountService;
 
     @Autowired
     private InterestCommandService interestCommandService;
@@ -107,6 +112,22 @@ class UserAccountAfterCommitEventIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    @DisplayName("회원 재활성화 이벤트는 실제 트랜잭션 커밋 이후 인증 캐시 무효화만 실행한다")
+    void reactivateUser_AfterCommit_EvictsAuthCacheOnly() {
+        User user = saveWithdrawnUser();
+
+        userAuthAccountService.getOrCreateSocialAuthProfile(
+                user.getSocialType(),
+                user.getSocialId(),
+                "reactivated@example.com",
+                "https://cdn.example.com/reactivated.png"
+        );
+
+        verify(userAuthCacheService).evict(user.getId());
+        verifyNoInteractions(personalizationProfileService);
+    }
+
+    @Test
     @DisplayName("회원 탈퇴 커밋 직전 인증 캐시 무효화에 실패하면 탈퇴 트랜잭션을 롤백한다")
     void withdrawUser_BeforeCommitCacheEvictionFails_RollsBackWithdrawal() {
         User user = saveActiveUser();
@@ -131,6 +152,7 @@ class UserAccountAfterCommitEventIntegrationTest extends IntegrationTestBase {
         transactionTemplate.executeWithoutResult(status -> {
             eventPublisher.publishEvent(new OnboardingCompletedEvent(userId));
             eventPublisher.publishEvent(new UserInterestsChangedEvent(userId));
+            eventPublisher.publishEvent(new UserReactivatedEvent(userId));
             eventPublisher.publishEvent(new UserWithdrawnEvent(userId));
             status.setRollbackOnly();
         });
@@ -147,6 +169,12 @@ class UserAccountAfterCommitEventIntegrationTest extends IntegrationTestBase {
         User user = User.createSocialUser(SocialType.KAKAO, uniqueSocialId(), "active@example.com", null);
         user.updateUser("테스트유저", "active@example.com", "백엔드 개발자입니다");
         return userRepository.save(user);
+    }
+
+    private User saveWithdrawnUser() {
+        User user = saveActiveUser();
+        user.withdraw();
+        return userRepository.saveAndFlush(user);
     }
 
     private UserInterestCommand backendInterest() {
