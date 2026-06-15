@@ -18,6 +18,7 @@ import java.io.IOException;
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final OAuth2LoginTokenIssuer tokenIssuer;
+    private final OAuth2LoginRefreshTokenWriter refreshTokenWriter;
     private final OAuth2LoginRedirectUrlFactory redirectUrlFactory;
 
     @Override
@@ -25,12 +26,13 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                                         Authentication authentication) throws IOException, ServletException {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
 
-        String accessToken = tokenIssuer.issueAccessToken(userPrincipal, response);
+        OAuth2LoginTokens tokens = tokenIssuer.issue(userPrincipal);
+        refreshTokenWriter.write(userPrincipal.getId(), tokens, response);
 
         log.info("OAuth2 login success - userId: {}, role: {}, status: {}, email: {}",
                 userPrincipal.getId(), userPrincipal.getRole(), userPrincipal.getStatus(), userPrincipal.getEmail());
 
-        String targetUrl = redirectUrlFactory.createSuccessRedirectUrl(userPrincipal, accessToken);
+        String targetUrl = redirectUrlFactory.createSuccessRedirectUrl(userPrincipal, tokens.accessToken());
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
