@@ -4,7 +4,6 @@ import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.oauth.UserPrincipal;
 import com.techfork.useraccount.domain.enums.UserStatus;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriUtils;
@@ -14,6 +13,8 @@ import java.nio.charset.StandardCharsets;
 @Component
 @RequiredArgsConstructor
 public class OAuth2LoginRedirectUrlFactory {
+
+    private static final String PUBLIC_FAILURE_ERROR_CODE = "oauth_failed";
 
     private final JwtProperties jwtProperties;
 
@@ -25,9 +26,9 @@ public class OAuth2LoginRedirectUrlFactory {
         return String.format(jwtProperties.getRedirectUri(), isRegistered, accessToken, email);
     }
 
-    public String createFailureRedirectUrl(AuthenticationException exception) {
+    public String createFailureRedirectUrl() {
         return UriComponentsBuilder.fromUriString(jwtProperties.getLoginFailureRedirectUri())
-                .queryParam("error", exception.getLocalizedMessage())
+                .queryParam("errorCode", PUBLIC_FAILURE_ERROR_CODE)
                 .build()
                 .toUriString();
     }

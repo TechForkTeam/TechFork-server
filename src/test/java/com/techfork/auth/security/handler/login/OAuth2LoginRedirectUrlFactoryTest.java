@@ -8,7 +8,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.util.UriUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -87,13 +86,11 @@ class OAuth2LoginRedirectUrlFactoryTest {
     class CreateFailureRedirectUrl {
 
         @Test
-        @DisplayName("실패 리다이렉트 URI에 에러 메시지를 query parameter로 추가한다")
-        void appendsErrorQueryParameter() {
-            String redirectUrl = redirectUrlFactory.createFailureRedirectUrl(
-                    new BadCredentialsException("oauth_failed")
-            );
+        @DisplayName("실패 리다이렉트 URI에 공개 에러 코드를 query parameter로 추가한다")
+        void appendsPublicErrorCodeQueryParameter() {
+            String redirectUrl = redirectUrlFactory.createFailureRedirectUrl();
 
-            assertThat(redirectUrl).isEqualTo(LOGIN_FAILURE_REDIRECT_URI + "&error=oauth_failed");
+            assertThat(redirectUrl).isEqualTo(LOGIN_FAILURE_REDIRECT_URI + "&errorCode=oauth_failed");
         }
     }
 

@@ -28,7 +28,7 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
 
         log.error("OAuth2 login failed - Error: {}", exception.getMessage(), exception);
 
-        String targetUrl = redirectUrlFactory.createFailureRedirectUrl(exception);
+        String targetUrl = redirectUrlFactory.createFailureRedirectUrl();
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }

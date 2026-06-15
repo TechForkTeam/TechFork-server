@@ -17,7 +17,7 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 class OAuth2AuthenticationFailureHandlerTest {
 
-    private static final String TARGET_URL = "http://localhost:5173/login?error=true&error=oauth_failed";
+    private static final String TARGET_URL = "http://localhost:5173/login?error=true&errorCode=oauth_failed";
 
     @Mock
     private OAuth2LoginRedirectUrlFactory redirectUrlFactory;
@@ -34,7 +34,7 @@ class OAuth2AuthenticationFailureHandlerTest {
     void onAuthenticationFailure_RedirectsToFactoryUrl() throws Exception {
         MockHttpServletResponse response = new MockHttpServletResponse();
         BadCredentialsException exception = new BadCredentialsException("oauth_failed");
-        given(redirectUrlFactory.createFailureRedirectUrl(exception)).willReturn(TARGET_URL);
+        given(redirectUrlFactory.createFailureRedirectUrl()).willReturn(TARGET_URL);
 
         failureHandler.onAuthenticationFailure(
                 new MockHttpServletRequest(),
@@ -42,7 +42,7 @@ class OAuth2AuthenticationFailureHandlerTest {
                 exception
         );
 
-        verify(redirectUrlFactory).createFailureRedirectUrl(exception);
+        verify(redirectUrlFactory).createFailureRedirectUrl();
         assertThat(response.getRedirectedUrl()).isEqualTo(TARGET_URL);
     }
 }
