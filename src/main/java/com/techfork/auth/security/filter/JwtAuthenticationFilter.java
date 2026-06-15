@@ -1,21 +1,22 @@
 package com.techfork.auth.security.filter;
 
 import com.techfork.auth.domain.exception.AuthErrorCode;
-import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.enums.UserStatus;
-import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.auth.security.AuthSecurityConstants;
-import com.techfork.global.constant.MdcKey;
-import com.techfork.global.exception.GeneralException;
-import com.techfork.auth.security.service.UserAuthCacheService;
 import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.jwt.JwtUtil;
 import com.techfork.auth.security.oauth.UserPrincipal;
+import com.techfork.auth.security.service.UserAuthCacheService;
 import com.techfork.auth.security.util.HeaderUtil;
+import com.techfork.global.constant.MdcKey;
+import com.techfork.global.exception.GeneralException;
+import com.techfork.useraccount.application.auth.UserAuthAccountService;
+import com.techfork.useraccount.application.auth.UserAuthProfile;
+import com.techfork.useraccount.domain.enums.UserStatus;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -25,8 +26,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
-import java.io.IOException;
 
 import static com.techfork.auth.security.jwt.JwtConstants.TOKEN_TYPE_ACCESS;
 
@@ -42,7 +41,7 @@ import static com.techfork.auth.security.jwt.JwtConstants.TOKEN_TYPE_ACCESS;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
+    private final UserAuthAccountService userAuthAccountService;
     private final UserAuthCacheService userAuthCacheService;
     private final JwtProperties jwtProperties;
 
@@ -62,16 +61,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UserPrincipal userPrincipal = userAuthCacheService.get(userId);
 
                 if (userPrincipal == null) {
-                    User user = userRepository.findById(userId)
+                    UserAuthProfile userAuthProfile = userAuthAccountService.findAuthProfileById(userId)
                             .orElseThrow(() -> new GeneralException(AuthErrorCode.USER_NOT_FOUND));
 
-                    userPrincipal = UserPrincipal.buildUserPrincipal(user);
+                    userPrincipal = UserPrincipal.from(userAuthProfile);
 
                     if (userPrincipal.getStatus() == UserStatus.WITHDRAWN) {
                         throw new GeneralException(AuthErrorCode.WITHDRAWN_USER);
                     }
 
-                    userAuthCacheService.put(userId, user, jwtProperties.getAccessTokenExpiration());
+                    userAuthCacheService.put(userId, userAuthProfile, jwtProperties.getAccessTokenExpiration());
                 } else if (userPrincipal.getStatus() == UserStatus.WITHDRAWN) {
                     throw new GeneralException(AuthErrorCode.WITHDRAWN_USER);
                 }

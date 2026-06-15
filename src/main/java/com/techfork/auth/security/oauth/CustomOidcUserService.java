@@ -1,8 +1,8 @@
 package com.techfork.auth.security.oauth;
 
-import com.techfork.useraccount.domain.User;
+import com.techfork.useraccount.application.auth.UserAuthAccountService;
+import com.techfork.useraccount.application.auth.UserAuthProfile;
 import com.techfork.useraccount.domain.enums.SocialType;
-import com.techfork.useraccount.infrastructure.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CustomOidcUserService extends OidcUserService {
 
-    private final UserRepository userRepository;
+    private final UserAuthAccountService userAuthAccountService;
 
     @Override
     @Transactional
@@ -37,30 +37,16 @@ public class CustomOidcUserService extends OidcUserService {
         }
         String profileImage = oidcUser.getAttribute("picture");
 
-        User user = getOrCreateUser(socialType, socialId, email, profileImage);
+        UserAuthProfile userAuthProfile = userAuthAccountService.getOrCreateReactivatedSocialAuthProfile(
+                socialType,
+                socialId,
+                email,
+                profileImage
+        );
 
         log.info("CustomOAuth2UserService - loaded user: id={}, email={}, socialType={}",
-                user.getId(), email, socialType);
+                userAuthProfile.id(), email, socialType);
 
-        return UserPrincipal.buildUserPrincipal(user);
-    }
-
-    private User getOrCreateUser(SocialType socialType, String socialId, String email, String profileImage) {
-        return userRepository.findBySocialTypeAndSocialId(socialType, socialId)
-                .map(user -> {
-                    if (user.isWithdrawn()) {
-                        log.info("Withdrawn user re-registering - userId: {}, email: {}", user.getId(), email);
-                        user.reactivate(email, profileImage);
-                        return user;
-                    }
-                    return user;
-                })
-                .orElseGet(() -> {
-                    User newUser = User.createSocialUser(socialType, socialId, email, profileImage);
-                    User savedUser = userRepository.save(newUser);
-                    log.info("New user created - id: {}, socialType: {}, socialId: {}, email: {}, profileImage: {}",
-                            savedUser.getId(), socialType, socialId, email, profileImage);
-                    return savedUser;
-                });
+        return UserPrincipal.from(userAuthProfile);
     }
 }

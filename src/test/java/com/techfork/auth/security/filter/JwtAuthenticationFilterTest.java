@@ -2,19 +2,19 @@ package com.techfork.auth.security.filter;
 
 import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.auth.security.AuthSecurityConstants;
-import com.techfork.global.exception.GeneralException;
-import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.enums.Role;
-import com.techfork.useraccount.domain.enums.SocialType;
-import com.techfork.useraccount.domain.enums.UserStatus;
-import com.techfork.useraccount.infrastructure.UserRepository;
-import com.techfork.auth.security.service.UserAuthCacheService;
 import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.jwt.JwtUtil;
 import com.techfork.auth.security.oauth.UserPrincipal;
+import com.techfork.auth.security.service.UserAuthCacheService;
+import com.techfork.global.exception.GeneralException;
+import com.techfork.useraccount.application.auth.UserAuthAccountService;
+import com.techfork.useraccount.application.auth.UserAuthProfile;
+import com.techfork.useraccount.domain.enums.Role;
+import com.techfork.useraccount.domain.enums.UserStatus;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -26,13 +26,20 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.Optional;
 
 import static com.techfork.auth.security.jwt.JwtConstants.TOKEN_TYPE_ACCESS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.*;
+import static org.mockito.BDDMockito.any;
+import static org.mockito.BDDMockito.anyLong;
+import static org.mockito.BDDMockito.anyString;
+import static org.mockito.BDDMockito.argThat;
+import static org.mockito.BDDMockito.doThrow;
+import static org.mockito.BDDMockito.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.never;
+import static org.mockito.BDDMockito.verify;
+import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.BDDMockito.willThrow;
 
 @ExtendWith(MockitoExtension.class)
 class JwtAuthenticationFilterTest {
@@ -41,7 +48,7 @@ class JwtAuthenticationFilterTest {
     private JwtUtil jwtUtil;
 
     @Mock
-    private UserRepository userRepository;
+    private UserAuthAccountService userAuthAccountService;
 
     @Mock
     private UserAuthCacheService userAuthCacheService;
@@ -61,7 +68,7 @@ class JwtAuthenticationFilterTest {
     @InjectMocks
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    private User testUser;
+    private UserAuthProfile testUserProfile;
     private Long userId;
     private String validAccessToken;
 
@@ -71,9 +78,7 @@ class JwtAuthenticationFilterTest {
 
         userId = 1L;
         validAccessToken = "valid.access.token";
-
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", null);
-        ReflectionTestUtils.setField(testUser, "id", userId);
+        testUserProfile = new UserAuthProfile(userId, Role.USER, UserStatus.PENDING, "test@example.com", false);
     }
 
     @Nested
@@ -81,14 +86,14 @@ class JwtAuthenticationFilterTest {
     class Success {
 
         @Test
-        @DisplayName("JWT 인증 성공 - 캐시 미스: DB 조회 후 캐시 저장")
+        @DisplayName("JWT 인증 성공 - 캐시 미스: 인증 프로필 조회 후 캐시 저장")
         void doFilterInternal_Success_CacheMiss() throws Exception {
             // Given
             given(request.getHeader("Authorization")).willReturn("Bearer " + validAccessToken);
             willDoNothing().given(jwtUtil).validateToken(validAccessToken);
             given(jwtUtil.getUserIdFromToken(validAccessToken)).willReturn(userId);
             given(userAuthCacheService.get(userId)).willReturn(null);
-            given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+            given(userAuthAccountService.findAuthProfileById(userId)).willReturn(Optional.of(testUserProfile));
             given(jwtProperties.getAccessTokenExpiration()).willReturn(180000L);
 
             // When
@@ -103,14 +108,15 @@ class JwtAuthenticationFilterTest {
             assertThat(principal.getId()).isEqualTo(userId);
             assertThat(principal.getRole()).isEqualTo(Role.USER);
             assertThat(principal.getStatus()).isEqualTo(UserStatus.PENDING);
+            assertThat(principal.getEmail()).isEqualTo("test@example.com");
 
-            verify(userRepository).findById(userId);
-            verify(userAuthCacheService).put(eq(userId), eq(testUser), eq(180000L));
+            verify(userAuthAccountService).findAuthProfileById(userId);
+            verify(userAuthCacheService).put(eq(userId), eq(testUserProfile), eq(180000L));
             verify(filterChain).doFilter(request, response);
         }
 
         @Test
-        @DisplayName("JWT 인증 성공 - 캐시 히트: DB 조회 없이 인증")
+        @DisplayName("JWT 인증 성공 - 캐시 히트: 인증 프로필 조회 없이 인증")
         void doFilterInternal_Success_CacheHit() throws Exception {
             // Given
             UserPrincipal cachedPrincipal = UserPrincipal.builder()
@@ -133,27 +139,29 @@ class JwtAuthenticationFilterTest {
             assertThat(authentication).isNotNull();
             assertThat(authentication.getPrincipal()).isEqualTo(cachedPrincipal);
 
-            verify(userRepository, never()).findById(anyLong());
-            verify(userAuthCacheService, never()).put(anyLong(), any(User.class), anyLong());
+            verify(userAuthAccountService, never()).findAuthProfileById(anyLong());
+            verify(userAuthCacheService, never()).put(anyLong(), any(UserAuthProfile.class), anyLong());
             verify(filterChain).doFilter(request, response);
         }
 
         @Test
-        @DisplayName("JWT 인증 성공 - 재활성화된 PENDING 사용자는 DB 조회 후 캐시에 저장한다")
+        @DisplayName("JWT 인증 성공 - 재활성화된 PENDING 사용자는 인증 프로필 조회 후 캐시에 저장한다")
         void doFilterInternal_Success_ReactivatedPendingUser_CacheMiss() throws Exception {
             // Given
-            User reactivatedUser = User.createSocialUser(SocialType.APPLE, "reactivatedSocialId", "old@example.com", "old.png");
-            reactivatedUser.updateUser("재활성화유저", "old@example.com", "탈퇴 전 설명");
-            reactivatedUser.withdraw();
-            reactivatedUser.reactivate("reactivated@example.com", "reactivated.png");
-            ReflectionTestUtils.setField(reactivatedUser, "id", userId);
+            UserAuthProfile reactivatedProfile = new UserAuthProfile(
+                    userId,
+                    Role.USER,
+                    UserStatus.PENDING,
+                    "reactivated@example.com",
+                    false
+            );
 
             given(request.getHeader("Authorization")).willReturn("Bearer " + validAccessToken);
             willDoNothing().given(jwtUtil).validateToken(validAccessToken);
             willDoNothing().given(jwtUtil).validateTokenType(validAccessToken, TOKEN_TYPE_ACCESS);
             given(jwtUtil.getUserIdFromToken(validAccessToken)).willReturn(userId);
             given(userAuthCacheService.get(userId)).willReturn(null);
-            given(userRepository.findById(userId)).willReturn(Optional.of(reactivatedUser));
+            given(userAuthAccountService.findAuthProfileById(userId)).willReturn(Optional.of(reactivatedProfile));
             given(jwtProperties.getAccessTokenExpiration()).willReturn(180000L);
 
             // When
@@ -169,8 +177,8 @@ class JwtAuthenticationFilterTest {
             assertThat(principal.getStatus()).isEqualTo(UserStatus.PENDING);
             assertThat(principal.getEmail()).isEqualTo("reactivated@example.com");
 
-            verify(userRepository).findById(userId);
-            verify(userAuthCacheService).put(userId, reactivatedUser, 180000L);
+            verify(userAuthAccountService).findAuthProfileById(userId);
+            verify(userAuthCacheService).put(userId, reactivatedProfile, 180000L);
             verify(filterChain).doFilter(request, response);
         }
     }
@@ -193,7 +201,7 @@ class JwtAuthenticationFilterTest {
             assertThat(authentication).isNull();
 
             verify(jwtUtil, never()).validateToken(anyString());
-            verify(userRepository, never()).findById(anyLong());
+            verify(userAuthAccountService, never()).findAuthProfileById(anyLong());
             verify(filterChain).doFilter(request, response);
         }
 
@@ -211,7 +219,7 @@ class JwtAuthenticationFilterTest {
             assertThat(authentication).isNull();
 
             verify(jwtUtil, never()).validateToken(anyString());
-            verify(userRepository, never()).findById(anyLong());
+            verify(userAuthAccountService, never()).findAuthProfileById(anyLong());
             verify(filterChain).doFilter(request, response);
         }
 
@@ -232,7 +240,7 @@ class JwtAuthenticationFilterTest {
             assertThat(authentication).isNull();
 
             verify(jwtUtil).validateToken(invalidToken);
-            verify(userRepository, never()).findById(anyLong());
+            verify(userAuthAccountService, never()).findAuthProfileById(anyLong());
             verifyJwtExceptionAttribute(invalidTokenException);
             verify(filterChain).doFilter(request, response);
         }
@@ -264,7 +272,7 @@ class JwtAuthenticationFilterTest {
             assertThat(authentication).isNull();
 
             verify(jwtUtil).validateToken(invalidToken);
-            verify(userRepository, never()).findById(anyLong());
+            verify(userAuthAccountService, never()).findAuthProfileById(anyLong());
             verifyJwtExceptionAttribute(invalidTokenException);
             verify(filterChain).doFilter(request, response);
         }
@@ -289,7 +297,7 @@ class JwtAuthenticationFilterTest {
 
             verify(jwtUtil).validateToken(refreshToken);
             verify(jwtUtil).validateTokenType(refreshToken, TOKEN_TYPE_ACCESS);
-            verify(userRepository, never()).findById(anyLong());
+            verify(userAuthAccountService, never()).findAuthProfileById(anyLong());
             verifyJwtExceptionAttribute(tokenTypeMismatchException);
             verify(filterChain).doFilter(request, response);
         }
@@ -303,7 +311,7 @@ class JwtAuthenticationFilterTest {
             willDoNothing().given(jwtUtil).validateToken(deletedUserToken);
             willDoNothing().given(jwtUtil).validateTokenType(deletedUserToken, TOKEN_TYPE_ACCESS);
             given(jwtUtil.getUserIdFromToken(deletedUserToken)).willReturn(999L);
-            given(userRepository.findById(999L)).willReturn(Optional.empty());
+            given(userAuthAccountService.findAuthProfileById(999L)).willReturn(Optional.empty());
 
             // When
             jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -314,26 +322,29 @@ class JwtAuthenticationFilterTest {
 
             verify(jwtUtil).validateToken(deletedUserToken);
             verify(jwtUtil).validateTokenType(deletedUserToken, TOKEN_TYPE_ACCESS);
-            verify(userRepository).findById(999L);
+            verify(userAuthAccountService).findAuthProfileById(999L);
             verifyJwtExceptionAttribute(AuthErrorCode.USER_NOT_FOUND);
             verify(filterChain).doFilter(request, response);
         }
 
         @Test
-        @DisplayName("JWT 인증 실패 - 탈퇴한 회원 (캐시 미스 후 DB 조회)")
+        @DisplayName("JWT 인증 실패 - 탈퇴한 회원 (캐시 미스 후 인증 프로필 조회)")
         void doFilterInternal_Fail_WithdrawnUser_CacheMiss() throws Exception {
             // Given
-            User withdrawnUser = User.createSocialUser(SocialType.KAKAO, "withdrawnSocialId", "withdrawn@example.com", null);
-            withdrawnUser.updateUser("탈퇴유저", "withdrawn@example.com", "개발자였습니다.");
-            withdrawnUser.withdraw();
-            ReflectionTestUtils.setField(withdrawnUser, "id", userId);
+            UserAuthProfile withdrawnProfile = new UserAuthProfile(
+                    userId,
+                    Role.USER,
+                    UserStatus.WITHDRAWN,
+                    null,
+                    false
+            );
 
             given(request.getHeader("Authorization")).willReturn("Bearer " + validAccessToken);
             willDoNothing().given(jwtUtil).validateToken(validAccessToken);
             willDoNothing().given(jwtUtil).validateTokenType(validAccessToken, TOKEN_TYPE_ACCESS);
             given(jwtUtil.getUserIdFromToken(validAccessToken)).willReturn(userId);
             given(userAuthCacheService.get(userId)).willReturn(null);
-            given(userRepository.findById(userId)).willReturn(Optional.of(withdrawnUser));
+            given(userAuthAccountService.findAuthProfileById(userId)).willReturn(Optional.of(withdrawnProfile));
 
             // When
             jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -342,8 +353,8 @@ class JwtAuthenticationFilterTest {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             assertThat(authentication).isNull();
 
-            verify(userRepository).findById(userId);
-            verify(userAuthCacheService, never()).put(anyLong(), any(User.class), anyLong()); // 탈퇴 유저는 캐시 저장 안 함
+            verify(userAuthAccountService).findAuthProfileById(userId);
+            verify(userAuthCacheService, never()).put(anyLong(), any(UserAuthProfile.class), anyLong()); // 탈퇴 유저는 캐시 저장 안 함
             verifyJwtExceptionAttribute(AuthErrorCode.WITHDRAWN_USER);
             verify(filterChain).doFilter(request, response);
         }
@@ -372,7 +383,7 @@ class JwtAuthenticationFilterTest {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             assertThat(authentication).isNull();
 
-            verify(userRepository, never()).findById(anyLong()); // 캐시 히트이므로 DB 조회 없음
+            verify(userAuthAccountService, never()).findAuthProfileById(anyLong()); // 캐시 히트이므로 인증 프로필 조회 없음
             verifyJwtExceptionAttribute(AuthErrorCode.WITHDRAWN_USER);
             verify(filterChain).doFilter(request, response);
         }

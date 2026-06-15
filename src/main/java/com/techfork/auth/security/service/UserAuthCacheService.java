@@ -1,17 +1,15 @@
 package com.techfork.auth.security.service;
 
+import com.techfork.auth.security.oauth.UserPrincipal;
+import com.techfork.global.constant.RedisKey;
 import com.techfork.useraccount.application.auth.UserAuthProfile;
-import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.UserStatus;
-import com.techfork.global.constant.RedisKey;
-import com.techfork.auth.security.oauth.UserPrincipal;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -30,10 +28,6 @@ public class UserAuthCacheService {
             return null;
         }
         return deserialize(cached);
-    }
-
-    public void put(Long userId, User user, long ttlMillis) {
-        put(userId, UserAuthProfile.from(user), ttlMillis);
     }
 
     public void put(Long userId, UserAuthProfile userAuthProfile, long ttlMillis) {
