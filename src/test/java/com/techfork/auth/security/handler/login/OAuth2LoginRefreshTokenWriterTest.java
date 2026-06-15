@@ -1,6 +1,6 @@
 package com.techfork.auth.security.handler.login;
 
-import com.techfork.auth.security.service.RefreshTokenService;
+import com.techfork.auth.security.token.RefreshTokenStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,13 +22,13 @@ class OAuth2LoginRefreshTokenWriterTest {
     private static final long REFRESH_TOKEN_EXPIRATION_MILLIS = 900_000L;
 
     @Mock
-    private RefreshTokenService refreshTokenService;
+    private RefreshTokenStore refreshTokenStore;
 
     private OAuth2LoginRefreshTokenWriter refreshTokenWriter;
 
     @BeforeEach
     void setUp() {
-        refreshTokenWriter = new OAuth2LoginRefreshTokenWriter(refreshTokenService);
+        refreshTokenWriter = new OAuth2LoginRefreshTokenWriter(refreshTokenStore);
         ReflectionTestUtils.setField(refreshTokenWriter, "domain", "localhost");
     }
 
@@ -40,7 +40,7 @@ class OAuth2LoginRefreshTokenWriterTest {
 
         refreshTokenWriter.write(USER_ID, tokens, response);
 
-        verify(refreshTokenService).saveRefreshToken(USER_ID, REFRESH_TOKEN, REFRESH_TOKEN_EXPIRATION_MILLIS);
+        verify(refreshTokenStore).saveRefreshToken(USER_ID, REFRESH_TOKEN, REFRESH_TOKEN_EXPIRATION_MILLIS);
         assertRefreshTokenCookie(response.getHeader("Set-Cookie"));
     }
 

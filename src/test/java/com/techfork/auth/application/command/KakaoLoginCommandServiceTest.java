@@ -7,7 +7,7 @@ import com.techfork.auth.infrastructure.kakao.response.KakaoUserInfoResponse;
 import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.jwt.JwtUtil;
-import com.techfork.auth.security.service.RefreshTokenService;
+import com.techfork.auth.security.token.RefreshTokenStore;
 import com.techfork.useraccount.application.auth.UserAuthAccountService;
 import com.techfork.useraccount.application.auth.UserAuthProfile;
 import com.techfork.useraccount.domain.enums.Role;
@@ -43,7 +43,7 @@ class KakaoLoginCommandServiceTest {
     private JwtProperties jwtProperties;
 
     @Mock
-    private RefreshTokenService refreshTokenService;
+    private RefreshTokenStore refreshTokenStore;
 
     @InjectMocks
     private KakaoLoginCommandService kakaoLoginCommandService;
@@ -102,7 +102,7 @@ class KakaoLoginCommandServiceTest {
                 profileImageUrl
         );
         verify(jwtUtil).generateTokens(userId, Role.USER);
-        verify(refreshTokenService).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
+        verify(refreshTokenStore).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
     }
 
     @Test
@@ -148,7 +148,7 @@ class KakaoLoginCommandServiceTest {
                 profileImageUrl
         );
         verify(jwtUtil).generateTokens(userId, Role.USER);
-        verify(refreshTokenService).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
+        verify(refreshTokenStore).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
     }
 
     private KakaoUserInfoResponse kakaoUserInfo(Long kakaoRestUserId, String email, String profileImageUrl) {
