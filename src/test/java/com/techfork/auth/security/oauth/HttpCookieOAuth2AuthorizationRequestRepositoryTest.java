@@ -4,6 +4,7 @@ import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
@@ -24,8 +25,8 @@ class HttpCookieOAuth2AuthorizationRequestRepositoryTest {
     class SaveAuthorizationRequest {
 
         @Test
-        @DisplayName("OAuth2 authorization request 저장 시 직렬화된 httpOnly 쿠키를 생성한다")
-        void createsSerializedHttpOnlyCookie() {
+        @DisplayName("OAuth2 authorization request 저장 시 보안 속성이 포함된 쿠키를 생성한다")
+        void createsSerializedSecureCookie() {
             MockHttpServletResponse response = new MockHttpServletResponse();
             OAuth2AuthorizationRequest authorizationRequest = authorizationRequest();
 
@@ -35,12 +36,9 @@ class HttpCookieOAuth2AuthorizationRequestRepositoryTest {
                     response
             );
 
-            Cookie cookie = response.getCookie(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME);
-            assertThat(cookie).isNotNull();
-            assertThat(cookie.getValue()).isNotBlank();
-            assertThat(cookie.getPath()).isEqualTo("/");
-            assertThat(cookie.isHttpOnly()).isTrue();
-            assertThat(cookie.getMaxAge()).isEqualTo(180);
+            String setCookie = response.getHeader(HttpHeaders.SET_COOKIE);
+            assertAuthorizationRequestCookie(setCookie, 180);
+            assertThat(extractCookieValue(setCookie)).isNotBlank();
         }
 
         @Test
@@ -53,8 +51,8 @@ class HttpCookieOAuth2AuthorizationRequestRepositoryTest {
 
             repository.saveAuthorizationRequest(null, request, response);
 
-            Cookie deleteCookie = response.getCookie(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME);
-            assertDeleteCookie(deleteCookie);
+            String setCookie = response.getHeader(HttpHeaders.SET_COOKIE);
+            assertDeleteCookie(setCookie);
         }
 
         @Test
@@ -65,7 +63,7 @@ class HttpCookieOAuth2AuthorizationRequestRepositoryTest {
 
             repository.saveAuthorizationRequest(null, request, response);
 
-            assertThat(response.getCookie(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME)).isNull();
+            assertThat(response.getHeader(HttpHeaders.SET_COOKIE)).isNull();
         }
     }
 
@@ -81,7 +79,7 @@ class HttpCookieOAuth2AuthorizationRequestRepositoryTest {
             repository.saveAuthorizationRequest(original, new MockHttpServletRequest(), saveResponse);
 
             MockHttpServletRequest loadRequest = new MockHttpServletRequest();
-            loadRequest.setCookies(saveResponse.getCookie(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME));
+            loadRequest.setCookies(cookieFromSetCookieHeader(saveResponse));
 
             OAuth2AuthorizationRequest loaded = repository.loadAuthorizationRequest(loadRequest);
 
@@ -116,15 +114,15 @@ class HttpCookieOAuth2AuthorizationRequestRepositoryTest {
             repository.saveAuthorizationRequest(original, new MockHttpServletRequest(), saveResponse);
 
             MockHttpServletRequest removeRequest = new MockHttpServletRequest();
-            removeRequest.setCookies(saveResponse.getCookie(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME));
+            removeRequest.setCookies(cookieFromSetCookieHeader(saveResponse));
             MockHttpServletResponse removeResponse = new MockHttpServletResponse();
 
             OAuth2AuthorizationRequest removed = repository.removeAuthorizationRequest(removeRequest, removeResponse);
 
             assertThat(removed).isNotNull();
             assertThat(removed.getState()).isEqualTo(original.getState());
-            Cookie deleteCookie = removeResponse.getCookie(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME);
-            assertDeleteCookie(deleteCookie);
+            String setCookie = removeResponse.getHeader(HttpHeaders.SET_COOKIE);
+            assertDeleteCookie(setCookie);
         }
 
         @Test
@@ -136,15 +134,36 @@ class HttpCookieOAuth2AuthorizationRequestRepositoryTest {
             OAuth2AuthorizationRequest removed = repository.removeAuthorizationRequest(request, response);
 
             assertThat(removed).isNull();
-            assertThat(response.getCookie(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME)).isNull();
+            assertThat(response.getHeader(HttpHeaders.SET_COOKIE)).isNull();
         }
     }
 
-    private void assertDeleteCookie(Cookie deleteCookie) {
-        assertThat(deleteCookie).isNotNull();
-        assertThat(deleteCookie.getValue()).isEmpty();
-        assertThat(deleteCookie.getPath()).isEqualTo("/");
-        assertThat(deleteCookie.getMaxAge()).isZero();
+    private void assertDeleteCookie(String setCookie) {
+        assertAuthorizationRequestCookie(setCookie, 0);
+        assertThat(extractCookieValue(setCookie)).isEmpty();
+    }
+
+    private void assertAuthorizationRequestCookie(String setCookie, int maxAge) {
+        assertThat(setCookie).isNotNull();
+        assertThat(setCookie).startsWith(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME + "=");
+        assertThat(setCookie).contains("Path=/");
+        assertThat(setCookie).contains("Max-Age=" + maxAge);
+        assertThat(setCookie).contains("Secure");
+        assertThat(setCookie).contains("HttpOnly");
+        assertThat(setCookie).contains("SameSite=None");
+        assertThat(setCookie).doesNotContain("Domain=");
+    }
+
+    private Cookie cookieFromSetCookieHeader(MockHttpServletResponse response) {
+        String setCookie = response.getHeader(HttpHeaders.SET_COOKIE);
+        return new Cookie(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME, extractCookieValue(setCookie));
+    }
+
+    private String extractCookieValue(String setCookie) {
+        assertThat(setCookie).isNotNull();
+        String nameValue = setCookie.split(";", 2)[0];
+        assertThat(nameValue).startsWith(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME + "=");
+        return nameValue.substring((OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME + "=").length());
     }
 
     private OAuth2AuthorizationRequest authorizationRequest() {
