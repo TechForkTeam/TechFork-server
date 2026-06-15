@@ -37,7 +37,7 @@ public class CustomOidcUserService extends OidcUserService {
         }
         String profileImage = oidcUser.getAttribute("picture");
 
-        UserAuthProfile userAuthProfile = userAuthAccountService.getOrCreateReactivatedSocialAuthProfile(
+        UserAuthProfile userAuthProfile = userAuthAccountService.getOrCreateSocialAuthProfile(
                 socialType,
                 socialId,
                 email,

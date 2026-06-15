@@ -58,7 +58,7 @@ class CustomOidcUserServiceTest {
         @DisplayName("신규 Apple 인증 프로필을 UserPrincipal로 반환한다")
         void loadUser_NewAppleUser_ReturnsPrincipal() {
             UserAuthProfile userAuthProfile = new UserAuthProfile(1L, Role.USER, UserStatus.PENDING, EMAIL, false);
-            given(userAuthAccountService.getOrCreateReactivatedSocialAuthProfile(
+            given(userAuthAccountService.getOrCreateSocialAuthProfile(
                     SocialType.APPLE,
                     SOCIAL_ID,
                     EMAIL,
@@ -73,7 +73,7 @@ class CustomOidcUserServiceTest {
             assertThat(principal.getRole()).isEqualTo(Role.USER);
             assertThat(principal.getStatus()).isEqualTo(UserStatus.PENDING);
             assertThat(principal.getEmail()).isEqualTo(EMAIL);
-            verify(userAuthAccountService).getOrCreateReactivatedSocialAuthProfile(
+            verify(userAuthAccountService).getOrCreateSocialAuthProfile(
                     SocialType.APPLE,
                     SOCIAL_ID,
                     EMAIL,
@@ -88,7 +88,7 @@ class CustomOidcUserServiceTest {
             String kakaoEmail = "kakao-user@example.com";
             String kakaoProfileImage = "https://cdn.example.com/kakao-user.png";
             UserAuthProfile userAuthProfile = new UserAuthProfile(4L, Role.USER, UserStatus.PENDING, kakaoEmail, false);
-            given(userAuthAccountService.getOrCreateReactivatedSocialAuthProfile(
+            given(userAuthAccountService.getOrCreateSocialAuthProfile(
                     SocialType.KAKAO,
                     kakaoSocialId,
                     kakaoEmail,
@@ -105,7 +105,7 @@ class CustomOidcUserServiceTest {
             assertThat(principal.getRole()).isEqualTo(Role.USER);
             assertThat(principal.getStatus()).isEqualTo(UserStatus.PENDING);
             assertThat(principal.getEmail()).isEqualTo(kakaoEmail);
-            verify(userAuthAccountService).getOrCreateReactivatedSocialAuthProfile(
+            verify(userAuthAccountService).getOrCreateSocialAuthProfile(
                     SocialType.KAKAO,
                     kakaoSocialId,
                     kakaoEmail,
@@ -117,7 +117,7 @@ class CustomOidcUserServiceTest {
         @DisplayName("기존 Apple 인증 프로필을 UserPrincipal로 반환한다")
         void loadUser_ExistingAppleUser_ReturnsPrincipal() {
             UserAuthProfile existingUserProfile = new UserAuthProfile(2L, Role.USER, UserStatus.ACTIVE, EMAIL, true);
-            given(userAuthAccountService.getOrCreateReactivatedSocialAuthProfile(
+            given(userAuthAccountService.getOrCreateSocialAuthProfile(
                     SocialType.APPLE,
                     SOCIAL_ID,
                     EMAIL,
@@ -130,7 +130,7 @@ class CustomOidcUserServiceTest {
             assertThat(principal.getId()).isEqualTo(2L);
             assertThat(principal.getStatus()).isEqualTo(UserStatus.ACTIVE);
             assertThat(principal.getEmail()).isEqualTo(EMAIL);
-            verify(userAuthAccountService).getOrCreateReactivatedSocialAuthProfile(
+            verify(userAuthAccountService).getOrCreateSocialAuthProfile(
                     SocialType.APPLE,
                     SOCIAL_ID,
                     EMAIL,
@@ -142,7 +142,7 @@ class CustomOidcUserServiceTest {
         @DisplayName("탈퇴 Apple 사용자의 재활성화된 PENDING 인증 프로필을 UserPrincipal로 반환한다")
         void loadUser_WithdrawnAppleUser_ReturnsReactivatedPendingPrincipal() {
             UserAuthProfile reactivatedUserProfile = new UserAuthProfile(3L, Role.USER, UserStatus.PENDING, EMAIL, false);
-            given(userAuthAccountService.getOrCreateReactivatedSocialAuthProfile(
+            given(userAuthAccountService.getOrCreateSocialAuthProfile(
                     SocialType.APPLE,
                     SOCIAL_ID,
                     EMAIL,
@@ -155,7 +155,7 @@ class CustomOidcUserServiceTest {
             assertThat(principal.getId()).isEqualTo(3L);
             assertThat(principal.getStatus()).isEqualTo(UserStatus.PENDING);
             assertThat(principal.getEmail()).isEqualTo(EMAIL);
-            verify(userAuthAccountService).getOrCreateReactivatedSocialAuthProfile(
+            verify(userAuthAccountService).getOrCreateSocialAuthProfile(
                     SocialType.APPLE,
                     SOCIAL_ID,
                     EMAIL,
@@ -177,7 +177,7 @@ class CustomOidcUserServiceTest {
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("sub");
 
-            verify(userAuthAccountService, never()).getOrCreateReactivatedSocialAuthProfile(any(), any(), any(), any());
+            verify(userAuthAccountService, never()).getOrCreateSocialAuthProfile(any(), any(), any(), any());
         }
 
         @Test
@@ -191,7 +191,7 @@ class CustomOidcUserServiceTest {
                             .getError()
                             .getErrorCode()).isEqualTo("email not found"));
 
-            verify(userAuthAccountService, never()).getOrCreateReactivatedSocialAuthProfile(any(), any(), any(), any());
+            verify(userAuthAccountService, never()).getOrCreateSocialAuthProfile(any(), any(), any(), any());
         }
     }
 

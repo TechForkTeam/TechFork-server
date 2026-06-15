@@ -125,8 +125,8 @@ class UserAuthAccountServiceTest {
         }
 
         @Test
-        @DisplayName("탈퇴 소셜 사용자는 재활성화하지 않고 현재 인증 상태만 반환한다")
-        void doesNotReactivateWithdrawnSocialUser() {
+        @DisplayName("탈퇴 소셜 사용자를 재활성화하고 PENDING 인증 프로필을 반환한다")
+        void reactivatesWithdrawnSocialUserAndReturnsPendingAuthProfile() {
             User withdrawnUser = activeUser(USER_ID, SocialType.KAKAO, SOCIAL_ID, "old@example.com", "old.png");
             withdrawnUser.withdraw();
             given(userRepository.findBySocialTypeAndSocialId(SocialType.KAKAO, SOCIAL_ID))
@@ -140,34 +140,6 @@ class UserAuthAccountServiceTest {
             );
 
             assertThat(result.id()).isEqualTo(USER_ID);
-            assertThat(result.status()).isEqualTo(UserStatus.WITHDRAWN);
-            assertThat(result.email()).isNull();
-            assertThat(result.active()).isFalse();
-            assertThat(withdrawnUser.getStatus()).isEqualTo(UserStatus.WITHDRAWN);
-            verify(userRepository, never()).save(any(User.class));
-        }
-    }
-
-    @Nested
-    @DisplayName("getOrCreateReactivatedSocialAuthProfile")
-    class GetOrCreateReactivatedSocialAuthProfile {
-
-        @Test
-        @DisplayName("탈퇴 소셜 사용자를 재활성화하고 PENDING 인증 프로필을 반환한다")
-        void reactivatesWithdrawnSocialUserAndReturnsPendingAuthProfile() {
-            User withdrawnUser = activeUser(USER_ID, SocialType.APPLE, SOCIAL_ID, "old@example.com", "old.png");
-            withdrawnUser.withdraw();
-            given(userRepository.findBySocialTypeAndSocialId(SocialType.APPLE, SOCIAL_ID))
-                    .willReturn(Optional.of(withdrawnUser));
-
-            UserAuthProfile result = userAuthAccountService.getOrCreateReactivatedSocialAuthProfile(
-                    SocialType.APPLE,
-                    SOCIAL_ID,
-                    EMAIL,
-                    PROFILE_IMAGE
-            );
-
-            assertThat(result.id()).isEqualTo(USER_ID);
             assertThat(result.status()).isEqualTo(UserStatus.PENDING);
             assertThat(result.email()).isEqualTo(EMAIL);
             assertThat(result.active()).isFalse();
@@ -175,27 +147,6 @@ class UserAuthAccountServiceTest {
             assertThat(withdrawnUser.getProfileImage()).isEqualTo(PROFILE_IMAGE);
             assertThat(withdrawnUser.getStatus()).isEqualTo(UserStatus.PENDING);
             verify(userRepository, never()).save(any(User.class));
-        }
-
-        @Test
-        @DisplayName("신규 소셜 사용자를 생성하고 인증 프로필을 반환한다")
-        void createsNewSocialUserAndReturnsAuthProfile() {
-            User savedUser = pendingUser(USER_ID, SocialType.APPLE, SOCIAL_ID, EMAIL, PROFILE_IMAGE);
-            given(userRepository.findBySocialTypeAndSocialId(SocialType.APPLE, SOCIAL_ID))
-                    .willReturn(Optional.empty());
-            given(userRepository.save(any(User.class))).willReturn(savedUser);
-
-            UserAuthProfile result = userAuthAccountService.getOrCreateReactivatedSocialAuthProfile(
-                    SocialType.APPLE,
-                    SOCIAL_ID,
-                    EMAIL,
-                    PROFILE_IMAGE
-            );
-
-            assertThat(result.id()).isEqualTo(USER_ID);
-            assertThat(result.status()).isEqualTo(UserStatus.PENDING);
-            assertThat(result.email()).isEqualTo(EMAIL);
-            verify(userRepository).save(any(User.class));
         }
     }
 

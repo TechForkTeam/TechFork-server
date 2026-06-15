@@ -28,19 +28,6 @@ public class UserAuthAccountService {
             String profileImage
     ) {
         User user = userRepository.findBySocialTypeAndSocialId(socialType, socialId)
-                .orElseGet(() -> createSocialUser(socialType, socialId, email, profileImage));
-
-        return UserAuthProfile.from(user);
-    }
-
-    @Transactional
-    public UserAuthProfile getOrCreateReactivatedSocialAuthProfile(
-            SocialType socialType,
-            String socialId,
-            String email,
-            String profileImage
-    ) {
-        User user = userRepository.findBySocialTypeAndSocialId(socialType, socialId)
                 .map(existingUser -> reactivateIfWithdrawn(existingUser, email, profileImage))
                 .orElseGet(() -> createSocialUser(socialType, socialId, email, profileImage));
 
