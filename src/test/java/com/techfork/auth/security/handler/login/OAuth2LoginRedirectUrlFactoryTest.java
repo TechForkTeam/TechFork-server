@@ -48,9 +48,9 @@ class OAuth2LoginRedirectUrlFactoryTest {
 
             assertThat(redirectUrl).startsWith(LOGIN_SUCCESS_REDIRECT_URI + "?");
             assertThat(queryParams)
+                    .containsOnlyKeys("registered", "email")
                     .containsEntry("registered", "true")
-                    .containsEntry("email", "dev user@example.com")
-                    .doesNotContainKey("token");
+                    .containsEntry("email", "dev user@example.com");
         }
 
         @Test
@@ -62,9 +62,9 @@ class OAuth2LoginRedirectUrlFactoryTest {
             Map<String, String> queryParams = queryParams(redirectUrl);
 
             assertThat(queryParams)
+                    .containsOnlyKeys("registered", "email")
                     .containsEntry("registered", "false")
-                    .containsEntry("email", "pending@example.com")
-                    .doesNotContainKey("token");
+                    .containsEntry("email", "pending@example.com");
         }
 
         @Test
@@ -76,9 +76,23 @@ class OAuth2LoginRedirectUrlFactoryTest {
             Map<String, String> queryParams = queryParams(redirectUrl);
 
             assertThat(queryParams)
+                    .containsOnlyKeys("registered", "email")
                     .containsEntry("registered", "true")
-                    .containsEntry("email", "")
-                    .doesNotContainKey("token");
+                    .containsEntry("email", "");
+        }
+
+        @Test
+        @DisplayName("이메일에 query 구분자가 포함되어도 별도 토큰 파라미터를 만들지 않는다")
+        void emailWithQueryDelimiter_DoesNotCreateAdditionalTokenParameter() {
+            UserPrincipal principal = principal(UserStatus.ACTIVE, "dev@example.com&token=leaked");
+
+            String redirectUrl = redirectUrlFactory.createSuccessRedirectUrl(principal);
+            Map<String, String> queryParams = queryParams(redirectUrl);
+
+            assertThat(queryParams)
+                    .containsOnlyKeys("registered", "email")
+                    .containsEntry("registered", "true")
+                    .containsEntry("email", "dev@example.com&token=leaked");
         }
     }
 
