@@ -8,14 +8,14 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-class OAuth2LoginTokenIssuer {
+class OAuth2LoginRefreshTokenIssuer {
 
     private final JwtUtil jwtUtil;
     private final JwtProperties jwtProperties;
 
-    public OAuth2LoginTokens issue(UserPrincipal userPrincipal) {
+    public OAuth2LoginRefreshToken issue(UserPrincipal userPrincipal) {
         String refreshToken = jwtUtil.generateRefreshToken(userPrincipal.getId(), userPrincipal.getRole());
-        return new OAuth2LoginTokens(
+        return new OAuth2LoginRefreshToken(
                 refreshToken,
                 jwtProperties.getRefreshTokenExpiration()
         );

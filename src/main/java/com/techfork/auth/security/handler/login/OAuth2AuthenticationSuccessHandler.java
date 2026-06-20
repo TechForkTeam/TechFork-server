@@ -17,7 +17,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    private final OAuth2LoginTokenIssuer tokenIssuer;
+    private final OAuth2LoginRefreshTokenIssuer refreshTokenIssuer;
     private final OAuth2LoginRefreshTokenWriter refreshTokenWriter;
     private final OAuth2LoginRedirectUrlFactory redirectUrlFactory;
 
@@ -26,8 +26,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                                         Authentication authentication) throws IOException, ServletException {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
 
-        OAuth2LoginTokens tokens = tokenIssuer.issue(userPrincipal);
-        refreshTokenWriter.write(userPrincipal.getId(), tokens, response);
+        OAuth2LoginRefreshToken issuedRefreshToken = refreshTokenIssuer.issue(userPrincipal);
+        refreshTokenWriter.write(userPrincipal.getId(), issuedRefreshToken, response);
 
         log.info("OAuth2 login success - userId: {}, role: {}, status: {}, email: {}",
                 userPrincipal.getId(), userPrincipal.getRole(), userPrincipal.getStatus(), userPrincipal.getEmail());
