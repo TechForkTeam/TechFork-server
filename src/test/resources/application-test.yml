@@ -89,7 +89,7 @@ jwt:
   secret: test-jwt-secret-key-for-unit-test-must-be-at-least-256-bits-long
   access-token-expiration: 900000  # 15분 (밀리초)
   refresh-token-expiration: 1209600000  # 14일 (밀리초)
-  redirect-uri: http://localhost:5173/auth/callback?registered=%s&token=%s&email=%s
+  login-success-redirect-uri: http://localhost:5173/auth/callback
   login-failure-redirect-uri: http://localhost:5173/login?error=true
 
 server:

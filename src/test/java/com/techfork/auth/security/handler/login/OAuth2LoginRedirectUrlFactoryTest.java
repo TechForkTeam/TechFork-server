@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class OAuth2LoginRedirectUrlFactoryTest {
 
     private static final Long USER_ID = 1L;
-    private static final String REDIRECT_URI = "http://localhost:5173/auth/callback?legacy=ignored";
+    private static final String LOGIN_SUCCESS_REDIRECT_URI = "http://localhost:5173/auth/callback";
     private static final String LOGIN_FAILURE_REDIRECT_URI = "http://localhost:5173/login?error=true";
 
     private OAuth2LoginRedirectUrlFactory redirectUrlFactory;
@@ -29,7 +29,7 @@ class OAuth2LoginRedirectUrlFactoryTest {
     @BeforeEach
     void setUp() {
         JwtProperties jwtProperties = new JwtProperties();
-        jwtProperties.setRedirectUri(REDIRECT_URI);
+        jwtProperties.setLoginSuccessRedirectUri(LOGIN_SUCCESS_REDIRECT_URI);
         jwtProperties.setLoginFailureRedirectUri(LOGIN_FAILURE_REDIRECT_URI);
         redirectUrlFactory = new OAuth2LoginRedirectUrlFactory(jwtProperties);
     }
@@ -46,7 +46,7 @@ class OAuth2LoginRedirectUrlFactoryTest {
             String redirectUrl = redirectUrlFactory.createSuccessRedirectUrl(principal);
             Map<String, String> queryParams = queryParams(redirectUrl);
 
-            assertThat(redirectUrl).startsWith("http://localhost:5173/auth/callback?");
+            assertThat(redirectUrl).startsWith(LOGIN_SUCCESS_REDIRECT_URI + "?");
             assertThat(queryParams)
                     .containsEntry("registered", "true")
                     .containsEntry("email", "dev user@example.com")

@@ -19,7 +19,7 @@ class OAuth2LoginRedirectUrlFactory {
         boolean isRegistered = userPrincipal.getStatus() == UserStatus.ACTIVE;
         String email = userPrincipal.getEmail() != null ? userPrincipal.getEmail() : "";
 
-        return UriComponentsBuilder.fromUriString(jwtProperties.getRedirectUri())
+        return UriComponentsBuilder.fromUriString(jwtProperties.getLoginSuccessRedirectUri())
                 .replaceQuery(null)
                 .queryParam("registered", isRegistered)
                 .queryParam("email", email)
