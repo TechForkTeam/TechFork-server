@@ -21,7 +21,6 @@ import static org.mockito.Mockito.verify;
 class OAuth2AuthenticationSuccessHandlerTest {
 
     private static final Long USER_ID = 1L;
-    private static final String ACCESS_TOKEN = "access-token";
     private static final String REFRESH_TOKEN = "refresh-token";
     private static final long REFRESH_TOKEN_EXPIRATION_MILLIS = 900_000L;
     private static final String TARGET_URL = "http://localhost:5173/auth/callback";
@@ -100,7 +99,7 @@ class OAuth2AuthenticationSuccessHandlerTest {
     }
 
     private OAuth2LoginTokens tokens() {
-        return new OAuth2LoginTokens(ACCESS_TOKEN, REFRESH_TOKEN, REFRESH_TOKEN_EXPIRATION_MILLIS);
+        return new OAuth2LoginTokens(REFRESH_TOKEN, REFRESH_TOKEN_EXPIRATION_MILLIS);
     }
 
     private UserPrincipal principal(UserStatus status, String email) {

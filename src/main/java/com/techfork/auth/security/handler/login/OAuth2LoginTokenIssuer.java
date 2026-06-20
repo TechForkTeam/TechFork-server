@@ -1,6 +1,5 @@
 package com.techfork.auth.security.handler.login;
 
-import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.jwt.JwtUtil;
 import com.techfork.auth.security.oauth.UserPrincipal;
@@ -15,10 +14,9 @@ class OAuth2LoginTokenIssuer {
     private final JwtProperties jwtProperties;
 
     public OAuth2LoginTokens issue(UserPrincipal userPrincipal) {
-        JwtDTO tokens = jwtUtil.generateTokens(userPrincipal.getId(), userPrincipal.getRole());
+        String refreshToken = jwtUtil.generateRefreshToken(userPrincipal.getId(), userPrincipal.getRole());
         return new OAuth2LoginTokens(
-                tokens.accessToken(),
-                tokens.refreshToken(),
+                refreshToken,
                 jwtProperties.getRefreshTokenExpiration()
         );
     }
