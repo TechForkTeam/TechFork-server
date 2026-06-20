@@ -7,7 +7,7 @@ import com.techfork.auth.presentation.annotation.AuthApi;
 import com.techfork.auth.presentation.converter.KakaoLoginConverter;
 import com.techfork.auth.presentation.request.KakaoLoginRequest;
 import com.techfork.auth.presentation.response.KakaoLoginResponse;
-import com.techfork.auth.security.util.CookieUtil;
+import com.techfork.auth.security.cookie.RefreshTokenCookieWriter;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,6 +31,7 @@ public class KakaoLoginController {
 
     private final KakaoLoginCommandService kakaoLoginCommandService;
     private final KakaoLoginConverter kakaoLoginConverter;
+    private final RefreshTokenCookieWriter refreshTokenCookieWriter;
 
     @Value("${server.domain}")
     private String domain;
@@ -46,7 +47,7 @@ public class KakaoLoginController {
     ) {
         KakaoLoginCommand command = kakaoLoginConverter.toKakaoLoginCommand(request);
         KakaoLoginResult result = kakaoLoginCommandService.login(command);
-        CookieUtil.addRefreshTokenCookie(response, domain, result.refreshToken(), result.refreshTokenExpiration());
+        refreshTokenCookieWriter.write(response, domain, result.refreshToken(), result.refreshTokenExpiration());
 
         KakaoLoginResponse loginResponse = kakaoLoginConverter.toKakaoLoginResponse(result);
         return BaseResponse.of(SuccessCode.OK, loginResponse);

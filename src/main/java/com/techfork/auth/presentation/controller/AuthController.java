@@ -7,7 +7,7 @@ import com.techfork.auth.application.command.result.TokenRefreshResult;
 import com.techfork.auth.presentation.annotation.AuthApi;
 import com.techfork.auth.presentation.converter.AuthTokenConverter;
 import com.techfork.auth.presentation.response.TokenRefreshResponse;
-import com.techfork.auth.security.util.CookieUtil;
+import com.techfork.auth.security.cookie.RefreshTokenCookieWriter;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,6 +30,7 @@ public class AuthController {
 
     private final AuthCommandService authCommandService;
     private final AuthTokenConverter authTokenConverter;
+    private final RefreshTokenCookieWriter refreshTokenCookieWriter;
 
     @Value("${server.domain}")
     private String domain;
@@ -45,7 +46,7 @@ public class AuthController {
     ) {
         RefreshTokenCommand command = authTokenConverter.toRefreshTokenCommand(refreshToken);
         TokenRefreshResult result = authCommandService.refreshToken(command);
-        CookieUtil.addRefreshTokenCookie(response, domain, result.refreshToken(), result.refreshTokenExpiration());
+        refreshTokenCookieWriter.write(response, domain, result.refreshToken(), result.refreshTokenExpiration());
 
         TokenRefreshResponse tokenResponse = authTokenConverter.toTokenRefreshResponse(result);
         return BaseResponse.of(SuccessCode.OK, tokenResponse);
@@ -62,7 +63,7 @@ public class AuthController {
     ) {
         LogoutCommand command = authTokenConverter.toLogoutCommand(refreshToken);
         authCommandService.logout(command);
-        CookieUtil.deleteRefreshTokenCookie(response, domain);
+        refreshTokenCookieWriter.delete(response, domain);
         return BaseResponse.of(SuccessCode.OK);
     }
 }
