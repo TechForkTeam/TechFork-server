@@ -445,29 +445,44 @@ SearchControllerIntegrationTest
 | `AuthCommandServiceTest` | unit/mock | refresh, logout, developer token command use cases |
 | `KakaoLoginCommandServiceTest` | unit/mock | iOS 직접 Kakao login 신규/기존 사용자 |
 | `KakaoOAuthServiceTest` | unit/mock | Kakao user info response mapping success/failure |
+| `KakaoSocialIdTest` | unit | Kakao REST/OIDC social id 정규화 |
 | `AuthControllerIntegrationTest` | integration | refresh/logout/kakao login API |
 | `DeveloperTokenControllerIntegrationTest` | integration | developer token 생성, 권한/인증 실패 |
 | `SecurityIntegrationTest` | integration | 인증/인가, 토큰 오류, 권한, 탈퇴 사용자 |
+| `JwtUtilTest` | unit | refresh token 단독 발급과 token type |
 | `JwtAuthenticationFilterTest` | unit/mock | access token filter, cache hit/miss, invalid token |
-| `OAuth2AuthenticationSuccessHandlerTest` | unit/mock | OIDC 로그인 성공 redirect/cookie |
+| `RefreshTokenCookieWriterTest` | unit | refresh token cookie 작성/삭제 wire contract |
+| `OAuth2AuthenticationSuccessHandlerTest` | unit/mock | OAuth2 로그인 성공 refresh token 발급/저장과 redirect |
 | `OAuth2AuthenticationFailureHandlerTest` | unit/mock | OIDC 로그인 실패 redirect |
+| `OAuth2LoginRedirectUrlFactoryTest` | unit | success/failure redirect URL 조립, token query 제거, email encoding |
+| `OAuth2LoginRefreshTokenIssuerTest` | unit/mock | OAuth2 로그인 성공 경로의 refresh token 단독 발급 |
+| `OAuth2LoginRefreshTokenWriterTest` | unit/mock | OAuth2 로그인 refresh token 저장과 cookie writer 위임 |
 | `CustomOidcUserServiceTest` | unit/mock | Kakao/Apple OIDC 사용자 생성/재사용/재활성화 |
+| `OidcSocialIdentityExtractorTest` | unit | Kakao/Apple OIDC claim에서 소셜 식별자 추출 |
 | `HttpCookieOAuth2AuthorizationRequestRepositoryTest` | unit/mock | OAuth authorization request cookie 저장/로드/삭제 |
 | `UserAuthCacheStoreTest` | unit/mock | auth cache serialization/deserialization |
 | `UserAuthCacheInvalidationListenerTest` | unit/mock | User Account 이벤트 기반 auth cache eviction |
 
 #### 평가
 
-Auth/Security는 비교적 안정적이다.  
-DDD 전환의 핵심 경로는 아니지만, User 컨텍스트 리팩터링 시 인증 모델이 깨지지 않도록 유지해야 한다.
+Auth / Security는 1차 DDD 경계 정리 이후 비교적 안정적이다.
+`auth` 최상위 컨텍스트와 `auth/security` shared kernel은 테스트로 대부분 보호되어 있고,
+OAuth/OIDC handler, redirect URL factory, refresh token issuer/writer, cookie writer가 단위 테스트 가능한 seam으로 분리되었다.
+
+OAuth 성공 redirect는 access token을 URL에 싣지 않고 refresh token cookie를 발급한 뒤,
+callback 이후 `/api/v1/auth/refresh`로 access token을 재발급받는 계약으로 정리되었다.
+Cookie 속성은 `RefreshTokenCookieWriterTest`로 단위 보호가 생겼지만,
+실제 브라우저 cross-origin 환경에서의 통합 검증은 별도 경량 경로가 필요하다.
 
 #### 남은 갭
 
 | 우선순위 | 갭 | 이유 |
 |---|---|---|
-| P1 | Auth/Security 통합 테스트의 경량 MySQL+Redis 기반 검증 경로 | 현재 `IntegrationTestBase`는 Elasticsearch까지 기동하므로 auth-only 검증 비용이 크다 |
+| P1 | Auth / Security 통합 테스트의 경량 MySQL+Redis 기반 검증 경로 | 현재 auth controller/security integration도 Elasticsearch Testcontainers까지 기동할 수 있어 auth-only 회귀 검증 비용과 실패면이 크다 |
 | P1 | withdraw/reactivate 이후 refresh token/auth cache 통합 정책 테스트 | User 상태 전환과 보안 정책 연결 |
-| P2 | Cookie 속성(SameSite/Secure/Domain/Max-Age) 통합 검증 | 프론트 연동에 직접 영향이 있는 보안 쿠키 계약 보호 |
+| P2 | OAuth success redirect + refresh 연동 통합 계약 | success redirect에는 `registered`, `email`만 남고 access token은 refresh API로만 받는 end-to-end 계약 보호 |
+| P2 | 운영 env/secret 변경 계약 문서화 | `JWT_LOGIN_SUCCESS_REDIRECT_URI(_DEV)` 누락 시 OAuth callback 장애가 배포 후 발견될 수 있다 |
+| P3 | Cookie 속성(SameSite/Secure/Domain/Max-Age) 통합 검증 | 단위 테스트는 있으나 실제 브라우저/cross-origin 쿠키 전달 계약은 e2e 또는 경량 통합 경로가 필요 |
 
 ---
 
