@@ -9,7 +9,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.mockito.Mockito.verify;
 
@@ -32,7 +31,6 @@ class OAuth2LoginRefreshTokenWriterTest {
     @BeforeEach
     void setUp() {
         refreshTokenWriter = new OAuth2LoginRefreshTokenWriter(refreshTokenStore, refreshTokenCookieWriter);
-        ReflectionTestUtils.setField(refreshTokenWriter, "domain", "localhost");
     }
 
     @Test
@@ -44,6 +42,6 @@ class OAuth2LoginRefreshTokenWriterTest {
         refreshTokenWriter.write(USER_ID, tokens, response);
 
         verify(refreshTokenStore).saveRefreshToken(USER_ID, REFRESH_TOKEN, REFRESH_TOKEN_EXPIRATION_MILLIS);
-        verify(refreshTokenCookieWriter).write(response, "localhost", REFRESH_TOKEN, REFRESH_TOKEN_EXPIRATION_MILLIS);
+        verify(refreshTokenCookieWriter).write(response, REFRESH_TOKEN, REFRESH_TOKEN_EXPIRATION_MILLIS);
     }
 }

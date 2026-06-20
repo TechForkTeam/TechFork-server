@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,9 +31,6 @@ public class AuthController {
     private final AuthTokenConverter authTokenConverter;
     private final RefreshTokenCookieWriter refreshTokenCookieWriter;
 
-    @Value("${server.domain}")
-    private String domain;
-
     @Operation(
             summary = "토큰 갱신",
             description = "쿠키의 리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급받습니다. 새로운 리프레시 토큰은 HttpOnly 쿠키로 설정됩니다."
@@ -46,7 +42,7 @@ public class AuthController {
     ) {
         RefreshTokenCommand command = authTokenConverter.toRefreshTokenCommand(refreshToken);
         TokenRefreshResult result = authCommandService.refreshToken(command);
-        refreshTokenCookieWriter.write(response, domain, result.refreshToken(), result.refreshTokenExpiration());
+        refreshTokenCookieWriter.write(response, result.refreshToken(), result.refreshTokenExpiration());
 
         TokenRefreshResponse tokenResponse = authTokenConverter.toTokenRefreshResponse(result);
         return BaseResponse.of(SuccessCode.OK, tokenResponse);
@@ -63,7 +59,7 @@ public class AuthController {
     ) {
         LogoutCommand command = authTokenConverter.toLogoutCommand(refreshToken);
         authCommandService.logout(command);
-        refreshTokenCookieWriter.delete(response, domain);
+        refreshTokenCookieWriter.delete(response);
         return BaseResponse.of(SuccessCode.OK);
     }
 }

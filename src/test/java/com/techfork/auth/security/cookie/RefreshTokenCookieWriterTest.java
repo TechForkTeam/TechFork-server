@@ -12,14 +12,14 @@ class RefreshTokenCookieWriterTest {
     private static final String REFRESH_TOKEN = "refresh-token";
     private static final long REFRESH_TOKEN_EXPIRATION_MILLIS = 900_000L;
 
-    private final RefreshTokenCookieWriter refreshTokenCookieWriter = new RefreshTokenCookieWriter();
+    private final RefreshTokenCookieWriter refreshTokenCookieWriter = new RefreshTokenCookieWriter(DOMAIN);
 
     @Test
     @DisplayName("refresh token 쿠키를 기존 wire contract로 작성한다")
     void write_AddsRefreshTokenCookieWithExistingWireContract() {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        refreshTokenCookieWriter.write(response, DOMAIN, REFRESH_TOKEN, REFRESH_TOKEN_EXPIRATION_MILLIS);
+        refreshTokenCookieWriter.write(response, REFRESH_TOKEN, REFRESH_TOKEN_EXPIRATION_MILLIS);
 
         assertThat(response.getHeader("Set-Cookie"))
                 .contains("refreshToken=" + REFRESH_TOKEN)
@@ -36,7 +36,7 @@ class RefreshTokenCookieWriterTest {
     void delete_AddsExpiredRefreshTokenCookieWithExistingWireContract() {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        refreshTokenCookieWriter.delete(response, DOMAIN);
+        refreshTokenCookieWriter.delete(response);
 
         assertThat(response.getHeader("Set-Cookie"))
                 .contains("refreshToken=")
