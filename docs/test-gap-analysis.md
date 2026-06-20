@@ -275,7 +275,7 @@ ContentChunkerServiceTest
 | `InterestCommandServiceTest` | unit/mock | 관심사 저장, 기존 관심사 clear, invalid keyword category, 관심사 수정 이벤트 발행 |
 | `UserCommandServiceTest` | unit/mock | 온보딩, 계정 프로필 수정, 탈퇴, 온보딩/탈퇴 이벤트 발행 |
 | `PersonalizationProfileEventListenerTest` | unit/mock | 온보딩/관심사 변경 이벤트의 `AFTER_COMMIT` 개인화 프로필 생성 요청 |
-| `UserAuthCacheEventListenerTest` | unit/mock | 온보딩 `AFTER_COMMIT` 캐시 evict, 탈퇴 `BEFORE_COMMIT + AFTER_COMMIT` 캐시 evict |
+| `UserAuthCacheInvalidationListenerTest` | unit/mock | 온보딩 `AFTER_COMMIT` 캐시 evict, 탈퇴 `BEFORE_COMMIT + AFTER_COMMIT` 캐시 evict |
 | `UserAccountAfterCommitEventIntegrationTest` | integration | 커밋 후 후처리 실행, 롤백 시 후처리 미실행, 탈퇴 evict 실패 시 트랜잭션 롤백 |
 | `UserQueryServiceTest` | unit/mock | 계정 프로필 조회 |
 | `PersonalizationProfileServiceTest` | unit/mock | 프로필 생성 성공 시 이벤트 발행, 생성 실패 시 이벤트 미발행 |
@@ -453,8 +453,8 @@ SearchControllerIntegrationTest
 | `OAuth2AuthenticationFailureHandlerTest` | unit/mock | OIDC 로그인 실패 redirect |
 | `CustomOidcUserServiceTest` | unit/mock | Kakao/Apple OIDC 사용자 생성/재사용/재활성화 |
 | `HttpCookieOAuth2AuthorizationRequestRepositoryTest` | unit/mock | OAuth authorization request cookie 저장/로드/삭제 |
-| `UserAuthCacheServiceTest` | unit/mock | auth cache serialization/deserialization |
-| `UserAuthCacheEventListenerTest` | unit/mock | User Account 이벤트 기반 auth cache eviction |
+| `UserAuthCacheStoreTest` | unit/mock | auth cache serialization/deserialization |
+| `UserAuthCacheInvalidationListenerTest` | unit/mock | User Account 이벤트 기반 auth cache eviction |
 
 #### 평가
 
