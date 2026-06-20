@@ -7,7 +7,7 @@ import com.techfork.auth.presentation.annotation.AuthApi;
 import com.techfork.auth.presentation.converter.KakaoLoginConverter;
 import com.techfork.auth.presentation.request.KakaoLoginRequest;
 import com.techfork.auth.presentation.response.KakaoLoginResponse;
-import com.techfork.auth.security.util.CookieUtil;
+import com.techfork.auth.security.cookie.RefreshTokenCookieWriter;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,7 +15,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,9 +30,7 @@ public class KakaoLoginController {
 
     private final KakaoLoginCommandService kakaoLoginCommandService;
     private final KakaoLoginConverter kakaoLoginConverter;
-
-    @Value("${server.domain}")
-    private String domain;
+    private final RefreshTokenCookieWriter refreshTokenCookieWriter;
 
     @Operation(
             summary = "카카오 로그인",
@@ -46,7 +43,7 @@ public class KakaoLoginController {
     ) {
         KakaoLoginCommand command = kakaoLoginConverter.toKakaoLoginCommand(request);
         KakaoLoginResult result = kakaoLoginCommandService.login(command);
-        CookieUtil.addRefreshTokenCookie(response, domain, result.refreshToken(), result.refreshTokenExpiration());
+        refreshTokenCookieWriter.write(response, result.refreshToken(), result.refreshTokenExpiration());
 
         KakaoLoginResponse loginResponse = kakaoLoginConverter.toKakaoLoginResponse(result);
         return BaseResponse.of(SuccessCode.OK, loginResponse);

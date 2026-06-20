@@ -9,8 +9,8 @@ import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.jwt.JwtUtil;
-import com.techfork.auth.security.service.RefreshTokenService;
-import com.techfork.auth.security.service.UserAuthCacheService;
+import com.techfork.auth.security.token.RefreshTokenStore;
+import com.techfork.auth.security.cache.UserAuthCacheStore;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.useraccount.application.auth.UserAuthAccountService;
 import com.techfork.useraccount.application.auth.UserAuthProfile;
@@ -42,7 +42,7 @@ class AuthCommandServiceTest {
     private JwtUtil jwtUtil;
 
     @Mock
-    private RefreshTokenService refreshTokenService;
+    private RefreshTokenStore refreshTokenStore;
 
     @Mock
     private UserAuthAccountService userAuthAccountService;
@@ -51,7 +51,7 @@ class AuthCommandServiceTest {
     private JwtProperties jwtProperties;
 
     @Mock
-    private UserAuthCacheService userAuthCacheService;
+    private UserAuthCacheStore userAuthCacheStore;
 
     @InjectMocks
     private AuthCommandService authCommandService;
@@ -81,7 +81,7 @@ class AuthCommandServiceTest {
 
         given(jwtUtil.isValidToken(validRefreshToken)).willReturn(true);
         given(jwtUtil.getUserIdFromToken(validRefreshToken)).willReturn(userId);
-        given(refreshTokenService.validateRefreshToken(userId, validRefreshToken)).willReturn(true);
+        given(refreshTokenStore.validateRefreshToken(userId, validRefreshToken)).willReturn(true);
         given(userAuthAccountService.findAuthProfileById(userId)).willReturn(Optional.of(userAuthProfile));
         given(jwtUtil.generateTokens(userId, Role.USER)).willReturn(newTokens);
         given(jwtProperties.getRefreshTokenExpiration()).willReturn(900000L);
@@ -96,8 +96,8 @@ class AuthCommandServiceTest {
         assertThat(result.refreshTokenExpiration()).isEqualTo(900000L);
         verify(jwtUtil).isValidToken(validRefreshToken);
         verify(jwtUtil).validateTokenType(validRefreshToken, TOKEN_TYPE_REFRESH);
-        verify(refreshTokenService).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
-        verify(userAuthCacheService).put(eq(userId), eq(userAuthProfile), eq(180000L));
+        verify(refreshTokenStore).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
+        verify(userAuthCacheStore).put(eq(userId), eq(userAuthProfile), eq(180000L));
     }
 
     @Test
@@ -139,7 +139,7 @@ class AuthCommandServiceTest {
         // Given
         given(jwtUtil.isValidToken(validRefreshToken)).willReturn(true);
         given(jwtUtil.getUserIdFromToken(validRefreshToken)).willReturn(userId);
-        given(refreshTokenService.validateRefreshToken(userId, validRefreshToken)).willReturn(false);
+        given(refreshTokenStore.validateRefreshToken(userId, validRefreshToken)).willReturn(false);
 
         // When & Then
         assertThatThrownBy(() -> authCommandService.refreshToken(new RefreshTokenCommand(validRefreshToken)))
@@ -148,7 +148,7 @@ class AuthCommandServiceTest {
                 .isEqualTo(AuthErrorCode.REFRESH_TOKEN_MISMATCH);
 
         // 세션 무효화를 위해 Redis 토큰 삭제가 호출되었는지 검증
-        verify(refreshTokenService).deleteRefreshToken(userId);
+        verify(refreshTokenStore).deleteRefreshToken(userId);
     }
 
     @Test
@@ -157,7 +157,7 @@ class AuthCommandServiceTest {
         // Given
         given(jwtUtil.isValidToken(validRefreshToken)).willReturn(true);
         given(jwtUtil.getUserIdFromToken(validRefreshToken)).willReturn(userId);
-        given(refreshTokenService.validateRefreshToken(userId, validRefreshToken)).willReturn(true);
+        given(refreshTokenStore.validateRefreshToken(userId, validRefreshToken)).willReturn(true);
         given(userAuthAccountService.findAuthProfileById(userId)).willReturn(Optional.empty());
 
         // When & Then
@@ -182,7 +182,7 @@ class AuthCommandServiceTest {
         // Then
         verify(jwtUtil).isValidToken(validRefreshToken);
         verify(jwtUtil).validateTokenType(validRefreshToken, TOKEN_TYPE_REFRESH);
-        verify(refreshTokenService).deleteRefreshToken(userId);
+        verify(refreshTokenStore).deleteRefreshToken(userId);
     }
 
     @Test

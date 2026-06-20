@@ -1,4 +1,4 @@
-package com.techfork.auth.security.service;
+package com.techfork.auth.security.cache;
 
 import com.techfork.auth.security.oauth.UserPrincipal;
 import com.techfork.useraccount.application.auth.UserAuthProfile;
@@ -20,7 +20,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class UserAuthCacheServiceTest {
+class UserAuthCacheStoreTest {
 
     @Mock
     private StringRedisTemplate redisTemplate;
@@ -29,7 +29,7 @@ class UserAuthCacheServiceTest {
     private ValueOperations<String, String> valueOperations;
 
     @InjectMocks
-    private UserAuthCacheService userAuthCacheService;
+    private UserAuthCacheStore userAuthCacheStore;
 
     private static final Long USER_ID = 1L;
     private static final String CACHE_KEY = "user:auth:" + USER_ID;
@@ -48,7 +48,7 @@ class UserAuthCacheServiceTest {
             given(valueOperations.get(CACHE_KEY)).willReturn(null);
 
             // When
-            UserPrincipal result = userAuthCacheService.get(USER_ID);
+            UserPrincipal result = userAuthCacheStore.get(USER_ID);
 
             // Then
             assertThat(result).isNull();
@@ -62,7 +62,7 @@ class UserAuthCacheServiceTest {
             given(valueOperations.get(CACHE_KEY)).willReturn(ACTIVE_USER_CACHE_VALUE);
 
             // When
-            UserPrincipal result = userAuthCacheService.get(USER_ID);
+            UserPrincipal result = userAuthCacheStore.get(USER_ID);
 
             // Then
             assertThat(result).isNotNull();
@@ -80,7 +80,7 @@ class UserAuthCacheServiceTest {
             given(valueOperations.get(CACHE_KEY)).willReturn(WITHDRAWN_USER_CACHE_VALUE);
 
             // When
-            UserPrincipal result = userAuthCacheService.get(USER_ID);
+            UserPrincipal result = userAuthCacheStore.get(USER_ID);
 
             // Then
             assertThat(result).isNotNull();
@@ -97,7 +97,7 @@ class UserAuthCacheServiceTest {
             given(valueOperations.get(CACHE_KEY)).willReturn(ACTIVE_USER_CACHE_VALUE);
 
             // When
-            UserPrincipal result = userAuthCacheService.get(USER_ID);
+            UserPrincipal result = userAuthCacheStore.get(USER_ID);
 
             // Then
             assertThat(result).isNotNull();
@@ -112,7 +112,7 @@ class UserAuthCacheServiceTest {
             given(valueOperations.get(CACHE_KEY)).willReturn("invalid-format");
 
             // When
-            UserPrincipal result = userAuthCacheService.get(USER_ID);
+            UserPrincipal result = userAuthCacheStore.get(USER_ID);
 
             // Then
             assertThat(result).isNull();
@@ -138,7 +138,7 @@ class UserAuthCacheServiceTest {
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
 
             // When
-            userAuthCacheService.put(USER_ID, userAuthProfile, 180000L);
+            userAuthCacheStore.put(USER_ID, userAuthProfile, 180000L);
 
             // Then
             verify(valueOperations).set(CACHE_KEY, "1|ADMIN|ACTIVE|admin@example.com", 180000L, TimeUnit.MILLISECONDS);
@@ -159,7 +159,7 @@ class UserAuthCacheServiceTest {
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
 
             // When
-            userAuthCacheService.put(USER_ID, userAuthProfile, 180000L);
+            userAuthCacheStore.put(USER_ID, userAuthProfile, 180000L);
 
             // Then
             verify(valueOperations).set(CACHE_KEY, "1|USER|PENDING|", 180000L, TimeUnit.MILLISECONDS);
@@ -174,7 +174,7 @@ class UserAuthCacheServiceTest {
         @DisplayName("사용자 인증 캐시 키를 삭제한다")
         void deletesCacheKey() {
             // When
-            userAuthCacheService.evict(USER_ID);
+            userAuthCacheStore.evict(USER_ID);
 
             // Then
             verify(redisTemplate).delete(CACHE_KEY);

@@ -9,8 +9,8 @@ import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.jwt.JwtUtil;
-import com.techfork.auth.security.service.RefreshTokenService;
-import com.techfork.auth.security.service.UserAuthCacheService;
+import com.techfork.auth.security.token.RefreshTokenStore;
+import com.techfork.auth.security.cache.UserAuthCacheStore;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.useraccount.application.auth.UserAuthAccountService;
 import com.techfork.useraccount.application.auth.UserAuthProfile;
@@ -29,10 +29,10 @@ import static com.techfork.auth.security.jwt.JwtConstants.TOKEN_TYPE_REFRESH;
 public class AuthCommandService {
 
     private final JwtUtil jwtUtil;
-    private final RefreshTokenService refreshTokenService;
+    private final RefreshTokenStore refreshTokenStore;
     private final UserAuthAccountService userAuthAccountService;
     private final JwtProperties jwtProperties;
-    private final UserAuthCacheService userAuthCacheService;
+    private final UserAuthCacheStore userAuthCacheStore;
 
     public TokenRefreshResult refreshToken(RefreshTokenCommand command) {
         String refreshToken = command.refreshToken();
@@ -48,7 +48,7 @@ public class AuthCommandService {
         long expiration = jwtProperties.getRefreshTokenExpiration();
         saveRefreshToken(userId, newTokens.refreshToken(), expiration);
 
-        userAuthCacheService.put(userId, userAuthProfile, jwtProperties.getAccessTokenExpiration());
+        userAuthCacheStore.put(userId, userAuthProfile, jwtProperties.getAccessTokenExpiration());
 
         log.info("Token refreshed");
 
@@ -98,18 +98,18 @@ public class AuthCommandService {
     }
 
     private void validateRefreshTokenInRedis(Long userId, String refreshToken) {
-        if (!refreshTokenService.validateRefreshToken(userId, refreshToken)) {
-            refreshTokenService.deleteRefreshToken(userId);
+        if (!refreshTokenStore.validateRefreshToken(userId, refreshToken)) {
+            refreshTokenStore.deleteRefreshToken(userId);
             log.warn("Refresh token mismatch detected for userId: {}. Session invalidated.", userId);
             throw new GeneralException(AuthErrorCode.REFRESH_TOKEN_MISMATCH);
         }
     }
 
     private void saveRefreshToken(Long userId, String refreshToken, long expiration) {
-        refreshTokenService.saveRefreshToken(userId, refreshToken, expiration);
+        refreshTokenStore.saveRefreshToken(userId, refreshToken, expiration);
     }
 
     private void deleteRefreshToken(Long userId) {
-        refreshTokenService.deleteRefreshToken(userId);
+        refreshTokenStore.deleteRefreshToken(userId);
     }
 }

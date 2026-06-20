@@ -1,6 +1,5 @@
-package com.techfork.auth.security.listener;
+package com.techfork.auth.security.cache;
 
-import com.techfork.auth.security.service.UserAuthCacheService;
 import com.techfork.useraccount.application.event.OnboardingCompletedEvent;
 import com.techfork.useraccount.application.event.UserReactivatedEvent;
 import com.techfork.useraccount.application.event.UserWithdrawnEvent;
@@ -13,14 +12,14 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class UserAuthCacheEventListener {
+public class UserAuthCacheInvalidationListener {
 
     private static final String ONBOARDING_COMPLETED_AFTER_COMMIT = "onboarding-completed-after-commit";
     private static final String USER_REACTIVATED_AFTER_COMMIT = "user-reactivated-after-commit";
     private static final String USER_WITHDRAWN_BEFORE_COMMIT = "user-withdrawn-before-commit";
     private static final String USER_WITHDRAWN_AFTER_COMMIT = "user-withdrawn-after-commit";
 
-    private final UserAuthCacheService userAuthCacheService;
+    private final UserAuthCacheStore userAuthCacheStore;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void evictOnOnboardingCompletedAfterCommit(OnboardingCompletedEvent event) {
@@ -47,7 +46,7 @@ public class UserAuthCacheEventListener {
     }
 
     private void evictUserAuthCache(Long userId, String reason) {
-        userAuthCacheService.evict(userId);
+        userAuthCacheStore.evict(userId);
         log.info("User auth cache eviction requested - userId: {}, reason: {}", userId, reason);
     }
 }

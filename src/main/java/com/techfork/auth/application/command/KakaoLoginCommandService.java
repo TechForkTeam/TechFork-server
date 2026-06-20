@@ -8,7 +8,7 @@ import com.techfork.auth.infrastructure.kakao.response.KakaoUserInfoResponse;
 import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.jwt.JwtUtil;
-import com.techfork.auth.security.service.RefreshTokenService;
+import com.techfork.auth.security.token.RefreshTokenStore;
 import com.techfork.useraccount.application.auth.UserAuthAccountService;
 import com.techfork.useraccount.application.auth.UserAuthProfile;
 import com.techfork.useraccount.domain.enums.SocialType;
@@ -27,7 +27,7 @@ public class KakaoLoginCommandService {
     private final UserAuthAccountService userAuthAccountService;
     private final JwtUtil jwtUtil;
     private final JwtProperties jwtProperties;
-    private final RefreshTokenService refreshTokenService;
+    private final RefreshTokenStore refreshTokenStore;
 
     public KakaoLoginResult login(KakaoLoginCommand command) {
         KakaoUserInfoResponse kakaoUserInfo = kakaoOAuthService.getUserInfo(command.accessToken());
@@ -45,7 +45,7 @@ public class KakaoLoginCommandService {
 
         JwtDTO tokens = jwtUtil.generateTokens(userAuthProfile.id(), userAuthProfile.role());
         long expiration = jwtProperties.getRefreshTokenExpiration();
-        refreshTokenService.saveRefreshToken(userAuthProfile.id(), tokens.refreshToken(), expiration);
+        refreshTokenStore.saveRefreshToken(userAuthProfile.id(), tokens.refreshToken(), expiration);
 
         log.info("Direct Kakao login successful - userId: {}, isRegistered: {}",
                 userAuthProfile.id(), userAuthProfile.active());

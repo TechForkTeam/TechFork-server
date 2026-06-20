@@ -5,7 +5,7 @@ import com.techfork.auth.security.AuthSecurityConstants;
 import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.jwt.JwtUtil;
 import com.techfork.auth.security.oauth.UserPrincipal;
-import com.techfork.auth.security.service.UserAuthCacheService;
+import com.techfork.auth.security.cache.UserAuthCacheStore;
 import com.techfork.auth.security.util.HeaderUtil;
 import com.techfork.global.constant.MdcKey;
 import com.techfork.global.exception.GeneralException;
@@ -42,7 +42,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final UserAuthAccountService userAuthAccountService;
-    private final UserAuthCacheService userAuthCacheService;
+    private final UserAuthCacheStore userAuthCacheStore;
     private final JwtProperties jwtProperties;
 
     @Override
@@ -58,7 +58,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 jwtUtil.validateTokenType(jwt, TOKEN_TYPE_ACCESS);
 
                 Long userId = jwtUtil.getUserIdFromToken(jwt);
-                UserPrincipal userPrincipal = userAuthCacheService.get(userId);
+                UserPrincipal userPrincipal = userAuthCacheStore.get(userId);
 
                 if (userPrincipal == null) {
                     UserAuthProfile userAuthProfile = userAuthAccountService.findAuthProfileById(userId)
@@ -70,7 +70,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         throw new GeneralException(AuthErrorCode.WITHDRAWN_USER);
                     }
 
-                    userAuthCacheService.put(userId, userAuthProfile, jwtProperties.getAccessTokenExpiration());
+                    userAuthCacheStore.put(userId, userAuthProfile, jwtProperties.getAccessTokenExpiration());
                 } else if (userPrincipal.getStatus() == UserStatus.WITHDRAWN) {
                     throw new GeneralException(AuthErrorCode.WITHDRAWN_USER);
                 }

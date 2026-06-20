@@ -859,7 +859,7 @@ global/util/ContentCleaner          -> Source / Post shared content support 후�
 
 ```text
 1. User Account 4.3
-   - 필요 시 Auth / Security shared seam(UserAuthCacheService, UserPrincipal)만 함께 정리
+   - 필요 시 Auth / Security shared seam(UserAuthCacheStore, UserPrincipal)만 함께 정리
    - Auth / Security 전체 경계 이동은 별도 이슈에서 진행한다
 
 2. Personalization Profile 4.4

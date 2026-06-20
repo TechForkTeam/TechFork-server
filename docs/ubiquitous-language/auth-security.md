@@ -37,11 +37,12 @@
 | 내부 용어 | 코드상 표현 | 설명 |
 |---|---|---|
 | 토큰 발급기 | `JwtUtil` | 액세스/리프레시/개발자 토큰 생성과 검증을 담당 |
-| 리프레시 토큰 저장소 | `RefreshTokenService` | Redis/Cookie 기반 리프레시 토큰 저장/검증 서비스 |
+| 리프레시 토큰 저장소 | `RefreshTokenStore` | Redis 기반 리프레시 토큰 저장/검증/삭제 store |
 | 인증 필터 | `JwtAuthenticationFilter` | 요청에서 JWT를 읽어 인증 컨텍스트를 채우는 필터 |
 | OAuth 요청 저장소 | `HttpCookieOAuth2AuthorizationRequestRepository` | OAuth 인증 요청 상태를 쿠키로 보관하는 구성요소 |
-| 사용자 인증 캐시 | `UserAuthCacheService` | 로그인/토큰 갱신 이후 사용자 인증 조회를 보조하는 캐시 |
-| 인증 캐시 이벤트 리스너 | `UserAuthCacheEventListener` | User Account 이벤트를 받아 사용자 인증 캐시를 무효화하는 리스너 |
+| 리프레시 토큰 쿠키 writer | `RefreshTokenCookieWriter` | refresh token `Set-Cookie` 작성/삭제 정책을 담당하는 응답 writer |
+| 사용자 인증 캐시 저장소 | `UserAuthCacheStore` | 로그인/토큰 갱신 이후 사용자 인증 조회를 보조하는 Redis cache store |
+| 인증 캐시 무효화 리스너 | `UserAuthCacheInvalidationListener` | User Account 이벤트를 받아 사용자 인증 캐시를 무효화하는 transactional event adapter |
 
 ## 혼동 금지
 
@@ -75,8 +76,9 @@
 - `src/main/java/com/techfork/auth/security/AuthSecurityConstants.java`
 - `src/main/java/com/techfork/auth/security/config/SecurityConfig.java`
 - `src/main/java/com/techfork/auth/security/jwt/JwtUtil.java`
-- `src/main/java/com/techfork/auth/security/service/RefreshTokenService.java`
-- `src/main/java/com/techfork/auth/security/service/UserAuthCacheService.java`
+- `src/main/java/com/techfork/auth/security/token/RefreshTokenStore.java`
+- `src/main/java/com/techfork/auth/security/cache/UserAuthCacheStore.java`
+- `src/main/java/com/techfork/auth/security/cookie/RefreshTokenCookieWriter.java`
 - `src/main/java/com/techfork/auth/security/util/HeaderUtil.java`
-- `src/main/java/com/techfork/auth/security/listener/UserAuthCacheEventListener.java`
+- `src/main/java/com/techfork/auth/security/cache/UserAuthCacheInvalidationListener.java`
 - `src/main/java/com/techfork/auth/security/oauth/UserPrincipal.java`

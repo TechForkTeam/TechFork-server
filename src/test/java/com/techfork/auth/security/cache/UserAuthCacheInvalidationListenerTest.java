@@ -1,6 +1,5 @@
-package com.techfork.auth.security.listener;
+package com.techfork.auth.security.cache;
 
-import com.techfork.auth.security.service.UserAuthCacheService;
 import com.techfork.useraccount.application.event.OnboardingCompletedEvent;
 import com.techfork.useraccount.application.event.UserReactivatedEvent;
 import com.techfork.useraccount.application.event.UserWithdrawnEvent;
@@ -24,13 +23,13 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class UserAuthCacheEventListenerTest {
+class UserAuthCacheInvalidationListenerTest {
 
     @Mock
-    private UserAuthCacheService userAuthCacheService;
+    private UserAuthCacheStore userAuthCacheStore;
 
     @InjectMocks
-    private UserAuthCacheEventListener listener;
+    private UserAuthCacheInvalidationListener listener;
 
     @Nested
     @DisplayName("온보딩 완료 이벤트")
@@ -43,7 +42,7 @@ class UserAuthCacheEventListenerTest {
 
             listener.evictOnOnboardingCompletedAfterCommit(new OnboardingCompletedEvent(userId));
 
-            verify(userAuthCacheService).evict(userId);
+            verify(userAuthCacheStore).evict(userId);
         }
 
         @Test
@@ -64,7 +63,7 @@ class UserAuthCacheEventListenerTest {
 
             listener.evictOnUserReactivatedAfterCommit(new UserReactivatedEvent(userId));
 
-            verify(userAuthCacheService).evict(userId);
+            verify(userAuthCacheStore).evict(userId);
         }
 
         @Test
@@ -85,7 +84,7 @@ class UserAuthCacheEventListenerTest {
 
             listener.evictOnUserWithdrawnBeforeCommit(new UserWithdrawnEvent(userId));
 
-            verify(userAuthCacheService).evict(userId);
+            verify(userAuthCacheStore).evict(userId);
         }
 
         @Test
@@ -95,7 +94,7 @@ class UserAuthCacheEventListenerTest {
 
             listener.evictOnUserWithdrawnAfterCommit(new UserWithdrawnEvent(userId));
 
-            verify(userAuthCacheService).evict(userId);
+            verify(userAuthCacheStore).evict(userId);
         }
 
         @Test
@@ -113,7 +112,7 @@ class UserAuthCacheEventListenerTest {
         void evictOnUserWithdrawnBeforeCommit_PropagatesEvictionFailure() {
             Long userId = 1L;
             RuntimeException evictionFailure = new RuntimeException("redis eviction failed");
-            doThrow(evictionFailure).when(userAuthCacheService).evict(userId);
+            doThrow(evictionFailure).when(userAuthCacheStore).evict(userId);
 
             assertThatThrownBy(() -> listener.evictOnUserWithdrawnBeforeCommit(new UserWithdrawnEvent(userId)))
                     .isSameAs(evictionFailure);
@@ -124,7 +123,7 @@ class UserAuthCacheEventListenerTest {
             Class<?> eventType,
             TransactionPhase... expectedPhases
     ) {
-        List<TransactionalEventListener> annotations = Arrays.stream(UserAuthCacheEventListener.class.getDeclaredMethods())
+        List<TransactionalEventListener> annotations = Arrays.stream(UserAuthCacheInvalidationListener.class.getDeclaredMethods())
                 .filter(method -> listensToEvent(method, eventType))
                 .map(method -> method.getAnnotation(TransactionalEventListener.class))
                 .toList();

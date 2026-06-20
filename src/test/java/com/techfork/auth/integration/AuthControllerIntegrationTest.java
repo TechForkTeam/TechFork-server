@@ -11,7 +11,7 @@ import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.enums.UserStatus;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.common.IntegrationTestBase;
-import com.techfork.auth.security.service.RefreshTokenService;
+import com.techfork.auth.security.token.RefreshTokenStore;
 import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.jwt.JwtUtil;
@@ -58,7 +58,7 @@ class AuthControllerIntegrationTest extends IntegrationTestBase {
     private JwtProperties jwtProperties;
 
     @Autowired
-    private RefreshTokenService refreshTokenService;
+    private RefreshTokenStore refreshTokenStore;
 
     @Autowired
     private StringRedisTemplate redisTemplate;
@@ -99,7 +99,7 @@ class AuthControllerIntegrationTest extends IntegrationTestBase {
         JwtDTO tokens = jwtUtil.generateTokens(userId, Role.USER);
         validRefreshToken = tokens.refreshToken();
         long expiration = jwtProperties.getRefreshTokenExpiration();
-        refreshTokenService.saveRefreshToken(userId, validRefreshToken, expiration);
+        refreshTokenStore.saveRefreshToken(userId, validRefreshToken, expiration);
     }
 
     @AfterEach
@@ -147,7 +147,7 @@ class AuthControllerIntegrationTest extends IntegrationTestBase {
         JwtDTO differentTokens = jwtUtil.generateTokens(userId, Role.USER);
         String requestToken = differentTokens.refreshToken();
 
-        refreshTokenService.saveRefreshToken(userId, differentToken, jwtProperties.getRefreshTokenExpiration());
+        refreshTokenStore.saveRefreshToken(userId, differentToken, jwtProperties.getRefreshTokenExpiration());
 
         // When & Then
         mockMvc.perform(post("/api/v1/auth/refresh")
@@ -159,7 +159,7 @@ class AuthControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.message").value(AuthErrorCode.REFRESH_TOKEN_MISMATCH.getReason().message()));
 
         // 세션이 무효화되었는지 검증 (Redis에서 토큰 삭제되었는지 확인)
-        boolean isTokenValid = refreshTokenService.validateRefreshToken(userId, differentToken);
+        boolean isTokenValid = refreshTokenStore.validateRefreshToken(userId, differentToken);
         assertThat(isTokenValid).isFalse();
     }
 
@@ -167,7 +167,7 @@ class AuthControllerIntegrationTest extends IntegrationTestBase {
     @DisplayName("토큰 갱신 실패 - Redis에 토큰이 없는 경우도 세션 무효화 처리")
     void refreshToken_Fail_NoTokenInRedis() throws Exception {
         // Given: Redis에서 토큰 삭제 (토큰 없는 상황 시뮬레이션)
-        refreshTokenService.deleteRefreshToken(userId);
+        refreshTokenStore.deleteRefreshToken(userId);
 
         // When & Then
         mockMvc.perform(post("/api/v1/auth/refresh")
@@ -223,7 +223,7 @@ class AuthControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(header().string("Set-Cookie", containsString("SameSite=None")));
 
         // Redis에서 토큰이 삭제되었는지 검증
-        boolean isTokenValid = refreshTokenService.validateRefreshToken(userId, validRefreshToken);
+        boolean isTokenValid = refreshTokenStore.validateRefreshToken(userId, validRefreshToken);
         assertThat(isTokenValid).isFalse();
     }
 
