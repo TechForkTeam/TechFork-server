@@ -10,7 +10,7 @@ import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.jwt.JwtUtil;
 import com.techfork.auth.security.token.RefreshTokenStore;
-import com.techfork.auth.security.service.UserAuthCacheService;
+import com.techfork.auth.security.cache.UserAuthCacheStore;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.useraccount.application.auth.UserAuthAccountService;
 import com.techfork.useraccount.application.auth.UserAuthProfile;
@@ -51,7 +51,7 @@ class AuthCommandServiceTest {
     private JwtProperties jwtProperties;
 
     @Mock
-    private UserAuthCacheService userAuthCacheService;
+    private UserAuthCacheStore userAuthCacheStore;
 
     @InjectMocks
     private AuthCommandService authCommandService;
@@ -97,7 +97,7 @@ class AuthCommandServiceTest {
         verify(jwtUtil).isValidToken(validRefreshToken);
         verify(jwtUtil).validateTokenType(validRefreshToken, TOKEN_TYPE_REFRESH);
         verify(refreshTokenStore).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
-        verify(userAuthCacheService).put(eq(userId), eq(userAuthProfile), eq(180000L));
+        verify(userAuthCacheStore).put(eq(userId), eq(userAuthProfile), eq(180000L));
     }
 
     @Test

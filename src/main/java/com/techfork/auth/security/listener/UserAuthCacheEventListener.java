@@ -1,6 +1,6 @@
 package com.techfork.auth.security.listener;
 
-import com.techfork.auth.security.service.UserAuthCacheService;
+import com.techfork.auth.security.cache.UserAuthCacheStore;
 import com.techfork.useraccount.application.event.OnboardingCompletedEvent;
 import com.techfork.useraccount.application.event.UserReactivatedEvent;
 import com.techfork.useraccount.application.event.UserWithdrawnEvent;
@@ -20,7 +20,7 @@ public class UserAuthCacheEventListener {
     private static final String USER_WITHDRAWN_BEFORE_COMMIT = "user-withdrawn-before-commit";
     private static final String USER_WITHDRAWN_AFTER_COMMIT = "user-withdrawn-after-commit";
 
-    private final UserAuthCacheService userAuthCacheService;
+    private final UserAuthCacheStore userAuthCacheStore;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void evictOnOnboardingCompletedAfterCommit(OnboardingCompletedEvent event) {
@@ -47,7 +47,7 @@ public class UserAuthCacheEventListener {
     }
 
     private void evictUserAuthCache(Long userId, String reason) {
-        userAuthCacheService.evict(userId);
+        userAuthCacheStore.evict(userId);
         log.info("User auth cache eviction requested - userId: {}, reason: {}", userId, reason);
     }
 }

@@ -1,4 +1,4 @@
-package com.techfork.auth.security.service;
+package com.techfork.auth.security.cache;
 
 import com.techfork.auth.security.oauth.UserPrincipal;
 import com.techfork.global.constant.RedisKey;
@@ -9,12 +9,12 @@ import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 @Slf4j
-@Service
+@Component
 @RequiredArgsConstructor
-public class UserAuthCacheService {
+public class UserAuthCacheStore {
 
     private static final String DELIMITER = "|";
     private static final int FIELD_COUNT = 4;

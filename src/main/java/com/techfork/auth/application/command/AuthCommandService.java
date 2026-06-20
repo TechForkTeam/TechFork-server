@@ -10,7 +10,7 @@ import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.jwt.JwtUtil;
 import com.techfork.auth.security.token.RefreshTokenStore;
-import com.techfork.auth.security.service.UserAuthCacheService;
+import com.techfork.auth.security.cache.UserAuthCacheStore;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.useraccount.application.auth.UserAuthAccountService;
 import com.techfork.useraccount.application.auth.UserAuthProfile;
@@ -32,7 +32,7 @@ public class AuthCommandService {
     private final RefreshTokenStore refreshTokenStore;
     private final UserAuthAccountService userAuthAccountService;
     private final JwtProperties jwtProperties;
-    private final UserAuthCacheService userAuthCacheService;
+    private final UserAuthCacheStore userAuthCacheStore;
 
     public TokenRefreshResult refreshToken(RefreshTokenCommand command) {
         String refreshToken = command.refreshToken();
@@ -48,7 +48,7 @@ public class AuthCommandService {
         long expiration = jwtProperties.getRefreshTokenExpiration();
         saveRefreshToken(userId, newTokens.refreshToken(), expiration);
 
-        userAuthCacheService.put(userId, userAuthProfile, jwtProperties.getAccessTokenExpiration());
+        userAuthCacheStore.put(userId, userAuthProfile, jwtProperties.getAccessTokenExpiration());
 
         log.info("Token refreshed");
 

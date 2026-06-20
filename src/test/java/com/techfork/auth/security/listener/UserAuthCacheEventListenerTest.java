@@ -1,6 +1,6 @@
 package com.techfork.auth.security.listener;
 
-import com.techfork.auth.security.service.UserAuthCacheService;
+import com.techfork.auth.security.cache.UserAuthCacheStore;
 import com.techfork.useraccount.application.event.OnboardingCompletedEvent;
 import com.techfork.useraccount.application.event.UserReactivatedEvent;
 import com.techfork.useraccount.application.event.UserWithdrawnEvent;
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.verify;
 class UserAuthCacheEventListenerTest {
 
     @Mock
-    private UserAuthCacheService userAuthCacheService;
+    private UserAuthCacheStore userAuthCacheStore;
 
     @InjectMocks
     private UserAuthCacheEventListener listener;
@@ -43,7 +43,7 @@ class UserAuthCacheEventListenerTest {
 
             listener.evictOnOnboardingCompletedAfterCommit(new OnboardingCompletedEvent(userId));
 
-            verify(userAuthCacheService).evict(userId);
+            verify(userAuthCacheStore).evict(userId);
         }
 
         @Test
@@ -64,7 +64,7 @@ class UserAuthCacheEventListenerTest {
 
             listener.evictOnUserReactivatedAfterCommit(new UserReactivatedEvent(userId));
 
-            verify(userAuthCacheService).evict(userId);
+            verify(userAuthCacheStore).evict(userId);
         }
 
         @Test
@@ -85,7 +85,7 @@ class UserAuthCacheEventListenerTest {
 
             listener.evictOnUserWithdrawnBeforeCommit(new UserWithdrawnEvent(userId));
 
-            verify(userAuthCacheService).evict(userId);
+            verify(userAuthCacheStore).evict(userId);
         }
 
         @Test
@@ -95,7 +95,7 @@ class UserAuthCacheEventListenerTest {
 
             listener.evictOnUserWithdrawnAfterCommit(new UserWithdrawnEvent(userId));
 
-            verify(userAuthCacheService).evict(userId);
+            verify(userAuthCacheStore).evict(userId);
         }
 
         @Test
@@ -113,7 +113,7 @@ class UserAuthCacheEventListenerTest {
         void evictOnUserWithdrawnBeforeCommit_PropagatesEvictionFailure() {
             Long userId = 1L;
             RuntimeException evictionFailure = new RuntimeException("redis eviction failed");
-            doThrow(evictionFailure).when(userAuthCacheService).evict(userId);
+            doThrow(evictionFailure).when(userAuthCacheStore).evict(userId);
 
             assertThatThrownBy(() -> listener.evictOnUserWithdrawnBeforeCommit(new UserWithdrawnEvent(userId)))
                     .isSameAs(evictionFailure);

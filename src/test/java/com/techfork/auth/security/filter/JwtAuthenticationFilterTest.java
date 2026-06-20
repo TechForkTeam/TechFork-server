@@ -5,7 +5,7 @@ import com.techfork.auth.security.AuthSecurityConstants;
 import com.techfork.auth.security.jwt.JwtProperties;
 import com.techfork.auth.security.jwt.JwtUtil;
 import com.techfork.auth.security.oauth.UserPrincipal;
-import com.techfork.auth.security.service.UserAuthCacheService;
+import com.techfork.auth.security.cache.UserAuthCacheStore;
 import com.techfork.global.exception.GeneralException;
 import com.techfork.useraccount.application.auth.UserAuthAccountService;
 import com.techfork.useraccount.application.auth.UserAuthProfile;
@@ -51,7 +51,7 @@ class JwtAuthenticationFilterTest {
     private UserAuthAccountService userAuthAccountService;
 
     @Mock
-    private UserAuthCacheService userAuthCacheService;
+    private UserAuthCacheStore userAuthCacheStore;
 
     @Mock
     private JwtProperties jwtProperties;
@@ -92,7 +92,7 @@ class JwtAuthenticationFilterTest {
             given(request.getHeader("Authorization")).willReturn("Bearer " + validAccessToken);
             willDoNothing().given(jwtUtil).validateToken(validAccessToken);
             given(jwtUtil.getUserIdFromToken(validAccessToken)).willReturn(userId);
-            given(userAuthCacheService.get(userId)).willReturn(null);
+            given(userAuthCacheStore.get(userId)).willReturn(null);
             given(userAuthAccountService.findAuthProfileById(userId)).willReturn(Optional.of(testUserProfile));
             given(jwtProperties.getAccessTokenExpiration()).willReturn(180000L);
 
@@ -111,7 +111,7 @@ class JwtAuthenticationFilterTest {
             assertThat(principal.getEmail()).isEqualTo("test@example.com");
 
             verify(userAuthAccountService).findAuthProfileById(userId);
-            verify(userAuthCacheService).put(eq(userId), eq(testUserProfile), eq(180000L));
+            verify(userAuthCacheStore).put(eq(userId), eq(testUserProfile), eq(180000L));
             verify(filterChain).doFilter(request, response);
         }
 
@@ -129,7 +129,7 @@ class JwtAuthenticationFilterTest {
             given(request.getHeader("Authorization")).willReturn("Bearer " + validAccessToken);
             willDoNothing().given(jwtUtil).validateToken(validAccessToken);
             given(jwtUtil.getUserIdFromToken(validAccessToken)).willReturn(userId);
-            given(userAuthCacheService.get(userId)).willReturn(cachedPrincipal);
+            given(userAuthCacheStore.get(userId)).willReturn(cachedPrincipal);
 
             // When
             jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -140,7 +140,7 @@ class JwtAuthenticationFilterTest {
             assertThat(authentication.getPrincipal()).isEqualTo(cachedPrincipal);
 
             verify(userAuthAccountService, never()).findAuthProfileById(anyLong());
-            verify(userAuthCacheService, never()).put(anyLong(), any(UserAuthProfile.class), anyLong());
+            verify(userAuthCacheStore, never()).put(anyLong(), any(UserAuthProfile.class), anyLong());
             verify(filterChain).doFilter(request, response);
         }
 
@@ -160,7 +160,7 @@ class JwtAuthenticationFilterTest {
             willDoNothing().given(jwtUtil).validateToken(validAccessToken);
             willDoNothing().given(jwtUtil).validateTokenType(validAccessToken, TOKEN_TYPE_ACCESS);
             given(jwtUtil.getUserIdFromToken(validAccessToken)).willReturn(userId);
-            given(userAuthCacheService.get(userId)).willReturn(null);
+            given(userAuthCacheStore.get(userId)).willReturn(null);
             given(userAuthAccountService.findAuthProfileById(userId)).willReturn(Optional.of(reactivatedProfile));
             given(jwtProperties.getAccessTokenExpiration()).willReturn(180000L);
 
@@ -178,7 +178,7 @@ class JwtAuthenticationFilterTest {
             assertThat(principal.getEmail()).isEqualTo("reactivated@example.com");
 
             verify(userAuthAccountService).findAuthProfileById(userId);
-            verify(userAuthCacheService).put(userId, reactivatedProfile, 180000L);
+            verify(userAuthCacheStore).put(userId, reactivatedProfile, 180000L);
             verify(filterChain).doFilter(request, response);
         }
     }
@@ -343,7 +343,7 @@ class JwtAuthenticationFilterTest {
             willDoNothing().given(jwtUtil).validateToken(validAccessToken);
             willDoNothing().given(jwtUtil).validateTokenType(validAccessToken, TOKEN_TYPE_ACCESS);
             given(jwtUtil.getUserIdFromToken(validAccessToken)).willReturn(userId);
-            given(userAuthCacheService.get(userId)).willReturn(null);
+            given(userAuthCacheStore.get(userId)).willReturn(null);
             given(userAuthAccountService.findAuthProfileById(userId)).willReturn(Optional.of(withdrawnProfile));
 
             // When
@@ -354,7 +354,7 @@ class JwtAuthenticationFilterTest {
             assertThat(authentication).isNull();
 
             verify(userAuthAccountService).findAuthProfileById(userId);
-            verify(userAuthCacheService, never()).put(anyLong(), any(UserAuthProfile.class), anyLong()); // 탈퇴 유저는 캐시 저장 안 함
+            verify(userAuthCacheStore, never()).put(anyLong(), any(UserAuthProfile.class), anyLong()); // 탈퇴 유저는 캐시 저장 안 함
             verifyJwtExceptionAttribute(AuthErrorCode.WITHDRAWN_USER);
             verify(filterChain).doFilter(request, response);
         }
@@ -374,7 +374,7 @@ class JwtAuthenticationFilterTest {
             willDoNothing().given(jwtUtil).validateToken(validAccessToken);
             willDoNothing().given(jwtUtil).validateTokenType(validAccessToken, TOKEN_TYPE_ACCESS);
             given(jwtUtil.getUserIdFromToken(validAccessToken)).willReturn(userId);
-            given(userAuthCacheService.get(userId)).willReturn(withdrawnPrincipal);
+            given(userAuthCacheStore.get(userId)).willReturn(withdrawnPrincipal);
 
             // When
             jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);

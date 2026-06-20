@@ -2,7 +2,7 @@ package com.techfork.useraccount.integration;
 
 import com.techfork.personalization.application.PersonalizationProfileService;
 import com.techfork.global.common.IntegrationTestBase;
-import com.techfork.auth.security.service.UserAuthCacheService;
+import com.techfork.auth.security.cache.UserAuthCacheStore;
 import com.techfork.useraccount.application.command.InterestCommandService;
 import com.techfork.useraccount.application.command.UserCommandService;
 import com.techfork.useraccount.application.command.input.CompleteOnboardingCommand;
@@ -60,7 +60,7 @@ class UserAccountAfterCommitEventIntegrationTest extends IntegrationTestBase {
     private PersonalizationProfileService personalizationProfileService;
 
     @MockitoBean
-    private UserAuthCacheService userAuthCacheService;
+    private UserAuthCacheStore userAuthCacheStore;
 
     @AfterEach
     void tearDown() {
@@ -81,7 +81,7 @@ class UserAccountAfterCommitEventIntegrationTest extends IntegrationTestBase {
 
         userCommandService.completeOnboarding(command);
 
-        verify(userAuthCacheService).evict(user.getId());
+        verify(userAuthCacheStore).evict(user.getId());
         verify(personalizationProfileService).generatePersonalizationProfile(user.getId());
     }
 
@@ -97,7 +97,7 @@ class UserAccountAfterCommitEventIntegrationTest extends IntegrationTestBase {
         interestCommandService.updateUserInterests(command);
 
         verify(personalizationProfileService).generatePersonalizationProfile(user.getId());
-        verifyNoInteractions(userAuthCacheService);
+        verifyNoInteractions(userAuthCacheStore);
     }
 
     @Test
@@ -107,7 +107,7 @@ class UserAccountAfterCommitEventIntegrationTest extends IntegrationTestBase {
 
         userCommandService.withdrawUser(new WithdrawUserCommand(user.getId()));
 
-        verify(userAuthCacheService, times(2)).evict(user.getId());
+        verify(userAuthCacheStore, times(2)).evict(user.getId());
         verifyNoInteractions(personalizationProfileService);
     }
 
@@ -123,7 +123,7 @@ class UserAccountAfterCommitEventIntegrationTest extends IntegrationTestBase {
                 "https://cdn.example.com/reactivated.png"
         );
 
-        verify(userAuthCacheService).evict(user.getId());
+        verify(userAuthCacheStore).evict(user.getId());
         verifyNoInteractions(personalizationProfileService);
     }
 
@@ -132,7 +132,7 @@ class UserAccountAfterCommitEventIntegrationTest extends IntegrationTestBase {
     void withdrawUser_BeforeCommitCacheEvictionFails_RollsBackWithdrawal() {
         User user = saveActiveUser();
         doThrow(new RuntimeException("redis eviction failed"))
-                .when(userAuthCacheService)
+                .when(userAuthCacheStore)
                 .evict(user.getId());
 
         assertThatThrownBy(() -> userCommandService.withdrawUser(new WithdrawUserCommand(user.getId())))
@@ -143,7 +143,7 @@ class UserAccountAfterCommitEventIntegrationTest extends IntegrationTestBase {
         assertThat(savedUser.getNickName()).isEqualTo("테스트유저");
         assertThat(savedUser.getEmail()).isEqualTo("active@example.com");
         assertThat(savedUser.getDescription()).isEqualTo("백엔드 개발자입니다");
-        verify(userAuthCacheService).evict(user.getId());
+        verify(userAuthCacheStore).evict(user.getId());
         verifyNoInteractions(personalizationProfileService);
     }
 
@@ -160,7 +160,7 @@ class UserAccountAfterCommitEventIntegrationTest extends IntegrationTestBase {
             status.setRollbackOnly();
         });
 
-        verifyNoInteractions(userAuthCacheService, personalizationProfileService);
+        verifyNoInteractions(userAuthCacheStore, personalizationProfileService);
     }
 
     private User savePendingUser() {
