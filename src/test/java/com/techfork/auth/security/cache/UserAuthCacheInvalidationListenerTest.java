@@ -1,6 +1,5 @@
-package com.techfork.auth.security.listener;
+package com.techfork.auth.security.cache;
 
-import com.techfork.auth.security.cache.UserAuthCacheStore;
 import com.techfork.useraccount.application.event.OnboardingCompletedEvent;
 import com.techfork.useraccount.application.event.UserReactivatedEvent;
 import com.techfork.useraccount.application.event.UserWithdrawnEvent;
@@ -24,13 +23,13 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class UserAuthCacheEventListenerTest {
+class UserAuthCacheInvalidationListenerTest {
 
     @Mock
     private UserAuthCacheStore userAuthCacheStore;
 
     @InjectMocks
-    private UserAuthCacheEventListener listener;
+    private UserAuthCacheInvalidationListener listener;
 
     @Nested
     @DisplayName("온보딩 완료 이벤트")
@@ -124,7 +123,7 @@ class UserAuthCacheEventListenerTest {
             Class<?> eventType,
             TransactionPhase... expectedPhases
     ) {
-        List<TransactionalEventListener> annotations = Arrays.stream(UserAuthCacheEventListener.class.getDeclaredMethods())
+        List<TransactionalEventListener> annotations = Arrays.stream(UserAuthCacheInvalidationListener.class.getDeclaredMethods())
                 .filter(method -> listensToEvent(method, eventType))
                 .map(method -> method.getAnnotation(TransactionalEventListener.class))
                 .toList();

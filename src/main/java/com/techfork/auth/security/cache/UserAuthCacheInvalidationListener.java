@@ -1,6 +1,5 @@
-package com.techfork.auth.security.listener;
+package com.techfork.auth.security.cache;
 
-import com.techfork.auth.security.cache.UserAuthCacheStore;
 import com.techfork.useraccount.application.event.OnboardingCompletedEvent;
 import com.techfork.useraccount.application.event.UserReactivatedEvent;
 import com.techfork.useraccount.application.event.UserWithdrawnEvent;
@@ -13,7 +12,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class UserAuthCacheEventListener {
+public class UserAuthCacheInvalidationListener {
 
     private static final String ONBOARDING_COMPLETED_AFTER_COMMIT = "onboarding-completed-after-commit";
     private static final String USER_REACTIVATED_AFTER_COMMIT = "user-reactivated-after-commit";
