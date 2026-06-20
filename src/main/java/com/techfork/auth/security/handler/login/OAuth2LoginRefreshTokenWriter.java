@@ -13,8 +13,16 @@ class OAuth2LoginRefreshTokenWriter {
     private final RefreshTokenStore refreshTokenStore;
     private final RefreshTokenCookieWriter refreshTokenCookieWriter;
 
-    public void write(Long userId, OAuth2LoginTokens tokens, HttpServletResponse response) {
-        refreshTokenStore.saveRefreshToken(userId, tokens.refreshToken(), tokens.refreshTokenExpiration());
-        refreshTokenCookieWriter.write(response, tokens.refreshToken(), tokens.refreshTokenExpiration());
+    public void write(Long userId, OAuth2LoginRefreshToken issuedRefreshToken, HttpServletResponse response) {
+        refreshTokenStore.saveRefreshToken(
+                userId,
+                issuedRefreshToken.refreshToken(),
+                issuedRefreshToken.refreshTokenExpiration()
+        );
+        refreshTokenCookieWriter.write(
+                response,
+                issuedRefreshToken.refreshToken(),
+                issuedRefreshToken.refreshTokenExpiration()
+        );
     }
 }

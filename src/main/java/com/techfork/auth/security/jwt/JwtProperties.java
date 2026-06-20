@@ -13,6 +13,6 @@ public class JwtProperties {
     private String secret;
     private long accessTokenExpiration;
     private long refreshTokenExpiration;
-    private String redirectUri;
+    private String loginSuccessRedirectUri;
     private String loginFailureRedirectUri;
 }

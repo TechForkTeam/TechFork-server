@@ -29,6 +29,10 @@ public class JwtUtil {
         );
     }
 
+    public String generateRefreshToken(Long userId, Role role) {
+        return generateToken(userId, role, jwtProperties.getRefreshTokenExpiration(), TOKEN_TYPE_REFRESH);
+    }
+
     public String generateLongLivedAccessToken(Long userId, Role role) {
         // 30일 = 30일 * 24시간 * 60분 * 60초 * 1000밀리초
         long longLivedTokenExpiration = 30L * 24 * 60 * 60 * 1000;
