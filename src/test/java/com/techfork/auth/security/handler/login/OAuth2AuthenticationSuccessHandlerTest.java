@@ -53,13 +53,13 @@ class OAuth2AuthenticationSuccessHandlerTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
         given(authentication.getPrincipal()).willReturn(principal);
         given(tokenIssuer.issue(principal)).willReturn(tokens);
-        given(redirectUrlFactory.createSuccessRedirectUrl(principal, ACCESS_TOKEN)).willReturn(TARGET_URL);
+        given(redirectUrlFactory.createSuccessRedirectUrl(principal)).willReturn(TARGET_URL);
 
         successHandler.onAuthenticationSuccess(new MockHttpServletRequest(), response, authentication);
 
         verify(tokenIssuer).issue(principal);
         verify(refreshTokenWriter).write(USER_ID, tokens, response);
-        verify(redirectUrlFactory).createSuccessRedirectUrl(principal, ACCESS_TOKEN);
+        verify(redirectUrlFactory).createSuccessRedirectUrl(principal);
         assertThat(response.getRedirectedUrl()).isEqualTo(TARGET_URL);
     }
 
@@ -71,13 +71,13 @@ class OAuth2AuthenticationSuccessHandlerTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
         given(authentication.getPrincipal()).willReturn(principal);
         given(tokenIssuer.issue(principal)).willReturn(tokens);
-        given(redirectUrlFactory.createSuccessRedirectUrl(principal, ACCESS_TOKEN)).willReturn(TARGET_URL);
+        given(redirectUrlFactory.createSuccessRedirectUrl(principal)).willReturn(TARGET_URL);
 
         successHandler.onAuthenticationSuccess(new MockHttpServletRequest(), response, authentication);
 
         verify(tokenIssuer).issue(principal);
         verify(refreshTokenWriter).write(USER_ID, tokens, response);
-        verify(redirectUrlFactory).createSuccessRedirectUrl(principal, ACCESS_TOKEN);
+        verify(redirectUrlFactory).createSuccessRedirectUrl(principal);
         assertThat(response.getRedirectedUrl()).isEqualTo(TARGET_URL);
     }
 
@@ -89,13 +89,13 @@ class OAuth2AuthenticationSuccessHandlerTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
         given(authentication.getPrincipal()).willReturn(principal);
         given(tokenIssuer.issue(principal)).willReturn(tokens);
-        given(redirectUrlFactory.createSuccessRedirectUrl(principal, ACCESS_TOKEN)).willReturn(TARGET_URL);
+        given(redirectUrlFactory.createSuccessRedirectUrl(principal)).willReturn(TARGET_URL);
 
         successHandler.onAuthenticationSuccess(new MockHttpServletRequest(), response, authentication);
 
         verify(tokenIssuer).issue(principal);
         verify(refreshTokenWriter).write(USER_ID, tokens, response);
-        verify(redirectUrlFactory).createSuccessRedirectUrl(principal, ACCESS_TOKEN);
+        verify(redirectUrlFactory).createSuccessRedirectUrl(principal);
         assertThat(response.getRedirectedUrl()).isEqualTo(TARGET_URL);
     }
 

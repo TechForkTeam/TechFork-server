@@ -6,9 +6,6 @@ import com.techfork.useraccount.domain.enums.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
-import org.springframework.web.util.UriUtils;
-
-import java.nio.charset.StandardCharsets;
 
 @Component
 @RequiredArgsConstructor
@@ -18,12 +15,17 @@ class OAuth2LoginRedirectUrlFactory {
 
     private final JwtProperties jwtProperties;
 
-    public String createSuccessRedirectUrl(UserPrincipal userPrincipal, String accessToken) {
+    public String createSuccessRedirectUrl(UserPrincipal userPrincipal) {
         boolean isRegistered = userPrincipal.getStatus() == UserStatus.ACTIVE;
-        String email = userPrincipal.getEmail() != null ?
-                UriUtils.encode(userPrincipal.getEmail(), StandardCharsets.UTF_8) : "";
+        String email = userPrincipal.getEmail() != null ? userPrincipal.getEmail() : "";
 
-        return String.format(jwtProperties.getRedirectUri(), isRegistered, accessToken, email);
+        return UriComponentsBuilder.fromUriString(jwtProperties.getRedirectUri())
+                .replaceQuery(null)
+                .queryParam("registered", isRegistered)
+                .queryParam("email", email)
+                .build()
+                .encode()
+                .toUriString();
     }
 
     public String createFailureRedirectUrl() {

@@ -8,17 +8,20 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.web.util.UriUtils;
 
+import java.net.URI;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class OAuth2LoginRedirectUrlFactoryTest {
 
     private static final Long USER_ID = 1L;
-    private static final String ACCESS_TOKEN = "access-token";
-    private static final String REDIRECT_URI = "http://localhost:5173/auth/callback?registered=%s&token=%s&email=%s";
+    private static final String REDIRECT_URI = "http://localhost:5173/auth/callback?legacy=ignored";
     private static final String LOGIN_FAILURE_REDIRECT_URI = "http://localhost:5173/login?error=true";
 
     private OAuth2LoginRedirectUrlFactory redirectUrlFactory;
@@ -40,14 +43,14 @@ class OAuth2LoginRedirectUrlFactoryTest {
         void activeUser_ReturnsRegisteredTrueAndEncodedEmail() {
             UserPrincipal principal = principal(UserStatus.ACTIVE, "dev user@example.com");
 
-            String redirectUrl = redirectUrlFactory.createSuccessRedirectUrl(principal, ACCESS_TOKEN);
+            String redirectUrl = redirectUrlFactory.createSuccessRedirectUrl(principal);
+            Map<String, String> queryParams = queryParams(redirectUrl);
 
-            assertThat(redirectUrl).isEqualTo(String.format(
-                    REDIRECT_URI,
-                    true,
-                    ACCESS_TOKEN,
-                    UriUtils.encode("dev user@example.com", StandardCharsets.UTF_8)
-            ));
+            assertThat(redirectUrl).startsWith("http://localhost:5173/auth/callback?");
+            assertThat(queryParams)
+                    .containsEntry("registered", "true")
+                    .containsEntry("email", "dev user@example.com")
+                    .doesNotContainKey("token");
         }
 
         @Test
@@ -55,14 +58,13 @@ class OAuth2LoginRedirectUrlFactoryTest {
         void pendingUser_ReturnsRegisteredFalse() {
             UserPrincipal principal = principal(UserStatus.PENDING, "pending@example.com");
 
-            String redirectUrl = redirectUrlFactory.createSuccessRedirectUrl(principal, ACCESS_TOKEN);
+            String redirectUrl = redirectUrlFactory.createSuccessRedirectUrl(principal);
+            Map<String, String> queryParams = queryParams(redirectUrl);
 
-            assertThat(redirectUrl).isEqualTo(String.format(
-                    REDIRECT_URI,
-                    false,
-                    ACCESS_TOKEN,
-                    UriUtils.encode("pending@example.com", StandardCharsets.UTF_8)
-            ));
+            assertThat(queryParams)
+                    .containsEntry("registered", "false")
+                    .containsEntry("email", "pending@example.com")
+                    .doesNotContainKey("token");
         }
 
         @Test
@@ -70,14 +72,13 @@ class OAuth2LoginRedirectUrlFactoryTest {
         void nullEmail_ReturnsEmptyEmailParameter() {
             UserPrincipal principal = principal(UserStatus.ACTIVE, null);
 
-            String redirectUrl = redirectUrlFactory.createSuccessRedirectUrl(principal, ACCESS_TOKEN);
+            String redirectUrl = redirectUrlFactory.createSuccessRedirectUrl(principal);
+            Map<String, String> queryParams = queryParams(redirectUrl);
 
-            assertThat(redirectUrl).isEqualTo(String.format(
-                    REDIRECT_URI,
-                    true,
-                    ACCESS_TOKEN,
-                    ""
-            ));
+            assertThat(queryParams)
+                    .containsEntry("registered", "true")
+                    .containsEntry("email", "")
+                    .doesNotContainKey("token");
         }
     }
 
@@ -101,5 +102,23 @@ class OAuth2LoginRedirectUrlFactoryTest {
                 .status(status)
                 .email(email)
                 .build();
+    }
+
+    private Map<String, String> queryParams(String redirectUrl) {
+        String rawQuery = URI.create(redirectUrl).getRawQuery();
+        Map<String, String> queryParams = new LinkedHashMap<>();
+
+        Arrays.stream(rawQuery.split("&"))
+                .map(parameter -> parameter.split("=", 2))
+                .forEach(parameter -> queryParams.put(
+                        decode(parameter[0]),
+                        parameter.length > 1 ? decode(parameter[1]) : ""
+                ));
+
+        return queryParams;
+    }
+
+    private String decode(String value) {
+        return URLDecoder.decode(value, StandardCharsets.UTF_8);
     }
 }

@@ -32,7 +32,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         log.info("OAuth2 login success - userId: {}, role: {}, status: {}, email: {}",
                 userPrincipal.getId(), userPrincipal.getRole(), userPrincipal.getStatus(), userPrincipal.getEmail());
 
-        String targetUrl = redirectUrlFactory.createSuccessRedirectUrl(userPrincipal, tokens.accessToken());
+        String targetUrl = redirectUrlFactory.createSuccessRedirectUrl(userPrincipal);
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
