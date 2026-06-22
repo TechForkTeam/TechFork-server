@@ -27,6 +27,22 @@
 - legacy slice를 옮길 때는 production과 test를 같은 작업 단위에서 함께 옮긴다. 네이밍 정리만을 위해 테스트만 먼저 이동하지 않는다.
 - `src/test/java/com/techfork/evaluation`은 별도 evaluation lane이다. 해당 하위 패키지는 [로컬 가이드](../../src/test/java/com/techfork/evaluation/AGENTS.md)를 따른다.
 
+## Legacy `domain/*` 유지/이관 기준
+
+현재 production package가 `com.techfork.domain.*`에 남아 있는 영역은 테스트도 같은 legacy root를 유지한다.
+
+- 현재 legacy 유지 대상:
+  - `com.techfork.domain.source`
+  - `com.techfork.domain.search`
+  - `com.techfork.domain.recommendation`
+- 테스트만 먼저 `com.techfork.<context>`로 옮기지 않는다. production과 test의 root가 달라지면 IDE 탐색, package-private 접근, fixture 소유권 판단이 어긋날 수 있다.
+- legacy slice를 이관할 때는 다음을 같은 작업 단위로 묶는다.
+  - production package 선언과 디렉터리 이동
+  - test package 선언과 디렉터리 이동
+  - fixture package와 import 경로 갱신
+  - 문서/AGENTS/로드맵의 package 경로 갱신
+- 단순 네이밍 정리나 fixture 정리 작업에서는 legacy root를 유지하고, 이관은 별도 리팩터링 이슈로 분리한다.
+
 ## 네이밍 컨벤션
 
 - Repository 검증 테스트는 `{RepositoryName}Test`를 사용한다.
