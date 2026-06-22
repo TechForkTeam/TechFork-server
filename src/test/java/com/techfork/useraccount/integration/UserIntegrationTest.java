@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * UserController 통합 테스트
+ * User API 통합 테스트
  */
 class UserIntegrationTest extends IntegrationTestBase {
 

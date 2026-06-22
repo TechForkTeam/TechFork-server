@@ -35,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * AuthController 통합 테스트
+ * Auth API 통합 테스트
  * - IntegrationTestBase 상속으로 테스트 컨테이너 공유
  * - @Tag("integration") 자동 적용
  * - 모든 레이어(Controller, Service, Repository) 통합 테스트

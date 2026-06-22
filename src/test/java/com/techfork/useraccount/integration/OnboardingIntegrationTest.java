@@ -34,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * OnboardingController 통합 테스트
+ * Onboarding API 통합 테스트
  */
 class OnboardingIntegrationTest extends IntegrationTestBase {
 
