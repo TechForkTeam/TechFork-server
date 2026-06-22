@@ -3,19 +3,24 @@ package com.techfork.useraccount.infrastructure;
 import com.techfork.activity.readpost.domain.ReadPost;
 import com.techfork.activity.bookmark.domain.Bookmark;
 import com.techfork.activity.readhistory.domain.SearchHistory;
+import com.techfork.activity.bookmark.fixture.BookmarkFixture;
+import com.techfork.activity.readhistory.fixture.SearchHistoryFixture;
+import com.techfork.activity.readpost.fixture.ReadPostFixture;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.activity.readhistory.infrastructure.SearchHistoryRepository;
 import com.techfork.post.domain.Post;
+import com.techfork.post.fixture.PostFixture;
 import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.fixture.TechBlogFixture;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.UserInterestCategory;
 import com.techfork.useraccount.domain.enums.EInterestCategory;
 import com.techfork.useraccount.domain.enums.EInterestKeyword;
-import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.vo.UserInterestSelection;
+import com.techfork.useraccount.fixture.UserFixture;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -67,14 +72,10 @@ class UserRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", null);
+        testUser = UserFixture.socialUser("testSocialId", "test@example.com", null);
         testUser = userRepository.save(testUser);
 
-        testTechBlog = TechBlog.builder()
-                .companyName("테스트 회사")
-                .blogUrl("https://test.com")
-                .rssUrl("https://test.com/rss")
-                .build();
+        testTechBlog = TechBlogFixture.createTechBlog("테스트 회사", "https://test.com", "https://test.com/rss", null);
         testTechBlog = techBlogRepository.save(testTechBlog);
     }
 
@@ -165,7 +166,7 @@ class UserRepositoryTest {
         LocalDateTime since = LocalDateTime.now().minusDays(7);
 
         Post post = createPost();
-        ReadPost readPost = ReadPost.create(testUser, post, LocalDateTime.now(), 100);
+        ReadPost readPost = ReadPostFixture.createReadPost(testUser, post, LocalDateTime.now(), 100);
         readPostRepository.save(readPost);
 
         // When: 최근 7일 이내 활동한 유저 조회
@@ -183,7 +184,7 @@ class UserRepositoryTest {
         LocalDateTime since = LocalDateTime.now().minusDays(7);
 
         Post post = createPost();
-        Bookmark bookmark = Bookmark.create(testUser, post, LocalDateTime.now());
+        Bookmark bookmark = BookmarkFixture.createBookmark(testUser, post, LocalDateTime.now());
         bookmarkRepository.save(bookmark);
 
         // When
@@ -200,7 +201,7 @@ class UserRepositoryTest {
         // Given
         LocalDateTime since = LocalDateTime.now().minusDays(7);
 
-        SearchHistory searchHistory = SearchHistory.create(testUser, "테스트 검색", LocalDateTime.now());
+        SearchHistory searchHistory = SearchHistoryFixture.createSearchHistory(testUser, "테스트 검색", LocalDateTime.now());
         searchHistoryRepository.save(searchHistory);
 
         // When
@@ -219,7 +220,7 @@ class UserRepositoryTest {
         LocalDateTime oldDate = LocalDateTime.now().minusDays(30); // 30일 전
 
         Post post = createPost();
-        ReadPost readPost = ReadPost.create(testUser, post, oldDate, 100);
+        ReadPost readPost = ReadPostFixture.createReadPost(testUser, post, oldDate, 100);
         readPostRepository.save(readPost);
 
         // When: 최근 7일 이내 활동한 유저만 조회
@@ -238,9 +239,9 @@ class UserRepositoryTest {
         Post post1 = createPost();
         Post post2 = createPost();
 
-        ReadPost readPost = ReadPost.create(testUser, post1, LocalDateTime.now(), 100);
-        Bookmark bookmark = Bookmark.create(testUser, post2, LocalDateTime.now());
-        SearchHistory searchHistory = SearchHistory.create(testUser, "검색", LocalDateTime.now());
+        ReadPost readPost = ReadPostFixture.createReadPost(testUser, post1, LocalDateTime.now(), 100);
+        Bookmark bookmark = BookmarkFixture.createBookmark(testUser, post2, LocalDateTime.now());
+        SearchHistory searchHistory = SearchHistoryFixture.createSearchHistory(testUser, "검색", LocalDateTime.now());
 
         readPostRepository.save(readPost);
         bookmarkRepository.save(bookmark);
@@ -258,11 +259,10 @@ class UserRepositoryTest {
     @DisplayName("findActiveUsersSince - 탈퇴한 회원은 제외")
     void findActiveUsersSince_ExcludesWithdrawnUsers() {
         // Given: 활성 유저와 탈퇴 유저 생성
-        User activeUser = User.createSocialUser(SocialType.KAKAO, "activeSocialId", "active@example.com", null);
+        User activeUser = UserFixture.activeUser("activeSocialId", "active@example.com");
         activeUser = userRepository.save(activeUser);
 
-        User withdrawnUser = User.createSocialUser(SocialType.KAKAO, "withdrawnSocialId", "withdrawn@example.com", null);
-        withdrawnUser.updateUser("탈퇴유저", "withdrawn@example.com", "개발자였습니다.");
+        User withdrawnUser = UserFixture.activeUser("withdrawnSocialId", "withdrawn@example.com");
         withdrawnUser.withdraw(); // 탈퇴 처리
         withdrawnUser = userRepository.save(withdrawnUser);
 
@@ -270,8 +270,8 @@ class UserRepositoryTest {
         Post post = createPost();
 
         // 두 유저 모두 최근 활동이 있음
-        ReadPost activeUserRead = ReadPost.create(activeUser, post, LocalDateTime.now(), 100);
-        ReadPost withdrawnUserRead = ReadPost.create(withdrawnUser, post, LocalDateTime.now(), 100);
+        ReadPost activeUserRead = ReadPostFixture.createReadPost(activeUser, post, LocalDateTime.now(), 100);
+        ReadPost withdrawnUserRead = ReadPostFixture.createReadPost(withdrawnUser, post, LocalDateTime.now(), 100);
         readPostRepository.saveAll(List.of(activeUserRead, withdrawnUserRead));
 
         // When: 최근 활동한 유저 조회
@@ -294,7 +294,7 @@ class UserRepositoryTest {
         Post post = createPost();
 
         // 탈퇴한 유저에게 최근 활동 기록 추가
-        ReadPost readPost = ReadPost.create(testUser, post, LocalDateTime.now(), 100);
+        ReadPost readPost = ReadPostFixture.createReadPost(testUser, post, LocalDateTime.now(), 100);
         readPostRepository.save(readPost);
 
         // When
@@ -308,13 +308,13 @@ class UserRepositoryTest {
     @DisplayName("findActiveUsersSince - 여러 유저 중 일부만 탈퇴한 경우")
     void findActiveUsersSince_MixedWithdrawnAndActiveUsers() {
         // Given: 3명의 유저 (1명 탈퇴, 2명 활성)
-        User user1 = User.createSocialUser(SocialType.KAKAO, "user1", "user1@example.com", null);
+        User user1 = UserFixture.activeUser("user1", "user1@example.com");
         user1 = userRepository.save(user1);
 
-        User user2 = User.createSocialUser(SocialType.KAKAO, "user2", "user2@example.com", null);
+        User user2 = UserFixture.activeUser("user2", "user2@example.com");
         user2 = userRepository.save(user2);
 
-        User user3Withdrawn = User.createSocialUser(SocialType.KAKAO, "user3", "user3@example.com", null);
+        User user3Withdrawn = UserFixture.activeUser("user3", "user3@example.com");
         user3Withdrawn.withdraw(); // 탈퇴
         user3Withdrawn = userRepository.save(user3Withdrawn);
 
@@ -323,9 +323,9 @@ class UserRepositoryTest {
 
         // 3명 모두 최근 활동 있음
         readPostRepository.saveAll(List.of(
-                ReadPost.create(user1, post, LocalDateTime.now(), 100),
-                ReadPost.create(user2, post, LocalDateTime.now(), 100),
-                ReadPost.create(user3Withdrawn, post, LocalDateTime.now(), 100)
+                ReadPostFixture.createReadPost(user1, post, LocalDateTime.now(), 100),
+                ReadPostFixture.createReadPost(user2, post, LocalDateTime.now(), 100),
+                ReadPostFixture.createReadPost(user3Withdrawn, post, LocalDateTime.now(), 100)
         ));
 
         // When
@@ -342,7 +342,7 @@ class UserRepositoryTest {
     @DisplayName("findAllWithInterestCategoriesByIds - 여러 유저를 관심사와 함께 조회")
     void findAllWithInterestCategoriesByIds_Success() {
         // Given: 두 번째 유저 생성
-        User user2 = User.createSocialUser(SocialType.KAKAO, "testSocialId2", "test2@example.com", null);
+        User user2 = UserFixture.socialUser("testSocialId2", "test2@example.com", null);
         user2 = userRepository.save(user2);
 
         UserInterestCategory category1 = UserInterestCategory.create(testUser, EInterestCategory.BACKEND);
@@ -376,16 +376,17 @@ class UserRepositoryTest {
     }
 
     private Post createPost() {
-        return postRepository.save(Post.builder()
-                .title("테스트 포스트")
-                .fullContent("내용")
-                .plainContent("내용")
-                .company("테스트 회사")
-                .url("https://test.com/post/" + UUID.randomUUID())
-                .publishedAt(LocalDateTime.now())
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testTechBlog)
-                .build());
+        return postRepository.save(PostFixture.createPost(
+                testTechBlog,
+                "테스트 포스트",
+                "내용",
+                "내용",
+                "테스트 포스트 요약",
+                "테스트 포스트 짧은 요약",
+                "https://test.com/thumbnail.png",
+                "https://test.com/post/" + UUID.randomUUID(),
+                LocalDateTime.now()
+        ));
     }
 
     private List<Long> findKeywordIdsByCategoryIds(List<Long> categoryIds) {

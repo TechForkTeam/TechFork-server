@@ -5,7 +5,7 @@ import com.techfork.useraccount.domain.UserInterestCategory;
 import com.techfork.useraccount.domain.UserInterestKeyword;
 import com.techfork.useraccount.domain.enums.EInterestCategory;
 import com.techfork.useraccount.domain.enums.EInterestKeyword;
-import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.fixture.UserFixture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,7 @@ class UserInterestCategoryRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", null);
+        testUser = UserFixture.socialUser("testSocialId", "test@example.com", null);
         testUser = userRepository.save(testUser);
     }
 
@@ -156,7 +156,7 @@ class UserInterestCategoryRepositoryTest {
     @DisplayName("findByUserIdWithKeywords - 다른 유저의 관심사는 조회되지 않음")
     void findByUserIdWithKeywords_OnlyOwnInterests() {
         // Given: 두 번째 유저와 관심사 생성
-        User anotherUser = User.createSocialUser(SocialType.KAKAO, "anotherSocialId", "another@example.com", null);
+        User anotherUser = UserFixture.socialUser("anotherSocialId", "another@example.com", null);
         anotherUser = userRepository.save(anotherUser);
 
         UserInterestCategory testUserCategory = UserInterestCategory.create(testUser, EInterestCategory.BACKEND);

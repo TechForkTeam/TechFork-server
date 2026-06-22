@@ -15,8 +15,8 @@ import com.techfork.useraccount.application.event.UserInterestsChangedEvent;
 import com.techfork.useraccount.application.event.UserReactivatedEvent;
 import com.techfork.useraccount.application.event.UserWithdrawnEvent;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.enums.UserStatus;
+import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -164,13 +164,13 @@ class UserAccountAfterCommitEventIntegrationTest extends IntegrationTestBase {
     }
 
     private User savePendingUser() {
-        User user = User.createSocialUser(SocialType.KAKAO, uniqueSocialId(), "pending@example.com", null);
+        User user = UserFixture.socialUser(uniqueSocialId(), "pending@example.com", null);
         return userRepository.save(user);
     }
 
     private User saveActiveUser() {
-        User user = User.createSocialUser(SocialType.KAKAO, uniqueSocialId(), "active@example.com", null);
-        user.updateUser("테스트유저", "active@example.com", "백엔드 개발자입니다");
+        User user = UserFixture.activeUser(uniqueSocialId(), "active@example.com");
+        user.updateProfile("테스트유저", "백엔드 개발자입니다");
         return userRepository.save(user);
     }
 
