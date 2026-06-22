@@ -27,7 +27,6 @@ import static com.techfork.domain.recommendation.fixture.RecommendationPostFixtu
 import static com.techfork.domain.recommendation.fixture.RecommendationUserFixture.user;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -86,6 +85,7 @@ class RecommendationQueryServiceTest {
         RecommendedPostDto dto1 = createRecommendedPostDto(1L, 101L, "게시글 1", "요약 1", null);
         RecommendedPostDto dto2 = createRecommendedPostDto(2L, 102L, "게시글 2", "요약 2", null);
         RecommendedPostDto dto3 = createRecommendedPostDto(3L, 103L, "게시글 3", "요약 3", null);
+        List<Long> postIds = List.of(101L, 102L, 103L);
 
         RecommendationListResponse initialResponse = RecommendationListResponse.builder()
                 .recommendations(List.of(dto1, dto2, dto3))
@@ -95,7 +95,7 @@ class RecommendationQueryServiceTest {
         given(userRepository.getReferenceById(userId)).willReturn(testUser);
         given(recommendedPostRepository.findByUserOrderByRankAsc(testUser)).willReturn(recommendedPosts);
         given(recommendationConverter.toRecommendationListResponse(recommendedPosts)).willReturn(initialResponse);
-        given(bookmarkRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(List.of());
+        given(bookmarkRepository.findBookmarkedPostIds(userId, postIds)).willReturn(List.of());
 
         // when
         RecommendationListResponse response = recommendationQueryService.getRecommendations(userId);
@@ -109,7 +109,7 @@ class RecommendationQueryServiceTest {
         verify(userRepository).getReferenceById(userId);
         verify(recommendedPostRepository).findByUserOrderByRankAsc(testUser);
         verify(recommendationConverter).toRecommendationListResponse(recommendedPosts);
-        verify(bookmarkRepository).findBookmarkedPostIds(eq(userId), any());
+        verify(bookmarkRepository).findBookmarkedPostIds(userId, postIds);
     }
 
     @Test
@@ -124,6 +124,7 @@ class RecommendationQueryServiceTest {
         RecommendedPostDto dto1 = createRecommendedPostDto(1L, 101L, "게시글 1", "요약 1", null);
         RecommendedPostDto dto2 = createRecommendedPostDto(2L, 102L, "게시글 2", "요약 2", null);
         RecommendedPostDto dto3 = createRecommendedPostDto(3L, 103L, "게시글 3", "요약 3", null);
+        List<Long> postIds = List.of(101L, 102L, 103L);
 
         RecommendationListResponse initialResponse = RecommendationListResponse.builder()
                 .recommendations(List.of(dto1, dto2, dto3))
@@ -136,7 +137,7 @@ class RecommendationQueryServiceTest {
         given(userRepository.getReferenceById(userId)).willReturn(testUser);
         given(recommendedPostRepository.findByUserOrderByRankAsc(testUser)).willReturn(recommendedPosts);
         given(recommendationConverter.toRecommendationListResponse(recommendedPosts)).willReturn(initialResponse);
-        given(bookmarkRepository.findBookmarkedPostIds(eq(userId), any())).willReturn(bookmarkedPostIds);
+        given(bookmarkRepository.findBookmarkedPostIds(userId, postIds)).willReturn(bookmarkedPostIds);
 
         // when
         RecommendationListResponse response = recommendationQueryService.getRecommendations(userId);
@@ -149,6 +150,7 @@ class RecommendationQueryServiceTest {
         assertThat(response.recommendations().get(1).isBookmarked()).isFalse();
         assertThat(response.recommendations().get(2).postId()).isEqualTo(103L);
         assertThat(response.recommendations().get(2).isBookmarked()).isTrue();
+        verify(bookmarkRepository).findBookmarkedPostIds(userId, postIds);
     }
 
     @Test
