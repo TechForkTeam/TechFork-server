@@ -7,6 +7,7 @@ import com.techfork.personalization.application.activity.UserActivityData;
 import com.techfork.personalization.infrastructure.PersonalizationProfileDocument;
 import com.techfork.personalization.infrastructure.PersonalizationProfileDocumentRepository;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -39,43 +40,48 @@ class PersonalizedProfileGeneratorTest {
     @InjectMocks
     private PersonalizedProfileGenerator personalizedProfileGenerator;
 
-    @Test
-    @DisplayName("사용자 활동 분석 결과를 임베딩해 개인화 프로필 문서로 저장한다")
-    void generate_AnalyzesActivityDataEmbedsAndSavesProfileDocument() {
-        Long userId = 1L;
-        UserActivityData activityData = activityData(
-                List.of("Java", "Spring", "Docker"),
-                List.of(postActivityData("읽은 포스트", List.of("Java"), "정독함")),
-                List.of(postActivityData("북마크 포스트", List.of("Kubernetes", "Helm"), null)),
-                List.of("Spring Batch", "Elasticsearch vector")
-        );
-        PersonalizationProfileAnalysis analysis = profileAnalysis(
-                "Java와 Spring 기반 백엔드, Docker 중심 운영 자동화, Elasticsearch 검색 최적화에 집중하는 사용자",
-                List.of("Java", "Spring", "Docker", "Elasticsearch", "Batch")
-        );
+    @Nested
+    @DisplayName("generate")
+    class Generate {
 
-        given(userActivityCollector.collect(userId)).willReturn(activityData);
-        given(personalizationProfileAnalyzer.analyze(activityData)).willReturn(analysis);
-        given(embeddingClient.embed(analysis.profileText())).willReturn(List.of(0.1f, 0.2f, 0.3f));
-        given(personalizationProfileDocumentRepository.save(any(PersonalizationProfileDocument.class)))
-                .willAnswer(invocation -> invocation.getArgument(0));
+        @Test
+        @DisplayName("사용자 활동 분석 결과를 임베딩해 개인화 프로필 문서로 저장한다")
+        void activityDataProvided_AnalyzesEmbedsAndSavesProfileDocument() {
+            Long userId = 1L;
+            UserActivityData activityData = activityData(
+                    List.of("Java", "Spring", "Docker"),
+                    List.of(postActivityData("읽은 포스트", List.of("Java"), "정독함")),
+                    List.of(postActivityData("북마크 포스트", List.of("Kubernetes", "Helm"), null)),
+                    List.of("Spring Batch", "Elasticsearch vector")
+            );
+            PersonalizationProfileAnalysis analysis = profileAnalysis(
+                    "Java와 Spring 기반 백엔드, Docker 중심 운영 자동화, Elasticsearch 검색 최적화에 집중하는 사용자",
+                    List.of("Java", "Spring", "Docker", "Elasticsearch", "Batch")
+            );
 
-        PersonalizationProfileDocument result = personalizedProfileGenerator.generate(userId);
+            given(userActivityCollector.collect(userId)).willReturn(activityData);
+            given(personalizationProfileAnalyzer.analyze(activityData)).willReturn(analysis);
+            given(embeddingClient.embed(analysis.profileText())).willReturn(List.of(0.1f, 0.2f, 0.3f));
+            given(personalizationProfileDocumentRepository.save(any(PersonalizationProfileDocument.class)))
+                    .willAnswer(invocation -> invocation.getArgument(0));
 
-        ArgumentCaptor<PersonalizationProfileDocument> documentCaptor = ArgumentCaptor.forClass(PersonalizationProfileDocument.class);
-        verify(personalizationProfileDocumentRepository).save(documentCaptor.capture());
+            PersonalizationProfileDocument result = personalizedProfileGenerator.generate(userId);
 
-        PersonalizationProfileDocument savedDocument = documentCaptor.getValue();
-        assertThat(result).isSameAs(savedDocument);
-        assertThat(savedDocument.getUserId()).isEqualTo(userId);
-        assertThat(savedDocument.getProfileText()).isEqualTo(analysis.profileText());
-        assertThat(savedDocument.getProfileVector()).containsExactly(0.1f, 0.2f, 0.3f);
-        assertThat(savedDocument.getInterests()).containsExactly("Java", "Spring", "Docker");
-        assertThat(savedDocument.getKeyKeywords()).containsExactlyElementsOf(analysis.keyKeywords());
+            ArgumentCaptor<PersonalizationProfileDocument> documentCaptor = ArgumentCaptor.forClass(PersonalizationProfileDocument.class);
+            verify(personalizationProfileDocumentRepository).save(documentCaptor.capture());
 
-        verify(userActivityCollector).collect(userId);
-        verify(personalizationProfileAnalyzer).analyze(activityData);
-        verify(embeddingClient).embed(analysis.profileText());
+            PersonalizationProfileDocument savedDocument = documentCaptor.getValue();
+            assertThat(result).isSameAs(savedDocument);
+            assertThat(savedDocument.getUserId()).isEqualTo(userId);
+            assertThat(savedDocument.getProfileText()).isEqualTo(analysis.profileText());
+            assertThat(savedDocument.getProfileVector()).containsExactly(0.1f, 0.2f, 0.3f);
+            assertThat(savedDocument.getInterests()).containsExactly("Java", "Spring", "Docker");
+            assertThat(savedDocument.getKeyKeywords()).containsExactlyElementsOf(analysis.keyKeywords());
+
+            verify(userActivityCollector).collect(userId);
+            verify(personalizationProfileAnalyzer).analyze(activityData);
+            verify(embeddingClient).embed(analysis.profileText());
+        }
     }
 
     private UserActivityData activityData(

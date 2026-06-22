@@ -3,6 +3,7 @@ package com.techfork.personalization.application;
 import com.techfork.useraccount.application.event.OnboardingCompletedEvent;
 import com.techfork.useraccount.application.event.UserInterestsChangedEvent;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,31 +24,41 @@ class PersonalizationProfileEventListenerTest {
     @InjectMocks
     private PersonalizationProfileEventListener listener;
 
-    @Test
-    @DisplayName("온보딩 완료 이벤트 - 커밋 이후 개인화 프로필 생성을 요청한다")
-    void handle_OnboardingCompletedEvent_GeneratesPersonalizationProfile() {
-        Long userId = 1L;
+    @Nested
+    @DisplayName("도메인 이벤트 처리")
+    class HandleDomainEvent {
 
-        listener.handle(new OnboardingCompletedEvent(userId));
+        @Test
+        @DisplayName("온보딩 완료 이벤트 - 커밋 이후 개인화 프로필 생성을 요청한다")
+        void onboardingCompletedEvent_GeneratesPersonalizationProfile() {
+            Long userId = 1L;
 
-        verify(personalizationProfileService).generatePersonalizationProfile(userId);
+            listener.handle(new OnboardingCompletedEvent(userId));
+
+            verify(personalizationProfileService).generatePersonalizationProfile(userId);
+        }
+
+        @Test
+        @DisplayName("관심사 변경 이벤트 - 커밋 이후 개인화 프로필 생성을 요청한다")
+        void userInterestsChangedEvent_GeneratesPersonalizationProfile() {
+            Long userId = 1L;
+
+            listener.handle(new UserInterestsChangedEvent(userId));
+
+            verify(personalizationProfileService).generatePersonalizationProfile(userId);
+        }
     }
 
-    @Test
-    @DisplayName("관심사 변경 이벤트 - 커밋 이후 개인화 프로필 생성을 요청한다")
-    void handle_UserInterestsChangedEvent_GeneratesPersonalizationProfile() {
-        Long userId = 1L;
+    @Nested
+    @DisplayName("transaction phase")
+    class TransactionPhaseContract {
 
-        listener.handle(new UserInterestsChangedEvent(userId));
-
-        verify(personalizationProfileService).generatePersonalizationProfile(userId);
-    }
-
-    @Test
-    @DisplayName("개인화 프로필 리스너는 AFTER_COMMIT 단계에서 실행된다")
-    void listenerMethods_RunAfterCommit() throws NoSuchMethodException {
-        assertAfterCommitListener("handle", OnboardingCompletedEvent.class);
-        assertAfterCommitListener("handle", UserInterestsChangedEvent.class);
+        @Test
+        @DisplayName("개인화 프로필 리스너는 AFTER_COMMIT 단계에서 실행된다")
+        void listeners_RunAfterCommit() throws NoSuchMethodException {
+            assertAfterCommitListener("handle", OnboardingCompletedEvent.class);
+            assertAfterCommitListener("handle", UserInterestsChangedEvent.class);
+        }
     }
 
     private void assertAfterCommitListener(String methodName, Class<?> eventType) throws NoSuchMethodException {
