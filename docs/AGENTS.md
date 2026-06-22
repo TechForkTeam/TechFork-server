@@ -16,6 +16,7 @@ This AGENTS.md scopes guidance to `docs`. Parent AGENTS guidance still applies u
 
 ### Subdirectories
 - `convention/`
+- `ddd/`
 
 <!-- OMX:AGENTS-INIT:MANUAL:START -->
 ## Local Notes

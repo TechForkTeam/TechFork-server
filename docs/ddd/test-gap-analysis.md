@@ -1,14 +1,15 @@
 # TechFork 테스트 갭 분석
 
+> Historical snapshot: DDD 전환 과정에서 작성된 테스트 갭 분석 문서입니다. 최신 테스트 컨벤션은 `src/test/AGENTS.md`를 따릅니다.
 > 목적: DDD 전환과 테스트 개선 로드맵을 실행하기 전에, 현재 테스트가 어떤 영역을 보호하고 있고 어떤 영역이 비어 있는지 분석한다.  
-> 관련 문서: [`docs/ubiquitous-language/README.md`](./ubiquitous-language/README.md), [`docs/ddd-test-refactoring-roadmap.md`](./ddd-test-refactoring-roadmap.md)  
+> 관련 문서: [`docs/ddd/ubiquitous-language/README.md`](./ubiquitous-language/README.md), [`docs/ddd/ddd-test-refactoring-roadmap.md`](./ddd-test-refactoring-roadmap.md)  
 > 기준 시점: **2026-06-03, #411 병합 후 `docs/#412` 시작 시점**
 
 ## 1. 분석 요약
 
 현재 테스트는 **Controller/Repository/Service 단위의 기존 기능 회귀 테스트는 꽤 많이 쌓여 있지만, DDD 전환에 필요한 애그리거트 단위 테스트와 핵심 개인화/추천/검색 알고리즘 테스트가 부족한 상태**다.
 
-테스트 보강 우선순위는 `docs/domain-strategy.md`의 하위 도메인 분류를 따른다. 즉, **핵심 하위 도메인인 개인화 기술 콘텐츠 발견(Search/Recommendation), 사용자 관심/행동 기반 개인화 모델링(Personalization Profile/Activity), 기술 게시글 이해/풍부화(Post enrichment)** 를 먼저 보호한다.
+테스트 보강 우선순위는 `docs/ddd/domain-strategy.md`의 하위 도메인 분류를 따른다. 즉, **핵심 하위 도메인인 개인화 기술 콘텐츠 발견(Search/Recommendation), 사용자 관심/행동 기반 개인화 모델링(Personalization Profile/Activity), 기술 게시글 이해/풍부화(Post enrichment)** 를 먼저 보호한다.
 
 요약하면 다음과 같다.
 
@@ -599,7 +600,7 @@ src/main/java/com/techfork/domain/notification/entity/NotificationToken.java
 
 ## 7. 테스트 작성 순서 제안
 
-`docs/ddd-test-refactoring-roadmap.md`의 실행 순서를 테스트 관점으로 더 구체화하면 다음과 같다.
+`docs/ddd/ddd-test-refactoring-roadmap.md`의 실행 순서를 테스트 관점으로 더 구체화하면 다음과 같다.
 
 ```text
 1. 현재 문서/테스트 인벤토리와 DDD 경계 최신화 유지

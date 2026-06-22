@@ -84,7 +84,7 @@
 ## 5. 다음 정리 순서
 
 1. `domain-strategy.md`의 명칭과 glossary 문서명을 맞춘다. (`Auth` → `Auth / Security`)
-2. `docs/ubiquitous-language.md`는 호환용 인덱스로 축소하고, 상세 용어는 이 디렉터리 문서에 모은다.
+2. `docs/ddd/ubiquitous-language.md`는 호환용 인덱스로 축소하고, 상세 용어는 이 디렉터리 문서에 모은다.
 3. 전략 문서와 glossary는 `User Account` / `Personalization Profile`로 분리 유지한다.
 4. 패키지 분리 이후에도 glossary와 전략 문서의 현재 상태 설명이 stale하지 않도록 함께 유지한다.
 

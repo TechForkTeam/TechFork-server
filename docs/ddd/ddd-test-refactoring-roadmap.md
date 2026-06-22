@@ -1,7 +1,7 @@
 # DDD 전환과 테스트 개선 로드맵
 
 > 목적: TechFork 서버를 DDD 관점으로 점진적으로 개선하면서, 아직 부족한 테스트 코드를 어떤 순서로 작성·개선할지 정리한다.  
-> 관련 문서: [`docs/ubiquitous-language/README.md`](./ubiquitous-language/README.md)  
+> 관련 문서: [`docs/ddd/ubiquitous-language/README.md`](./ubiquitous-language/README.md)  
 > 기준 시점: **2026-06-21, #432 Auth / Security 문서 동기화 시점**
 
 ## 1. 결론
@@ -84,8 +84,8 @@ DDD 목표 지도 작성
 
 산출물:
 
-- `docs/ubiquitous-language/README.md`
-- `docs/ubiquitous-language/` (컨텍스트별 glossary)
+- `docs/ddd/ubiquitous-language/README.md`
+- `docs/ddd/ubiquitous-language/` (컨텍스트별 glossary)
 
 포함되어야 할 내용:
 
@@ -127,10 +127,10 @@ DDD 리팩터링에 들어가기 전에 테스트 현황을 먼저 파악한다.
 권장 산출물:
 
 ```text
-docs/test-gap-analysis.md
+docs/ddd/test-gap-analysis.md
 ```
 
-2026-04-28 현재 `docs/test-gap-analysis.md`는 이미 존재하며, 이후 로드맵 업데이트와 함께 같이 최신화하는 것을 기본 원칙으로 둔다.
+2026-04-28 현재 `docs/ddd/test-gap-analysis.md`는 이미 존재하며, 이후 로드맵 업데이트와 함께 같이 최신화하는 것을 기본 원칙으로 둔다.
 
 분석 항목:
 

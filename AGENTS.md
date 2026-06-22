@@ -70,7 +70,7 @@ docker compose -f docker/docker-compose.local.yml up -d
 ```
 
 ## NOTES
-- High-value docs: `docs/source-package.md`, `docs/SCHEDULER_GUIDE.md`, `docs/convention/commit-convention.md`, `docs/convention/pr-convention.md`.
+- High-value docs: `docs/SCHEDULER_GUIDE.md`, `docs/ddd/domain-strategy.md`, `docs/ddd/ddd-test-refactoring-roadmap.md`, `docs/convention/commit-convention.md`, `docs/convention/pr-convention.md`.
 - `HELP.md` is Spring starter boilerplate; low signal compared with repo docs.
 - Child AGENTS live at:
   - `src/main/java/com/techfork/domain/source/AGENTS.md`
