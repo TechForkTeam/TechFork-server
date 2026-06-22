@@ -45,12 +45,34 @@
 
 ## 네이밍 컨벤션
 
-- Repository 검증 테스트는 `{RepositoryName}Test`를 사용한다.
-- 같은 subject에 일반 단위 테스트와 persistence slice 테스트가 함께 있을 때만 `{Subject}DataJpaTest`를 사용한다.
-- HTTP/API 통합 테스트는 `{Context}IntegrationTest`를 기본으로 한다. 더 좁은 시나리오가 명확하다면 목적이 드러나는 suffix를 사용할 수 있다.
-- 이벤트, 스케줄러, 동시성, after-commit 테스트는 목적이 드러나는 suffix를 사용할 수 있다.
-- `@Nested`는 행위나 시나리오 단위로 묶는다. `Success`/`Failure`만 단독으로 남발하지 말고, 더 큰 행위 그룹 아래에서 의미가 있을 때 사용한다.
+### 클래스명
+
+| 대상 | 기본 이름 | 예외/비고 |
+| --- | --- | --- |
+| 도메인 객체/값 객체 | `{Subject}Test` | 예: `PostTest`, `UserTest` |
+| application/service 단위 테스트 | `{Subject}Test` | production class 이름을 따른다. 예: `PostQueryServiceTest` |
+| Repository 검증 테스트 | `{RepositoryName}Test` | `DataJpaTest` suffix를 기본값으로 쓰지 않는다. 예: `PostRepositoryTest` |
+| 같은 subject에 unit과 persistence slice가 공존하는 batch/reader/writer | `{Subject}DataJpaTest` 허용 | 예: `PostSummaryReaderTest` + `PostSummaryReaderDataJpaTest` |
+| HTTP/API 통합 테스트 | `{Context}IntegrationTest` | `Controller` suffix는 테스트 클래스명에서 제거한다. 예: `PostIntegrationTest`, `AuthIntegrationTest` |
+| API version이 같은 context 안에서 분리된 경우 | `{Context}V{N}IntegrationTest` | 예: `PostV2IntegrationTest` |
+| 이벤트/스케줄러/동시성/after-commit 통합 테스트 | 목적이 드러나는 suffix 허용 | 예: `ReadPostCommandServiceConcurrencyIntegrationTest`, `UserAccountAfterCommitEventIntegrationTest` |
+
+### 메서드명
+
+- 테스트 메서드는 `subject_condition_expectedResult` 형태를 기본으로 한다.
+  - 예: `getBookmarks_Success_WithCursor`, `findByIdWithTechBlog_NotFound_ReturnsEmpty`
+- 행위가 `@Nested`로 충분히 묶였으면 condition/expectedResult 중심으로 짧게 써도 된다.
+  - 예: `withCookie_ReturnsDeserializedAuthorizationRequest`
+- 단순 성공/실패만 표현하는 `*_Success`, `*_Fail`은 새 테스트에서 지양한다. 조건이나 관찰 결과를 함께 쓴다.
+- 기존 테스트를 대량 rename하지 않는다. 기능 변경/테스트 보강 시 해당 파일 안에서 자연스럽게 맞춘다.
+
+### `@Nested` / `@DisplayName`
+
+- `@Nested`는 행위, API endpoint, 시나리오 단위로 묶는다.
+  - 예: `GET /api/v1/posts/{postId}`, `북마크 목록 조회`, `loadUser`
+- `Success`/`Failure`만 단독 최상위 그룹으로 남발하지 않는다. 더 큰 행위 그룹 아래에서 의미가 있을 때만 사용한다.
 - `@DisplayName`은 관찰 가능한 동작이나 기대 결과가 드러나도록 한글로 작성하는 것을 기본으로 한다.
+- HTTP/API 통합 테스트의 `@DisplayName`은 wire contract가 드러나도록 endpoint, 인증 여부, 응답 상태/필드를 표현한다.
 
 ## Fixture 컨벤션
 
