@@ -15,6 +15,7 @@ import com.techfork.auth.security.jwt.JwtUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -82,260 +83,271 @@ class OnboardingIntegrationTest extends IntegrationTestBase {
         userRepository.deleteAll();
     }
 
-    @Test
-    @DisplayName("관심사 목록 조회 - 성공")
-    void getInterests_Success() throws Exception {
-        // When & Then
-        mockMvc.perform(get("/api/v1/onboarding/interests"))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.isSuccess").value(true))
-                .andExpect(jsonPath("$.data.categories").isArray())
-                .andExpect(jsonPath("$.data.categories").isNotEmpty());
+    @Nested
+    @DisplayName("GET /api/v1/onboarding/interests")
+    class GetInterests {
+
+        @Test
+        @DisplayName("관심사 목록 조회 - 성공")
+        void request_ReturnsInterestCatalog() throws Exception {
+            // When & Then
+            mockMvc.perform(get("/api/v1/onboarding/interests"))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.isSuccess").value(true))
+                    .andExpect(jsonPath("$.data.categories").isArray())
+                    .andExpect(jsonPath("$.data.categories").isNotEmpty());
+        }
     }
 
-    @Test
-    @DisplayName("온보딩 완료 - 정상 케이스")
-    void completeOnboarding_Success() throws Exception {
-        // Given
-        List<UserInterestRequest> interests = List.of(
-                UserInterestRequest.builder()
-                        .category("BACKEND")
-                        .keywords(List.of("JAVA", "SPRING"))
-                        .build(),
-                UserInterestRequest.builder()
-                        .category("DATABASE")
-                        .keywords(List.of("MYSQL", "REDIS"))
-                        .build()
-        );
+    @Nested
+    @DisplayName("온보딩 완료")
+    class CompleteOnboarding {
 
-        OnboardingRequest request = new OnboardingRequest(
-                "테크포크유저",
-                "user@techfork.com",
-                "백엔드 개발자입니다",
-                interests
-        );
+        @Test
+        @DisplayName("온보딩 완료 - 정상 케이스")
+        void validRequest_ReturnsOk() throws Exception {
+            // Given
+            List<UserInterestRequest> interests = List.of(
+                    UserInterestRequest.builder()
+                            .category("BACKEND")
+                            .keywords(List.of("JAVA", "SPRING"))
+                            .build(),
+                    UserInterestRequest.builder()
+                            .category("DATABASE")
+                            .keywords(List.of("MYSQL", "REDIS"))
+                            .build()
+            );
 
-        String requestBody = objectMapper.writeValueAsString(request);
+            OnboardingRequest request = new OnboardingRequest(
+                    "테크포크유저",
+                    "user@techfork.com",
+                    "백엔드 개발자입니다",
+                    interests
+            );
 
-        // When & Then
-        mockMvc.perform(post("/api/v1/onboarding/complete")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andDo(print())
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.isSuccess").value(true));
+            String requestBody = objectMapper.writeValueAsString(request);
 
-        // 데이터베이스 검증
-        User savedUser = userRepository.findByIdWithInterestCategories(testUser.getId()).orElseThrow();
-        assertThat(savedUser.getNickName()).isEqualTo("테크포크유저");
-        assertThat(savedUser.getEmail()).isEqualTo("user@techfork.com");
-        assertThat(savedUser.getDescription()).isEqualTo("백엔드 개발자입니다");
-        assertThat(savedUser.getInterestCategories()).hasSize(2);
+            // When & Then
+            mockMvc.perform(post("/api/v1/onboarding/complete")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
+                    .andDo(print())
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.isSuccess").value(true));
+
+            // 데이터베이스 검증
+            User savedUser = userRepository.findByIdWithInterestCategories(testUser.getId()).orElseThrow();
+            assertThat(savedUser.getNickName()).isEqualTo("테크포크유저");
+            assertThat(savedUser.getEmail()).isEqualTo("user@techfork.com");
+            assertThat(savedUser.getDescription()).isEqualTo("백엔드 개발자입니다");
+            assertThat(savedUser.getInterestCategories()).hasSize(2);
+        }
+
+        @Test
+        @DisplayName("온보딩 완료 - description null 허용")
+        void nullDescription_ReturnsOk() throws Exception {
+            // Given
+            OnboardingRequest request = new OnboardingRequest(
+                    "테크포크유저",
+                    "user@techfork.com",
+                    null,
+                    List.of(
+                            UserInterestRequest.builder()
+                                    .category("FRONTEND")
+                                    .keywords(List.of("REACT"))
+                                    .build()
+                    )
+            );
+
+            String requestBody = objectMapper.writeValueAsString(request);
+
+            // When & Then
+            mockMvc.perform(post("/api/v1/onboarding/complete")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
+                    .andDo(print())
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.isSuccess").value(true));
+
+            User savedUser = userRepository.findById(testUser.getId()).orElseThrow();
+            assertThat(savedUser.getDescription()).isNull();
+        }
+
+        @Test
+        @DisplayName("온보딩 완료 - 닉네임 필수 검증")
+        void blankNickname_ReturnsBadRequest() throws Exception {
+            // Given
+            OnboardingRequest request = new OnboardingRequest(
+                    "",
+                    "user@techfork.com",
+                    null,
+                    List.of(
+                            UserInterestRequest.builder()
+                                    .category("BACKEND")
+                                    .keywords(List.of("JAVA"))
+                                    .build()
+                    )
+            );
+
+            String requestBody = objectMapper.writeValueAsString(request);
+
+            // When & Then
+            mockMvc.perform(post("/api/v1/onboarding/complete")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
+                    .andDo(print())
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("온보딩 완료 - 닉네임 길이 검증 (2-20자)")
+        void tooShortNickname_ReturnsBadRequest() throws Exception {
+            // Given
+            OnboardingRequest request = new OnboardingRequest(
+                    "a", // 1자 (최소 2자 필요)
+                    "user@techfork.com",
+                    null,
+                    List.of(
+                            UserInterestRequest.builder()
+                                    .category("BACKEND")
+                                    .keywords(List.of("JAVA"))
+                                    .build()
+                    )
+            );
+
+            String requestBody = objectMapper.writeValueAsString(request);
+
+            // When & Then
+            mockMvc.perform(post("/api/v1/onboarding/complete")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
+                    .andDo(print())
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("온보딩 완료 - 이메일 형식 검증")
+        void invalidEmail_ReturnsBadRequest() throws Exception {
+            // Given
+            OnboardingRequest request = new OnboardingRequest(
+                    "테크포크유저",
+                    "invalid-email", // 잘못된 이메일 형식
+                    null,
+                    List.of(
+                            UserInterestRequest.builder()
+                                    .category("BACKEND")
+                                    .keywords(List.of("JAVA"))
+                                    .build()
+                    )
+            );
+
+            String requestBody = objectMapper.writeValueAsString(request);
+
+            // When & Then
+            mockMvc.perform(post("/api/v1/onboarding/complete")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
+                    .andDo(print())
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("온보딩 완료 - 관심사 필수 검증")
+        void emptyInterests_ReturnsBadRequest() throws Exception {
+            // Given
+            OnboardingRequest request = new OnboardingRequest(
+                    "테크포크유저",
+                    "user@techfork.com",
+                    null,
+                    List.of() // 빈 관심사 목록
+            );
+
+            String requestBody = objectMapper.writeValueAsString(request);
+
+            // When & Then
+            mockMvc.perform(post("/api/v1/onboarding/complete")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
+                    .andDo(print())
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("온보딩 완료 - description 길이 검증 (100자 이하)")
+        void tooLongDescription_ReturnsBadRequest() throws Exception {
+            // Given
+            String longDescription = "a".repeat(101); // 101자
+
+            OnboardingRequest request = new OnboardingRequest(
+                    "테크포크유저",
+                    "user@techfork.com",
+                    longDescription,
+                    List.of(
+                            UserInterestRequest.builder()
+                                    .category("BACKEND")
+                                    .keywords(List.of("JAVA"))
+                                    .build()
+                    )
+            );
+
+            String requestBody = objectMapper.writeValueAsString(request);
+
+            // When & Then
+            mockMvc.perform(post("/api/v1/onboarding/complete")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
+                    .andDo(print())
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("온보딩 완료 - 여러 카테고리와 키워드 조합")
+        void multipleCategories_ReturnsOk() throws Exception {
+            // Given
+            List<UserInterestRequest> interests = List.of(
+                    UserInterestRequest.builder()
+                            .category("BACKEND")
+                            .keywords(List.of("JAVA", "SPRING", "PYTHON"))
+                            .build(),
+                    UserInterestRequest.builder()
+                            .category("DEVOPS")
+                            .keywords(List.of("DOCKER", "KUBERNETES"))
+                            .build(),
+                    UserInterestRequest.builder()
+                            .category("DATABASE")
+                            .keywords(List.of("MYSQL", "POSTGRESQL", "REDIS"))
+                            .build()
+            );
+
+            OnboardingRequest request = new OnboardingRequest(
+                    "풀스택개발자",
+                    "fullstack@techfork.com",
+                    "백엔드와 인프라를 다룹니다",
+                    interests
+            );
+
+            String requestBody = objectMapper.writeValueAsString(request);
+
+            // When & Then
+            mockMvc.perform(post("/api/v1/onboarding/complete")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
+                    .andDo(print())
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.isSuccess").value(true));
+
+            User savedUser = userRepository.findByIdWithInterestCategories(testUser.getId()).orElseThrow();
+            assertThat(savedUser.getInterestCategories()).hasSize(3);
+        }
     }
 
-    @Test
-    @DisplayName("온보딩 완료 - description null 허용")
-    void completeOnboarding_NullDescription_Success() throws Exception {
-        // Given
-        OnboardingRequest request = new OnboardingRequest(
-                "테크포크유저",
-                "user@techfork.com",
-                null,
-                List.of(
-                        UserInterestRequest.builder()
-                                .category("FRONTEND")
-                                .keywords(List.of("REACT"))
-                                .build()
-                )
-        );
-
-        String requestBody = objectMapper.writeValueAsString(request);
-
-        // When & Then
-        mockMvc.perform(post("/api/v1/onboarding/complete")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andDo(print())
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.isSuccess").value(true));
-
-        User savedUser = userRepository.findById(testUser.getId()).orElseThrow();
-        assertThat(savedUser.getDescription()).isNull();
-    }
-
-    @Test
-    @DisplayName("온보딩 완료 - 닉네임 필수 검증")
-    void completeOnboarding_BlankNickname_BadRequest() throws Exception {
-        // Given
-        OnboardingRequest request = new OnboardingRequest(
-                "",
-                "user@techfork.com",
-                null,
-                List.of(
-                        UserInterestRequest.builder()
-                                .category("BACKEND")
-                                .keywords(List.of("JAVA"))
-                                .build()
-                )
-        );
-
-        String requestBody = objectMapper.writeValueAsString(request);
-
-        // When & Then
-        mockMvc.perform(post("/api/v1/onboarding/complete")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @DisplayName("온보딩 완료 - 닉네임 길이 검증 (2-20자)")
-    void completeOnboarding_NicknameTooShort_BadRequest() throws Exception {
-        // Given
-        OnboardingRequest request = new OnboardingRequest(
-                "a", // 1자 (최소 2자 필요)
-                "user@techfork.com",
-                null,
-                List.of(
-                        UserInterestRequest.builder()
-                                .category("BACKEND")
-                                .keywords(List.of("JAVA"))
-                                .build()
-                )
-        );
-
-        String requestBody = objectMapper.writeValueAsString(request);
-
-        // When & Then
-        mockMvc.perform(post("/api/v1/onboarding/complete")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @DisplayName("온보딩 완료 - 이메일 형식 검증")
-    void completeOnboarding_InvalidEmail_BadRequest() throws Exception {
-        // Given
-        OnboardingRequest request = new OnboardingRequest(
-                "테크포크유저",
-                "invalid-email", // 잘못된 이메일 형식
-                null,
-                List.of(
-                        UserInterestRequest.builder()
-                                .category("BACKEND")
-                                .keywords(List.of("JAVA"))
-                                .build()
-                )
-        );
-
-        String requestBody = objectMapper.writeValueAsString(request);
-
-        // When & Then
-        mockMvc.perform(post("/api/v1/onboarding/complete")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @DisplayName("온보딩 완료 - 관심사 필수 검증")
-    void completeOnboarding_EmptyInterests_BadRequest() throws Exception {
-        // Given
-        OnboardingRequest request = new OnboardingRequest(
-                "테크포크유저",
-                "user@techfork.com",
-                null,
-                List.of() // 빈 관심사 목록
-        );
-
-        String requestBody = objectMapper.writeValueAsString(request);
-
-        // When & Then
-        mockMvc.perform(post("/api/v1/onboarding/complete")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @DisplayName("온보딩 완료 - description 길이 검증 (100자 이하)")
-    void completeOnboarding_DescriptionTooLong_BadRequest() throws Exception {
-        // Given
-        String longDescription = "a".repeat(101); // 101자
-
-        OnboardingRequest request = new OnboardingRequest(
-                "테크포크유저",
-                "user@techfork.com",
-                longDescription,
-                List.of(
-                        UserInterestRequest.builder()
-                                .category("BACKEND")
-                                .keywords(List.of("JAVA"))
-                                .build()
-                )
-        );
-
-        String requestBody = objectMapper.writeValueAsString(request);
-
-        // When & Then
-        mockMvc.perform(post("/api/v1/onboarding/complete")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @DisplayName("온보딩 완료 - 여러 카테고리와 키워드 조합")
-    void completeOnboarding_MultipleCategories_Success() throws Exception {
-        // Given
-        List<UserInterestRequest> interests = List.of(
-                UserInterestRequest.builder()
-                        .category("BACKEND")
-                        .keywords(List.of("JAVA", "SPRING", "PYTHON"))
-                        .build(),
-                UserInterestRequest.builder()
-                        .category("DEVOPS")
-                        .keywords(List.of("DOCKER", "KUBERNETES"))
-                        .build(),
-                UserInterestRequest.builder()
-                        .category("DATABASE")
-                        .keywords(List.of("MYSQL", "POSTGRESQL", "REDIS"))
-                        .build()
-        );
-
-        OnboardingRequest request = new OnboardingRequest(
-                "풀스택개발자",
-                "fullstack@techfork.com",
-                "백엔드와 인프라를 다룹니다",
-                interests
-        );
-
-        String requestBody = objectMapper.writeValueAsString(request);
-
-        // When & Then
-        mockMvc.perform(post("/api/v1/onboarding/complete")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andDo(print())
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.isSuccess").value(true));
-
-        User savedUser = userRepository.findByIdWithInterestCategories(testUser.getId()).orElseThrow();
-        assertThat(savedUser.getInterestCategories()).hasSize(3);
-    }
 }

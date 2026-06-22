@@ -36,7 +36,7 @@ class UserInterestRequestValidationTest {
 
         @Test
         @DisplayName("null 관심사 항목을 허용하지 않는다")
-        void rejectsNullInterestItem() {
+        void nullInterestItem_ReturnsValidationError() {
             SaveInterestRequest request = new SaveInterestRequest(Collections.singletonList(null));
 
             assertThat(validator.validate(request))
@@ -46,7 +46,7 @@ class UserInterestRequestValidationTest {
 
         @Test
         @DisplayName("빈 카테고리를 허용하지 않는다")
-        void rejectsBlankCategory() {
+        void blankCategory_ReturnsValidationError() {
             SaveInterestRequest request = new SaveInterestRequest(List.of(
                     UserInterestRequest.builder()
                             .category("")
@@ -61,7 +61,7 @@ class UserInterestRequestValidationTest {
 
         @Test
         @DisplayName("빈 키워드를 허용하지 않는다")
-        void rejectsBlankKeyword() {
+        void blankKeyword_ReturnsValidationError() {
             SaveInterestRequest request = new SaveInterestRequest(List.of(
                     UserInterestRequest.builder()
                             .category("BACKEND")
@@ -81,7 +81,7 @@ class UserInterestRequestValidationTest {
 
         @Test
         @DisplayName("관심사 항목을 중첩 검증한다")
-        void validatesNestedInterestItem() {
+        void invalidNestedInterestItem_ReturnsValidationError() {
             OnboardingRequest request = new OnboardingRequest(
                     "테크포크유저",
                     "user@techfork.com",

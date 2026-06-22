@@ -47,7 +47,7 @@ class UserAuthAccountServiceTest {
 
         @Test
         @DisplayName("존재하는 사용자의 인증 프로필 스냅샷을 반환한다")
-        void returnsAuthProfileSnapshot() {
+        void existingUser_ReturnsAuthProfileSnapshot() {
             User user = UserFixture.socialUserWithId(USER_ID, SocialType.KAKAO, SOCIAL_ID, EMAIL, PROFILE_IMAGE);
             given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
 
@@ -65,7 +65,7 @@ class UserAuthAccountServiceTest {
 
         @Test
         @DisplayName("존재하지 않는 사용자는 빈 결과를 반환한다")
-        void returnsEmptyWhenUserNotFound() {
+        void userNotFound_ReturnsEmpty() {
             given(userRepository.findById(USER_ID)).willReturn(Optional.empty());
 
             Optional<UserAuthProfile> result = userAuthAccountService.findAuthProfileById(USER_ID);
@@ -81,7 +81,7 @@ class UserAuthAccountServiceTest {
 
         @Test
         @DisplayName("신규 소셜 사용자를 생성하고 인증 프로필을 반환한다")
-        void createsNewSocialUserAndReturnsAuthProfile() {
+        void newSocialUser_CreatesAndReturnsAuthProfile() {
             User savedUser = UserFixture.socialUserWithId(USER_ID, SocialType.KAKAO, SOCIAL_ID, EMAIL, PROFILE_IMAGE);
             given(userRepository.findBySocialTypeAndSocialId(SocialType.KAKAO, SOCIAL_ID))
                     .willReturn(Optional.empty());
@@ -112,7 +112,7 @@ class UserAuthAccountServiceTest {
 
         @Test
         @DisplayName("기존 소셜 사용자를 재사용하고 새로 저장하지 않는다")
-        void reusesExistingSocialUserWithoutSaving() {
+        void existingSocialUser_ReturnsAuthProfileWithoutSaving() {
             User existingUser = UserFixture.activeUserWithId(USER_ID, SocialType.KAKAO, SOCIAL_ID, EMAIL, PROFILE_IMAGE);
             given(userRepository.findBySocialTypeAndSocialId(SocialType.KAKAO, SOCIAL_ID))
                     .willReturn(Optional.of(existingUser));
@@ -133,7 +133,7 @@ class UserAuthAccountServiceTest {
 
         @Test
         @DisplayName("탈퇴 소셜 사용자를 재활성화하고 PENDING 인증 프로필을 반환한다")
-        void reactivatesWithdrawnSocialUserAndReturnsPendingAuthProfile() {
+        void withdrawnSocialUser_ReactivatesAndReturnsPendingAuthProfile() {
             User withdrawnUser = UserFixture.activeUserWithId(USER_ID, SocialType.KAKAO, SOCIAL_ID, "old@example.com", "old.png");
             withdrawnUser.withdraw();
             given(userRepository.findBySocialTypeAndSocialId(SocialType.KAKAO, SOCIAL_ID))

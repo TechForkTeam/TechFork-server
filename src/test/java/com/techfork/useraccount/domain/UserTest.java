@@ -27,7 +27,7 @@ class UserTest {
 
         @Test
         @DisplayName("소셜 사용자 생성 시 기본 상태는 PENDING이고 ROLE_USER를 가진다")
-        void createsPendingSocialUserWithUserRole() {
+        void socialIdentity_CreatesPendingUserWithUserRole() {
             User user = User.createSocialUser(
                     SocialType.KAKAO,
                     "social-id-123",
@@ -53,7 +53,7 @@ class UserTest {
 
         @Test
         @DisplayName("관심사 교체 시 카테고리와 키워드를 함께 조립한다")
-        void replacesInterestsWithCategoriesAndKeywords() {
+        void categoriesAndKeywords_ReplacesInterests() {
             User user = activeUser();
 
             user.replaceInterests(List.of(
@@ -78,7 +78,7 @@ class UserTest {
 
         @Test
         @DisplayName("키워드가 없으면 카테고리만 교체한다")
-        void replacesInterestsWithCategoryOnly() {
+        void categoryOnly_ReplacesInterests() {
             User user = activeUser();
 
             user.replaceInterests(List.of(
@@ -92,7 +92,7 @@ class UserTest {
 
         @Test
         @DisplayName("관심사 선택값은 키워드 목록을 빈 불변 리스트로 정규화한다")
-        void interestSelectionNormalizesKeywordsToImmutableList() {
+        void mutableKeywords_NormalizesToImmutableList() {
             List<EInterestKeyword> keywords = new ArrayList<>(List.of(EInterestKeyword.JAVA));
 
             UserInterestSelection selection = new UserInterestSelection(EInterestCategory.BACKEND, keywords);
@@ -105,7 +105,7 @@ class UserTest {
 
         @Test
         @DisplayName("기존 관심사를 제거하고 새 관심사로 교체한다")
-        void clearsExistingInterestsBeforeReplacing() {
+        void existingInterests_ClearsBeforeReplacing() {
             User user = activeUser();
             user.replaceInterests(List.of(
                     new UserInterestSelection(EInterestCategory.BACKEND, List.of(EInterestKeyword.JAVA, EInterestKeyword.SPRING))
@@ -125,7 +125,7 @@ class UserTest {
 
         @Test
         @DisplayName("키워드는 선택된 카테고리에 속해야 한다")
-        void rejectsKeywordThatDoesNotBelongToCategory() {
+        void keywordFromOtherCategory_ThrowsIllegalArgumentException() {
             User user = activeUser();
             user.replaceInterests(List.of(
                     new UserInterestSelection(EInterestCategory.BACKEND, List.of(EInterestKeyword.JAVA))
@@ -152,7 +152,7 @@ class UserTest {
 
         @Test
         @DisplayName("온보딩 완료 시 계정 정보를 갱신하고 ACTIVE 상태가 된다")
-        void activatesUserWhenOnboardingCompletes() {
+        void pendingUser_ActivatesOnOnboardingComplete() {
             User user = User.createSocialUser(SocialType.KAKAO, "social-id-123", "before@example.com", null);
 
             user.updateUser("테크포크유저", "after@example.com", "백엔드 개발자입니다.");
@@ -172,7 +172,7 @@ class UserTest {
 
         @Test
         @DisplayName("계정 프로필 수정 시 전달된 필드만 변경한다")
-        void updatesOnlyProvidedProfileFields() {
+        void partialFields_UpdatesOnlyProvidedProfileFields() {
             User user = activeUser();
 
             user.updateProfile("새닉네임", null);
@@ -194,7 +194,7 @@ class UserTest {
 
         @Test
         @DisplayName("탈퇴 시 개인정보를 null 처리하고 WITHDRAWN 상태가 된다")
-        void anonymizesPersonalDataAndMarksWithdrawn() {
+        void activeUser_AnonymizesPersonalDataAndMarksWithdrawn() {
             User user = activeUser();
             String originalSocialId = user.getSocialId();
             SocialType originalSocialType = user.getSocialType();
@@ -216,7 +216,7 @@ class UserTest {
 
         @Test
         @DisplayName("이미 탈퇴한 사용자면 예외를 던진다")
-        void rejectsAlreadyWithdrawnUser() {
+        void alreadyWithdrawnUser_ThrowsWithdrawnUser() {
             User user = activeUser();
             user.withdraw();
 
@@ -232,7 +232,7 @@ class UserTest {
 
         @Test
         @DisplayName("재활성화 시 이메일과 프로필 이미지를 복구하고 PENDING 상태가 된다")
-        void reactivatesUserAsPendingWithRecoveredIdentityData() {
+        void withdrawnUser_ReactivatesAsPendingWithRecoveredIdentityData() {
             User user = activeUser();
             user.withdraw();
 

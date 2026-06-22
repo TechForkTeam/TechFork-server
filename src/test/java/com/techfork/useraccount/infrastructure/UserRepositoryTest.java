@@ -25,6 +25,7 @@ import com.techfork.useraccount.fixture.UserInterestCategoryFixture;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -80,300 +81,320 @@ class UserRepositoryTest {
         testTechBlog = techBlogRepository.save(testTechBlog);
     }
 
-    @Test
-    @DisplayName("findByIdWithInterestCategories - 관심사 카테고리와 함께 조회")
-    void findByIdWithInterestCategories_Success() {
-        // Given: 관심사 카테고리 추가
-        UserInterestCategory category1 = UserInterestCategoryFixture.interestCategory(testUser, EInterestCategory.BACKEND);
-        UserInterestCategory category2 = UserInterestCategoryFixture.interestCategory(testUser, EInterestCategory.DATABASE);
-        testUser.getInterestCategories().add(category1);
-        testUser.getInterestCategories().add(category2);
-        userRepository.save(testUser);
+    @Nested
+    @DisplayName("findByIdWithInterestCategories")
+    class FindByIdWithInterestCategories {
 
-        // When: fetch join으로 조회
-        Optional<User> result = userRepository.findByIdWithInterestCategories(testUser.getId());
+        @Test
+        @DisplayName("findByIdWithInterestCategories - 관심사 카테고리와 함께 조회")
+        void userWithInterests_ReturnsUserWithCategories() {
+            // Given: 관심사 카테고리 추가
+            UserInterestCategory category1 = UserInterestCategoryFixture.interestCategory(testUser, EInterestCategory.BACKEND);
+            UserInterestCategory category2 = UserInterestCategoryFixture.interestCategory(testUser, EInterestCategory.DATABASE);
+            testUser.getInterestCategories().add(category1);
+            testUser.getInterestCategories().add(category2);
+            userRepository.save(testUser);
 
-        // Then
-        assertThat(result).isPresent();
-        User user = result.get();
-        assertThat(user.getInterestCategories()).hasSize(2);
-        assertThat(user.getInterestCategories())
-                .extracting(UserInterestCategory::getCategory)
-                .containsExactlyInAnyOrder(EInterestCategory.BACKEND, EInterestCategory.DATABASE);
+            // When: fetch join으로 조회
+            Optional<User> result = userRepository.findByIdWithInterestCategories(testUser.getId());
+
+            // Then
+            assertThat(result).isPresent();
+            User user = result.get();
+            assertThat(user.getInterestCategories()).hasSize(2);
+            assertThat(user.getInterestCategories())
+                    .extracting(UserInterestCategory::getCategory)
+                    .containsExactlyInAnyOrder(EInterestCategory.BACKEND, EInterestCategory.DATABASE);
+        }
+
+        @Test
+        @DisplayName("findByIdWithInterestCategories - 관심사가 없어도 조회 성공")
+        void userWithoutInterests_ReturnsUser() {
+            // When: 관심사 없는 유저 조회
+            Optional<User> result = userRepository.findByIdWithInterestCategories(testUser.getId());
+
+            // Then
+            assertThat(result).isPresent();
+            assertThat(result.get().getInterestCategories()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("findByIdWithInterestCategories - 존재하지 않는 유저는 Empty 반환")
+        void userNotFound_ReturnsEmpty() {
+            // When
+            Optional<User> result = userRepository.findByIdWithInterestCategories(99999L);
+
+            // Then
+            assertThat(result).isEmpty();
+        }
     }
 
-    @Test
-    @DisplayName("findByIdWithInterestCategories - 관심사가 없어도 조회 성공")
-    void findByIdWithInterestCategories_NoInterests_Success() {
-        // When: 관심사 없는 유저 조회
-        Optional<User> result = userRepository.findByIdWithInterestCategories(testUser.getId());
+    @Nested
+    @DisplayName("replaceInterests")
+    class ReplaceInterests {
 
-        // Then
-        assertThat(result).isPresent();
-        assertThat(result.get().getInterestCategories()).isEmpty();
+        @Test
+        @DisplayName("replaceInterests - flush 후 기존 관심사 row를 제거하고 새 관심사 graph를 저장")
+        void newInterestGraph_FlushesOrphansAndPersists() {
+            // Given: 기존 관심사 graph 저장
+            testUser.replaceInterests(List.of(
+                    new UserInterestSelection(EInterestCategory.BACKEND, List.of(EInterestKeyword.JAVA, EInterestKeyword.SPRING)),
+                    new UserInterestSelection(EInterestCategory.DATABASE, List.of(EInterestKeyword.MYSQL))
+            ));
+            userRepository.saveAndFlush(testUser);
+            entityManager.clear();
+
+            List<Long> oldCategoryIds = userInterestCategoryRepository.findByUserIdWithKeywords(testUser.getId()).stream()
+                    .map(UserInterestCategory::getId)
+                    .toList();
+            List<Long> oldKeywordIds = findKeywordIdsByCategoryIds(oldCategoryIds);
+
+            User user = userRepository.findByIdWithInterestCategories(testUser.getId()).orElseThrow();
+
+            // When: 관심사를 새 graph로 완전히 교체하고 flush/clear
+            user.replaceInterests(List.of(
+                    new UserInterestSelection(EInterestCategory.FRONTEND, List.of(EInterestKeyword.REACT))
+            ));
+            userRepository.flush();
+            entityManager.clear();
+
+            // Then: 기존 row는 orphanRemoval로 제거되고 새 graph만 남는다
+            assertThat(countCategoriesByIds(oldCategoryIds)).isZero();
+            assertThat(countKeywordsByIds(oldKeywordIds)).isZero();
+
+            List<UserInterestCategory> categories = userInterestCategoryRepository.findByUserIdWithKeywords(testUser.getId());
+            assertThat(categories).hasSize(1);
+            assertThat(categories.get(0).getCategory()).isEqualTo(EInterestCategory.FRONTEND);
+            assertThat(categories.get(0).getKeywords())
+                    .extracting(keyword -> keyword.getKeyword())
+                    .containsExactly(EInterestKeyword.REACT);
+        }
     }
 
-    @Test
-    @DisplayName("findByIdWithInterestCategories - 존재하지 않는 유저는 Empty 반환")
-    void findByIdWithInterestCategories_NotFound_ReturnsEmpty() {
-        // When
-        Optional<User> result = userRepository.findByIdWithInterestCategories(99999L);
+    @Nested
+    @DisplayName("findActiveUsersSince")
+    class FindActiveUsersSince {
 
-        // Then
-        assertThat(result).isEmpty();
+        @Test
+        @DisplayName("findActiveUsersSince - 최근 읽은 포스트가 있는 유저 조회")
+        void recentReadPost_ReturnsActiveUsers() {
+            // Given
+            LocalDateTime since = LocalDateTime.now().minusDays(7);
+
+            Post post = createPost();
+            ReadPost readPost = ReadPostFixture.createReadPost(testUser, post, LocalDateTime.now(), 100);
+            readPostRepository.save(readPost);
+
+            // When: 최근 7일 이내 활동한 유저 조회
+            List<User> activeUsers = userRepository.findActiveUsersSince(since);
+
+            // Then
+            assertThat(activeUsers).hasSize(1);
+            assertThat(activeUsers.get(0).getId()).isEqualTo(testUser.getId());
+        }
+
+        @Test
+        @DisplayName("findActiveUsersSince - 최근 북마크한 포스트가 있는 유저 조회")
+        void recentBookmark_ReturnsActiveUsers() {
+            // Given
+            LocalDateTime since = LocalDateTime.now().minusDays(7);
+
+            Post post = createPost();
+            Bookmark bookmark = BookmarkFixture.createBookmark(testUser, post, LocalDateTime.now());
+            bookmarkRepository.save(bookmark);
+
+            // When
+            List<User> activeUsers = userRepository.findActiveUsersSince(since);
+
+            // Then
+            assertThat(activeUsers).hasSize(1);
+            assertThat(activeUsers.get(0).getId()).isEqualTo(testUser.getId());
+        }
+
+        @Test
+        @DisplayName("findActiveUsersSince - 최근 검색 기록이 있는 유저 조회")
+        void recentSearchHistory_ReturnsActiveUsers() {
+            // Given
+            LocalDateTime since = LocalDateTime.now().minusDays(7);
+
+            SearchHistory searchHistory = SearchHistoryFixture.createSearchHistory(testUser, "테스트 검색", LocalDateTime.now());
+            searchHistoryRepository.save(searchHistory);
+
+            // When
+            List<User> activeUsers = userRepository.findActiveUsersSince(since);
+
+            // Then
+            assertThat(activeUsers).hasSize(1);
+            assertThat(activeUsers.get(0).getId()).isEqualTo(testUser.getId());
+        }
+
+        @Test
+        @DisplayName("findActiveUsersSince - 오래된 활동만 있으면 조회되지 않음")
+        void oldActivity_ReturnsEmpty() {
+            // Given
+            LocalDateTime since = LocalDateTime.now().minusDays(7);
+            LocalDateTime oldDate = LocalDateTime.now().minusDays(30); // 30일 전
+
+            Post post = createPost();
+            ReadPost readPost = ReadPostFixture.createReadPost(testUser, post, oldDate, 100);
+            readPostRepository.save(readPost);
+
+            // When: 최근 7일 이내 활동한 유저만 조회
+            List<User> activeUsers = userRepository.findActiveUsersSince(since);
+
+            // Then
+            assertThat(activeUsers).isEmpty();
+        }
+
+        @Test
+        @DisplayName("findActiveUsersSince - 여러 활동이 있으면 DISTINCT로 중복 제거")
+        void multipleActivities_ReturnsDistinctUsers() {
+            // Given: 같은 유저가 여러 활동
+            LocalDateTime since = LocalDateTime.now().minusDays(7);
+
+            Post post1 = createPost();
+            Post post2 = createPost();
+
+            ReadPost readPost = ReadPostFixture.createReadPost(testUser, post1, LocalDateTime.now(), 100);
+            Bookmark bookmark = BookmarkFixture.createBookmark(testUser, post2, LocalDateTime.now());
+            SearchHistory searchHistory = SearchHistoryFixture.createSearchHistory(testUser, "검색", LocalDateTime.now());
+
+            readPostRepository.save(readPost);
+            bookmarkRepository.save(bookmark);
+            searchHistoryRepository.save(searchHistory);
+
+            // When
+            List<User> activeUsers = userRepository.findActiveUsersSince(since);
+
+            // Then: 중복 없이 1명만 조회
+            assertThat(activeUsers).hasSize(1);
+            assertThat(activeUsers.get(0).getId()).isEqualTo(testUser.getId());
+        }
+
+        @Test
+        @DisplayName("findActiveUsersSince - 탈퇴한 회원은 제외")
+        void withdrawnUserWithActivity_IsExcluded() {
+            // Given: 활성 유저와 탈퇴 유저 생성
+            User activeUser = UserFixture.activeUser("activeSocialId", "active@example.com");
+            activeUser = userRepository.save(activeUser);
+
+            User withdrawnUser = UserFixture.activeUser("withdrawnSocialId", "withdrawn@example.com");
+            withdrawnUser.withdraw(); // 탈퇴 처리
+            withdrawnUser = userRepository.save(withdrawnUser);
+
+            LocalDateTime since = LocalDateTime.now().minusDays(7);
+            Post post = createPost();
+
+            // 두 유저 모두 최근 활동이 있음
+            ReadPost activeUserRead = ReadPostFixture.createReadPost(activeUser, post, LocalDateTime.now(), 100);
+            ReadPost withdrawnUserRead = ReadPostFixture.createReadPost(withdrawnUser, post, LocalDateTime.now(), 100);
+            readPostRepository.saveAll(List.of(activeUserRead, withdrawnUserRead));
+
+            // When: 최근 활동한 유저 조회
+            List<User> activeUsers = userRepository.findActiveUsersSince(since);
+
+            // Then: 탈퇴한 유저는 제외되고 활성 유저만 조회
+            assertThat(activeUsers).hasSize(1);
+            assertThat(activeUsers.get(0).getId()).isEqualTo(activeUser.getId());
+            assertThat(activeUsers).extracting(User::getId).doesNotContain(withdrawnUser.getId());
+        }
+
+        @Test
+        @DisplayName("findActiveUsersSince - 탈퇴 회원만 있으면 빈 리스트 반환")
+        void onlyWithdrawnUsers_ReturnsEmpty() {
+            // Given: 탈퇴한 유저만 생성
+            testUser.withdraw();
+            userRepository.save(testUser);
+
+            LocalDateTime since = LocalDateTime.now().minusDays(7);
+            Post post = createPost();
+
+            // 탈퇴한 유저에게 최근 활동 기록 추가
+            ReadPost readPost = ReadPostFixture.createReadPost(testUser, post, LocalDateTime.now(), 100);
+            readPostRepository.save(readPost);
+
+            // When
+            List<User> activeUsers = userRepository.findActiveUsersSince(since);
+
+            // Then: 탈퇴 회원은 제외되므로 빈 리스트
+            assertThat(activeUsers).isEmpty();
+        }
+
+        @Test
+        @DisplayName("findActiveUsersSince - 여러 유저 중 일부만 탈퇴한 경우")
+        void mixedWithdrawnAndActiveUsers_ReturnsOnlyActiveUsers() {
+            // Given: 3명의 유저 (1명 탈퇴, 2명 활성)
+            User user1 = UserFixture.activeUser("user1", "user1@example.com");
+            user1 = userRepository.save(user1);
+
+            User user2 = UserFixture.activeUser("user2", "user2@example.com");
+            user2 = userRepository.save(user2);
+
+            User user3Withdrawn = UserFixture.activeUser("user3", "user3@example.com");
+            user3Withdrawn.withdraw(); // 탈퇴
+            user3Withdrawn = userRepository.save(user3Withdrawn);
+
+            LocalDateTime since = LocalDateTime.now().minusDays(7);
+            Post post = createPost();
+
+            // 3명 모두 최근 활동 있음
+            readPostRepository.saveAll(List.of(
+                    ReadPostFixture.createReadPost(user1, post, LocalDateTime.now(), 100),
+                    ReadPostFixture.createReadPost(user2, post, LocalDateTime.now(), 100),
+                    ReadPostFixture.createReadPost(user3Withdrawn, post, LocalDateTime.now(), 100)
+            ));
+
+            // When
+            List<User> activeUsers = userRepository.findActiveUsersSince(since);
+
+            // Then: 활성 회원 2명만 조회
+            assertThat(activeUsers).hasSize(2);
+            assertThat(activeUsers).extracting(User::getId)
+                    .containsExactlyInAnyOrder(user1.getId(), user2.getId())
+                    .doesNotContain(user3Withdrawn.getId());
+        }
     }
 
-    @Test
-    @DisplayName("replaceInterests - flush 후 기존 관심사 row를 제거하고 새 관심사 graph를 저장")
-    void replaceInterests_FlushesOrphansAndPersistsNewGraph() {
-        // Given: 기존 관심사 graph 저장
-        testUser.replaceInterests(List.of(
-                new UserInterestSelection(EInterestCategory.BACKEND, List.of(EInterestKeyword.JAVA, EInterestKeyword.SPRING)),
-                new UserInterestSelection(EInterestCategory.DATABASE, List.of(EInterestKeyword.MYSQL))
-        ));
-        userRepository.saveAndFlush(testUser);
-        entityManager.clear();
+    @Nested
+    @DisplayName("findAllWithInterestCategoriesByIds")
+    class FindAllWithInterestCategoriesByIds {
 
-        List<Long> oldCategoryIds = userInterestCategoryRepository.findByUserIdWithKeywords(testUser.getId()).stream()
-                .map(UserInterestCategory::getId)
-                .toList();
-        List<Long> oldKeywordIds = findKeywordIdsByCategoryIds(oldCategoryIds);
+        @Test
+        @DisplayName("findAllWithInterestCategoriesByIds - 여러 유저를 관심사와 함께 조회")
+        void validIds_ReturnsUsersWithInterestCategories() {
+            // Given: 두 번째 유저 생성
+            User user2 = UserFixture.socialUser("testSocialId2", "test2@example.com", null);
+            user2 = userRepository.save(user2);
 
-        User user = userRepository.findByIdWithInterestCategories(testUser.getId()).orElseThrow();
+            UserInterestCategory category1 = UserInterestCategoryFixture.interestCategory(testUser, EInterestCategory.BACKEND);
+            UserInterestCategory category2 = UserInterestCategoryFixture.interestCategory(user2, EInterestCategory.FRONTEND);
+            testUser.getInterestCategories().add(category1);
+            user2.getInterestCategories().add(category2);
+            userRepository.saveAll(List.of(testUser, user2));
 
-        // When: 관심사를 새 graph로 완전히 교체하고 flush/clear
-        user.replaceInterests(List.of(
-                new UserInterestSelection(EInterestCategory.FRONTEND, List.of(EInterestKeyword.REACT))
-        ));
-        userRepository.flush();
-        entityManager.clear();
+            // When
+            List<User> users = userRepository.findAllWithInterestCategoriesByIds(
+                    List.of(testUser.getId(), user2.getId())
+            );
 
-        // Then: 기존 row는 orphanRemoval로 제거되고 새 graph만 남는다
-        assertThat(countCategoriesByIds(oldCategoryIds)).isZero();
-        assertThat(countKeywordsByIds(oldKeywordIds)).isZero();
+            // Then
+            assertThat(users).hasSize(2);
+            assertThat(users.get(0).getInterestCategories()).isNotEmpty();
+            assertThat(users.get(1).getInterestCategories()).isNotEmpty();
+        }
 
-        List<UserInterestCategory> categories = userInterestCategoryRepository.findByUserIdWithKeywords(testUser.getId());
-        assertThat(categories).hasSize(1);
-        assertThat(categories.get(0).getCategory()).isEqualTo(EInterestCategory.FRONTEND);
-        assertThat(categories.get(0).getKeywords())
-                .extracting(keyword -> keyword.getKeyword())
-                .containsExactly(EInterestKeyword.REACT);
-    }
+        @Test
+        @DisplayName("findAllWithInterestCategoriesByIds - 존재하지 않는 ID는 제외")
+        void invalidIds_FiltersOutMissingUsers() {
+            // When
+            List<User> users = userRepository.findAllWithInterestCategoriesByIds(
+                    List.of(testUser.getId(), 99999L)
+            );
 
-    @Test
-    @DisplayName("findActiveUsersSince - 최근 읽은 포스트가 있는 유저 조회")
-    void findActiveUsersSince_WithReadPost_ReturnsActiveUsers() {
-        // Given
-        LocalDateTime since = LocalDateTime.now().minusDays(7);
-
-        Post post = createPost();
-        ReadPost readPost = ReadPostFixture.createReadPost(testUser, post, LocalDateTime.now(), 100);
-        readPostRepository.save(readPost);
-
-        // When: 최근 7일 이내 활동한 유저 조회
-        List<User> activeUsers = userRepository.findActiveUsersSince(since);
-
-        // Then
-        assertThat(activeUsers).hasSize(1);
-        assertThat(activeUsers.get(0).getId()).isEqualTo(testUser.getId());
-    }
-
-    @Test
-    @DisplayName("findActiveUsersSince - 최근 북마크한 포스트가 있는 유저 조회")
-    void findActiveUsersSince_WithBookmark_ReturnsActiveUsers() {
-        // Given
-        LocalDateTime since = LocalDateTime.now().minusDays(7);
-
-        Post post = createPost();
-        Bookmark bookmark = BookmarkFixture.createBookmark(testUser, post, LocalDateTime.now());
-        bookmarkRepository.save(bookmark);
-
-        // When
-        List<User> activeUsers = userRepository.findActiveUsersSince(since);
-
-        // Then
-        assertThat(activeUsers).hasSize(1);
-        assertThat(activeUsers.get(0).getId()).isEqualTo(testUser.getId());
-    }
-
-    @Test
-    @DisplayName("findActiveUsersSince - 최근 검색 기록이 있는 유저 조회")
-    void findActiveUsersSince_WithSearchHistory_ReturnsActiveUsers() {
-        // Given
-        LocalDateTime since = LocalDateTime.now().minusDays(7);
-
-        SearchHistory searchHistory = SearchHistoryFixture.createSearchHistory(testUser, "테스트 검색", LocalDateTime.now());
-        searchHistoryRepository.save(searchHistory);
-
-        // When
-        List<User> activeUsers = userRepository.findActiveUsersSince(since);
-
-        // Then
-        assertThat(activeUsers).hasSize(1);
-        assertThat(activeUsers.get(0).getId()).isEqualTo(testUser.getId());
-    }
-
-    @Test
-    @DisplayName("findActiveUsersSince - 오래된 활동만 있으면 조회되지 않음")
-    void findActiveUsersSince_OldActivity_ReturnsEmpty() {
-        // Given
-        LocalDateTime since = LocalDateTime.now().minusDays(7);
-        LocalDateTime oldDate = LocalDateTime.now().minusDays(30); // 30일 전
-
-        Post post = createPost();
-        ReadPost readPost = ReadPostFixture.createReadPost(testUser, post, oldDate, 100);
-        readPostRepository.save(readPost);
-
-        // When: 최근 7일 이내 활동한 유저만 조회
-        List<User> activeUsers = userRepository.findActiveUsersSince(since);
-
-        // Then
-        assertThat(activeUsers).isEmpty();
-    }
-
-    @Test
-    @DisplayName("findActiveUsersSince - 여러 활동이 있으면 DISTINCT로 중복 제거")
-    void findActiveUsersSince_MultipleActivities_ReturnsDistinct() {
-        // Given: 같은 유저가 여러 활동
-        LocalDateTime since = LocalDateTime.now().minusDays(7);
-
-        Post post1 = createPost();
-        Post post2 = createPost();
-
-        ReadPost readPost = ReadPostFixture.createReadPost(testUser, post1, LocalDateTime.now(), 100);
-        Bookmark bookmark = BookmarkFixture.createBookmark(testUser, post2, LocalDateTime.now());
-        SearchHistory searchHistory = SearchHistoryFixture.createSearchHistory(testUser, "검색", LocalDateTime.now());
-
-        readPostRepository.save(readPost);
-        bookmarkRepository.save(bookmark);
-        searchHistoryRepository.save(searchHistory);
-
-        // When
-        List<User> activeUsers = userRepository.findActiveUsersSince(since);
-
-        // Then: 중복 없이 1명만 조회
-        assertThat(activeUsers).hasSize(1);
-        assertThat(activeUsers.get(0).getId()).isEqualTo(testUser.getId());
-    }
-
-    @Test
-    @DisplayName("findActiveUsersSince - 탈퇴한 회원은 제외")
-    void findActiveUsersSince_ExcludesWithdrawnUsers() {
-        // Given: 활성 유저와 탈퇴 유저 생성
-        User activeUser = UserFixture.activeUser("activeSocialId", "active@example.com");
-        activeUser = userRepository.save(activeUser);
-
-        User withdrawnUser = UserFixture.activeUser("withdrawnSocialId", "withdrawn@example.com");
-        withdrawnUser.withdraw(); // 탈퇴 처리
-        withdrawnUser = userRepository.save(withdrawnUser);
-
-        LocalDateTime since = LocalDateTime.now().minusDays(7);
-        Post post = createPost();
-
-        // 두 유저 모두 최근 활동이 있음
-        ReadPost activeUserRead = ReadPostFixture.createReadPost(activeUser, post, LocalDateTime.now(), 100);
-        ReadPost withdrawnUserRead = ReadPostFixture.createReadPost(withdrawnUser, post, LocalDateTime.now(), 100);
-        readPostRepository.saveAll(List.of(activeUserRead, withdrawnUserRead));
-
-        // When: 최근 활동한 유저 조회
-        List<User> activeUsers = userRepository.findActiveUsersSince(since);
-
-        // Then: 탈퇴한 유저는 제외되고 활성 유저만 조회
-        assertThat(activeUsers).hasSize(1);
-        assertThat(activeUsers.get(0).getId()).isEqualTo(activeUser.getId());
-        assertThat(activeUsers).extracting(User::getId).doesNotContain(withdrawnUser.getId());
-    }
-
-    @Test
-    @DisplayName("findActiveUsersSince - 탈퇴 회원만 있으면 빈 리스트 반환")
-    void findActiveUsersSince_OnlyWithdrawnUsers_ReturnsEmpty() {
-        // Given: 탈퇴한 유저만 생성
-        testUser.withdraw();
-        userRepository.save(testUser);
-
-        LocalDateTime since = LocalDateTime.now().minusDays(7);
-        Post post = createPost();
-
-        // 탈퇴한 유저에게 최근 활동 기록 추가
-        ReadPost readPost = ReadPostFixture.createReadPost(testUser, post, LocalDateTime.now(), 100);
-        readPostRepository.save(readPost);
-
-        // When
-        List<User> activeUsers = userRepository.findActiveUsersSince(since);
-
-        // Then: 탈퇴 회원은 제외되므로 빈 리스트
-        assertThat(activeUsers).isEmpty();
-    }
-
-    @Test
-    @DisplayName("findActiveUsersSince - 여러 유저 중 일부만 탈퇴한 경우")
-    void findActiveUsersSince_MixedWithdrawnAndActiveUsers() {
-        // Given: 3명의 유저 (1명 탈퇴, 2명 활성)
-        User user1 = UserFixture.activeUser("user1", "user1@example.com");
-        user1 = userRepository.save(user1);
-
-        User user2 = UserFixture.activeUser("user2", "user2@example.com");
-        user2 = userRepository.save(user2);
-
-        User user3Withdrawn = UserFixture.activeUser("user3", "user3@example.com");
-        user3Withdrawn.withdraw(); // 탈퇴
-        user3Withdrawn = userRepository.save(user3Withdrawn);
-
-        LocalDateTime since = LocalDateTime.now().minusDays(7);
-        Post post = createPost();
-
-        // 3명 모두 최근 활동 있음
-        readPostRepository.saveAll(List.of(
-                ReadPostFixture.createReadPost(user1, post, LocalDateTime.now(), 100),
-                ReadPostFixture.createReadPost(user2, post, LocalDateTime.now(), 100),
-                ReadPostFixture.createReadPost(user3Withdrawn, post, LocalDateTime.now(), 100)
-        ));
-
-        // When
-        List<User> activeUsers = userRepository.findActiveUsersSince(since);
-
-        // Then: 활성 회원 2명만 조회
-        assertThat(activeUsers).hasSize(2);
-        assertThat(activeUsers).extracting(User::getId)
-                .containsExactlyInAnyOrder(user1.getId(), user2.getId())
-                .doesNotContain(user3Withdrawn.getId());
-    }
-
-    @Test
-    @DisplayName("findAllWithInterestCategoriesByIds - 여러 유저를 관심사와 함께 조회")
-    void findAllWithInterestCategoriesByIds_Success() {
-        // Given: 두 번째 유저 생성
-        User user2 = UserFixture.socialUser("testSocialId2", "test2@example.com", null);
-        user2 = userRepository.save(user2);
-
-        UserInterestCategory category1 = UserInterestCategoryFixture.interestCategory(testUser, EInterestCategory.BACKEND);
-        UserInterestCategory category2 = UserInterestCategoryFixture.interestCategory(user2, EInterestCategory.FRONTEND);
-        testUser.getInterestCategories().add(category1);
-        user2.getInterestCategories().add(category2);
-        userRepository.saveAll(List.of(testUser, user2));
-
-        // When
-        List<User> users = userRepository.findAllWithInterestCategoriesByIds(
-                List.of(testUser.getId(), user2.getId())
-        );
-
-        // Then
-        assertThat(users).hasSize(2);
-        assertThat(users.get(0).getInterestCategories()).isNotEmpty();
-        assertThat(users.get(1).getInterestCategories()).isNotEmpty();
-    }
-
-    @Test
-    @DisplayName("findAllWithInterestCategoriesByIds - 존재하지 않는 ID는 제외")
-    void findAllWithInterestCategoriesByIds_InvalidIds_FiltersOut() {
-        // When
-        List<User> users = userRepository.findAllWithInterestCategoriesByIds(
-                List.of(testUser.getId(), 99999L)
-        );
-
-        // Then: 존재하는 유저만 조회
-        assertThat(users).hasSize(1);
-        assertThat(users.get(0).getId()).isEqualTo(testUser.getId());
+            // Then: 존재하는 유저만 조회
+            assertThat(users).hasSize(1);
+            assertThat(users.get(0).getId()).isEqualTo(testUser.getId());
+        }
     }
 
     private Post createPost() {
