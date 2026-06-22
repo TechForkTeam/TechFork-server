@@ -30,14 +30,13 @@ import static com.techfork.domain.recommendation.fixture.RecommendationPostFixtu
 import static com.techfork.domain.recommendation.fixture.RecommendedPostFixture.recommendedPost;
 import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.techBlog;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * 추천 통합 테스트
  */
-class RecommendationIntegrationTest extends IntegrationTestBase {
+class RecommendationControllerIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;
@@ -126,10 +125,9 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("추천 게시글 목록 조회 성공 - 빈 목록")
-        void success_empty() throws Exception {
+        void getRecommendations_WhenEmpty_ReturnsEmptyList() throws Exception {
             mockMvc.perform(get("/api/v1/recommendations")
                             .header("Authorization", "Bearer " + accessToken))
-                    .andDo(print())
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.isSuccess").value(true))
                     .andExpect(jsonPath("$.code").value("COMMON200"))
@@ -140,7 +138,7 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("추천 게시글 목록 조회 성공 - 여러 개")
-        void success_multiple() throws Exception {
+        void getRecommendations_WhenMultipleRecommendations_ReturnsRecommendationList() throws Exception {
             RecommendedPost rec1 = recommendedPost(testUser, testPost1, 1);
             RecommendedPost rec2 = recommendedPost(testUser, testPost2, 2);
             RecommendedPost rec3 = recommendedPost(testUser, testPost3, 3);
@@ -148,7 +146,6 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
 
             mockMvc.perform(get("/api/v1/recommendations")
                             .header("Authorization", "Bearer " + accessToken))
-                    .andDo(print())
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.isSuccess").value(true))
                     .andExpect(jsonPath("$.data.totalCount").value(3))
@@ -174,7 +171,7 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("추천 게시글 목록 조회 성공 - 랭킹 순으로 정렬")
-        void success_orderedByRank() throws Exception {
+        void getRecommendations_WhenSavedOutOfOrder_ReturnsOrderedByRank() throws Exception {
             RecommendedPost rec3 = recommendedPost(testUser, testPost3, 3);
             RecommendedPost rec1 = recommendedPost(testUser, testPost1, 1);
             RecommendedPost rec2 = recommendedPost(testUser, testPost2, 2);
@@ -182,7 +179,6 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
 
             mockMvc.perform(get("/api/v1/recommendations")
                             .header("Authorization", "Bearer " + accessToken))
-                    .andDo(print())
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.data.recommendations[0].rank").value(1))
                     .andExpect(jsonPath("$.data.recommendations[0].postId").value(testPost1.getId()))
@@ -199,7 +195,7 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("추천 조회 후 북마크 추가 후 다시 조회")
-        void getRecommendations_addBookmark_getAgain() throws Exception {
+        void getRecommendations_WhenBookmarkAdded_ReturnsUpdatedBookmarkStatus() throws Exception {
             RecommendedPost rec1 = recommendedPost(testUser, testPost1, 1);
             recommendedPostRepository.save(rec1);
 
