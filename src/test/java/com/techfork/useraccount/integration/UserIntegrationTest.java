@@ -7,6 +7,7 @@ import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.enums.UserStatus;
 import com.techfork.useraccount.infrastructure.UserRepository;
+import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtUtil;
@@ -16,7 +17,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,8 +48,7 @@ class UserIntegrationTest extends IntegrationTestBase {
     @BeforeEach
     void setUp() {
         // ACTIVE 상태의 테스트 사용자 생성
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", "profile.jpg");
-        testUser.updateUser("테스트유저", "test@example.com", "백엔드 개발자입니다.");
+        testUser = UserFixture.activeUser();
         testUser = userRepository.save(testUser);
 
         // JWT 토큰 생성

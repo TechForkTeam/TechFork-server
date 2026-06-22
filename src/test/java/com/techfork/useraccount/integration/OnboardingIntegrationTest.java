@@ -5,8 +5,8 @@ import com.techfork.useraccount.presentation.request.OnboardingRequest;
 import com.techfork.useraccount.presentation.request.UserInterestRequest;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
-import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.infrastructure.UserRepository;
+import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.global.llm.EmbeddingClient;
 import com.techfork.global.llm.LlmClient;
@@ -61,7 +61,7 @@ class OnboardingIntegrationTest extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() {
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", null);
+        testUser = UserFixture.socialUser("testSocialId", "test@example.com", null);
         testUser = userRepository.save(testUser);
 
         // PENDING 상태 사용자용 JWT 토큰 생성

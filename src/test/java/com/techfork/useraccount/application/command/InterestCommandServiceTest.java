@@ -10,8 +10,8 @@ import com.techfork.useraccount.domain.UserInterestCategory;
 import com.techfork.useraccount.domain.UserInterestKeyword;
 import com.techfork.useraccount.domain.enums.EInterestCategory;
 import com.techfork.useraccount.domain.enums.EInterestKeyword;
-import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
+import com.techfork.useraccount.fixture.UserFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,7 +20,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
@@ -46,7 +45,7 @@ class InterestCommandServiceTest {
     @Test
     @DisplayName("관심사 저장 - 요청을 도메인 선택값으로 변환한다")
     void saveUserInterests_ConvertsCommand() {
-        User user = createUserWithId(1L);
+        User user = UserFixture.socialUserWithId(1L);
         List<UserInterestCommand> interests = List.of(
                 UserInterestCommand.builder()
                         .category("BACKEND")
@@ -68,7 +67,7 @@ class InterestCommandServiceTest {
     @Test
     @DisplayName("관심사 저장 - 키워드가 없는 요청도 카테고리만 저장한다")
     void saveUserInterests_CategoryOnly() {
-        User user = createUserWithId(1L);
+        User user = UserFixture.socialUserWithId(1L);
         List<UserInterestCommand> interests = List.of(
                 UserInterestCommand.builder()
                         .category("AI_ML")
@@ -88,7 +87,7 @@ class InterestCommandServiceTest {
     @Test
     @DisplayName("관심사 저장 - 잘못된 카테고리와 키워드 조합이면 이벤트를 발행하지 않는다")
     void saveUserInterests_InvalidKeywordCategory_SkipsEventPublishing() {
-        User user = createUserWithId(1L);
+        User user = UserFixture.socialUserWithId(1L);
         List<UserInterestCommand> interests = List.of(
                 UserInterestCommand.builder().category("BACKEND").keywords(List.of("REACT")).build()
         );
@@ -103,7 +102,7 @@ class InterestCommandServiceTest {
     @Test
     @DisplayName("관심사 저장 - 존재하지 않는 카테고리면 이벤트를 발행하지 않는다")
     void saveUserInterests_UnknownCategory_SkipsEventPublishing() {
-        User user = createUserWithId(1L);
+        User user = UserFixture.socialUserWithId(1L);
         List<UserInterestCommand> interests = List.of(
                 UserInterestCommand.builder().category("UNKNOWN").keywords(List.of("JAVA")).build()
         );
@@ -118,7 +117,7 @@ class InterestCommandServiceTest {
     @Test
     @DisplayName("관심사 저장 - 존재하지 않는 키워드면 이벤트를 발행하지 않는다")
     void saveUserInterests_UnknownKeyword_SkipsEventPublishing() {
-        User user = createUserWithId(1L);
+        User user = UserFixture.socialUserWithId(1L);
         List<UserInterestCommand> interests = List.of(
                 UserInterestCommand.builder().category("BACKEND").keywords(List.of("UNKNOWN")).build()
         );
@@ -134,7 +133,7 @@ class InterestCommandServiceTest {
     @DisplayName("관심사 업데이트 - 사용자를 조회해 관심사를 교체하고 이벤트를 발행한다")
     void updateUserInterests_Success() {
         Long userId = 1L;
-        User user = createUserWithId(userId);
+        User user = UserFixture.socialUserWithId(userId);
         List<UserInterestCommand> interests = List.of(
                 UserInterestCommand.builder().category("AI_ML").keywords(List.of("TENSORFLOW", "PYTORCH")).build()
         );
@@ -161,12 +160,6 @@ class InterestCommandServiceTest {
                 .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
 
         verify(eventPublisher, never()).publishEvent(any());
-    }
-
-    private User createUserWithId(Long userId) {
-        User user = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", null);
-        ReflectionTestUtils.setField(user, "id", userId);
-        return user;
     }
 
     private void verifyPublishedEvent(Long expectedUserId) {

@@ -9,9 +9,9 @@ import com.techfork.useraccount.application.event.OnboardingCompletedEvent;
 import com.techfork.useraccount.application.event.UserWithdrawnEvent;
 import com.techfork.useraccount.application.reader.UserAggregateReader;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.enums.UserStatus;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
+import com.techfork.useraccount.fixture.UserFixture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
@@ -54,15 +53,13 @@ class UserCommandServiceTest {
     @BeforeEach
     void setUp() {
         userId = 1L;
-        testUser = User.createSocialUser(SocialType.KAKAO, "socialId123", "test@example.com", "profile.jpg");
-        testUser.updateUser("테스트유저", "test@example.com", "백엔드 개발자입니다.");
-        ReflectionTestUtils.setField(testUser, "id", userId);
+        testUser = UserFixture.activeUserWithId(userId, "socialId123", "test@example.com", "profile.jpg");
     }
 
     @Test
     @DisplayName("온보딩 완료 - 정상 케이스")
     void completeOnboarding_Success() {
-        User mockUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", null);
+        User mockUser = UserFixture.socialUser("testSocialId", "test@example.com", null);
         List<UserInterestCommand> interests = List.of(
                 UserInterestCommand.builder().category("BACKEND").keywords(List.of("JAVA", "SPRING")).build(),
                 UserInterestCommand.builder().category("DATABASE").keywords(List.of("MYSQL", "REDIS")).build()
@@ -103,7 +100,7 @@ class UserCommandServiceTest {
     @Test
     @DisplayName("온보딩 완료 - description이 null이어도 정상 처리")
     void completeOnboarding_NullDescription_Success() {
-        User mockUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", null);
+        User mockUser = UserFixture.socialUser("testSocialId", "test@example.com", null);
         CompleteOnboardingCommand command = new CompleteOnboardingCommand(
                 userId,
                 "테크포크유저",
@@ -125,7 +122,7 @@ class UserCommandServiceTest {
     @Test
     @DisplayName("온보딩 완료 - 여러 카테고리와 키워드 조합")
     void completeOnboarding_MultipleCategories_Success() {
-        User mockUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", null);
+        User mockUser = UserFixture.socialUser("testSocialId", "test@example.com", null);
         List<UserInterestCommand> interests = List.of(
                 UserInterestCommand.builder().category("BACKEND").keywords(List.of("JAVA", "SPRING", "PYTHON")).build(),
                 UserInterestCommand.builder().category("DEVOPS").keywords(List.of("DOCKER", "KUBERNETES")).build(),

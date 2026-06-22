@@ -2,10 +2,9 @@ package com.techfork.useraccount.application.query.lookup;
 
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.UserInterestCategory;
-import com.techfork.useraccount.domain.UserInterestKeyword;
 import com.techfork.useraccount.domain.enums.EInterestCategory;
 import com.techfork.useraccount.domain.enums.EInterestKeyword;
-import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserInterestCategoryRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,9 +32,9 @@ class UserInterestLookupServiceTest {
     @DisplayName("사용자의 관심 키워드 display name 목록을 반환한다")
     void getInterestKeywordDisplayNames_ReturnsKeywordDisplayNames() {
         Long userId = 1L;
-        User user = User.createSocialUser(SocialType.KAKAO, "social-1", "user@example.com", null);
-        UserInterestCategory backend = interestCategory(user, EInterestCategory.BACKEND, EInterestKeyword.JAVA, EInterestKeyword.SPRING);
-        UserInterestCategory devops = interestCategory(user, EInterestCategory.DEVOPS, EInterestKeyword.DOCKER);
+        User user = UserFixture.socialUser("social-1", "user@example.com", null);
+        UserInterestCategory backend = UserFixture.interestCategory(user, EInterestCategory.BACKEND, EInterestKeyword.JAVA, EInterestKeyword.SPRING);
+        UserInterestCategory devops = UserFixture.interestCategory(user, EInterestCategory.DEVOPS, EInterestKeyword.DOCKER);
         given(userInterestCategoryRepository.findByUserIdWithKeywords(userId))
                 .willReturn(List.of(backend, devops));
 
@@ -57,11 +56,4 @@ class UserInterestLookupServiceTest {
         verify(userInterestCategoryRepository).findByUserIdWithKeywords(userId);
     }
 
-    private UserInterestCategory interestCategory(User user, EInterestCategory category, EInterestKeyword... keywords) {
-        UserInterestCategory userInterestCategory = UserInterestCategory.create(user, category);
-        for (EInterestKeyword keyword : keywords) {
-            userInterestCategory.addKeyword(UserInterestKeyword.create(userInterestCategory, keyword));
-        }
-        return userInterestCategory;
-    }
 }

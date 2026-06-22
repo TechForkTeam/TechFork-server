@@ -3,9 +3,9 @@ package com.techfork.useraccount.application.query;
 import com.techfork.useraccount.application.query.result.GetAccountProfileResult;
 import com.techfork.useraccount.application.reader.UserAggregateReader;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
 import com.techfork.global.exception.GeneralException;
+import com.techfork.useraccount.fixture.UserFixture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,7 +13,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -35,9 +34,7 @@ class UserQueryServiceTest {
     @BeforeEach
     void setUp() {
         userId = 1L;
-        testUser = User.createSocialUser(SocialType.KAKAO, "socialId123", "test@example.com", "profile.jpg");
-        testUser.updateUser("테스트유저", "test@example.com", "백엔드 개발자입니다.");
-        ReflectionTestUtils.setField(testUser, "id", userId);
+        testUser = UserFixture.activeUserWithId(userId, "socialId123", "test@example.com", "profile.jpg");
     }
 
     @Test
