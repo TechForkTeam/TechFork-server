@@ -12,12 +12,10 @@ This AGENTS.md scopes guidance to `docs`. Parent AGENTS guidance still applies u
 ## Current Layout
 
 ### Files
-- `commit-convention.md`
-- `pr-convention.md`
 - `SCHEDULER_GUIDE.md`
 
 ### Subdirectories
-- None
+- `convention/`
 
 <!-- OMX:AGENTS-INIT:MANUAL:START -->
 ## Local Notes
