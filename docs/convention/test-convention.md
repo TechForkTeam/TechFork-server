@@ -1,5 +1,22 @@
 # 테스트 컨벤션
 
+## 테스트 실행 레인 계약
+
+테스트는 Gradle task와 JUnit tag 조합으로 실행 레인을 나눈다.
+
+| 레인 | 실행 명령 | 태그 계약 | 용도 |
+| --- | --- | --- | --- |
+| unit / slice | `./gradlew test -PexcludeIntegration` | `integration`, `evaluation`, `evaluation-setup` 제외 | 일반 단위 테스트와 JPA slice 등 빠른 회귀 확인 |
+| default test | `./gradlew test` | `evaluation`, `evaluation-setup` 제외 | Gradle 기본 테스트. `integration` 태그는 제외하지 않으므로 빠른 로컬 루프에는 권장하지 않음 |
+| integration | `./gradlew integrationTest` | `integration` 포함, `evaluation`, `evaluation-setup` 제외 | `IntegrationTestBase` 기반 API/트랜잭션/컨테이너 통합 검증 |
+| evaluation | `./gradlew evaluationTest` | `evaluation` 포함, `integration`, `evaluation-setup` 제외 | 검색/추천 품질 평가 |
+| evaluation-setup | `./gradlew evaluationSetup` | `evaluation-setup` 포함 | 평가 fixture 생성/export 등 사전 데이터 준비 |
+
+- 빠른 리팩터링 검증 루프는 `./gradlew test -PexcludeIntegration`를 기본으로 한다.
+- `@SpringBootTest` 기반 테스트는 기본적으로 `IntegrationTestBase`를 상속해 `integration` 레인에 둔다.
+- 빈 Spring context smoke test는 일반 `test` 레인에 두지 않는다. 유지가 필요하면 `integration` 레인 계약을 명확히 적용한다.
+- evaluation 하위 테스트는 일반 unit/integration 회귀 검증과 섞지 않는다.
+
 ## 패키지 컨벤션
 
 - 테스트 패키지는 `com.techfork.<bounded-context>.<test-kind>`를 기본으로 한다.
