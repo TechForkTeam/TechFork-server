@@ -37,7 +37,7 @@ class RecommendationHistoryTest {
 
     @Test
     @DisplayName("추천 이력을 클릭 상태로 표시한다")
-    void markAsisClicked_MarksHistoryAsClicked() {
+    void markAsClicked_MarksHistoryAsClicked() {
         RecommendationHistory history = RecommendationHistory.fromRecommendedPost(
                 recommendedPost(
                         user("recommendation-history-user", "history@example.com"),
@@ -49,7 +49,7 @@ class RecommendationHistoryTest {
         );
 
         LocalDateTime beforeClick = LocalDateTime.now();
-        history.markAsisClicked();
+        history.markAsClicked();
         LocalDateTime afterClick = LocalDateTime.now();
 
         assertThat(history.getIsClicked()).isTrue();
