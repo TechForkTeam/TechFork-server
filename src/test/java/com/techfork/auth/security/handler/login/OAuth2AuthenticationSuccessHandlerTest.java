@@ -5,6 +5,7 @@ import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.UserStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -44,58 +45,63 @@ class OAuth2AuthenticationSuccessHandlerTest {
         successHandler = new OAuth2AuthenticationSuccessHandler(refreshTokenIssuer, refreshTokenWriter, redirectUrlFactory);
     }
 
-    @Test
-    @DisplayName("OAuth2 로그인 성공 - ACTIVE 사용자는 refresh token 발급/저장 후 factory가 생성한 URL로 리다이렉트한다")
-    void onAuthenticationSuccess_ActiveUser_RedirectsToFactoryUrlWithTokens() throws Exception {
-        UserPrincipal principal = principal(UserStatus.ACTIVE, "dev user@example.com");
-        OAuth2LoginRefreshToken issuedRefreshToken = issuedRefreshToken();
-        MockHttpServletResponse response = new MockHttpServletResponse();
-        given(authentication.getPrincipal()).willReturn(principal);
-        given(refreshTokenIssuer.issue(principal)).willReturn(issuedRefreshToken);
-        given(redirectUrlFactory.createSuccessRedirectUrl(principal)).willReturn(TARGET_URL);
+    @Nested
+    @DisplayName("onAuthenticationSuccess")
+    class OnAuthenticationSuccess {
 
-        successHandler.onAuthenticationSuccess(new MockHttpServletRequest(), response, authentication);
+        @Test
+        @DisplayName("OAuth2 로그인 성공 - ACTIVE 사용자는 refresh token 발급/저장 후 factory가 생성한 URL로 리다이렉트한다")
+        void activeUser_IssuesTokenWritesCookieAndRedirects() throws Exception {
+            UserPrincipal principal = principal(UserStatus.ACTIVE, "dev user@example.com");
+            OAuth2LoginRefreshToken issuedRefreshToken = issuedRefreshToken();
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            given(authentication.getPrincipal()).willReturn(principal);
+            given(refreshTokenIssuer.issue(principal)).willReturn(issuedRefreshToken);
+            given(redirectUrlFactory.createSuccessRedirectUrl(principal)).willReturn(TARGET_URL);
 
-        verify(refreshTokenIssuer).issue(principal);
-        verify(refreshTokenWriter).write(USER_ID, issuedRefreshToken, response);
-        verify(redirectUrlFactory).createSuccessRedirectUrl(principal);
-        assertThat(response.getRedirectedUrl()).isEqualTo(TARGET_URL);
-    }
+            successHandler.onAuthenticationSuccess(new MockHttpServletRequest(), response, authentication);
 
-    @Test
-    @DisplayName("OAuth2 로그인 성공 - PENDING 사용자도 refresh token 발급/저장 후 factory가 생성한 URL로 리다이렉트한다")
-    void onAuthenticationSuccess_PendingUser_RedirectsToFactoryUrl() throws Exception {
-        UserPrincipal principal = principal(UserStatus.PENDING, "pending@example.com");
-        OAuth2LoginRefreshToken issuedRefreshToken = issuedRefreshToken();
-        MockHttpServletResponse response = new MockHttpServletResponse();
-        given(authentication.getPrincipal()).willReturn(principal);
-        given(refreshTokenIssuer.issue(principal)).willReturn(issuedRefreshToken);
-        given(redirectUrlFactory.createSuccessRedirectUrl(principal)).willReturn(TARGET_URL);
+            verify(refreshTokenIssuer).issue(principal);
+            verify(refreshTokenWriter).write(USER_ID, issuedRefreshToken, response);
+            verify(redirectUrlFactory).createSuccessRedirectUrl(principal);
+            assertThat(response.getRedirectedUrl()).isEqualTo(TARGET_URL);
+        }
 
-        successHandler.onAuthenticationSuccess(new MockHttpServletRequest(), response, authentication);
+        @Test
+        @DisplayName("OAuth2 로그인 성공 - PENDING 사용자도 refresh token 발급/저장 후 factory가 생성한 URL로 리다이렉트한다")
+        void pendingUser_IssuesTokenWritesCookieAndRedirects() throws Exception {
+            UserPrincipal principal = principal(UserStatus.PENDING, "pending@example.com");
+            OAuth2LoginRefreshToken issuedRefreshToken = issuedRefreshToken();
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            given(authentication.getPrincipal()).willReturn(principal);
+            given(refreshTokenIssuer.issue(principal)).willReturn(issuedRefreshToken);
+            given(redirectUrlFactory.createSuccessRedirectUrl(principal)).willReturn(TARGET_URL);
 
-        verify(refreshTokenIssuer).issue(principal);
-        verify(refreshTokenWriter).write(USER_ID, issuedRefreshToken, response);
-        verify(redirectUrlFactory).createSuccessRedirectUrl(principal);
-        assertThat(response.getRedirectedUrl()).isEqualTo(TARGET_URL);
-    }
+            successHandler.onAuthenticationSuccess(new MockHttpServletRequest(), response, authentication);
 
-    @Test
-    @DisplayName("OAuth2 로그인 성공 - 이메일이 없어도 refresh token 발급/저장과 redirect URL 생성을 위임한다")
-    void onAuthenticationSuccess_NullEmail_DelegatesTokenIssuingRefreshWritingAndRedirectUrlCreation() throws Exception {
-        UserPrincipal principal = principal(UserStatus.ACTIVE, null);
-        OAuth2LoginRefreshToken issuedRefreshToken = issuedRefreshToken();
-        MockHttpServletResponse response = new MockHttpServletResponse();
-        given(authentication.getPrincipal()).willReturn(principal);
-        given(refreshTokenIssuer.issue(principal)).willReturn(issuedRefreshToken);
-        given(redirectUrlFactory.createSuccessRedirectUrl(principal)).willReturn(TARGET_URL);
+            verify(refreshTokenIssuer).issue(principal);
+            verify(refreshTokenWriter).write(USER_ID, issuedRefreshToken, response);
+            verify(redirectUrlFactory).createSuccessRedirectUrl(principal);
+            assertThat(response.getRedirectedUrl()).isEqualTo(TARGET_URL);
+        }
 
-        successHandler.onAuthenticationSuccess(new MockHttpServletRequest(), response, authentication);
+        @Test
+        @DisplayName("OAuth2 로그인 성공 - 이메일이 없어도 refresh token 발급/저장과 redirect URL 생성을 위임한다")
+        void nullEmail_DelegatesTokenCookieAndRedirect() throws Exception {
+            UserPrincipal principal = principal(UserStatus.ACTIVE, null);
+            OAuth2LoginRefreshToken issuedRefreshToken = issuedRefreshToken();
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            given(authentication.getPrincipal()).willReturn(principal);
+            given(refreshTokenIssuer.issue(principal)).willReturn(issuedRefreshToken);
+            given(redirectUrlFactory.createSuccessRedirectUrl(principal)).willReturn(TARGET_URL);
 
-        verify(refreshTokenIssuer).issue(principal);
-        verify(refreshTokenWriter).write(USER_ID, issuedRefreshToken, response);
-        verify(redirectUrlFactory).createSuccessRedirectUrl(principal);
-        assertThat(response.getRedirectedUrl()).isEqualTo(TARGET_URL);
+            successHandler.onAuthenticationSuccess(new MockHttpServletRequest(), response, authentication);
+
+            verify(refreshTokenIssuer).issue(principal);
+            verify(refreshTokenWriter).write(USER_ID, issuedRefreshToken, response);
+            verify(redirectUrlFactory).createSuccessRedirectUrl(principal);
+            assertThat(response.getRedirectedUrl()).isEqualTo(TARGET_URL);
+        }
     }
 
     private OAuth2LoginRefreshToken issuedRefreshToken() {

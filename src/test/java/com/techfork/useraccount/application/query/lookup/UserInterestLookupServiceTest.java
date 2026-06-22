@@ -2,12 +2,13 @@ package com.techfork.useraccount.application.query.lookup;
 
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.UserInterestCategory;
-import com.techfork.useraccount.domain.UserInterestKeyword;
 import com.techfork.useraccount.domain.enums.EInterestCategory;
 import com.techfork.useraccount.domain.enums.EInterestKeyword;
-import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.fixture.UserFixture;
+import com.techfork.useraccount.fixture.UserInterestCategoryFixture;
 import com.techfork.useraccount.infrastructure.UserInterestCategoryRepository;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,39 +30,37 @@ class UserInterestLookupServiceTest {
     @InjectMocks
     private UserInterestLookupService userInterestLookupService;
 
-    @Test
-    @DisplayName("사용자의 관심 키워드 display name 목록을 반환한다")
-    void getInterestKeywordDisplayNames_ReturnsKeywordDisplayNames() {
-        Long userId = 1L;
-        User user = User.createSocialUser(SocialType.KAKAO, "social-1", "user@example.com", null);
-        UserInterestCategory backend = interestCategory(user, EInterestCategory.BACKEND, EInterestKeyword.JAVA, EInterestKeyword.SPRING);
-        UserInterestCategory devops = interestCategory(user, EInterestCategory.DEVOPS, EInterestKeyword.DOCKER);
-        given(userInterestCategoryRepository.findByUserIdWithKeywords(userId))
-                .willReturn(List.of(backend, devops));
+    @Nested
+    @DisplayName("관심 키워드 display name 조회")
+    class GetInterestKeywordDisplayNames {
 
-        List<String> result = userInterestLookupService.getInterestKeywordDisplayNames(userId);
+        @Test
+        @DisplayName("사용자의 관심 키워드 display name 목록을 반환한다")
+        void existingInterests_ReturnsKeywordDisplayNames() {
+            Long userId = 1L;
+            User user = UserFixture.socialUser("social-1", "user@example.com", null);
+            UserInterestCategory backend = UserInterestCategoryFixture.interestCategory(user, EInterestCategory.BACKEND, EInterestKeyword.JAVA, EInterestKeyword.SPRING);
+            UserInterestCategory devops = UserInterestCategoryFixture.interestCategory(user, EInterestCategory.DEVOPS, EInterestKeyword.DOCKER);
+            given(userInterestCategoryRepository.findByUserIdWithKeywords(userId))
+                    .willReturn(List.of(backend, devops));
 
-        assertThat(result).containsExactly("Java", "Spring", "Docker");
-        verify(userInterestCategoryRepository).findByUserIdWithKeywords(userId);
-    }
+            List<String> result = userInterestLookupService.getInterestKeywordDisplayNames(userId);
 
-    @Test
-    @DisplayName("관심사가 없으면 빈 목록을 반환한다")
-    void getInterestKeywordDisplayNames_NoInterests_ReturnsEmptyList() {
-        Long userId = 2L;
-        given(userInterestCategoryRepository.findByUserIdWithKeywords(userId)).willReturn(List.of());
-
-        List<String> result = userInterestLookupService.getInterestKeywordDisplayNames(userId);
-
-        assertThat(result).isEmpty();
-        verify(userInterestCategoryRepository).findByUserIdWithKeywords(userId);
-    }
-
-    private UserInterestCategory interestCategory(User user, EInterestCategory category, EInterestKeyword... keywords) {
-        UserInterestCategory userInterestCategory = UserInterestCategory.create(user, category);
-        for (EInterestKeyword keyword : keywords) {
-            userInterestCategory.addKeyword(UserInterestKeyword.create(userInterestCategory, keyword));
+            assertThat(result).containsExactly("Java", "Spring", "Docker");
+            verify(userInterestCategoryRepository).findByUserIdWithKeywords(userId);
         }
-        return userInterestCategory;
+
+        @Test
+        @DisplayName("관심사가 없으면 빈 목록을 반환한다")
+        void noInterests_ReturnsEmptyList() {
+            Long userId = 2L;
+            given(userInterestCategoryRepository.findByUserIdWithKeywords(userId)).willReturn(List.of());
+
+            List<String> result = userInterestLookupService.getInterestKeywordDisplayNames(userId);
+
+            assertThat(result).isEmpty();
+            verify(userInterestCategoryRepository).findByUserIdWithKeywords(userId);
+        }
     }
+
 }

@@ -41,7 +41,7 @@ class SummaryExtractionServiceTest {
 
         @Test
         @DisplayName("LLM JSON 응답에서 summary, shortSummary, keywords를 파싱한다")
-        void parsesSummaryShortSummaryAndKeywordsFromJsonResponse() {
+        void jsonResponse_ParsesSummaryShortSummaryAndKeywords() {
             given(llmClient.call(anyString(), anyString()))
                     .willReturn("""
                             {
@@ -60,7 +60,7 @@ class SummaryExtractionServiceTest {
 
         @Test
         @DisplayName("shortSummary가 없으면 빈 문자열을 반환한다")
-        void returnsEmptyStringWhenShortSummaryIsMissing() {
+        void missingShortSummary_ReturnsEmptyString() {
             given(llmClient.call(anyString(), anyString()))
                     .willReturn("""
                             {
@@ -78,7 +78,7 @@ class SummaryExtractionServiceTest {
 
         @Test
         @DisplayName("keywords가 없으면 빈 리스트를 반환한다")
-        void returnsEmptyListWhenKeywordsAreMissing() {
+        void missingKeywords_ReturnsEmptyList() {
             given(llmClient.call(anyString(), anyString()))
                     .willReturn("""
                             {
@@ -96,7 +96,7 @@ class SummaryExtractionServiceTest {
 
         @Test
         @DisplayName("keywords가 배열이 아니면 빈 리스트를 반환한다")
-        void returnsEmptyListWhenKeywordsIsNotArray() {
+        void nonArrayKeywords_ReturnsEmptyList() {
             given(llmClient.call(anyString(), anyString()))
                     .willReturn("""
                             {
@@ -115,7 +115,7 @@ class SummaryExtractionServiceTest {
 
         @Test
         @DisplayName("유효하지 않은 JSON 응답이면 예외를 던진다")
-        void throwsExceptionWhenJsonParsingFails() {
+        void invalidJson_ThrowsException() {
             given(llmClient.call(anyString(), anyString()))
                     .willReturn("not-json");
 
@@ -126,7 +126,7 @@ class SummaryExtractionServiceTest {
 
         @Test
         @DisplayName("본문이 너무 길면 50000자로 정제 후 제한한 내용을 프롬프트에 사용한다")
-        void usesCleanedAndLimitedContentWhenBodyIsTooLong() {
+        void bodyTooLong_UsesCleanedAndLimitedContent() {
             String longContent = "word ".repeat(15000) + "TRAILING_MARKER";
             String expectedContent = ContentCleaner.cleanAndLimit(longContent, 50000);
             given(llmClient.call(anyString(), anyString()))

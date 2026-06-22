@@ -3,7 +3,6 @@ package com.techfork.post.application.batch;
 import com.techfork.post.domain.projection.ContentChunk;
 import com.techfork.post.domain.projection.PostDocument;
 import com.techfork.post.domain.Post;
-import com.techfork.post.fixture.PostFixture;
 import com.techfork.post.application.embedding.ContentChunkerService;
 import com.techfork.global.llm.EmbeddingClient;
 import org.junit.jupiter.api.DisplayName;
@@ -14,10 +13,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.techfork.post.fixture.PostFixture.DEFAULT_PUBLISHED_AT;
+import static com.techfork.post.fixture.PostFixture.createEmbeddingTargetPost;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -28,8 +28,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class PostEmbeddingProcessorTest {
-
-    private static final LocalDateTime DEFAULT_PUBLISHED_AT = LocalDateTime.of(2026, 4, 13, 7, 0, 0);
 
     @Mock
     private ContentChunkerService contentChunkerService;
@@ -43,9 +41,9 @@ class PostEmbeddingProcessorTest {
 
         @Test
         @DisplayName("제목, 요약, 유효 본문 청크를 임베딩해 PostDocument projection을 생성한다")
-        void createsPostDocumentProjectionFromEmbeddings() {
+        void validEmbeddings_CreatePostDocumentProjection() {
             PostEmbeddingProcessor postEmbeddingProcessor = createProcessor();
-            Post post = createPost();
+            Post post = createEmbeddingTargetPost();
             List<Float> titleEmbedding = List.of(0.1f, 0.2f);
             List<Float> summaryEmbedding = List.of(0.3f, 0.4f);
             List<String> rawChunks = List.of("첫 번째 청크", "", "  ", "두 번째 청크");
@@ -90,9 +88,9 @@ class PostEmbeddingProcessorTest {
 
         @Test
         @DisplayName("제목이 비어 있으면 임베딩을 스킵하고 null을 반환한다")
-        void returnsNullWhenTitleIsBlank() {
+        void blankTitle_ReturnsNull() {
             PostEmbeddingProcessor postEmbeddingProcessor = createProcessor();
-            Post post = createPost();
+            Post post = createEmbeddingTargetPost();
             ReflectionTestUtils.setField(post, "title", " ");
 
             PostDocument result = postEmbeddingProcessor.process(post);
@@ -103,9 +101,9 @@ class PostEmbeddingProcessorTest {
 
         @Test
         @DisplayName("요약이 비어 있으면 임베딩을 스킵하고 null을 반환한다")
-        void returnsNullWhenSummaryIsBlank() {
+        void blankSummary_ReturnsNull() {
             PostEmbeddingProcessor postEmbeddingProcessor = createProcessor();
-            Post post = createPost();
+            Post post = createEmbeddingTargetPost();
             ReflectionTestUtils.setField(post, "summary", " ");
 
             PostDocument result = postEmbeddingProcessor.process(post);
@@ -116,9 +114,9 @@ class PostEmbeddingProcessorTest {
 
         @Test
         @DisplayName("유효한 본문 청크가 없으면 batch embedding 없이 null을 반환한다")
-        void returnsNullWhenNoValidChunksRemain() {
+        void noValidChunksRemain_ReturnsNull() {
             PostEmbeddingProcessor postEmbeddingProcessor = createProcessor();
-            Post post = createPost();
+            Post post = createEmbeddingTargetPost();
             given(embeddingClient.embed("임베딩 대상 게시글")).willReturn(List.of(0.1f));
             given(embeddingClient.embed("요약 완료")).willReturn(List.of(0.2f));
             given(contentChunkerService.chunkContent("원문 본문"))
@@ -135,9 +133,9 @@ class PostEmbeddingProcessorTest {
 
         @Test
         @DisplayName("임베딩 클라이언트 예외를 그대로 전파한다")
-        void propagatesEmbeddingClientFailure() {
+        void embeddingClientFails_PropagatesException() {
             PostEmbeddingProcessor postEmbeddingProcessor = createProcessor();
-            Post post = createPost();
+            Post post = createEmbeddingTargetPost();
             given(embeddingClient.embed("임베딩 대상 게시글"))
                     .willThrow(new IllegalStateException("embedding failed"));
 
@@ -153,16 +151,5 @@ class PostEmbeddingProcessorTest {
             return new PostEmbeddingProcessor(contentChunkerService, embeddingClient);
         }
 
-        private Post createPost() {
-            return PostFixture.createPost(
-                    1L,
-                    "임베딩 대상 게시글",
-                    "원문 본문",
-                    "평문 본문",
-                    "TechFork",
-                    "요약 완료",
-                    "짧은 요약"
-            );
-        }
     }
 }

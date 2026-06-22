@@ -58,7 +58,7 @@ class ReadPostQueryServiceTest {
 
         @Test
         @DisplayName("첫 페이지 요청 시 size+1 결과를 converter에 전달한다")
-        void getReadPosts_Success_FirstPage() {
+        void firstPage_ReturnsReadPosts() {
             Long userId = 1L;
             Long lastReadPostId = null;
             int size = 2;
@@ -84,7 +84,7 @@ class ReadPostQueryServiceTest {
 
         @Test
         @DisplayName("키워드와 북마크 여부를 함께 조합한다")
-        void getReadPosts_Success_WithKeywordsAndBookmarks() {
+        void keywordsAndBookmarksExist_ReturnsEnrichedReadPosts() {
             Long userId = 1L;
             Long lastReadPostId = null;
             int size = 20;
@@ -113,7 +113,7 @@ class ReadPostQueryServiceTest {
 
         @Test
         @DisplayName("빈 목록이면 추가 조회 없이 바로 응답을 조립한다")
-        void getReadPosts_Success_EmptyList() {
+        void noReadPosts_ReturnsEmptyPage() {
             Long userId = 1L;
             Long lastReadPostId = null;
             int size = 20;

@@ -2,6 +2,8 @@ package com.techfork.post.domain;
 
 import com.techfork.domain.source.dto.RssFeedItem;
 import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.fixture.RssFeedItemFixture;
+import com.techfork.domain.source.fixture.TechBlogFixture;
 import com.techfork.post.fixture.PostFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -20,10 +22,10 @@ class PostTest {
 
         @Test
         @DisplayName("RssFeedItem과 TechBlog로 게시글 aggregate를 생성한다")
-        void createsPostAggregateFromRssFeedItem() {
-            TechBlog techBlog = PostFixture.createTechBlog(1L, "TechFork");
+        void rssFeedItem_CreatesPostAggregate() {
+            TechBlog techBlog = TechBlogFixture.createTechBlog(1L, "TechFork");
             LocalDateTime publishedAt = LocalDateTime.of(2026, 5, 7, 10, 30);
-            RssFeedItem rssFeedItem = PostFixture.createRssFeedItem(
+            RssFeedItem rssFeedItem = RssFeedItemFixture.createRssFeedItem(
                     1L,
                     "Post aggregate 설계",
                     "https://posts.example.com/post-aggregate",
@@ -60,7 +62,7 @@ class PostTest {
 
         @Test
         @DisplayName("summary와 shortSummary를 함께 갱신한다")
-        void updatesSummaryAndShortSummaryTogether() {
+        void summaryAndShortSummary_UpdatesTogether() {
             Post post = PostFixture.createPost(1L, "Post aggregate 설계", "원문 본문", "평문 본문", "TechFork", null, null);
 
             post.updateSummaries("새 요약", "새 짧은 요약");
@@ -76,7 +78,7 @@ class PostTest {
 
         @Test
         @DisplayName("기존 keyword를 제거하고 새 keyword 목록으로 교체한다")
-        void replacesExistingKeywordsWithNewKeywordNames() {
+        void newKeywordNames_ReplacesExistingKeywords() {
             Post post = PostFixture.createPost(1L, "Post aggregate 설계", "원문 본문", "평문 본문", "TechFork", null, null);
             post.replaceKeywords(List.of("Legacy", "Old"));
 
@@ -91,7 +93,7 @@ class PostTest {
 
         @Test
         @DisplayName("빈 목록이면 기존 keyword를 모두 제거한다")
-        void clearsExistingKeywordsWhenKeywordNamesAreEmpty() {
+        void emptyKeywordNames_ClearsExistingKeywords() {
             Post post = PostFixture.createPost(1L, "Post aggregate 설계", "원문 본문", "평문 본문", "TechFork", null, null);
             post.replaceKeywords(List.of("AI", "Batch"));
 

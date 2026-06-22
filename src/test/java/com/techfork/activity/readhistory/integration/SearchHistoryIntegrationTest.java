@@ -6,9 +6,9 @@ import com.techfork.activity.readhistory.infrastructure.SearchHistoryRepository;
 import com.techfork.activity.readhistory.presentation.SearchHistoryRequest;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
-import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
-import com.techfork.global.common.IntegrationTestBase;
+import com.techfork.global.common.MySqlRedisIntegrationTestBase;
 import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtUtil;
 import java.time.LocalDateTime;
@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class SearchHistoryIntegrationTest extends IntegrationTestBase {
+class SearchHistoryIntegrationTest extends MySqlRedisIntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;
@@ -50,8 +50,7 @@ class SearchHistoryIntegrationTest extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() {
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", "profile.jpg");
-        testUser.updateUser("테스트유저", "test@example.com", "백엔드 개발자입니다.");
+        testUser = UserFixture.activeUser("testSocialId", "test@example.com");
         testUser = userRepository.save(testUser);
 
         JwtDTO tokens = jwtUtil.generateTokens(testUser.getId(), Role.USER);
@@ -68,97 +67,87 @@ class SearchHistoryIntegrationTest extends IntegrationTestBase {
     @DisplayName("검색 히스토리 저장")
     class SaveSearchHistory {
 
-        @Nested
-        @DisplayName("Success")
-        class Success {
+        @Test
+        @DisplayName("검색 히스토리 저장 성공")
+        void queryFieldProvided_ReturnsOk() throws Exception {
+            SearchHistoryRequest request = new SearchHistoryRequest("Spring Boot", LocalDateTime.now());
 
-            @Test
-            @DisplayName("검색 히스토리 저장 성공")
-            void saveSearchHistory_Success() throws Exception {
-                SearchHistoryRequest request = new SearchHistoryRequest("Spring Boot", LocalDateTime.now());
+            mockMvc.perform(post("/api/v1/activities/searches")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.isSuccess").value(true));
 
-                mockMvc.perform(post("/api/v1/activities/searches")
-                                .header("Authorization", "Bearer " + accessToken)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
-                        .andDo(print())
-                        .andExpect(status().isCreated())
-                        .andExpect(jsonPath("$.isSuccess").value(true));
-
-                List<SearchHistory> searchHistories = searchHistoryRepository.findAll();
-                assertThat(searchHistories).hasSize(1);
-                assertThat(searchHistories.get(0).getUser().getId()).isEqualTo(testUser.getId());
-                assertThat(searchHistories.get(0).getQuery()).isEqualTo("Spring Boot");
-            }
-
-            @Test
-            @DisplayName("legacy searchWord alias 허용")
-            void saveSearchHistory_Success_WithLegacyAlias() throws Exception {
-                LocalDateTime searchedAt = LocalDateTime.now();
-                String requestJson = """
-                        {
-                          "searchWord": "Spring Boot",
-                          "searchedAt": "%s"
-                        }
-                        """.formatted(searchedAt);
-
-                mockMvc.perform(post("/api/v1/activities/searches")
-                                .header("Authorization", "Bearer " + accessToken)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestJson))
-                        .andDo(print())
-                        .andExpect(status().isCreated())
-                        .andExpect(jsonPath("$.isSuccess").value(true));
-
-                List<SearchHistory> searchHistories = searchHistoryRepository.findAll();
-                assertThat(searchHistories).hasSize(1);
-                assertThat(searchHistories.get(0).getQuery()).isEqualTo("Spring Boot");
-            }
-
-            @Test
-            @DisplayName("여러 개 저장")
-            void saveSearchHistory_Success_Multiple() throws Exception {
-                SearchHistoryRequest request1 = new SearchHistoryRequest("Spring Boot", LocalDateTime.now());
-                SearchHistoryRequest request2 = new SearchHistoryRequest("Java", LocalDateTime.now());
-                SearchHistoryRequest request3 = new SearchHistoryRequest("Kotlin", LocalDateTime.now());
-
-                mockMvc.perform(post("/api/v1/activities/searches")
-                                .header("Authorization", "Bearer " + accessToken)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request1)))
-                        .andExpect(status().isCreated());
-                mockMvc.perform(post("/api/v1/activities/searches")
-                                .header("Authorization", "Bearer " + accessToken)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request2)))
-                        .andExpect(status().isCreated());
-                mockMvc.perform(post("/api/v1/activities/searches")
-                                .header("Authorization", "Bearer " + accessToken)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request3)))
-                        .andExpect(status().isCreated());
-
-                List<SearchHistory> searchHistories = searchHistoryRepository.findAll();
-                assertThat(searchHistories).hasSize(3);
-            }
+            List<SearchHistory> searchHistories = searchHistoryRepository.findAll();
+            assertThat(searchHistories).hasSize(1);
+            assertThat(searchHistories.get(0).getUser().getId()).isEqualTo(testUser.getId());
+            assertThat(searchHistories.get(0).getQuery()).isEqualTo("Spring Boot");
         }
 
-        @Nested
-        @DisplayName("Failure")
-        class Failure {
+        @Test
+        @DisplayName("legacy searchWord alias 허용")
+        void legacySearchWordAliasProvided_ReturnsOk() throws Exception {
+            LocalDateTime searchedAt = LocalDateTime.now();
+            String requestJson = """
+                    {
+                      "searchWord": "Spring Boot",
+                      "searchedAt": "%s"
+                    }
+                    """.formatted(searchedAt);
 
-            @Test
-            @DisplayName("검색어가 비어 있으면 실패한다")
-            void saveSearchHistory_Fail_BlankQuery() throws Exception {
-                SearchHistoryRequest request = new SearchHistoryRequest("", LocalDateTime.now());
+            mockMvc.perform(post("/api/v1/activities/searches")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestJson))
+                    .andDo(print())
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.isSuccess").value(true));
 
-                mockMvc.perform(post("/api/v1/activities/searches")
-                                .header("Authorization", "Bearer " + accessToken)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
-                        .andDo(print())
-                        .andExpect(status().isBadRequest());
-            }
+            List<SearchHistory> searchHistories = searchHistoryRepository.findAll();
+            assertThat(searchHistories).hasSize(1);
+            assertThat(searchHistories.get(0).getQuery()).isEqualTo("Spring Boot");
+        }
+
+        @Test
+        @DisplayName("여러 개 저장")
+        void multipleRequests_ReturnsRecentHistories() throws Exception {
+            SearchHistoryRequest request1 = new SearchHistoryRequest("Spring Boot", LocalDateTime.now());
+            SearchHistoryRequest request2 = new SearchHistoryRequest("Java", LocalDateTime.now());
+            SearchHistoryRequest request3 = new SearchHistoryRequest("Kotlin", LocalDateTime.now());
+
+            mockMvc.perform(post("/api/v1/activities/searches")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request1)))
+                    .andExpect(status().isCreated());
+            mockMvc.perform(post("/api/v1/activities/searches")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request2)))
+                    .andExpect(status().isCreated());
+            mockMvc.perform(post("/api/v1/activities/searches")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request3)))
+                    .andExpect(status().isCreated());
+
+            List<SearchHistory> searchHistories = searchHistoryRepository.findAll();
+            assertThat(searchHistories).hasSize(3);
+        }
+
+        @Test
+        @DisplayName("검색어가 비어 있으면 실패한다")
+        void blankQuery_ReturnsBadRequest() throws Exception {
+            SearchHistoryRequest request = new SearchHistoryRequest("", LocalDateTime.now());
+
+            mockMvc.perform(post("/api/v1/activities/searches")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isBadRequest());
         }
     }
 }

@@ -20,6 +20,21 @@ This AGENTS.md scopes guidance to `src/test`. Parent AGENTS guidance still appli
 
 <!-- OMX:AGENTS-INIT:MANUAL:START -->
 ## Local Notes
-- Add subtree-specific constraints, ownership notes, and test commands here.
-- Keep notes scoped to this directory and its children.
+- Keep only executable test guidance here; detailed rationale and examples live in [`docs/convention/test-convention.md`](../../docs/convention/test-convention.md).
+- Deeper `AGENTS.md` files may narrow these rules for specific subtrees.
+- `src/test/java/com/techfork/evaluation` is a separate evaluation lane; follow its local guide instead of ordinary unit/integration defaults.
+
+## Required Defaults
+- Prefer `com.techfork.<bounded-context>.<test-kind>` packages unless production still uses legacy `com.techfork.domain.*`.
+- Keep reusable fixtures in the owning context's `fixture` package; keep one-off setup as private helpers.
+- Use `IntegrationTestBase` by default; do not switch integration bases broadly without CI container reuse evidence.
+- For local checks of integration tests that do not use Elasticsearch, you may temporarily run with `MySqlRedisIntegrationTestConfig` / `MySqlRedisIntegrationTestBase`, but restore `IntegrationTestConfig` / `IntegrationTestBase` before finishing the task or committing.
+
+## Commands
+```bash
+./gradlew test -PexcludeIntegration
+./gradlew integrationTest
+./gradlew evaluationTest
+./gradlew evaluationSetup
+```
 <!-- OMX:AGENTS-INIT:MANUAL:END -->

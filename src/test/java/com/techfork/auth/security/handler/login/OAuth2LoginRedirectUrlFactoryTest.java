@@ -102,7 +102,7 @@ class OAuth2LoginRedirectUrlFactoryTest {
 
         @Test
         @DisplayName("실패 리다이렉트 URI에 공개 에러 코드를 query parameter로 추가한다")
-        void appendsPublicErrorCodeQueryParameter() {
+        void publicErrorCode_AppendsQueryParameter() {
             String redirectUrl = redirectUrlFactory.createFailureRedirectUrl();
 
             assertThat(redirectUrl).isEqualTo(LOGIN_FAILURE_REDIRECT_URI + "&errorCode=oauth_failed");

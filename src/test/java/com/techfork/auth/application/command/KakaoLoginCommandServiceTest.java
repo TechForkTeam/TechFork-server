@@ -15,6 +15,7 @@ import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.enums.UserStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -59,96 +60,101 @@ class KakaoLoginCommandServiceTest {
         userId = 1L;
     }
 
-    @Test
-    @DisplayName("iOS 카카오 로그인 성공 - REST id를 Kakao service user ID socialId로 사용해 신규 회원 가입")
-    void login_Success_NewUser() {
-        // Given
-        String kakaoAccessToken = "kakao.access.token";
-        Long kakaoRestUserId = 12345L;
-        String kakaoServiceUserId = "12345";
-        String email = "newuser@kakao.com";
-        String profileImageUrl = "https://example.com/profile.jpg";
-        long refreshTokenExpiration = 900000L;
+    @Nested
+    @DisplayName("login")
+    class Login {
 
-        KakaoUserInfoResponse kakaoUserInfo = kakaoUserInfo(kakaoRestUserId, email, profileImageUrl);
-        UserAuthProfile newUserProfile = new UserAuthProfile(userId, Role.USER, UserStatus.PENDING, email, false);
-        JwtDTO tokens = JwtDTO.of(newAccessToken, newRefreshToken);
+        @Test
+        @DisplayName("iOS 카카오 로그인 성공 - REST id를 Kakao service user ID socialId로 사용해 신규 회원 가입")
+        void newUser_ReturnsUnregisteredResult() {
+            // Given
+            String kakaoAccessToken = "kakao.access.token";
+            Long kakaoRestUserId = 12345L;
+            String kakaoServiceUserId = "12345";
+            String email = "newuser@kakao.com";
+            String profileImageUrl = "https://example.com/profile.jpg";
+            long refreshTokenExpiration = 900000L;
 
-        given(kakaoOAuthService.getUserInfo(kakaoAccessToken)).willReturn(kakaoUserInfo);
-        given(userAuthAccountService.getOrCreateSocialAuthProfile(
-                SocialType.KAKAO,
-                kakaoServiceUserId,
-                email,
-                profileImageUrl
-        )).willReturn(newUserProfile);
-        given(jwtUtil.generateTokens(userId, Role.USER)).willReturn(tokens);
-        given(jwtProperties.getRefreshTokenExpiration()).willReturn(refreshTokenExpiration);
+            KakaoUserInfoResponse kakaoUserInfo = kakaoUserInfo(kakaoRestUserId, email, profileImageUrl);
+            UserAuthProfile newUserProfile = new UserAuthProfile(userId, Role.USER, UserStatus.PENDING, email, false);
+            JwtDTO tokens = JwtDTO.of(newAccessToken, newRefreshToken);
 
-        // When
-        KakaoLoginResult result = kakaoLoginCommandService.login(new KakaoLoginCommand(kakaoAccessToken));
+            given(kakaoOAuthService.getUserInfo(kakaoAccessToken)).willReturn(kakaoUserInfo);
+            given(userAuthAccountService.getOrCreateSocialAuthProfile(
+                    SocialType.KAKAO,
+                    kakaoServiceUserId,
+                    email,
+                    profileImageUrl
+            )).willReturn(newUserProfile);
+            given(jwtUtil.generateTokens(userId, Role.USER)).willReturn(tokens);
+            given(jwtProperties.getRefreshTokenExpiration()).willReturn(refreshTokenExpiration);
 
-        // Then
-        assertThat(result.accessToken()).isEqualTo(newAccessToken);
-        assertThat(result.refreshToken()).isEqualTo(newRefreshToken);
-        assertThat(result.refreshTokenExpiration()).isEqualTo(refreshTokenExpiration);
-        assertThat(result.userId()).isEqualTo(userId);
-        assertThat(result.isRegistered()).isFalse();
+            // When
+            KakaoLoginResult result = kakaoLoginCommandService.login(new KakaoLoginCommand(kakaoAccessToken));
 
-        verify(kakaoOAuthService).getUserInfo(kakaoAccessToken);
-        verify(userAuthAccountService).getOrCreateSocialAuthProfile(
-                SocialType.KAKAO,
-                kakaoServiceUserId,
-                email,
-                profileImageUrl
-        );
-        verify(jwtUtil).generateTokens(userId, Role.USER);
-        verify(refreshTokenStore).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
-    }
+            // Then
+            assertThat(result.accessToken()).isEqualTo(newAccessToken);
+            assertThat(result.refreshToken()).isEqualTo(newRefreshToken);
+            assertThat(result.refreshTokenExpiration()).isEqualTo(refreshTokenExpiration);
+            assertThat(result.userId()).isEqualTo(userId);
+            assertThat(result.isRegistered()).isFalse();
 
-    @Test
-    @DisplayName("iOS 카카오 로그인 성공 - 기존 회원 로그인")
-    void login_Success_ExistingUser() {
-        // Given
-        String kakaoAccessToken = "kakao.access.token";
-        Long kakaoRestUserId = 12345L;
-        String kakaoServiceUserId = "12345";
-        String email = "existinguser@kakao.com";
-        String profileImageUrl = "https://example.com/profile.jpg";
-        long refreshTokenExpiration = 900000L;
+            verify(kakaoOAuthService).getUserInfo(kakaoAccessToken);
+            verify(userAuthAccountService).getOrCreateSocialAuthProfile(
+                    SocialType.KAKAO,
+                    kakaoServiceUserId,
+                    email,
+                    profileImageUrl
+            );
+            verify(jwtUtil).generateTokens(userId, Role.USER);
+            verify(refreshTokenStore).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
+        }
 
-        KakaoUserInfoResponse kakaoUserInfo = kakaoUserInfo(kakaoRestUserId, email, profileImageUrl);
-        UserAuthProfile existingUserProfile = new UserAuthProfile(userId, Role.USER, UserStatus.ACTIVE, email, true);
-        JwtDTO tokens = JwtDTO.of(newAccessToken, newRefreshToken);
+        @Test
+        @DisplayName("iOS 카카오 로그인 성공 - 기존 회원 로그인")
+        void existingUser_ReturnsRegisteredResult() {
+            // Given
+            String kakaoAccessToken = "kakao.access.token";
+            Long kakaoRestUserId = 12345L;
+            String kakaoServiceUserId = "12345";
+            String email = "existinguser@kakao.com";
+            String profileImageUrl = "https://example.com/profile.jpg";
+            long refreshTokenExpiration = 900000L;
 
-        given(kakaoOAuthService.getUserInfo(kakaoAccessToken)).willReturn(kakaoUserInfo);
-        given(userAuthAccountService.getOrCreateSocialAuthProfile(
-                SocialType.KAKAO,
-                kakaoServiceUserId,
-                email,
-                profileImageUrl
-        )).willReturn(existingUserProfile);
-        given(jwtUtil.generateTokens(userId, Role.USER)).willReturn(tokens);
-        given(jwtProperties.getRefreshTokenExpiration()).willReturn(refreshTokenExpiration);
+            KakaoUserInfoResponse kakaoUserInfo = kakaoUserInfo(kakaoRestUserId, email, profileImageUrl);
+            UserAuthProfile existingUserProfile = new UserAuthProfile(userId, Role.USER, UserStatus.ACTIVE, email, true);
+            JwtDTO tokens = JwtDTO.of(newAccessToken, newRefreshToken);
 
-        // When
-        KakaoLoginResult result = kakaoLoginCommandService.login(new KakaoLoginCommand(kakaoAccessToken));
+            given(kakaoOAuthService.getUserInfo(kakaoAccessToken)).willReturn(kakaoUserInfo);
+            given(userAuthAccountService.getOrCreateSocialAuthProfile(
+                    SocialType.KAKAO,
+                    kakaoServiceUserId,
+                    email,
+                    profileImageUrl
+            )).willReturn(existingUserProfile);
+            given(jwtUtil.generateTokens(userId, Role.USER)).willReturn(tokens);
+            given(jwtProperties.getRefreshTokenExpiration()).willReturn(refreshTokenExpiration);
 
-        // Then
-        assertThat(result.accessToken()).isEqualTo(newAccessToken);
-        assertThat(result.refreshToken()).isEqualTo(newRefreshToken);
-        assertThat(result.refreshTokenExpiration()).isEqualTo(refreshTokenExpiration);
-        assertThat(result.userId()).isEqualTo(userId);
-        assertThat(result.isRegistered()).isTrue();
+            // When
+            KakaoLoginResult result = kakaoLoginCommandService.login(new KakaoLoginCommand(kakaoAccessToken));
 
-        verify(kakaoOAuthService).getUserInfo(kakaoAccessToken);
-        verify(userAuthAccountService).getOrCreateSocialAuthProfile(
-                SocialType.KAKAO,
-                kakaoServiceUserId,
-                email,
-                profileImageUrl
-        );
-        verify(jwtUtil).generateTokens(userId, Role.USER);
-        verify(refreshTokenStore).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
+            // Then
+            assertThat(result.accessToken()).isEqualTo(newAccessToken);
+            assertThat(result.refreshToken()).isEqualTo(newRefreshToken);
+            assertThat(result.refreshTokenExpiration()).isEqualTo(refreshTokenExpiration);
+            assertThat(result.userId()).isEqualTo(userId);
+            assertThat(result.isRegistered()).isTrue();
+
+            verify(kakaoOAuthService).getUserInfo(kakaoAccessToken);
+            verify(userAuthAccountService).getOrCreateSocialAuthProfile(
+                    SocialType.KAKAO,
+                    kakaoServiceUserId,
+                    email,
+                    profileImageUrl
+            );
+            verify(jwtUtil).generateTokens(userId, Role.USER);
+            verify(refreshTokenStore).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
+        }
     }
 
     private KakaoUserInfoResponse kakaoUserInfo(Long kakaoRestUserId, String email, String profileImageUrl) {

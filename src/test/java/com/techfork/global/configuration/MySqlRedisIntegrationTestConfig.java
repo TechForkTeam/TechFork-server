@@ -18,7 +18,7 @@ import org.testcontainers.utility.DockerImageName;
 public class MySqlRedisIntegrationTestConfig {
 
     private static final MySQLContainer<?> mysql =
-            new MySQLContainer<>("mysql:8.0.36");
+            new MySQLContainer<>("mysql:8.0");
 
     private static final RedisContainer redis =
             new RedisContainer(DockerImageName.parse("redis:7.2-alpine"));

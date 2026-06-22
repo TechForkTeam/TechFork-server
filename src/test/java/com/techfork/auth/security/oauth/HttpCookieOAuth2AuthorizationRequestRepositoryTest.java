@@ -26,7 +26,7 @@ class HttpCookieOAuth2AuthorizationRequestRepositoryTest {
 
         @Test
         @DisplayName("OAuth2 authorization request 저장 시 보안 속성이 포함된 쿠키를 생성한다")
-        void createsSerializedSecureCookie() {
+        void validRequest_CreatesSerializedSecureCookie() {
             MockHttpServletResponse response = new MockHttpServletResponse();
             OAuth2AuthorizationRequest authorizationRequest = authorizationRequest();
 
@@ -108,7 +108,7 @@ class HttpCookieOAuth2AuthorizationRequestRepositoryTest {
 
         @Test
         @DisplayName("기존 request를 반환하고 삭제 쿠키를 추가한다")
-        void returnsExistingRequestAndAddsDeleteCookie() {
+        void withCookie_ReturnsExistingRequestAndAddsDeleteCookie() {
             OAuth2AuthorizationRequest original = authorizationRequest();
             MockHttpServletResponse saveResponse = new MockHttpServletResponse();
             repository.saveAuthorizationRequest(original, new MockHttpServletRequest(), saveResponse);

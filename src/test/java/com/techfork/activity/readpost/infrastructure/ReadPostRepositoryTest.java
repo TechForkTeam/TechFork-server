@@ -1,16 +1,20 @@
 package com.techfork.activity.readpost.infrastructure;
 
 import com.techfork.activity.readpost.domain.ReadPost;
+import com.techfork.activity.readpost.fixture.ReadPostFixture;
 import com.techfork.post.domain.Post;
+import com.techfork.post.fixture.PostFixture;
 import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.fixture.TechBlogFixture;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -45,38 +49,20 @@ class ReadPostRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", "profile.jpg");
+        testUser = UserFixture.socialUser("testSocialId", "test@example.com");
         testUser = userRepository.save(testUser);
 
-        testBlog = TechBlog.builder()
-                .companyName("테스트회사")
-                .blogUrl("https://test.com")
-                .rssUrl("https://test.com/rss")
-                .build();
+        testBlog = TechBlogFixture.createTechBlog("테스트회사", "https://test.com");
         testBlog = techBlogRepository.save(testBlog);
 
-        testPost1 = Post.builder()
-                .title("테스트 게시글 1")
-                .fullContent("전체 내용")
-                .plainContent("내용")
-                .company("테스트회사")
-                .url("https://test.com/post/1")
-                .publishedAt(LocalDateTime.now())
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testBlog)
-                .build();
+        testPost1 = PostFixture.createPost(testBlog, "테스트 게시글 1", "전체 내용", "내용",
+                "테스트 게시글 1 요약", "테스트 게시글 1 짧은 요약", "https://test.com/thumb1.png",
+                "https://test.com/post/1", LocalDateTime.now());
         testPost1 = postRepository.save(testPost1);
 
-        testPost2 = Post.builder()
-                .title("테스트 게시글 2")
-                .fullContent("전체 내용 2")
-                .plainContent("내용 2")
-                .company("테스트회사")
-                .url("https://test.com/post/2")
-                .publishedAt(LocalDateTime.now())
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testBlog)
-                .build();
+        testPost2 = PostFixture.createPost(testBlog, "테스트 게시글 2", "전체 내용 2", "내용 2",
+                "테스트 게시글 2 요약", "테스트 게시글 2 짧은 요약", "https://test.com/thumb2.png",
+                "https://test.com/post/2", LocalDateTime.now());
         testPost2 = postRepository.save(testPost2);
     }
 
@@ -88,69 +74,85 @@ class ReadPostRepositoryTest {
         userRepository.deleteAll();
     }
 
-    @Test
-    @DisplayName("최근 읽은 게시글 조회 - readDurationSeconds 10초 초과 필터링")
-    void findRecentReadPostsByUserIdWithMinDuration() {
-        ReadPost readPost1 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(2), 5);
-        ReadPost readPost2 = ReadPost.create(testUser, testPost2, LocalDateTime.now(), null);
-        readPostRepository.saveAll(List.of(readPost1, readPost2));
+    @Nested
+    @DisplayName("최소 읽기 시간 기준 최근 읽은 게시글 조회")
+    class FindRecentReadPostsByUserIdWithMinDuration {
 
-        List<ReadPost> result = readPostRepository.findRecentReadPostsByUserIdWithMinDuration(testUser.getId(), PageRequest.of(0, 10));
+        @Test
+        @DisplayName("최근 읽은 게시글 조회 - readDurationSeconds 10초 초과 필터링")
+        void minimumDurationProvided_ReturnsRecentReadPosts() {
+            ReadPost readPost1 = ReadPostFixture.createReadPost(testUser, testPost1, LocalDateTime.now().minusHours(2), 5);
+            ReadPost readPost2 = ReadPostFixture.createReadPost(testUser, testPost2, LocalDateTime.now(), null);
+            readPostRepository.saveAll(List.of(readPost1, readPost2));
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getReadDurationSeconds()).isNull();
+            List<ReadPost> result = readPostRepository.findRecentReadPostsByUserIdWithMinDuration(testUser.getId(), PageRequest.of(0, 10));
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getReadDurationSeconds()).isNull();
+        }
     }
 
-    @Test
-    @DisplayName("같은 게시글은 중복 저장 가능하다")
-    void saveDuplicateReadPost_Success() {
-        ReadPost readPost1 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(1), 100);
-        ReadPost readPost2 = ReadPost.create(testUser, testPost1, LocalDateTime.now(), 200);
+    @Nested
+    @DisplayName("중복 읽은 게시글 저장")
+    class SaveDuplicateReadPost {
 
-        readPostRepository.save(readPost1);
-        readPostRepository.save(readPost2);
-        readPostRepository.flush();
+        @Test
+        @DisplayName("같은 게시글은 중복 저장 가능하다")
+        void duplicateUserAndPost_PersistsReadHistoryRows() {
+            ReadPost readPost1 = ReadPostFixture.createReadPost(testUser, testPost1, LocalDateTime.now().minusHours(1), 100);
+            ReadPost readPost2 = ReadPostFixture.createReadPost(testUser, testPost1, LocalDateTime.now(), 200);
 
-        List<ReadPost> all = readPostRepository.findAll();
-        assertThat(all).hasSize(2);
-        assertThat(all).allMatch(rp -> rp.getPost().getId().equals(testPost1.getId()));
-        assertThat(all).allMatch(rp -> rp.getUser().getId().equals(testUser.getId()));
+            readPostRepository.save(readPost1);
+            readPostRepository.save(readPost2);
+            readPostRepository.flush();
+
+            List<ReadPost> all = readPostRepository.findAll();
+            assertThat(all).hasSize(2);
+            assertThat(all).allMatch(rp -> rp.getPost().getId().equals(testPost1.getId()));
+            assertThat(all).allMatch(rp -> rp.getUser().getId().equals(testUser.getId()));
+        }
     }
 
-    @Test
-    @DisplayName("읽은 게시글 목록 조회 - 동일 포스트 중복 제거 및 최신순 정렬 확인")
-    void findReadPostsWithCursor_DeduplicateByPostId_Success() {
-        ReadPost read1 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(2), 100);
-        ReadPost read2 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(1), 100);
-        ReadPost read3 = ReadPost.create(testUser, testPost2, LocalDateTime.now(), 100);
+    @Nested
+    @DisplayName("읽은 게시글 cursor 조회")
+    class FindReadPostsWithCursor {
 
-        readPostRepository.saveAll(List.of(read1, read2, read3));
+        @Test
+        @DisplayName("읽은 게시글 목록 조회 - 동일 포스트 중복 제거 및 최신순 정렬 확인")
+        void duplicatePostReads_ReturnsDeduplicatedPosts() {
+            ReadPost read1 = ReadPostFixture.createReadPost(testUser, testPost1, LocalDateTime.now().minusHours(2), 100);
+            ReadPost read2 = ReadPostFixture.createReadPost(testUser, testPost1, LocalDateTime.now().minusHours(1), 100);
+            ReadPost read3 = ReadPostFixture.createReadPost(testUser, testPost2, LocalDateTime.now(), 100);
 
-        List<ReadPostQueryRow> result = readPostRepository.findReadPostsWithCursor(testUser.getId(), null, PageRequest.of(0, 10));
+            readPostRepository.saveAll(List.of(read1, read2, read3));
 
-        assertThat(result).hasSize(2);
-        assertThat(result).extracting(ReadPostQueryRow::postId)
-                .containsExactly(testPost2.getId(), testPost1.getId());
-        assertThat(result.get(1).readPostId()).isEqualTo(read2.getId());
+            List<ReadPostQueryRow> result = readPostRepository.findReadPostsWithCursor(testUser.getId(), null, PageRequest.of(0, 10));
+
+            assertThat(result).hasSize(2);
+            assertThat(result).extracting(ReadPostQueryRow::postId)
+                    .containsExactly(testPost2.getId(), testPost1.getId());
+            assertThat(result.get(1).readPostId()).isEqualTo(read2.getId());
+        }
+
+        @Test
+        @DisplayName("읽은 게시글 목록 조회 - lastReadPostId 커서를 적용한다")
+        void cursorProvided_AppliesBoundary() {
+            ReadPost read1 = ReadPostFixture.createReadPost(testUser, testPost1, LocalDateTime.now().minusHours(2), 100);
+            ReadPost read2 = ReadPostFixture.createReadPost(testUser, testPost2, LocalDateTime.now().minusHours(1), 100);
+
+            readPostRepository.saveAll(List.of(read1, read2));
+            readPostRepository.flush();
+
+            List<ReadPostQueryRow> result = readPostRepository.findReadPostsWithCursor(
+                    testUser.getId(),
+                    read2.getId(),
+                    PageRequest.of(0, 10)
+            );
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).readPostId()).isEqualTo(read1.getId());
+            assertThat(result.get(0).postId()).isEqualTo(testPost1.getId());
+        }
     }
 
-    @Test
-    @DisplayName("읽은 게시글 목록 조회 - lastReadPostId 커서를 적용한다")
-    void findReadPostsWithCursor_ApplyCursorBoundary() {
-        ReadPost read1 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(2), 100);
-        ReadPost read2 = ReadPost.create(testUser, testPost2, LocalDateTime.now().minusHours(1), 100);
-
-        readPostRepository.saveAll(List.of(read1, read2));
-        readPostRepository.flush();
-
-        List<ReadPostQueryRow> result = readPostRepository.findReadPostsWithCursor(
-                testUser.getId(),
-                read2.getId(),
-                PageRequest.of(0, 10)
-        );
-
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).readPostId()).isEqualTo(read1.getId());
-        assertThat(result.get(0).postId()).isEqualTo(testPost1.getId());
-    }
 }

@@ -3,6 +3,8 @@ package com.techfork.domain.source.batch;
 import com.techfork.post.domain.Post;
 import com.techfork.domain.source.dto.RssFeedItem;
 import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.fixture.RssFeedItemFixture;
+import com.techfork.domain.source.fixture.TechBlogFixture;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.DisplayName;
@@ -25,17 +27,17 @@ class RssToPostProcessorTest {
     @Mock
     private TechBlogRepository techBlogRepository;
 
-    private final RssFeedItem rssFeedItem = RssFeedItem.builder()
-            .title("테스트 제목")
-            .url("https://posts.example.com/1")
-            .logoUrl("https://cdn.example.com/logo.png")
-            .thumbnailUrl("https://cdn.example.com/thumb.png")
-            .content("긴 본문")
-            .plainContent("평문 본문")
-            .publishedAt(LocalDateTime.of(2026, 4, 13, 5, 45, 0))
-            .company("TechFork")
-            .techBlogId(7L)
-            .build();
+    private final RssFeedItem rssFeedItem = RssFeedItemFixture.createRssFeedItem(
+            7L,
+            "테스트 제목",
+            "https://posts.example.com/1",
+            "https://cdn.example.com/logo.png",
+            "https://cdn.example.com/thumb.png",
+            "긴 본문",
+            "평문 본문",
+            LocalDateTime.of(2026, 4, 13, 5, 45, 0),
+            "TechFork"
+    );
 
     @Nested
     @DisplayName("process")
@@ -43,9 +45,9 @@ class RssToPostProcessorTest {
 
         @Test
         @DisplayName("tech blog 참조를 조회한 뒤 Post 엔티티로 변환한다")
-        void loadsTechBlogReferenceAndCreatesPost() {
+        void rssFeedItemProvided_LoadsTechBlogReferenceAndCreatesPost() {
             RssToPostProcessor rssToPostProcessor = new RssToPostProcessor(techBlogRepository);
-            TechBlog techBlog = TechBlog.create(
+            TechBlog techBlog = TechBlogFixture.createTechBlog(
                     "TechFork",
                     "https://techfork.example.com",
                     "https://techfork.example.com/rss",
@@ -72,7 +74,7 @@ class RssToPostProcessorTest {
 
         @Test
         @DisplayName("tech blog 조회 실패를 그대로 전파한다")
-        void propagatesRepositoryFailure() {
+        void repositoryFails_PropagatesException() {
             RssToPostProcessor rssToPostProcessor = new RssToPostProcessor(techBlogRepository);
             given(techBlogRepository.getReferenceById(7L))
                     .willThrow(new EntityNotFoundException("tech blog not found"));

@@ -8,8 +8,10 @@ import co.elastic.clients.util.ObjectBuilder;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.personalization.infrastructure.PersonalizationProfileDocument;
 import com.techfork.personalization.infrastructure.PersonalizationProfileDocumentRepository;
+import com.techfork.personalization.fixture.PersonalizationProfileDocumentFixture;
 import com.techfork.post.domain.Post;
 import com.techfork.post.domain.projection.PostDocument;
+import com.techfork.post.fixture.PostDocumentFixture;
 import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.domain.search.config.GeneralSearchProperties;
 import com.techfork.domain.search.dto.SearchResult;
@@ -21,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -56,128 +59,138 @@ class SearchServiceImplTest {
     @Mock
     private CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer;
 
-    @Test
-    @DisplayName("일반 검색은 PostDocument projection을 후보로 사용하고 MySQL metadata를 별도로 조합한다")
-    void searchGeneral_ComposesProjectionAndMetadata() throws IOException {
-        GeneralSearchProperties properties = new GeneralSearchProperties();
-        properties.setSearchSize(10);
-        properties.setRRF_WINDOW_SIZE(10);
-        SearchServiceImpl searchService = new SearchServiceImpl(
-                elasticsearchClient,
-                embeddingClient,
-                properties,
-                personalizationProfileDocumentRepository,
-                postRepository,
-                bookmarkRepository,
-                Runnable::run,
-                thumbnailOptimizer
-        );
+    @Nested
+    @DisplayName("일반 검색")
+    class SearchGeneral {
 
-        PostDocument postDocument = postDocument(10L);
-        SearchResponse<PostDocument> lexicalResponse = searchResponse(hit("10", 3.5, postDocument));
-        SearchResponse<PostDocument> semanticResponse = searchResponse(hit("10", 7.0, postDocument));
+        @Test
+        @DisplayName("일반 검색은 PostDocument projection을 후보로 사용하고 MySQL metadata를 별도로 조합한다")
+        void postDocumentProjectionExists_ComposesProjectionAndMetadata() throws IOException {
+            GeneralSearchProperties properties = new GeneralSearchProperties();
+            properties.setSearchSize(10);
+            properties.setRRF_WINDOW_SIZE(10);
+            SearchServiceImpl searchService = new SearchServiceImpl(
+                    elasticsearchClient,
+                    embeddingClient,
+                    properties,
+                    personalizationProfileDocumentRepository,
+                    postRepository,
+                    bookmarkRepository,
+                    Runnable::run,
+                    thumbnailOptimizer
+            );
 
-        given(elasticsearchClient.search(searchRequestBuilder(), eq(PostDocument.class)))
-                .willReturn(lexicalResponse, semanticResponse);
-        given(embeddingClient.embed("spring batch")).willReturn(List.of(0.1f, 0.2f));
-        Post metadataPost = mock(Post.class);
-        given(metadataPost.getId()).willReturn(10L);
-        given(metadataPost.getViewCount()).willReturn(321L);
-        given(postRepository.findAllById(List.of(10L))).willReturn(List.of(metadataPost));
-        given(thumbnailOptimizer.optimize("https://cdn.example.com/thumb-10.png"))
-                .willReturn("https://cdn.example.com/thumb-10.optimized.png");
+            PostDocument postDocument = postDocument(10L);
+            SearchResponse<PostDocument> lexicalResponse = searchResponse(hit("10", 3.5, postDocument));
+            SearchResponse<PostDocument> semanticResponse = searchResponse(hit("10", 7.0, postDocument));
 
-        List<SearchResult> results = searchService.searchGeneral("spring batch");
+            given(elasticsearchClient.search(searchRequestBuilder(), eq(PostDocument.class)))
+                    .willReturn(lexicalResponse, semanticResponse);
+            given(embeddingClient.embed("spring batch")).willReturn(List.of(0.1f, 0.2f));
+            Post metadataPost = mock(Post.class);
+            given(metadataPost.getId()).willReturn(10L);
+            given(metadataPost.getViewCount()).willReturn(321L);
+            given(postRepository.findAllById(List.of(10L))).willReturn(List.of(metadataPost));
+            given(thumbnailOptimizer.optimize("https://cdn.example.com/thumb-10.png"))
+                    .willReturn("https://cdn.example.com/thumb-10.optimized.png");
 
-        assertThat(results).hasSize(1);
-        SearchResult result = results.get(0);
-        assertThat(result.getPostId()).isEqualTo(10L);
-        assertThat(result.getTitle()).isEqualTo("Spring Batch 정리");
-        assertThat(result.getSummary()).isEqualTo("배치 처리 요약");
-        assertThat(result.getShortSummary()).isEqualTo("짧은 요약");
-        assertThat(result.getCompanyName()).isEqualTo("TechFork");
-        assertThat(result.getThumbnailUrl()).isEqualTo("https://cdn.example.com/thumb-10.optimized.png");
-        assertThat(result.getViewCount()).isEqualTo(321L);
-        assertThat(result.getIsBookmarked()).isFalse();
-        assertThat(result.getTitleVector()).isNull();
-        assertThat(result.getSummaryVector()).isNull();
+            List<SearchResult> results = searchService.searchGeneral("spring batch");
 
-        verify(postRepository).findAllById(List.of(10L));
-        verify(bookmarkRepository, never()).findBookmarkedPostIds(any(), any());
+            assertThat(results).hasSize(1);
+            SearchResult result = results.get(0);
+            assertThat(result.getPostId()).isEqualTo(10L);
+            assertThat(result.getTitle()).isEqualTo("Spring Batch 정리");
+            assertThat(result.getSummary()).isEqualTo("배치 처리 요약");
+            assertThat(result.getShortSummary()).isEqualTo("짧은 요약");
+            assertThat(result.getCompanyName()).isEqualTo("TechFork");
+            assertThat(result.getThumbnailUrl()).isEqualTo("https://cdn.example.com/thumb-10.optimized.png");
+            assertThat(result.getViewCount()).isEqualTo(321L);
+            assertThat(result.getIsBookmarked()).isFalse();
+            assertThat(result.getTitleVector()).isNull();
+            assertThat(result.getSummaryVector()).isNull();
+
+            verify(postRepository).findAllById(List.of(10L));
+            verify(bookmarkRepository, never()).findBookmarkedPostIds(any(), any());
+        }
     }
 
-    @Test
-    @DisplayName("개인화 검색은 PersonalizationProfileDocument projection 벡터로 검색 결과를 재정렬한다")
-    void searchPersonalized_ReranksWithPersonalizationProfileProjection() throws IOException {
-        Long userId = 7L;
-        GeneralSearchProperties properties = new GeneralSearchProperties();
-        properties.setSearchSize(2);
-        properties.setRRF_WINDOW_SIZE(2);
-        properties.setHybridScoreWeight(0.0);
-        properties.setPersonalScoreWeight(1.0);
-        properties.setRerankDocumentTitleWeight(1.0);
-        properties.setRerankDocumentSummaryWeight(0.0);
-        SearchServiceImpl searchService = new SearchServiceImpl(
-                elasticsearchClient,
-                embeddingClient,
-                properties,
-                personalizationProfileDocumentRepository,
-                postRepository,
-                bookmarkRepository,
-                Runnable::run,
-                thumbnailOptimizer
-        );
+    @Nested
+    @DisplayName("개인화 검색")
+    class SearchPersonalized {
 
-        PersonalizationProfileDocument personalizationProfile = PersonalizationProfileDocument.create(
-                userId,
-                "Kubernetes 운영 자동화에 관심이 높은 사용자",
-                new float[]{0.0f, 1.0f},
-                List.of("DevOps"),
-                List.of("Kubernetes", "운영 자동화")
-        );
-        PostDocument lessRelevantDocument = postDocument(10L, "Java 튜닝", List.of(1.0f, 0.0f), List.of(1.0f, 0.0f));
-        PostDocument moreRelevantDocument = postDocument(20L, "Kubernetes 운영", List.of(0.0f, 1.0f), List.of(0.0f, 1.0f));
-        SearchResponse<PostDocument> lexicalResponse = searchResponse(
-                hit("10", 9.0, lessRelevantDocument),
-                hit("20", 8.0, moreRelevantDocument)
-        );
-        SearchResponse<PostDocument> semanticResponse = searchResponse(
-                hit("10", 7.0, lessRelevantDocument),
-                hit("20", 6.0, moreRelevantDocument)
-        );
-        Post lessRelevantPost = metadataPost(10L, 10L);
-        Post moreRelevantPost = metadataPost(20L, 20L);
+        @Test
+        @DisplayName("개인화 검색은 PersonalizationProfileDocument projection 벡터로 검색 결과를 재정렬한다")
+        void personalizationProfileProjectionExists_ReranksSearchResults() throws IOException {
+            Long userId = 7L;
+            GeneralSearchProperties properties = new GeneralSearchProperties();
+            properties.setSearchSize(2);
+            properties.setRRF_WINDOW_SIZE(2);
+            properties.setHybridScoreWeight(0.0);
+            properties.setPersonalScoreWeight(1.0);
+            properties.setRerankDocumentTitleWeight(1.0);
+            properties.setRerankDocumentSummaryWeight(0.0);
+            SearchServiceImpl searchService = new SearchServiceImpl(
+                    elasticsearchClient,
+                    embeddingClient,
+                    properties,
+                    personalizationProfileDocumentRepository,
+                    postRepository,
+                    bookmarkRepository,
+                    Runnable::run,
+                    thumbnailOptimizer
+            );
 
-        given(personalizationProfileDocumentRepository.findByUserId(userId))
-                .willReturn(Optional.of(personalizationProfile));
-        given(elasticsearchClient.search(searchRequestBuilder(), eq(PostDocument.class)))
-                .willReturn(lexicalResponse, semanticResponse);
-        given(embeddingClient.embed("kubernetes")).willReturn(List.of(0.0f, 1.0f));
-        given(postRepository.findAllById(List.of(20L, 10L)))
-                .willReturn(List.of(moreRelevantPost, lessRelevantPost));
-        given(bookmarkRepository.findBookmarkedPostIds(userId, List.of(20L, 10L)))
-                .willReturn(List.of(20L));
-        given(thumbnailOptimizer.optimize("https://cdn.example.com/thumb-10.png"))
-                .willReturn("https://cdn.example.com/thumb-10.optimized.png");
-        given(thumbnailOptimizer.optimize("https://cdn.example.com/thumb-20.png"))
-                .willReturn("https://cdn.example.com/thumb-20.optimized.png");
+            PersonalizationProfileDocument personalizationProfile = PersonalizationProfileDocumentFixture.personalizationProfileDocument(
+                    userId,
+                    "Kubernetes 운영 자동화에 관심이 높은 사용자",
+                    new float[]{0.0f, 1.0f},
+                    List.of("DevOps"),
+                    List.of("Kubernetes", "운영 자동화")
+            );
+            PostDocument lessRelevantDocument = postDocument(10L, "Java 튜닝", List.of(1.0f, 0.0f), List.of(1.0f, 0.0f));
+            PostDocument moreRelevantDocument = postDocument(20L, "Kubernetes 운영", List.of(0.0f, 1.0f), List.of(0.0f, 1.0f));
+            SearchResponse<PostDocument> lexicalResponse = searchResponse(
+                    hit("10", 9.0, lessRelevantDocument),
+                    hit("20", 8.0, moreRelevantDocument)
+            );
+            SearchResponse<PostDocument> semanticResponse = searchResponse(
+                    hit("10", 7.0, lessRelevantDocument),
+                    hit("20", 6.0, moreRelevantDocument)
+            );
+            Post lessRelevantPost = metadataPost(10L, 10L);
+            Post moreRelevantPost = metadataPost(20L, 20L);
 
-        List<SearchResult> results = searchService.searchPersonalized("kubernetes", userId);
+            given(personalizationProfileDocumentRepository.findByUserId(userId))
+                    .willReturn(Optional.of(personalizationProfile));
+            given(elasticsearchClient.search(searchRequestBuilder(), eq(PostDocument.class)))
+                    .willReturn(lexicalResponse, semanticResponse);
+            given(embeddingClient.embed("kubernetes")).willReturn(List.of(0.0f, 1.0f));
+            given(postRepository.findAllById(List.of(20L, 10L)))
+                    .willReturn(List.of(moreRelevantPost, lessRelevantPost));
+            given(bookmarkRepository.findBookmarkedPostIds(userId, List.of(20L, 10L)))
+                    .willReturn(List.of(20L));
+            given(thumbnailOptimizer.optimize("https://cdn.example.com/thumb-10.png"))
+                    .willReturn("https://cdn.example.com/thumb-10.optimized.png");
+            given(thumbnailOptimizer.optimize("https://cdn.example.com/thumb-20.png"))
+                    .willReturn("https://cdn.example.com/thumb-20.optimized.png");
 
-        assertThat(results)
-                .extracting(SearchResult::getPostId)
-                .containsExactly(20L, 10L);
-        assertThat(results.get(0).getPersonalScore()).isGreaterThan(results.get(1).getPersonalScore());
-        assertThat(results.get(0).getIsBookmarked()).isTrue();
-        assertThat(results.get(1).getIsBookmarked()).isFalse();
-        assertThat(results)
-                .allSatisfy(result -> {
-                    assertThat(result.getTitleVector()).isNull();
-                    assertThat(result.getSummaryVector()).isNull();
-                });
+            List<SearchResult> results = searchService.searchPersonalized("kubernetes", userId);
 
-        verify(personalizationProfileDocumentRepository).findByUserId(userId);
-        verify(bookmarkRepository).findBookmarkedPostIds(userId, List.of(20L, 10L));
+            assertThat(results)
+                    .extracting(SearchResult::getPostId)
+                    .containsExactly(20L, 10L);
+            assertThat(results.get(0).getPersonalScore()).isGreaterThan(results.get(1).getPersonalScore());
+            assertThat(results.get(0).getIsBookmarked()).isTrue();
+            assertThat(results.get(1).getIsBookmarked()).isFalse();
+            assertThat(results)
+                    .allSatisfy(result -> {
+                        assertThat(result.getTitleVector()).isNull();
+                        assertThat(result.getSummaryVector()).isNull();
+                    });
+
+            verify(personalizationProfileDocumentRepository).findByUserId(userId);
+            verify(bookmarkRepository).findBookmarkedPostIds(userId, List.of(20L, 10L));
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -223,21 +236,13 @@ class SearchServiceImplTest {
             List<Float> titleEmbedding,
             List<Float> summaryEmbedding
     ) {
-        return PostDocument.builder()
-                .id(String.valueOf(postId))
-                .postId(postId)
-                .title(title)
-                .summary("배치 처리 요약")
-                .shortSummary("짧은 요약")
-                .company("TechFork")
-                .url("https://posts.example.com/" + postId)
-                .logoUrl("https://cdn.example.com/logo.png")
-                .thumbnailUrl("https://cdn.example.com/thumb-" + postId + ".png")
-                .publishedAtString(LocalDateTime.of(2026, 5, 1, 10, 0).toString())
-                .titleEmbedding(titleEmbedding)
-                .summaryEmbedding(summaryEmbedding)
-                .contentChunks(List.of())
-                .build();
+        return PostDocumentFixture.createPostDocument(
+                postId,
+                title,
+                titleEmbedding,
+                summaryEmbedding,
+                LocalDateTime.of(2026, 5, 1, 10, 0)
+        );
     }
 
     private Post metadataPost(Long postId, Long viewCount) {

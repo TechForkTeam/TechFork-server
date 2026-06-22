@@ -52,8 +52,8 @@ TechFork is a Spring Boot 3.5.9 / Java 17 backend that crawls Korean tech blogs,
 - Do not trust docs over code when they disagree; example: scheduler docs mention hourly behavior, but `RssCrawlingScheduler` currently runs daily at 05:00 KST.
 
 ## UNIQUE STYLES
-- Commit format: `<type>: <subject>` (`docs/commit-convention.md`).
-- PR title format: `[type/#issue] description` (`docs/pr-convention.md`).
+- Commit format: `<type>: <subject>` (`docs/convention/commit-convention.md`).
+- PR title format: `[type/#issue] description` (`docs/convention/pr-convention.md`).
 - Korean messages/comments are normal in code and docs.
 - Evaluation outputs are checked into `src/test/resources/` as JSON reports.
 - Operational knowledge is split across docs, compose files, shell scripts, and workflows rather than a single ops README.
@@ -70,7 +70,7 @@ docker compose -f docker/docker-compose.local.yml up -d
 ```
 
 ## NOTES
-- High-value docs: `docs/source-package.md`, `docs/SCHEDULER_GUIDE.md`, `docs/commit-convention.md`, `docs/pr-convention.md`.
+- High-value docs: `docs/SCHEDULER_GUIDE.md`, `docs/ddd/domain-strategy.md`, `docs/ddd/ddd-test-refactoring-roadmap.md`, `docs/convention/commit-convention.md`, `docs/convention/pr-convention.md`.
 - `HELP.md` is Spring starter boilerplate; low signal compared with repo docs.
 - Child AGENTS live at:
   - `src/main/java/com/techfork/domain/source/AGENTS.md`

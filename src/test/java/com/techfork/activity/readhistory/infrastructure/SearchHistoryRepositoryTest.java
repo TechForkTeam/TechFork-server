@@ -1,8 +1,9 @@
 package com.techfork.activity.readhistory.infrastructure;
 
 import com.techfork.activity.readhistory.domain.SearchHistory;
+import com.techfork.activity.readhistory.fixture.SearchHistoryFixture;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,7 +33,7 @@ class SearchHistoryRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", "profile.jpg");
+        testUser = UserFixture.socialUser("testSocialId", "test@example.com");
         testUser = userRepository.save(testUser);
     }
 
@@ -46,27 +47,22 @@ class SearchHistoryRepositoryTest {
     @DisplayName("최근 검색 히스토리 조회")
     class FindRecentSearchHistoriesByUserId {
 
-        @Nested
-        @DisplayName("Success")
-        class Success {
+        @Test
+        @DisplayName("최근 순으로 정렬된다")
+        void existingHistories_ReturnsRecentSearchHistories() {
+            SearchHistory history1 = SearchHistoryFixture.createSearchHistory(testUser, "Spring Boot", LocalDateTime.now().minusHours(3));
+            SearchHistory history2 = SearchHistoryFixture.createSearchHistory(testUser, "Java", LocalDateTime.now().minusHours(2));
+            SearchHistory history3 = SearchHistoryFixture.createSearchHistory(testUser, "Kotlin", LocalDateTime.now().minusHours(1));
+            searchHistoryRepository.saveAll(List.of(history1, history2, history3));
 
-            @Test
-            @DisplayName("최근 순으로 정렬된다")
-            void findRecentSearchHistoriesByUserId_Success() {
-                SearchHistory history1 = SearchHistory.create(testUser, "Spring Boot", LocalDateTime.now().minusHours(3));
-                SearchHistory history2 = SearchHistory.create(testUser, "Java", LocalDateTime.now().minusHours(2));
-                SearchHistory history3 = SearchHistory.create(testUser, "Kotlin", LocalDateTime.now().minusHours(1));
-                searchHistoryRepository.saveAll(List.of(history1, history2, history3));
+            PageRequest pageRequest = PageRequest.of(0, 10);
 
-                PageRequest pageRequest = PageRequest.of(0, 10);
+            List<SearchHistory> result = searchHistoryRepository.findRecentSearchHistoriesByUserId(testUser.getId(), pageRequest);
 
-                List<SearchHistory> result = searchHistoryRepository.findRecentSearchHistoriesByUserId(testUser.getId(), pageRequest);
-
-                assertThat(result).hasSize(3);
-                assertThat(result.get(0).getQuery()).isEqualTo("Kotlin");
-                assertThat(result.get(1).getQuery()).isEqualTo("Java");
-                assertThat(result.get(2).getQuery()).isEqualTo("Spring Boot");
-            }
+            assertThat(result).hasSize(3);
+            assertThat(result.get(0).getQuery()).isEqualTo("Kotlin");
+            assertThat(result.get(1).getQuery()).isEqualTo("Java");
+            assertThat(result.get(2).getQuery()).isEqualTo("Spring Boot");
         }
     }
 }

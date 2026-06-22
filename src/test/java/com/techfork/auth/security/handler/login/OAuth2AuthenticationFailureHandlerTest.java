@@ -2,6 +2,7 @@ package com.techfork.auth.security.handler.login;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -29,20 +30,26 @@ class OAuth2AuthenticationFailureHandlerTest {
         failureHandler = new OAuth2AuthenticationFailureHandler(redirectUrlFactory);
     }
 
-    @Test
-    @DisplayName("OAuth2 로그인 실패 - factory가 생성한 실패 URL로 리다이렉트한다")
-    void onAuthenticationFailure_RedirectsToFactoryUrl() throws Exception {
-        MockHttpServletResponse response = new MockHttpServletResponse();
-        BadCredentialsException exception = new BadCredentialsException("oauth_failed");
-        given(redirectUrlFactory.createFailureRedirectUrl()).willReturn(TARGET_URL);
+    @Nested
+    @DisplayName("onAuthenticationFailure")
+    class OnAuthenticationFailure {
 
-        failureHandler.onAuthenticationFailure(
-                new MockHttpServletRequest(),
-                response,
-                exception
-        );
+        @Test
+        @DisplayName("OAuth2 로그인 실패 - factory가 생성한 실패 URL로 리다이렉트한다")
+        void factoryUrl_RedirectsResponse() throws Exception {
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            BadCredentialsException exception = new BadCredentialsException("oauth_failed");
+            given(redirectUrlFactory.createFailureRedirectUrl()).willReturn(TARGET_URL);
 
-        verify(redirectUrlFactory).createFailureRedirectUrl();
-        assertThat(response.getRedirectedUrl()).isEqualTo(TARGET_URL);
+            failureHandler.onAuthenticationFailure(
+                    new MockHttpServletRequest(),
+                    response,
+                    exception
+            );
+
+            verify(redirectUrlFactory).createFailureRedirectUrl();
+            assertThat(response.getRedirectedUrl()).isEqualTo(TARGET_URL);
+        }
     }
+
 }

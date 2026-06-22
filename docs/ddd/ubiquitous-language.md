@@ -1,14 +1,14 @@
 # TechFork 유비쿼터스 언어 사전
 
-> 이 문서는 **호환용 인덱스**입니다. 상세 표준 용어는 `docs/ubiquitous-language/` 디렉터리 문서를 사용합니다.  
+> 이 문서는 **호환용 인덱스**입니다. 상세 표준 용어는 `docs/ddd/ubiquitous-language/` 디렉터리 문서를 사용합니다.  
 > 관련 문서: [도메인 전략 설계](domain-strategy.md) | [전술 설계](tactical-design.md) | [유비쿼터스 언어 README](ubiquitous-language/README.md)
 
 ---
 
 ## 문서 사용 순서
 
-1. 컨텍스트 경계와 관계는 [`docs/domain-strategy.md`](./domain-strategy.md)에서 확인한다.
-2. 애그리거트/이벤트/불변식은 [`docs/tactical-design.md`](./tactical-design.md)에서 확인한다.
+1. 컨텍스트 경계와 관계는 [`docs/ddd/domain-strategy.md`](./domain-strategy.md)에서 확인한다.
+2. 애그리거트/이벤트/불변식은 [`docs/ddd/tactical-design.md`](./tactical-design.md)에서 확인한다.
 3. 표준 용어는 아래 컨텍스트별 glossary 문서에서 확인한다.
 
 ## 컨텍스트별 glossary

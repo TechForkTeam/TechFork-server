@@ -1,16 +1,18 @@
 package com.techfork.post.integration;
 
-import com.techfork.activity.bookmark.domain.Bookmark;
+import com.techfork.activity.bookmark.fixture.BookmarkFixture;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.fixture.TechBlogFixture;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
-import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
-import com.techfork.global.common.IntegrationTestBase;
+import com.techfork.global.common.MySqlRedisIntegrationTestBase;
 import com.techfork.auth.security.jwt.JwtUtil;
 import com.techfork.post.domain.Post;
+import com.techfork.post.fixture.PostFixture;
 import com.techfork.post.infrastructure.PostRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -29,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class PostControllerV2IntegrationTest extends IntegrationTestBase {
+class PostV2IntegrationTest extends MySqlRedisIntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;
@@ -58,59 +60,43 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() {
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", "profile.jpg");
+        testUser = UserFixture.socialUser("testSocialId", "test@example.com");
         testUser = userRepository.save(testUser);
         accessToken = jwtUtil.generateTokens(testUser.getId(), Role.USER).accessToken();
 
-        testTechBlog1 = TechBlog.builder()
-                .companyName("카카오")
-                .blogUrl("https://kakao.com")
-                .rssUrl("https://kakao.com/rss")
-                .logoUrl("https://kakao.com/logo.png")
-                .build();
-        techBlogRepository.save(testTechBlog1);
+        testTechBlog1 = TechBlogFixture.createTechBlog("카카오", "https://kakao.com");
+        testTechBlog1 = techBlogRepository.save(testTechBlog1);
 
-        testTechBlog2 = TechBlog.builder()
-                .companyName("네이버")
-                .blogUrl("https://naver.com")
-                .rssUrl("https://naver.com/rss")
-                .logoUrl("https://naver.com/logo.png")
-                .build();
-        techBlogRepository.save(testTechBlog2);
+        testTechBlog2 = TechBlogFixture.createTechBlog("네이버", "https://naver.com");
+        testTechBlog2 = techBlogRepository.save(testTechBlog2);
 
-        todayPost = Post.builder()
-                .title("오늘의 게시글")
-                .fullContent("<p>오늘 내용</p>")
-                .plainContent("오늘 내용")
-                .summary("오늘 요약")
-                .shortSummary("오늘 짧은 요약")
-                .company("카카오")
-                .url("https://kakao.com/post/today")
-                .logoUrl("https://kakao.com/logo.png")
-                .thumbnailUrl("https://kakao.com/thumbnail.png")
-                .publishedAt(LocalDate.now().atStartOfDay())
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testTechBlog1)
-                .build();
+        todayPost = PostFixture.createPost(
+                testTechBlog1,
+                "오늘의 게시글",
+                "<p>오늘 내용</p>",
+                "오늘 내용",
+                "오늘 요약",
+                "오늘 짧은 요약",
+                "https://kakao.com/thumbnail.png",
+                "https://kakao.com/post/today",
+                LocalDate.now().atStartOfDay()
+        );
         postRepository.save(todayPost);
 
-        oldPost = Post.builder()
-                .title("어제의 게시글")
-                .fullContent("<p>어제 내용</p>")
-                .plainContent("어제 내용")
-                .summary("어제 요약")
-                .shortSummary("어제 짧은 요약")
-                .company("네이버")
-                .url("https://naver.com/post/old")
-                .logoUrl("https://naver.com/logo.png")
-                .thumbnailUrl("https://naver.com/thumbnail.png")
-                .publishedAt(LocalDate.now().minusDays(1).atStartOfDay())
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testTechBlog2)
-                .build();
+        oldPost = PostFixture.createPost(
+                testTechBlog2,
+                "어제의 게시글",
+                "<p>어제 내용</p>",
+                "어제 내용",
+                "어제 요약",
+                "어제 짧은 요약",
+                "https://naver.com/thumbnail.png",
+                "https://naver.com/post/old",
+                LocalDate.now().minusDays(1).atStartOfDay()
+        );
         postRepository.save(oldPost);
 
-        bookmarkRepository.save(Bookmark.create(testUser, todayPost, LocalDateTime.now()));
+        bookmarkRepository.save(BookmarkFixture.createBookmark(testUser, todayPost, LocalDateTime.now()));
     }
 
     @AfterEach
@@ -127,7 +113,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("회사 목록 상세 조회 성공")
-        void getCompanies_Success() throws Exception {
+        void companiesExist_ReturnsCompanies() throws Exception {
             mockMvc.perform(get("/api/v2/posts/companies"))
                     .andDo(print())
                     .andExpect(status().isOk())
@@ -141,7 +127,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("게시글이 없는 경우 빈 배열 반환")
-        void getCompanies_EmptyWhenNoPosts() throws Exception {
+        void noPosts_ReturnsEmptyCompanies() throws Exception {
             bookmarkRepository.deleteAll();
             postRepository.deleteAll();
 
@@ -155,18 +141,18 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("발행일 기준 정렬 확인")
-        void getCompanies_SortedByLatestPublishedAt() throws Exception {
-            Post newerPost = Post.builder()
-                    .title("최신 네이버 게시글")
-                    .fullContent("<p>최신 내용</p>")
-                    .plainContent("최신 내용")
-                    .company("네이버")
-                    .url("https://naver.com/post/newest")
-                    .logoUrl("https://naver.com/logo.png")
-                    .publishedAt(LocalDateTime.now())
-                    .crawledAt(LocalDateTime.now())
-                    .techBlog(testTechBlog2)
-                    .build();
+        void postsExist_ReturnsCompaniesSortedByLatestPublishedAt() throws Exception {
+            Post newerPost = PostFixture.createPost(
+                    testTechBlog2,
+                    "최신 네이버 게시글",
+                    "<p>최신 내용</p>",
+                    "최신 내용",
+                    null,
+                    null,
+                    null,
+                    "https://naver.com/post/newest",
+                    LocalDateTime.now()
+            );
             postRepository.save(newerPost);
 
             mockMvc.perform(get("/api/v2/posts/companies"))
@@ -183,7 +169,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("여러 회사의 게시글 조회 성공")
-        void getPostsByCompany_MultipleCompanies_Success() throws Exception {
+        void multipleCompanies_ReturnsPosts() throws Exception {
             mockMvc.perform(get("/api/v2/posts/by-company")
                             .param("companies", "카카오", "네이버")
                             .param("size", "20"))
@@ -209,7 +195,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("companies 없으면 전체 조회")
-        void getPostsByCompany_NoCompaniesParam_ReturnsAll() throws Exception {
+        void noCompaniesParam_ReturnsAllPosts() throws Exception {
             mockMvc.perform(get("/api/v2/posts/by-company")
                             .param("size", "20"))
                     .andDo(print())
@@ -220,7 +206,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("단일 회사만 조회")
-        void getPostsByCompany_SingleCompany_Success() throws Exception {
+        void singleCompany_ReturnsPosts() throws Exception {
             mockMvc.perform(get("/api/v2/posts/by-company")
                             .param("companies", "카카오")
                             .param("size", "20"))
@@ -234,20 +220,19 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("커서 페이징")
-        void getPostsByCompany_CursorPaging_Success() throws Exception {
+        void cursorProvided_ReturnsNextPage() throws Exception {
             for (int i = 1; i <= 5; i++) {
-                postRepository.save(Post.builder()
-                        .title("카카오 게시글 " + i)
-                        .fullContent("<p>내용 " + i + "</p>")
-                        .plainContent("내용 " + i)
-                        .company("카카오")
-                        .url("https://kakao.com/post/" + i)
-                        .logoUrl("https://kakao.com/logo.png")
-                        .thumbnailUrl("https://kakao.com/thumbnail.png")
-                        .publishedAt(LocalDateTime.now().minusHours(i))
-                        .crawledAt(LocalDateTime.now())
-                        .techBlog(testTechBlog1)
-                        .build());
+                postRepository.save(PostFixture.createPost(
+                        testTechBlog1,
+                        "카카오 게시글 " + i,
+                        "<p>내용 " + i + "</p>",
+                        "내용 " + i,
+                        null,
+                        null,
+                        "https://kakao.com/thumbnail.png",
+                        "https://kakao.com/post/" + i,
+                        LocalDateTime.now().minusHours(i)
+                ));
             }
 
             mockMvc.perform(get("/api/v2/posts/by-company")
@@ -261,7 +246,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("존재하지 않는 회사 조회 시 빈 배열")
-        void getPostsByCompany_NonExistentCompany_ReturnsEmpty() throws Exception {
+        void nonExistentCompany_ReturnsEmptyPage() throws Exception {
             mockMvc.perform(get("/api/v2/posts/by-company")
                             .param("companies", "존재하지않는회사")
                             .param("size", "20"))
@@ -274,19 +259,18 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("발행일 기준 정렬 확인")
-        void getPostsByCompany_SortedByPublishedAt() throws Exception {
-            postRepository.save(Post.builder()
-                    .title("최신 게시글")
-                    .fullContent("<p>최신</p>")
-                    .plainContent("최신")
-                    .company("카카오")
-                    .url("https://kakao.com/post/recent")
-                    .logoUrl("https://kakao.com/logo.png")
-                    .thumbnailUrl("https://kakao.com/thumbnail.png")
-                    .publishedAt(LocalDateTime.now())
-                    .crawledAt(LocalDateTime.now())
-                    .techBlog(testTechBlog1)
-                    .build());
+        void postsExist_ReturnsSortedByPublishedAt() throws Exception {
+            postRepository.save(PostFixture.createPost(
+                    testTechBlog1,
+                    "최신 게시글",
+                    "<p>최신</p>",
+                    "최신",
+                    null,
+                    null,
+                    "https://kakao.com/thumbnail.png",
+                    "https://kakao.com/post/recent",
+                    LocalDateTime.now()
+            ));
 
             mockMvc.perform(get("/api/v2/posts/by-company")
                             .param("companies", "카카오")
@@ -299,7 +283,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("비로그인 시 isBookmarked 미포함")
-        void getPostsByCompany_WithoutAuth() throws Exception {
+        void withoutAuth_ReturnsPostsByCompany() throws Exception {
             mockMvc.perform(get("/api/v2/posts/by-company")
                             .param("companies", "카카오", "네이버")
                             .param("size", "20"))
@@ -313,7 +297,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("로그인 시 북마크 여부 포함 (todayPost=true, oldPost=false)")
-        void getPostsByCompany_WithAuth() throws Exception {
+        void withAuth_ReturnsPostsByCompanyWithBookmarkFlags() throws Exception {
             mockMvc.perform(get("/api/v2/posts/by-company")
                             .param("companies", "카카오", "네이버")
                             .param("size", "20")
@@ -335,7 +319,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("LATEST 정렬로 최근 게시글 조회")
-        void getRecentPosts_Latest_Success() throws Exception {
+        void latestSort_ReturnsRecentPosts() throws Exception {
             mockMvc.perform(get("/api/v2/posts/recent")
                             .param("sortBy", "LATEST")
                             .param("size", "20"))
@@ -361,7 +345,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("POPULAR 정렬로 인기 게시글 조회")
-        void getRecentPosts_Popular_Success() throws Exception {
+        void popularSort_ReturnsRecentPosts() throws Exception {
             setViewCount(todayPost, 100L);
             setViewCount(oldPost, 50L);
             postRepository.saveAll(List.of(todayPost, oldPost));
@@ -392,20 +376,19 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("LATEST 커서 페이징")
-        void getRecentPosts_Latest_CursorPaging() throws Exception {
+        void latestSortWithCursor_ReturnsNextPage() throws Exception {
             for (int i = 1; i <= 5; i++) {
-                postRepository.save(Post.builder()
-                        .title("게시글 " + i)
-                        .fullContent("<p>내용 " + i + "</p>")
-                        .plainContent("내용 " + i)
-                        .company("카카오")
-                        .url("https://kakao.com/post/" + i)
-                        .logoUrl("https://kakao.com/logo.png")
-                        .thumbnailUrl("https://kakao.com/thumbnail.png")
-                        .publishedAt(LocalDateTime.now().minusHours(i + 1))
-                        .crawledAt(LocalDateTime.now())
-                        .techBlog(testTechBlog1)
-                        .build());
+                postRepository.save(PostFixture.createPost(
+                        testTechBlog1,
+                        "게시글 " + i,
+                        "<p>내용 " + i + "</p>",
+                        "내용 " + i,
+                        null,
+                        null,
+                        "https://kakao.com/thumbnail.png",
+                        "https://kakao.com/post/" + i,
+                        LocalDateTime.now().minusHours(i + 1)
+                ));
             }
 
             mockMvc.perform(get("/api/v2/posts/recent")
@@ -419,20 +402,19 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("POPULAR 커서 페이징")
-        void getRecentPosts_Popular_CursorPaging() throws Exception {
+        void popularSortWithCursor_ReturnsNextPage() throws Exception {
             for (int i = 1; i <= 5; i++) {
-                Post post = Post.builder()
-                        .title("인기 게시글 " + i)
-                        .fullContent("<p>내용 " + i + "</p>")
-                        .plainContent("내용 " + i)
-                        .company("카카오")
-                        .url("https://kakao.com/post/popular/" + i)
-                        .logoUrl("https://kakao.com/logo.png")
-                        .thumbnailUrl("https://kakao.com/thumbnail.png")
-                        .publishedAt(LocalDateTime.now().minusHours(i))
-                        .crawledAt(LocalDateTime.now())
-                        .techBlog(testTechBlog1)
-                        .build();
+                Post post = PostFixture.createPost(
+                        testTechBlog1,
+                        "인기 게시글 " + i,
+                        "<p>내용 " + i + "</p>",
+                        "내용 " + i,
+                        null,
+                        null,
+                        "https://kakao.com/thumbnail.png",
+                        "https://kakao.com/post/popular/" + i,
+                        LocalDateTime.now().minusHours(i)
+                );
                 setViewCount(post, (long) ((6 - i) * 100));
                 postRepository.save(post);
             }
@@ -449,7 +431,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("기본값은 LATEST 정렬")
-        void getRecentPosts_DefaultSortByLatest() throws Exception {
+        void sortMissing_DefaultsToLatest() throws Exception {
             mockMvc.perform(get("/api/v2/posts/recent")
                             .param("size", "20"))
                     .andDo(print())
@@ -460,7 +442,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("게시글이 없으면 빈 배열 반환")
-        void getRecentPosts_EmptyWhenNoPosts() throws Exception {
+        void noPosts_ReturnsEmptyPage() throws Exception {
             bookmarkRepository.deleteAll();
             postRepository.deleteAll();
 
@@ -476,7 +458,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("비로그인 시 isBookmarked 미포함")
-        void getRecentPosts_WithoutAuth() throws Exception {
+        void withoutAuth_ReturnsRecentPosts() throws Exception {
             mockMvc.perform(get("/api/v2/posts/recent")
                             .param("sortBy", "LATEST")
                             .param("size", "20"))
@@ -489,7 +471,7 @@ class PostControllerV2IntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("로그인 시 북마크 여부 포함 (todayPost=true, oldPost=false)")
-        void getRecentPosts_WithAuth() throws Exception {
+        void withAuth_ReturnsRecentPostsWithBookmarkFlags() throws Exception {
             mockMvc.perform(get("/api/v2/posts/recent")
                             .param("sortBy", "LATEST")
                             .param("size", "20")

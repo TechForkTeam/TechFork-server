@@ -7,12 +7,13 @@ import com.techfork.useraccount.application.query.lookup.UserLookupService;
 import com.techfork.useraccount.domain.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
@@ -56,51 +57,56 @@ class PersonalizedProfileGeneratedAfterCommitIntegrationTest {
         reset(userLookupService, recommendationService);
     }
 
-    @Test
-    @DisplayName("프로필 생성 이벤트는 실제 트랜잭션 커밋 이후 추천 생성을 실행한다")
-    void profileGeneratedEvent_CommittedTransaction_GeneratesRecommendationAfterCommit() {
-        Long userId = 1L;
-        User user = mock(User.class);
-        float[] profileVector = new float[]{0.1f, 0.2f};
-        List<String> keyKeywords = List.of("Spring", "JPA");
-        given(userLookupService.getUserOrThrow(userId)).willReturn(user);
-        given(recommendationService.generateRecommendationsForUser(
-                eq(user),
-                argThat(vector -> Arrays.equals(vector, profileVector)),
-                eq(keyKeywords)
-        )).willReturn(5);
+    @Nested
+    @DisplayName("profile generated event")
+    class ProfileGeneratedEvent {
 
-        transactionTemplate.executeWithoutResult(status -> {
-            eventPublisher.publishEvent(new PersonalizedProfileGeneratedEvent(userId, profileVector, keyKeywords));
+        @Test
+        @DisplayName("프로필 생성 이벤트는 실제 트랜잭션 커밋 이후 추천 생성을 실행한다")
+        void committedTransaction_GeneratesRecommendationAfterCommit() {
+            Long userId = 1L;
+            User user = mock(User.class);
+            float[] profileVector = new float[]{0.1f, 0.2f};
+            List<String> keyKeywords = List.of("Spring", "JPA");
+            given(userLookupService.getUserOrThrow(userId)).willReturn(user);
+            given(recommendationService.generateRecommendationsForUser(
+                    eq(user),
+                    argThat(vector -> Arrays.equals(vector, profileVector)),
+                    eq(keyKeywords)
+            )).willReturn(5);
+
+            transactionTemplate.executeWithoutResult(status -> {
+                eventPublisher.publishEvent(new PersonalizedProfileGeneratedEvent(userId, profileVector, keyKeywords));
+
+                verifyNoInteractions(userLookupService, recommendationService);
+            });
+
+            verify(userLookupService).getUserOrThrow(userId);
+            verify(recommendationService).generateRecommendationsForUser(
+                    eq(user),
+                    argThat(vector -> Arrays.equals(vector, profileVector)),
+                    eq(keyKeywords)
+            );
+            verify(recommendationService, never()).generateRecommendationsForUser(user);
+        }
+
+        @Test
+        @DisplayName("트랜잭션이 롤백되면 프로필 생성 이벤트의 추천 후처리는 실행되지 않는다")
+        void rolledBackTransaction_DoesNotGenerateRecommendation() {
+            transactionTemplate.executeWithoutResult(status -> {
+                eventPublisher.publishEvent(new PersonalizedProfileGeneratedEvent(
+                        1L,
+                        new float[]{0.1f},
+                        List.of("Spring")
+                ));
+                status.setRollbackOnly();
+            });
 
             verifyNoInteractions(userLookupService, recommendationService);
-        });
-
-        verify(userLookupService).getUserOrThrow(userId);
-        verify(recommendationService).generateRecommendationsForUser(
-                eq(user),
-                argThat(vector -> Arrays.equals(vector, profileVector)),
-                eq(keyKeywords)
-        );
-        verify(recommendationService, never()).generateRecommendationsForUser(user);
+        }
     }
 
-    @Test
-    @DisplayName("트랜잭션이 롤백되면 프로필 생성 이벤트의 추천 후처리는 실행되지 않는다")
-    void profileGeneratedEvent_RolledBackTransaction_DoesNotGenerateRecommendation() {
-        transactionTemplate.executeWithoutResult(status -> {
-            eventPublisher.publishEvent(new PersonalizedProfileGeneratedEvent(
-                    1L,
-                    new float[]{0.1f},
-                    List.of("Spring")
-            ));
-            status.setRollbackOnly();
-        });
-
-        verifyNoInteractions(userLookupService, recommendationService);
-    }
-
-    @Configuration
+    @TestConfiguration
     @EnableTransactionManagement
     static class TestConfig {
 

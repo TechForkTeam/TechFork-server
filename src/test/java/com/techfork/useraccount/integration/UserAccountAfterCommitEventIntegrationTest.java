@@ -1,7 +1,7 @@
 package com.techfork.useraccount.integration;
 
 import com.techfork.personalization.application.PersonalizationProfileService;
-import com.techfork.global.common.IntegrationTestBase;
+import com.techfork.global.common.MySqlRedisIntegrationTestBase;
 import com.techfork.auth.security.cache.UserAuthCacheStore;
 import com.techfork.useraccount.application.command.InterestCommandService;
 import com.techfork.useraccount.application.command.UserCommandService;
@@ -15,11 +15,12 @@ import com.techfork.useraccount.application.event.UserInterestsChangedEvent;
 import com.techfork.useraccount.application.event.UserReactivatedEvent;
 import com.techfork.useraccount.application.event.UserWithdrawnEvent;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.enums.UserStatus;
+import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -36,7 +37,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
-class UserAccountAfterCommitEventIntegrationTest extends IntegrationTestBase {
+class UserAccountAfterCommitEventIntegrationTest extends MySqlRedisIntegrationTestBase {
 
     @Autowired
     private UserCommandService userCommandService;
@@ -67,110 +68,135 @@ class UserAccountAfterCommitEventIntegrationTest extends IntegrationTestBase {
         userRepository.deleteAll();
     }
 
-    @Test
-    @DisplayName("온보딩 완료 이벤트는 실제 트랜잭션 커밋 이후 인증 캐시 무효화와 개인화 프로필 생성을 실행한다")
-    void completeOnboarding_AfterCommit_EvictsAuthCacheAndGeneratesPersonalizationProfile() {
-        User user = savePendingUser();
-        CompleteOnboardingCommand command = new CompleteOnboardingCommand(
-                user.getId(),
-                "테크포크유저",
-                "user@techfork.com",
-                "백엔드 개발자입니다",
-                List.of(backendInterest())
-        );
+    @Nested
+    @DisplayName("온보딩 완료")
+    class CompleteOnboarding {
 
-        userCommandService.completeOnboarding(command);
+        @Test
+        @DisplayName("온보딩 완료 이벤트는 실제 트랜잭션 커밋 이후 인증 캐시 무효화와 개인화 프로필 생성을 실행한다")
+        void afterCommit_EvictsAuthCacheAndGeneratesPersonalizationProfile() {
+            User user = savePendingUser();
+            CompleteOnboardingCommand command = new CompleteOnboardingCommand(
+                    user.getId(),
+                    "테크포크유저",
+                    "user@techfork.com",
+                    "백엔드 개발자입니다",
+                    List.of(backendInterest())
+            );
 
-        verify(userAuthCacheStore).evict(user.getId());
-        verify(personalizationProfileService).generatePersonalizationProfile(user.getId());
+            userCommandService.completeOnboarding(command);
+
+            verify(userAuthCacheStore).evict(user.getId());
+            verify(personalizationProfileService).generatePersonalizationProfile(user.getId());
+        }
     }
 
-    @Test
-    @DisplayName("관심사 수정 이벤트는 실제 트랜잭션 커밋 이후 개인화 프로필 생성만 실행한다")
-    void updateUserInterests_AfterCommit_GeneratesPersonalizationProfileOnly() {
-        User user = saveActiveUser();
-        UpdateUserInterestsCommand command = new UpdateUserInterestsCommand(
-                user.getId(),
-                List.of(backendInterest())
-        );
+    @Nested
+    @DisplayName("관심사 수정")
+    class UpdateUserInterests {
 
-        interestCommandService.updateUserInterests(command);
+        @Test
+        @DisplayName("관심사 수정 이벤트는 실제 트랜잭션 커밋 이후 개인화 프로필 생성만 실행한다")
+        void afterCommit_GeneratesPersonalizationProfileOnly() {
+            User user = saveActiveUser();
+            UpdateUserInterestsCommand command = new UpdateUserInterestsCommand(
+                    user.getId(),
+                    List.of(backendInterest())
+            );
 
-        verify(personalizationProfileService).generatePersonalizationProfile(user.getId());
-        verifyNoInteractions(userAuthCacheStore);
+            interestCommandService.updateUserInterests(command);
+
+            verify(personalizationProfileService).generatePersonalizationProfile(user.getId());
+            verifyNoInteractions(userAuthCacheStore);
+        }
     }
 
-    @Test
-    @DisplayName("회원 탈퇴 이벤트는 실제 트랜잭션 커밋 전후로 인증 캐시 무효화만 실행한다")
-    void withdrawUser_BeforeAndAfterCommit_EvictsAuthCacheOnly() {
-        User user = saveActiveUser();
+    @Nested
+    @DisplayName("회원 탈퇴")
+    class WithdrawUser {
 
-        userCommandService.withdrawUser(new WithdrawUserCommand(user.getId()));
+        @Test
+        @DisplayName("회원 탈퇴 이벤트는 실제 트랜잭션 커밋 전후로 인증 캐시 무효화만 실행한다")
+        void beforeAndAfterCommit_EvictsAuthCacheOnly() {
+            User user = saveActiveUser();
 
-        verify(userAuthCacheStore, times(2)).evict(user.getId());
-        verifyNoInteractions(personalizationProfileService);
+            userCommandService.withdrawUser(new WithdrawUserCommand(user.getId()));
+
+            verify(userAuthCacheStore, times(2)).evict(user.getId());
+            verifyNoInteractions(personalizationProfileService);
+        }
+
+        @Test
+        @DisplayName("회원 탈퇴 커밋 직전 인증 캐시 무효화에 실패하면 탈퇴 트랜잭션을 롤백한다")
+        void beforeCommitCacheEvictionFails_RollsBackWithdrawal() {
+            User user = saveActiveUser();
+            doThrow(new RuntimeException("redis eviction failed"))
+                    .when(userAuthCacheStore)
+                    .evict(user.getId());
+
+            assertThatThrownBy(() -> userCommandService.withdrawUser(new WithdrawUserCommand(user.getId())))
+                    .isInstanceOf(RuntimeException.class);
+
+            User savedUser = userRepository.findById(user.getId()).orElseThrow();
+            assertThat(savedUser.getStatus()).isEqualTo(UserStatus.ACTIVE);
+            assertThat(savedUser.getNickName()).isEqualTo("테스트유저");
+            assertThat(savedUser.getEmail()).isEqualTo("active@example.com");
+            assertThat(savedUser.getDescription()).isEqualTo("백엔드 개발자입니다");
+            verify(userAuthCacheStore).evict(user.getId());
+            verifyNoInteractions(personalizationProfileService);
+        }
     }
 
-    @Test
-    @DisplayName("회원 재활성화 이벤트는 실제 트랜잭션 커밋 이후 인증 캐시 무효화만 실행한다")
-    void reactivateUser_AfterCommit_EvictsAuthCacheOnly() {
-        User user = saveWithdrawnUser();
+    @Nested
+    @DisplayName("회원 재활성화")
+    class ReactivateUser {
 
-        userAuthAccountService.getOrCreateSocialAuthProfile(
-                user.getSocialType(),
-                user.getSocialId(),
-                "reactivated@example.com",
-                "https://cdn.example.com/reactivated.png"
-        );
+        @Test
+        @DisplayName("회원 재활성화 이벤트는 실제 트랜잭션 커밋 이후 인증 캐시 무효화만 실행한다")
+        void afterCommit_EvictsAuthCacheOnly() {
+            User user = saveWithdrawnUser();
 
-        verify(userAuthCacheStore).evict(user.getId());
-        verifyNoInteractions(personalizationProfileService);
+            userAuthAccountService.getOrCreateSocialAuthProfile(
+                    user.getSocialType(),
+                    user.getSocialId(),
+                    "reactivated@example.com",
+                    "https://cdn.example.com/reactivated.png"
+            );
+
+            verify(userAuthCacheStore).evict(user.getId());
+            verifyNoInteractions(personalizationProfileService);
+        }
     }
 
-    @Test
-    @DisplayName("회원 탈퇴 커밋 직전 인증 캐시 무효화에 실패하면 탈퇴 트랜잭션을 롤백한다")
-    void withdrawUser_BeforeCommitCacheEvictionFails_RollsBackWithdrawal() {
-        User user = saveActiveUser();
-        doThrow(new RuntimeException("redis eviction failed"))
-                .when(userAuthCacheStore)
-                .evict(user.getId());
+    @Nested
+    @DisplayName("트랜잭션 롤백")
+    class TransactionRollback {
 
-        assertThatThrownBy(() -> userCommandService.withdrawUser(new WithdrawUserCommand(user.getId())))
-                .isInstanceOf(RuntimeException.class);
+        @Test
+        @DisplayName("트랜잭션이 롤백되면 발행된 사용자 이벤트의 트랜잭션 후처리는 실행되지 않는다")
+        void rolledBackTransaction_DoesNotRunTransactionalHandlers() {
+            Long userId = 1L;
 
-        User savedUser = userRepository.findById(user.getId()).orElseThrow();
-        assertThat(savedUser.getStatus()).isEqualTo(UserStatus.ACTIVE);
-        assertThat(savedUser.getNickName()).isEqualTo("테스트유저");
-        assertThat(savedUser.getEmail()).isEqualTo("active@example.com");
-        assertThat(savedUser.getDescription()).isEqualTo("백엔드 개발자입니다");
-        verify(userAuthCacheStore).evict(user.getId());
-        verifyNoInteractions(personalizationProfileService);
-    }
+            transactionTemplate.executeWithoutResult(status -> {
+                eventPublisher.publishEvent(new OnboardingCompletedEvent(userId));
+                eventPublisher.publishEvent(new UserInterestsChangedEvent(userId));
+                eventPublisher.publishEvent(new UserReactivatedEvent(userId));
+                eventPublisher.publishEvent(new UserWithdrawnEvent(userId));
+                status.setRollbackOnly();
+            });
 
-    @Test
-    @DisplayName("트랜잭션이 롤백되면 발행된 사용자 이벤트의 트랜잭션 후처리는 실행되지 않는다")
-    void publishedUserEvents_RolledBack_DoNotRunTransactionalHandlers() {
-        Long userId = 1L;
-
-        transactionTemplate.executeWithoutResult(status -> {
-            eventPublisher.publishEvent(new OnboardingCompletedEvent(userId));
-            eventPublisher.publishEvent(new UserInterestsChangedEvent(userId));
-            eventPublisher.publishEvent(new UserReactivatedEvent(userId));
-            eventPublisher.publishEvent(new UserWithdrawnEvent(userId));
-            status.setRollbackOnly();
-        });
-
-        verifyNoInteractions(userAuthCacheStore, personalizationProfileService);
+            verifyNoInteractions(userAuthCacheStore, personalizationProfileService);
+        }
     }
 
     private User savePendingUser() {
-        User user = User.createSocialUser(SocialType.KAKAO, uniqueSocialId(), "pending@example.com", null);
+        User user = UserFixture.socialUser(uniqueSocialId(), "pending@example.com", null);
         return userRepository.save(user);
     }
 
     private User saveActiveUser() {
-        User user = User.createSocialUser(SocialType.KAKAO, uniqueSocialId(), "active@example.com", null);
-        user.updateUser("테스트유저", "active@example.com", "백엔드 개발자입니다");
+        User user = UserFixture.activeUser(uniqueSocialId(), "active@example.com");
+        user.updateProfile("테스트유저", "백엔드 개발자입니다");
         return userRepository.save(user);
     }
 

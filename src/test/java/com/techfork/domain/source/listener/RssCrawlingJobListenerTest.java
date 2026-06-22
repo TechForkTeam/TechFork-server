@@ -48,7 +48,7 @@ class RssCrawlingJobListenerTest {
 
         @Test
         @DisplayName("배치 MDC 컨텍스트를 설정한다")
-        void setsBatchMdcContext() {
+        void jobExecutionProvided_SetsBatchMdcContext() {
             rssCrawlingJobListener = new RssCrawlingJobListener(webhookNotificationService, elasticsearchCacheManager);
             JobExecution jobExecution = new JobExecution(1L);
 
@@ -65,7 +65,7 @@ class RssCrawlingJobListenerTest {
 
         @Test
         @DisplayName("성공 시 전체 step 집계를 기준으로 로그를 남기고 Elasticsearch cache warmup을 실행한다")
-        void onCompleted_WarmsElasticsearchCacheUsingAggregatedStepCounts(CapturedOutput output) {
+        void completedJob_WarmsElasticsearchCacheUsingAggregatedStepCounts(CapturedOutput output) {
             rssCrawlingJobListener = new RssCrawlingJobListener(webhookNotificationService, elasticsearchCacheManager);
             JobExecution jobExecution = new JobExecution(1L);
             jobExecution.setStatus(BatchStatus.COMPLETED);
@@ -91,7 +91,7 @@ class RssCrawlingJobListenerTest {
 
         @Test
         @DisplayName("실패 시 실패 컨텍스트를 담아 webhook 알림을 전송한다")
-        void onFailure_SendsFailureWebhookWithContext() {
+        void failedJob_SendsFailureWebhookWithContext() {
             rssCrawlingJobListener = new RssCrawlingJobListener(webhookNotificationService, elasticsearchCacheManager);
             JobExecution jobExecution = new JobExecution(2L);
             jobExecution.setStatus(BatchStatus.FAILED);
@@ -111,7 +111,7 @@ class RssCrawlingJobListenerTest {
 
         @Test
         @DisplayName("완료 후 MDC를 정리한다")
-        void clearsMdcAfterCompletion() {
+        void jobCompletion_ClearsMdc() {
             rssCrawlingJobListener = new RssCrawlingJobListener(webhookNotificationService, elasticsearchCacheManager);
             JobExecution jobExecution = new JobExecution(3L);
             jobExecution.setStatus(BatchStatus.COMPLETED);

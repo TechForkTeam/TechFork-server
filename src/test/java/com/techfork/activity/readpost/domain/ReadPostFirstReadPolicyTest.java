@@ -33,7 +33,7 @@ class ReadPostFirstReadPolicyTest {
 
         @Test
         @DisplayName("첫 읽기 마킹이 성공하면 true를 반환한다")
-        void markFirstRead_ReturnTrue_WhenInsertSucceeds() {
+        void insertSucceeds_ReturnsTrue() {
             User user = mock(User.class);
             Post post = mock(Post.class);
             LocalDateTime readAt = LocalDateTime.of(2026, 5, 8, 12, 0);
@@ -49,7 +49,7 @@ class ReadPostFirstReadPolicyTest {
 
         @Test
         @DisplayName("이미 마킹된 조합이면 false를 반환한다")
-        void markFirstRead_ReturnFalse_WhenAlreadyMarked() {
+        void alreadyMarked_ReturnsFalse() {
             User user = mock(User.class);
             Post post = mock(Post.class);
             LocalDateTime readAt = LocalDateTime.of(2026, 5, 8, 12, 5);

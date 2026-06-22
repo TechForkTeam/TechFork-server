@@ -19,7 +19,7 @@ class ReadPostTest {
 
         @Test
         @DisplayName("사용자, 게시글, 읽은 시각, 읽은 시간을 그대로 보존한다")
-        void create_PreservesReadPostState() {
+        void userPostAndReadTime_PreservesReadPostState() {
             User user = mock(User.class);
             Post post = mock(Post.class);
             LocalDateTime readAt = LocalDateTime.of(2026, 5, 5, 10, 30, 0);

@@ -53,12 +53,12 @@ class CustomOidcUserServiceTest {
     }
 
     @Nested
-    @DisplayName("성공")
-    class Success {
+    @DisplayName("loadUser")
+    class LoadUser {
 
         @Test
         @DisplayName("신규 Apple 인증 프로필을 UserPrincipal로 반환한다")
-        void loadUser_NewAppleUser_ReturnsPrincipal() {
+        void newAppleUser_ReturnsPrincipal() {
             UserAuthProfile userAuthProfile = new UserAuthProfile(1L, Role.USER, UserStatus.PENDING, EMAIL, false);
             givenSocialIdentity(SocialType.APPLE, SOCIAL_ID, EMAIL, PROFILE_IMAGE);
             given(userAuthAccountService.getOrCreateSocialAuthProfile(
@@ -82,7 +82,7 @@ class CustomOidcUserServiceTest {
 
         @Test
         @DisplayName("Kakao 인증 식별자로 인증 프로필을 조회하고 UserPrincipal로 반환한다")
-        void loadUser_KakaoIdentity_ReturnsPrincipal() {
+        void kakaoIdentity_ReturnsPrincipal() {
             String kakaoServiceUserId = "12345";
             String kakaoEmail = "kakao-user@example.com";
             String kakaoProfileImage = "https://cdn.example.com/kakao-user.png";
@@ -109,7 +109,7 @@ class CustomOidcUserServiceTest {
 
         @Test
         @DisplayName("기존 Apple 인증 프로필을 UserPrincipal로 반환한다")
-        void loadUser_ExistingAppleUser_ReturnsPrincipal() {
+        void existingAppleUser_ReturnsPrincipal() {
             UserAuthProfile existingUserProfile = new UserAuthProfile(2L, Role.USER, UserStatus.ACTIVE, EMAIL, true);
             givenSocialIdentity(SocialType.APPLE, SOCIAL_ID, EMAIL, PROFILE_IMAGE);
             given(userAuthAccountService.getOrCreateSocialAuthProfile(
@@ -133,7 +133,7 @@ class CustomOidcUserServiceTest {
 
         @Test
         @DisplayName("탈퇴 Apple 사용자의 재활성화된 PENDING 인증 프로필을 UserPrincipal로 반환한다")
-        void loadUser_WithdrawnAppleUser_ReturnsReactivatedPendingPrincipal() {
+        void withdrawnAppleUser_ReturnsReactivatedPendingPrincipal() {
             UserAuthProfile reactivatedUserProfile = new UserAuthProfile(3L, Role.USER, UserStatus.PENDING, EMAIL, false);
             givenSocialIdentity(SocialType.APPLE, SOCIAL_ID, EMAIL, PROFILE_IMAGE);
             given(userAuthAccountService.getOrCreateSocialAuthProfile(
@@ -154,15 +154,10 @@ class CustomOidcUserServiceTest {
                     PROFILE_IMAGE
             );
         }
-    }
-
-    @Nested
-    @DisplayName("실패")
-    class Failure {
 
         @Test
         @DisplayName("소셜 식별자 추출에 실패하면 인증 프로필을 조회하지 않는다")
-        void loadUser_SocialIdentityExtractionFails_DoesNotRequestAuthProfile() {
+        void socialIdentityExtractionFails_DoesNotRequestAuthProfile() {
             given(socialIdentityExtractor.extract(any(OidcUserRequest.class), any(OidcUser.class)))
                     .willThrow(new OAuth2AuthenticationException("socialId(sub) not found"));
 
@@ -177,7 +172,7 @@ class CustomOidcUserServiceTest {
 
         @Test
         @DisplayName("이메일 추출에 실패하면 인증 프로필을 조회하지 않는다")
-        void loadUser_EmailExtractionFails_DoesNotRequestAuthProfile() {
+        void emailExtractionFails_DoesNotRequestAuthProfile() {
             given(socialIdentityExtractor.extract(any(OidcUserRequest.class), any(OidcUser.class)))
                     .willThrow(new OAuth2AuthenticationException("email not found"));
 

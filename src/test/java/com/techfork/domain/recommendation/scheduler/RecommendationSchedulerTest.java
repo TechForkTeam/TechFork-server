@@ -5,6 +5,7 @@ import com.techfork.domain.recommendation.service.RecommendationService;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -39,56 +40,61 @@ class RecommendationSchedulerTest {
     @InjectMocks
     private RecommendationScheduler recommendationScheduler;
 
-    @Test
-    @DisplayName("최근 활성 사용자를 조회해 일일 추천 생성을 요청한다")
-    void generateDailyRecommendations_GeneratesRecommendationsForActiveUsers() {
-        int activeUserHours = 24;
-        User user1 = mockUser(1L);
-        User user2 = mockUser(2L);
-        given(properties.getActiveUserHours()).willReturn(activeUserHours);
-        given(userRepository.findActiveUsersSince(any(LocalDateTime.class))).willReturn(List.of(user1, user2));
-        given(recommendationService.generateRecommendationsForUser(user1)).willReturn(2);
-        given(recommendationService.generateRecommendationsForUser(user2)).willReturn(3);
+    @Nested
+    @DisplayName("generateDailyRecommendations")
+    class GenerateDailyRecommendations {
 
-        LocalDateTime lowerBound = LocalDateTime.now().minusHours(activeUserHours);
-        recommendationScheduler.generateDailyRecommendations();
-        LocalDateTime upperBound = LocalDateTime.now().minusHours(activeUserHours);
+        @Test
+        @DisplayName("최근 활성 사용자를 조회해 일일 추천 생성을 요청한다")
+        void activeUsersExist_GeneratesRecommendationsForUsers() {
+            int activeUserHours = 24;
+            User user1 = mockUser(1L);
+            User user2 = mockUser(2L);
+            given(properties.getActiveUserHours()).willReturn(activeUserHours);
+            given(userRepository.findActiveUsersSince(any(LocalDateTime.class))).willReturn(List.of(user1, user2));
+            given(recommendationService.generateRecommendationsForUser(user1)).willReturn(2);
+            given(recommendationService.generateRecommendationsForUser(user2)).willReturn(3);
 
-        ArgumentCaptor<LocalDateTime> sinceCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
-        verify(userRepository).findActiveUsersSince(sinceCaptor.capture());
-        assertThat(sinceCaptor.getValue()).isBetween(lowerBound, upperBound);
-        verify(recommendationService).generateRecommendationsForUser(user1);
-        verify(recommendationService).generateRecommendationsForUser(user2);
-    }
+            LocalDateTime lowerBound = LocalDateTime.now().minusHours(activeUserHours);
+            recommendationScheduler.generateDailyRecommendations();
+            LocalDateTime upperBound = LocalDateTime.now().minusHours(activeUserHours);
 
-    @Test
-    @DisplayName("일부 사용자 추천 생성이 실패해도 다음 사용자 처리를 계속한다")
-    void generateDailyRecommendations_WhenOneUserFails_ContinuesWithNextUser() {
-        User failingUser = mockUser(1L);
-        User successfulUser = mockUser(2L);
-        given(properties.getActiveUserHours()).willReturn(24);
-        given(userRepository.findActiveUsersSince(any(LocalDateTime.class))).willReturn(List.of(failingUser, successfulUser));
-        given(recommendationService.generateRecommendationsForUser(failingUser))
-                .willThrow(new RuntimeException("recommendation failure"));
-        given(recommendationService.generateRecommendationsForUser(successfulUser)).willReturn(3);
+            ArgumentCaptor<LocalDateTime> sinceCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
+            verify(userRepository).findActiveUsersSince(sinceCaptor.capture());
+            assertThat(sinceCaptor.getValue()).isBetween(lowerBound, upperBound);
+            verify(recommendationService).generateRecommendationsForUser(user1);
+            verify(recommendationService).generateRecommendationsForUser(user2);
+        }
 
-        assertThatCode(() -> recommendationScheduler.generateDailyRecommendations())
-                .doesNotThrowAnyException();
+        @Test
+        @DisplayName("일부 사용자 추천 생성이 실패해도 다음 사용자 처리를 계속한다")
+        void oneUserFails_ContinuesWithNextUser() {
+            User failingUser = mockUser(1L);
+            User successfulUser = mockUser(2L);
+            given(properties.getActiveUserHours()).willReturn(24);
+            given(userRepository.findActiveUsersSince(any(LocalDateTime.class))).willReturn(List.of(failingUser, successfulUser));
+            given(recommendationService.generateRecommendationsForUser(failingUser))
+                    .willThrow(new RuntimeException("recommendation failure"));
+            given(recommendationService.generateRecommendationsForUser(successfulUser)).willReturn(3);
 
-        verify(recommendationService).generateRecommendationsForUser(failingUser);
-        verify(recommendationService).generateRecommendationsForUser(successfulUser);
-    }
+            assertThatCode(() -> recommendationScheduler.generateDailyRecommendations())
+                    .doesNotThrowAnyException();
 
-    @Test
-    @DisplayName("일일 추천 스케줄은 매일 7시 KST에 실행된다")
-    void generateDailyRecommendations_HasDailySevenAmKstSchedule() throws NoSuchMethodException {
-        Scheduled scheduled = RecommendationScheduler.class
-                .getDeclaredMethod("generateDailyRecommendations")
-                .getAnnotation(Scheduled.class);
+            verify(recommendationService).generateRecommendationsForUser(failingUser);
+            verify(recommendationService).generateRecommendationsForUser(successfulUser);
+        }
 
-        assertThat(scheduled).isNotNull();
-        assertThat(scheduled.cron()).isEqualTo("0 0 7 * * *");
-        assertThat(scheduled.zone()).isEqualTo("Asia/Seoul");
+        @Test
+        @DisplayName("일일 추천 스케줄은 매일 7시 KST에 실행된다")
+        void schedulerAnnotation_UsesDailySevenAmKstSchedule() throws NoSuchMethodException {
+            Scheduled scheduled = RecommendationScheduler.class
+                    .getDeclaredMethod("generateDailyRecommendations")
+                    .getAnnotation(Scheduled.class);
+
+            assertThat(scheduled).isNotNull();
+            assertThat(scheduled.cron()).isEqualTo("0 0 7 * * *");
+            assertThat(scheduled.zone()).isEqualTo("Asia/Seoul");
+        }
     }
 
     private User mockUser(Long userId) {

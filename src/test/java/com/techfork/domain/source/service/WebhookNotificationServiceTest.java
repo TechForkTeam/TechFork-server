@@ -47,13 +47,18 @@ class WebhookNotificationServiceTest {
         webhookNotificationService = new WebhookNotificationService(restOperations);
     }
 
-    @Test
-    @DisplayName("Spring configuration으로 webhook RestOperations bean을 주입받아 생성된다")
-    void createsServiceWithSpringManagedRestOperations() {
-        applicationContextRunner.run(context -> {
-            assertThat(context).hasSingleBean(WebhookNotificationService.class);
-            assertThat(context).hasBean("webhookRestOperations");
-        });
+    @Nested
+    @DisplayName("생성")
+    class Constructor {
+
+        @Test
+        @DisplayName("Spring configuration으로 webhook RestOperations bean을 주입받아 생성된다")
+        void restOperationsProvided_CreatesService() {
+            applicationContextRunner.run(context -> {
+                assertThat(context).hasSingleBean(WebhookNotificationService.class);
+                assertThat(context).hasBean("webhookRestOperations");
+            });
+        }
     }
 
     @Nested
@@ -62,7 +67,7 @@ class WebhookNotificationServiceTest {
 
         @Test
         @DisplayName("webhook이 비활성화되어 있으면 아무 요청도 보내지 않는다")
-        void doesNothingWhenWebhookDisabled() {
+        void webhookDisabled_DoesNothing() {
             ReflectionTestUtils.setField(webhookNotificationService, "webhookEnabled", false);
 
             webhookNotificationService.sendCrawlingFailureNotification(Map.of("errorMessage", "failure"));
@@ -72,7 +77,7 @@ class WebhookNotificationServiceTest {
 
         @Test
         @DisplayName("webhook이 활성화되고 URL이 있으면 Discord payload를 전송한다")
-        void sendsDiscordPayloadWhenEnabledAndUrlPresent() {
+        void enabledAndUrlPresent_SendsDiscordPayload() {
             ReflectionTestUtils.setField(webhookNotificationService, "webhookEnabled", true);
             ReflectionTestUtils.setField(webhookNotificationService, "discordWebhookUrl", "https://discord.example.com/webhook");
 
@@ -102,7 +107,7 @@ class WebhookNotificationServiceTest {
 
         @Test
         @DisplayName("jobExecutionId가 없으면 N/A로 전송한다")
-        void usesNaWhenJobExecutionIdMissing() {
+        void jobExecutionIdMissing_UsesNa() {
             ReflectionTestUtils.setField(webhookNotificationService, "webhookEnabled", true);
             ReflectionTestUtils.setField(webhookNotificationService, "discordWebhookUrl", "https://discord.example.com/webhook");
 
@@ -121,7 +126,7 @@ class WebhookNotificationServiceTest {
 
         @Test
         @DisplayName("URL이 비어 있으면 전송을 시도하지 않는다")
-        void doesNothingWhenWebhookUrlIsBlank() {
+        void webhookUrlBlank_DoesNothing() {
             ReflectionTestUtils.setField(webhookNotificationService, "webhookEnabled", true);
             ReflectionTestUtils.setField(webhookNotificationService, "discordWebhookUrl", "");
 
@@ -132,7 +137,7 @@ class WebhookNotificationServiceTest {
 
         @Test
         @DisplayName("Discord 전송 중 예외가 나도 외부로 전파하지 않는다")
-        void swallowsDiscordSendFailure() {
+        void discordSendFails_SwallowsException() {
             ReflectionTestUtils.setField(webhookNotificationService, "webhookEnabled", true);
             ReflectionTestUtils.setField(webhookNotificationService, "discordWebhookUrl", "https://discord.example.com/webhook");
             when(restOperations.postForEntity(eq("https://discord.example.com/webhook"), any(HttpEntity.class), eq(String.class)))

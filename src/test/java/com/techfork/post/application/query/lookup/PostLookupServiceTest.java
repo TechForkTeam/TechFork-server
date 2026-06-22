@@ -31,37 +31,27 @@ class PostLookupServiceTest {
     @DisplayName("게시글 조회")
     class GetPostOrThrow {
 
-        @Nested
-        @DisplayName("Success")
-        class Success {
+        @Test
+        @DisplayName("존재하는 게시글이면 반환한다")
+        void existingPost_ReturnsPost() {
+            Long postId = 100L;
+            Post post = mock(Post.class);
+            given(postRepository.findById(postId)).willReturn(Optional.of(post));
 
-            @Test
-            @DisplayName("존재하는 게시글이면 반환한다")
-            void getPostOrThrow_Success() {
-                Long postId = 100L;
-                Post post = mock(Post.class);
-                given(postRepository.findById(postId)).willReturn(Optional.of(post));
+            Post result = postLookupService.getPostOrThrow(postId);
 
-                Post result = postLookupService.getPostOrThrow(postId);
-
-                assertThat(result).isSameAs(post);
-            }
+            assertThat(result).isSameAs(post);
         }
 
-        @Nested
-        @DisplayName("Failure")
-        class Failure {
+        @Test
+        @DisplayName("존재하지 않는 게시글이면 예외를 던진다")
+        void postNotFound_ThrowsPostNotFound() {
+            Long postId = 999L;
+            given(postRepository.findById(postId)).willReturn(Optional.empty());
 
-            @Test
-            @DisplayName("존재하지 않는 게시글이면 예외를 던진다")
-            void getPostOrThrow_Fail_PostNotFound() {
-                Long postId = 999L;
-                given(postRepository.findById(postId)).willReturn(Optional.empty());
-
-                assertThatThrownBy(() -> postLookupService.getPostOrThrow(postId))
-                        .isInstanceOf(GeneralException.class)
-                        .hasFieldOrPropertyWithValue("code", PostErrorCode.POST_NOT_FOUND);
-            }
+            assertThatThrownBy(() -> postLookupService.getPostOrThrow(postId))
+                    .isInstanceOf(GeneralException.class)
+                    .hasFieldOrPropertyWithValue("code", PostErrorCode.POST_NOT_FOUND);
         }
     }
 }

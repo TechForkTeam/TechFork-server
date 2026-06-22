@@ -49,7 +49,7 @@ class PostQueryServiceTest {
 
         @Test
         @DisplayName("회사 목록 조회 성공")
-        void getCompanies_Success() {
+        void companiesExist_ReturnsCompanies() {
             List<String> mockCompanies = List.of("카카오", "네이버", "라인");
             given(postRepository.findDistinctCompanies()).willReturn(mockCompanies);
 
@@ -68,7 +68,7 @@ class PostQueryServiceTest {
 
         @Test
         @DisplayName("회사 상세 정보 포함 목록 조회 성공")
-        void getCompaniesV2_Success() {
+        void companiesExist_ReturnsCompanyDetails() {
             List<CompanyRow> companies = List.of(
                     CompanyRow.builder().company("카카오").hasNewPost(true).logoUrl("kakao-logo").build(),
                     CompanyRow.builder().company("네이버").hasNewPost(false).logoUrl("naver-logo").build()
@@ -90,67 +90,57 @@ class PostQueryServiceTest {
     @DisplayName("게시글 상세 조회")
     class GetPostDetail {
 
-        @Nested
-        @DisplayName("Success")
-        class Success {
+        @Test
+        @DisplayName("조회 row를 조합 서비스에 위임한다")
+        void postExists_DelegatesToCompositionService() {
+            Long postId = 1L;
+            Long userId = 100L;
+            PostDetailRow postDetailRow = PostDetailRow.builder()
+                    .id(postId)
+                    .title("테스트 제목")
+                    .summary("테스트 요약")
+                    .company("카카오")
+                    .url("https://test.com/1")
+                    .logoUrl("https://test.com/logo.png")
+                    .publishedAt(LocalDateTime.now())
+                    .viewCount(100L)
+                    .keywords(List.of("Java"))
+                    .isBookmarked(true)
+                    .build();
+            GetPostDetailResult expected = GetPostDetailResult.builder()
+                    .id(postId)
+                    .title("테스트 제목")
+                    .summary("테스트 요약")
+                    .company("카카오")
+                    .url("https://test.com/1")
+                    .logoUrl("https://test.com/logo.png")
+                    .publishedAt(postDetailRow.publishedAt())
+                    .viewCount(100L)
+                    .keywords(List.of("Java"))
+                    .isBookmarked(true)
+                    .build();
 
-            @Test
-            @DisplayName("조회 row를 조합 서비스에 위임한다")
-            void getPostDetail_DelegatesToCompositionService() {
-                Long postId = 1L;
-                Long userId = 100L;
-                PostDetailRow postDetailRow = PostDetailRow.builder()
-                        .id(postId)
-                        .title("테스트 제목")
-                        .summary("테스트 요약")
-                        .company("카카오")
-                        .url("https://test.com/1")
-                        .logoUrl("https://test.com/logo.png")
-                        .publishedAt(LocalDateTime.now())
-                        .viewCount(100L)
-                        .keywords(List.of("Java"))
-                        .isBookmarked(true)
-                        .build();
-                GetPostDetailResult expected = GetPostDetailResult.builder()
-                        .id(postId)
-                        .title("테스트 제목")
-                        .summary("테스트 요약")
-                        .company("카카오")
-                        .url("https://test.com/1")
-                        .logoUrl("https://test.com/logo.png")
-                        .publishedAt(postDetailRow.publishedAt())
-                        .viewCount(100L)
-                        .keywords(List.of("Java"))
-                        .isBookmarked(true)
-                        .build();
+            given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.of(postDetailRow));
+            given(postReadModelEnricher.enrichPostDetailRow(postDetailRow, userId)).willReturn(postDetailRow);
 
-                given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.of(postDetailRow));
-                given(postReadModelEnricher.enrichPostDetailRow(postDetailRow, userId)).willReturn(postDetailRow);
+            GetPostDetailResult result = postQueryService.getPostDetail(new GetPostDetailQuery(postId, userId));
 
-                GetPostDetailResult result = postQueryService.getPostDetail(new GetPostDetailQuery(postId, userId));
-
-                assertThat(result).isEqualTo(expected);
-                verify(postRepository, times(1)).findByIdWithTechBlog(postId);
-                verify(postReadModelEnricher, times(1)).enrichPostDetailRow(postDetailRow, userId);
-            }
+            assertThat(result).isEqualTo(expected);
+            verify(postRepository, times(1)).findByIdWithTechBlog(postId);
+            verify(postReadModelEnricher, times(1)).enrichPostDetailRow(postDetailRow, userId);
         }
 
-        @Nested
-        @DisplayName("Failure")
-        class Failure {
+        @Test
+        @DisplayName("존재하지 않는 게시글 조회 시 예외 발생")
+        void postNotFound_ThrowsPostNotFound() {
+            Long postId = 999L;
+            given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.empty());
 
-            @Test
-            @DisplayName("존재하지 않는 게시글 조회 시 예외 발생")
-            void getPostDetail_NotFound_ThrowsException() {
-                Long postId = 999L;
-                given(postRepository.findByIdWithTechBlog(postId)).willReturn(Optional.empty());
+            assertThatThrownBy(() -> postQueryService.getPostDetail(new GetPostDetailQuery(postId, null)))
+                    .isInstanceOf(GeneralException.class);
 
-                assertThatThrownBy(() -> postQueryService.getPostDetail(new GetPostDetailQuery(postId, null)))
-                        .isInstanceOf(GeneralException.class);
-
-                verify(postRepository, times(1)).findByIdWithTechBlog(postId);
-                verify(postReadModelEnricher, never()).enrichPostDetailRow(any(), any());
-            }
+            verify(postRepository, times(1)).findByIdWithTechBlog(postId);
+            verify(postReadModelEnricher, never()).enrichPostDetailRow(any(), any());
         }
     }
 
@@ -160,7 +150,7 @@ class PostQueryServiceTest {
 
         @Test
         @DisplayName("LATEST 정렬 시 최근 게시글 조회 후 조합한다")
-        void getRecentPosts_Latest_Success() {
+        void latestSort_ReturnsRecentPosts() {
             Long lastPostId = null;
             int size = 20;
             List<PostInfoRow> rawPosts = List.of(
@@ -190,7 +180,7 @@ class PostQueryServiceTest {
 
         @Test
         @DisplayName("POPULAR 정렬 시 인기 게시글 repository 경로만 사용한다")
-        void getRecentPosts_Popular_UsesPopularRepositoryPath() {
+        void popularSort_UsesPopularRepositoryPath() {
             Long lastPostId = 10L;
             int size = 20;
             Long userId = 7L;
@@ -218,7 +208,7 @@ class PostQueryServiceTest {
 
         @Test
         @DisplayName("size+1 조회 결과면 마지막 커서와 hasNext를 잘라서 계산한다")
-        void getRecentPosts_SizePlusOneRows_SetsHasNextAndLastCursor() {
+        void sizePlusOneRows_SetsHasNextAndLastCursor() {
             Long lastPostId = null;
             int size = 2;
             LocalDateTime now = LocalDateTime.now();
@@ -249,7 +239,7 @@ class PostQueryServiceTest {
 
         @Test
         @DisplayName("빈 결과면 커서 값은 모두 null이고 hasNext는 false다")
-        void getRecentPosts_EmptyRows_ReturnsNullCursors() {
+        void emptyRows_ReturnsNullCursors() {
             given(postRepository.findRecentPostsWithCursor(eq(null), any(PageRequest.class))).willReturn(List.of());
             given(postReadModelEnricher.enrichPostInfoRows(List.of(), null)).willReturn(List.of());
 
@@ -272,7 +262,7 @@ class PostQueryServiceTest {
 
         @Test
         @DisplayName("LATEST 정렬 시 recent V2 repository 경로만 사용한다")
-        void getRecentPostsV2_Latest_UsesLatestRepositoryPath() {
+        void latestSort_UsesLatestRepositoryPath() {
             LocalDateTime lastPublishedAt = LocalDateTime.now().minusDays(1);
             Long lastPostId = 20L;
             Long userId = 5L;
@@ -301,7 +291,7 @@ class PostQueryServiceTest {
 
         @Test
         @DisplayName("POPULAR 정렬 시 조합 후 size 기준으로 커서 응답을 만든다")
-        void getRecentPostsV2_Popular_BuildsCursorFromComposedRows() {
+        void popularSort_BuildsCursorFromComposedRows() {
             Integer lastViewCount = null;
             Long lastPostId = null;
             Long userId = 1L;
@@ -336,7 +326,7 @@ class PostQueryServiceTest {
 
         @Test
         @DisplayName("POPULAR 정렬 시 cursor 인자를 repository에 그대로 전달한다")
-        void getRecentPostsV2_Popular_PropagatesCursorArguments() {
+        void popularSort_PropagatesCursorArguments() {
             Integer lastViewCount = 250;
             LocalDateTime lastPublishedAt = LocalDateTime.now().minusHours(2);
             Long lastPostId = 11L;
@@ -369,7 +359,7 @@ class PostQueryServiceTest {
 
         @Test
         @DisplayName("회사별 게시글 조회 후 로그인 사용자 북마크 결과를 유지한다")
-        void getPostsByCompany_WithUserId_IncludesBookmarks() {
+        void userIdProvided_IncludesBookmarks() {
             String company = "카카오";
             Long userId = 1L;
             List<PostInfoRow> rawPosts = List.of(
@@ -395,7 +385,7 @@ class PostQueryServiceTest {
 
         @Test
         @DisplayName("비로그인 조회는 null userId를 조합 서비스에 전달한다")
-        void getPostsByCompany_WithoutUserId_DelegatesNullUserId() {
+        void userIdMissing_DelegatesNullUserId() {
             String company = "카카오";
             List<PostInfoRow> rawPosts = List.of(
                     postInfoRow(1L, "카카오 게시글", company, LocalDateTime.now(), 50L, null, null, "thumb-1")
@@ -423,7 +413,7 @@ class PostQueryServiceTest {
 
         @Test
         @DisplayName("companies가 null이면 전체 회사 조회 경로를 유지한다")
-        void getPostsByCompanyV2_NullCompanies_UsesAllCompaniesPath() {
+        void nullCompanies_UsesAllCompaniesPath() {
             LocalDateTime now = LocalDateTime.now();
             List<PostInfoRow> rawPosts = List.of(
                     postInfoRow(2L, "네이버 게시글", "네이버", now, 100L, null, null, "thumb-2"),
@@ -449,7 +439,7 @@ class PostQueryServiceTest {
 
         @Test
         @DisplayName("조합된 결과의 마지막 게시글로 published cursor를 유지한다")
-        void getPostsByCompanyV2_PreservesLastPublishedCursor() {
+        void lastPublishedCursorProvided_PreservesCursor() {
             List<String> companies = List.of("카카오", "네이버");
             LocalDateTime now = LocalDateTime.now();
             List<PostInfoRow> rawPosts = List.of(

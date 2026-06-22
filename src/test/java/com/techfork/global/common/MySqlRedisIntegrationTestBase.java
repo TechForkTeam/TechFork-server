@@ -14,10 +14,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ActiveProfiles;
 
 /**
- * Elasticsearch를 쓰지 않는 통합 테스트를 위한 경량 베이스 클래스.
+ * 일반 통합 테스트를 위한 MySQL/Redis 베이스 클래스.
  *
- * <p>기본 통합 테스트는 {@link IntegrationTestBase}를 유지하고,
- * 로컬에서 MySQL/Redis만으로 충분한 테스트를 빠르게 돌릴 때 이 클래스로 상속을 바꿔 사용한다.</p>
+ * <p>{@code integrationTest} 레인에서는 이 베이스를 기본으로 사용한다.
+ * Elasticsearch 실기동이 필요한 평가/검색 품질 검증은 별도 레인에서 실행한다.</p>
  */
 @Tag("integration")
 @SpringBootTest

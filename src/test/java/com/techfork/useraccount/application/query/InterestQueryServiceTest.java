@@ -7,6 +7,7 @@ import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
 import com.techfork.useraccount.infrastructure.UserInterestCategoryRepository;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -34,32 +35,38 @@ class InterestQueryServiceTest {
     @InjectMocks
     private InterestQueryService interestQueryService;
 
-    @Test
-    @DisplayName("사용자 관심사 조회 - 사용자 조회 후 관심사를 반환한다")
-    void getUserInterests_Success() {
-        Long userId = 1L;
-        User user = mock(User.class);
-        given(user.getId()).willReturn(userId);
-        given(userAggregateReader.getById(userId)).willReturn(user);
-        given(userInterestCategoryRepository.findByUserIdWithKeywords(userId)).willReturn(List.of());
+    @Nested
+    @DisplayName("사용자 관심사 조회")
+    class GetUserInterests {
 
-        GetUserInterestsResult result = interestQueryService.getUserInterests(new GetUserInterestsQuery(userId));
+        @Test
+        @DisplayName("사용자 관심사 조회 - 사용자 조회 후 관심사를 반환한다")
+        void existingUser_ReturnsUserInterests() {
+            Long userId = 1L;
+            User user = mock(User.class);
+            given(user.getId()).willReturn(userId);
+            given(userAggregateReader.getById(userId)).willReturn(user);
+            given(userInterestCategoryRepository.findByUserIdWithKeywords(userId)).willReturn(List.of());
 
-        assertThat(result.interests()).isEmpty();
-        verify(userAggregateReader).getById(userId);
-        verify(userInterestCategoryRepository).findByUserIdWithKeywords(userId);
+            GetUserInterestsResult result = interestQueryService.getUserInterests(new GetUserInterestsQuery(userId));
+
+            assertThat(result.interests()).isEmpty();
+            verify(userAggregateReader).getById(userId);
+            verify(userInterestCategoryRepository).findByUserIdWithKeywords(userId);
+        }
+
+        @Test
+        @DisplayName("사용자 관심사 조회 - 사용자가 없으면 관심사를 조회하지 않는다")
+        void userNotFound_ThrowsUserNotFound() {
+            Long userId = 999L;
+            given(userAggregateReader.getById(userId)).willThrow(new GeneralException(UserErrorCode.USER_NOT_FOUND));
+
+            assertThatThrownBy(() -> interestQueryService.getUserInterests(new GetUserInterestsQuery(userId)))
+                    .isInstanceOf(GeneralException.class)
+                    .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
+            verify(userAggregateReader).getById(userId);
+            verify(userInterestCategoryRepository, never()).findByUserIdWithKeywords(userId);
+        }
     }
 
-    @Test
-    @DisplayName("사용자 관심사 조회 - 사용자가 없으면 관심사를 조회하지 않는다")
-    void getUserInterests_UserNotFound_ThrowsException() {
-        Long userId = 999L;
-        given(userAggregateReader.getById(userId)).willThrow(new GeneralException(UserErrorCode.USER_NOT_FOUND));
-
-        assertThatThrownBy(() -> interestQueryService.getUserInterests(new GetUserInterestsQuery(userId)))
-                .isInstanceOf(GeneralException.class)
-                .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
-        verify(userAggregateReader).getById(userId);
-        verify(userInterestCategoryRepository, never()).findByUserIdWithKeywords(userId);
-    }
 }

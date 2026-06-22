@@ -74,7 +74,7 @@ class UserAuthCacheStoreTest {
 
         @Test
         @DisplayName("빈 email은 null email로 역직렬화한다")
-        void cacheHit_EmptyEmail_ReturnsNullEmail() {
+        void cacheHitWithEmptyEmail_ReturnsNullEmail() {
             // Given
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
             given(valueOperations.get(CACHE_KEY)).willReturn(WITHDRAWN_USER_CACHE_VALUE);
@@ -91,7 +91,7 @@ class UserAuthCacheStoreTest {
 
         @Test
         @DisplayName("ACTIVE 상태는 enabled principal로 역직렬화한다")
-        void cacheHit_ActiveStatus_ReturnsEnabledPrincipal() {
+        void cacheHitWithActiveStatus_ReturnsEnabledPrincipal() {
             // Given
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
             given(valueOperations.get(CACHE_KEY)).willReturn(ACTIVE_USER_CACHE_VALUE);
@@ -125,7 +125,7 @@ class UserAuthCacheStoreTest {
 
         @Test
         @DisplayName("인증 프로필을 기존 wire format으로 직렬화해 저장한다")
-        void withAuthProfile_SerializesAndSaves() {
+        void authProfile_SerializesAndSaves() {
             // Given
             UserAuthProfile userAuthProfile = new UserAuthProfile(
                     USER_ID,
@@ -146,7 +146,7 @@ class UserAuthCacheStoreTest {
 
         @Test
         @DisplayName("email이 null이면 빈 email로 저장한다")
-        void withNullEmail_SerializesEmptyEmail() {
+        void nullEmail_SerializesEmptyEmail() {
             // Given
             UserAuthProfile userAuthProfile = new UserAuthProfile(
                     USER_ID,
@@ -172,7 +172,7 @@ class UserAuthCacheStoreTest {
 
         @Test
         @DisplayName("사용자 인증 캐시 키를 삭제한다")
-        void deletesCacheKey() {
+        void existingKey_DeletesCacheKey() {
             // When
             userAuthCacheStore.evict(USER_ID);
 

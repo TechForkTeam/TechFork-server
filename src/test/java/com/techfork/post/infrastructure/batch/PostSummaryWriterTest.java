@@ -1,8 +1,6 @@
 package com.techfork.post.infrastructure.batch;
 
 import com.techfork.post.domain.Post;
-import com.techfork.post.domain.PostKeyword;
-import com.techfork.post.fixture.PostFixture;
 import com.techfork.global.util.JdbcBatchExecutor;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
@@ -18,6 +16,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.sql.PreparedStatement;
 import java.util.List;
 
+import static com.techfork.post.fixture.PostFixture.createPostWithSummaryAndKeywords;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -56,7 +55,7 @@ class PostSummaryWriterTest {
 
         @Test
         @DisplayName("빈 chunk면 JDBC batch와 EntityManager clear를 수행하지 않는다")
-        void doesNothingForEmptyChunk() throws Exception {
+        void emptyChunk_DoesNothing() throws Exception {
             PostSummaryWriter postSummaryWriter = createWriter();
 
             postSummaryWriter.write(Chunk.of());
@@ -68,10 +67,10 @@ class PostSummaryWriterTest {
         @Test
         @DisplayName("게시글 chunk를 summary update, keyword delete, keyword insert로 위임한다")
         @SuppressWarnings({"rawtypes", "unchecked"})
-        void delegatesUpdateDeleteInsertWithExpectedBindings() throws Exception {
+        void chunkWithKeywords_DelegatesUpdateDeleteInsert() throws Exception {
             PostSummaryWriter postSummaryWriter = createWriter();
-            Post firstPost = createPost(1L, "첫 요약", "첫 짧은 요약", List.of("AI", "Java"));
-            Post secondPost = createPost(2L, "둘 요약", "둘 짧은 요약", List.of("Spring"));
+            Post firstPost = createPostWithSummaryAndKeywords(1L, "첫 요약", "첫 짧은 요약", List.of("AI", "Java"));
+            Post secondPost = createPostWithSummaryAndKeywords(2L, "둘 요약", "둘 짧은 요약", List.of("Spring"));
             when(jdbcBatchExecutor.batchExecute(any(), anyList(), any())).thenReturn(2);
 
             ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
@@ -120,10 +119,10 @@ class PostSummaryWriterTest {
         @Test
         @DisplayName("삽입할 keyword가 없으면 insert batch를 건너뛰고 update/delete/clear를 수행한다")
         @SuppressWarnings({"rawtypes", "unchecked"})
-        void skipsInsertWhenFlattenedKeywordListIsEmpty() throws Exception {
+        void emptyFlattenedKeywordList_SkipsInsert() throws Exception {
             PostSummaryWriter postSummaryWriter = createWriter();
-            Post firstPost = createPost(1L, "첫 요약", "첫 짧은 요약", List.of());
-            Post secondPost = createPost(2L, "둘 요약", "둘 짧은 요약", List.of());
+            Post firstPost = createPostWithSummaryAndKeywords(1L, "첫 요약", "첫 짧은 요약", List.of());
+            Post secondPost = createPostWithSummaryAndKeywords(2L, "둘 요약", "둘 짧은 요약", List.of());
             when(jdbcBatchExecutor.batchExecute(any(), anyList(), any())).thenReturn(2);
 
             ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
@@ -147,19 +146,6 @@ class PostSummaryWriterTest {
             PostSummaryWriter postSummaryWriter = new PostSummaryWriter(jdbcBatchExecutor);
             ReflectionTestUtils.setField(postSummaryWriter, "entityManager", entityManager);
             return postSummaryWriter;
-        }
-
-        private Post createPost(Long id, String summary, String shortSummary, List<String> keywords) {
-            return PostFixture.createPostWithKeywords(
-                    id,
-                    "게시글-" + id,
-                    "원문-" + id,
-                    "평문-" + id,
-                    "TechFork",
-                    summary,
-                    shortSummary,
-                    keywords
-            );
         }
     }
 

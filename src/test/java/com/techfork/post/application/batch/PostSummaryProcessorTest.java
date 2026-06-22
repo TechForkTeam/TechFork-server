@@ -3,7 +3,6 @@ package com.techfork.post.application.batch;
 import com.techfork.post.application.summary.SummaryExtractionResult;
 import com.techfork.post.domain.Post;
 import com.techfork.post.domain.PostKeyword;
-import com.techfork.post.fixture.PostFixture;
 import com.techfork.post.application.summary.SummaryExtractionService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -14,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
+import static com.techfork.post.fixture.PostFixture.createSummaryTargetPostWithExistingKeywords;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
@@ -31,9 +31,9 @@ class PostSummaryProcessorTest {
 
         @Test
         @DisplayName("추출 결과로 summary를 갱신하고 keyword를 재구성한다")
-        void updatesSummariesAndRebuildsKeywordsFromExtractionResult() {
+        void extractionResult_UpdatesSummariesAndRebuildsKeywords() {
             PostSummaryProcessor postSummaryProcessor = new PostSummaryProcessor(summaryExtractionService);
-            Post post = createPostWithExistingKeywords();
+            Post post = createSummaryTargetPostWithExistingKeywords();
             PostKeyword oldKeyword1 = post.getKeywords().get(0);
             PostKeyword oldKeyword2 = post.getKeywords().get(1);
             SummaryExtractionResult summaryWithKeywordsDto = new SummaryExtractionResult(
@@ -60,9 +60,9 @@ class PostSummaryProcessorTest {
 
         @Test
         @DisplayName("추출 결과 keyword가 비어 있으면 기존 keyword를 모두 제거한다")
-        void clearsExistingKeywordsWhenExtractionReturnsNoKeywords() {
+        void noKeywords_ClearsExistingKeywords() {
             PostSummaryProcessor postSummaryProcessor = new PostSummaryProcessor(summaryExtractionService);
-            Post post = createPostWithExistingKeywords();
+            Post post = createSummaryTargetPostWithExistingKeywords();
             given(summaryExtractionService.extractSummary("요약 대상 글", "평문 본문"))
                     .willReturn(new SummaryExtractionResult("새 요약", "새 짧은 요약", List.of()));
 
@@ -76,9 +76,9 @@ class PostSummaryProcessorTest {
 
         @Test
         @DisplayName("요약 추출 서비스 예외를 그대로 전파한다")
-        void propagatesExtractionServiceFailure() {
+        void extractionServiceFails_PropagatesException() {
             PostSummaryProcessor postSummaryProcessor = new PostSummaryProcessor(summaryExtractionService);
-            Post post = createPostWithExistingKeywords();
+            Post post = createSummaryTargetPostWithExistingKeywords();
             PostKeyword oldKeyword1 = post.getKeywords().get(0);
             PostKeyword oldKeyword2 = post.getKeywords().get(1);
             given(summaryExtractionService.extractSummary("요약 대상 글", "평문 본문"))
@@ -92,17 +92,5 @@ class PostSummaryProcessorTest {
             assertThat(post.getKeywords()).containsExactly(oldKeyword1, oldKeyword2);
         }
 
-        private Post createPostWithExistingKeywords() {
-            return PostFixture.createPostWithKeywords(
-                    1L,
-                    "요약 대상 글",
-                    "원문 본문",
-                    "평문 본문",
-                    "TechFork",
-                    "기존 요약",
-                    "기존 짧은 요약",
-                    List.of("기존키워드1", "기존키워드2")
-            );
-        }
     }
 }

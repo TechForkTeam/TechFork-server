@@ -1,8 +1,9 @@
 package com.techfork.post.infrastructure.batch;
 
 import com.techfork.post.domain.Post;
-import com.techfork.domain.source.dto.RssFeedItem;
+import com.techfork.post.fixture.PostFixture;
 import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.fixture.TechBlogFixture;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.global.util.JdbcBatchExecutor;
@@ -48,14 +49,12 @@ class PostSummaryWriterDataJpaTest {
         postSummaryWriter = new PostSummaryWriter(jdbcBatchExecutor);
         ReflectionTestUtils.setField(postSummaryWriter, "entityManager", entityManager);
 
-        techBlog = techBlogRepository.save(
-                TechBlog.create(
-                        "TechFork",
-                        "https://techfork.example.com",
-                        "https://techfork.example.com/rss",
-                        "https://cdn.example.com/logo.png"
-                )
-        );
+        techBlog = techBlogRepository.save(TechBlogFixture.createTechBlog(
+                "TechFork",
+                "https://techfork.example.com",
+                "https://techfork.example.com/rss",
+                "https://cdn.example.com/logo.png"
+        ));
     }
 
     @Nested
@@ -64,7 +63,7 @@ class PostSummaryWriterDataJpaTest {
 
         @Test
         @DisplayName("summary를 갱신하고 기존 keyword를 제거한 뒤 새 keyword만 저장한다")
-        void updatesSummariesAndReplacesPersistedKeywords() {
+        void chunkWithKeywords_UpdatesSummariesAndReplacesKeywords() {
             Post post = savePost("기존 요약", "기존 짧은 요약", List.of("Legacy", "Old"));
 
             entityManager.clear();
@@ -86,7 +85,7 @@ class PostSummaryWriterDataJpaTest {
 
         @Test
         @DisplayName("새 keyword가 없으면 기존 keyword를 모두 삭제하고 summary만 저장한다")
-        void deletesExistingKeywordsWhenNewKeywordListIsEmpty() {
+        void emptyKeywordList_DeletesExistingKeywords() {
             Post post = savePost("기존 요약", "기존 짧은 요약", List.of("Legacy", "Old"));
 
             entityManager.clear();
@@ -108,21 +107,17 @@ class PostSummaryWriterDataJpaTest {
     }
 
     private Post savePost(String summary, String shortSummary, List<String> keywords) {
-        Post post = Post.create(
-                RssFeedItem.builder()
-                        .title("요약 대상 글")
-                        .url("https://posts.example.com/post-summary-writer")
-                        .logoUrl("https://cdn.example.com/post-summary-writer-logo.png")
-                        .thumbnailUrl("https://cdn.example.com/post-summary-writer-thumb.png")
-                        .content("원문 본문")
-                        .plainContent("평문 본문")
-                        .publishedAt(LocalDateTime.of(2026, 5, 10, 10, 0))
-                        .company("TechFork")
-                        .techBlogId(techBlog.getId())
-                        .build(),
-                techBlog
+        Post post = PostFixture.createPost(
+                techBlog,
+                "요약 대상 글",
+                "원문 본문",
+                "평문 본문",
+                summary,
+                shortSummary,
+                "https://cdn.example.com/post-summary-writer-thumb.png",
+                "https://posts.example.com/post-summary-writer",
+                LocalDateTime.of(2026, 5, 10, 10, 0)
         );
-        post.updateSummaries(summary, shortSummary);
         post.replaceKeywords(keywords);
         return postRepository.saveAndFlush(post);
     }

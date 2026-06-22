@@ -19,7 +19,7 @@ class BookmarkTest {
 
         @Test
         @DisplayName("사용자, 게시글, 북마크 시각을 그대로 보존한다")
-        void create_PreservesBookmarkState() {
+        void userAndPost_PreservesBookmarkState() {
             User user = mock(User.class);
             Post post = mock(Post.class);
             LocalDateTime bookmarkedAt = LocalDateTime.of(2026, 5, 5, 10, 30, 0);

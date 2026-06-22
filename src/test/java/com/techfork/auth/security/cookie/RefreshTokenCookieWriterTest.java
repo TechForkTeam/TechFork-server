@@ -1,6 +1,7 @@
 package com.techfork.auth.security.cookie;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -14,37 +15,48 @@ class RefreshTokenCookieWriterTest {
 
     private final RefreshTokenCookieWriter refreshTokenCookieWriter = new RefreshTokenCookieWriter(DOMAIN);
 
-    @Test
-    @DisplayName("refresh token 쿠키를 기존 wire contract로 작성한다")
-    void write_AddsRefreshTokenCookieWithExistingWireContract() {
-        MockHttpServletResponse response = new MockHttpServletResponse();
+    @Nested
+    @DisplayName("write")
+    class Write {
 
-        refreshTokenCookieWriter.write(response, REFRESH_TOKEN, REFRESH_TOKEN_EXPIRATION_MILLIS);
+        @Test
+        @DisplayName("refresh token 쿠키를 기존 wire contract로 작성한다")
+        void refreshToken_AddsCookieWithExistingWireContract() {
+            MockHttpServletResponse response = new MockHttpServletResponse();
 
-        assertThat(response.getHeader("Set-Cookie"))
-                .contains("refreshToken=" + REFRESH_TOKEN)
-                .contains("Path=/")
-                .contains("Domain=" + DOMAIN)
-                .contains("Max-Age=900")
-                .contains("Secure")
-                .contains("HttpOnly")
-                .contains("SameSite=None");
+            refreshTokenCookieWriter.write(response, REFRESH_TOKEN, REFRESH_TOKEN_EXPIRATION_MILLIS);
+
+            assertThat(response.getHeader("Set-Cookie"))
+                    .contains("refreshToken=" + REFRESH_TOKEN)
+                    .contains("Path=/")
+                    .contains("Domain=" + DOMAIN)
+                    .contains("Max-Age=900")
+                    .contains("Secure")
+                    .contains("HttpOnly")
+                    .contains("SameSite=None");
+        }
     }
 
-    @Test
-    @DisplayName("refresh token 쿠키 삭제 응답을 기존 wire contract로 작성한다")
-    void delete_AddsExpiredRefreshTokenCookieWithExistingWireContract() {
-        MockHttpServletResponse response = new MockHttpServletResponse();
+    @Nested
+    @DisplayName("delete")
+    class Delete {
 
-        refreshTokenCookieWriter.delete(response);
+        @Test
+        @DisplayName("refresh token 쿠키 삭제 응답을 기존 wire contract로 작성한다")
+        void existingRefreshToken_AddsExpiredCookieWithExistingWireContract() {
+            MockHttpServletResponse response = new MockHttpServletResponse();
 
-        assertThat(response.getHeader("Set-Cookie"))
-                .contains("refreshToken=")
-                .contains("Path=/")
-                .contains("Domain=" + DOMAIN)
-                .contains("Max-Age=0")
-                .contains("Secure")
-                .contains("HttpOnly")
-                .contains("SameSite=None");
+            refreshTokenCookieWriter.delete(response);
+
+            assertThat(response.getHeader("Set-Cookie"))
+                    .contains("refreshToken=")
+                    .contains("Path=/")
+                    .contains("Domain=" + DOMAIN)
+                    .contains("Max-Age=0")
+                    .contains("Secure")
+                    .contains("HttpOnly")
+                    .contains("SameSite=None");
+        }
     }
+
 }

@@ -24,12 +24,17 @@ class PostSummaryReaderTest {
     @Mock
     private PostRepository postRepository;
 
-    @Test
-    @DisplayName("생성만으로는 repository를 조회하지 않는다")
-    void doesNotQueryRepositoryOnConstruction() {
-        new PostSummaryReader(postRepository);
+    @Nested
+    @DisplayName("생성")
+    class Constructor {
 
-        verifyNoInteractions(postRepository);
+        @Test
+        @DisplayName("생성만으로는 repository를 조회하지 않는다")
+        void construction_DoesNotQueryRepository() {
+            new PostSummaryReader(postRepository);
+
+            verifyNoInteractions(postRepository);
+        }
     }
 
     @Nested
@@ -38,7 +43,7 @@ class PostSummaryReaderTest {
 
         @Test
         @DisplayName("첫 read에서만 repository를 조회하고 Post를 순차적으로 반환한다")
-        void lazilyLoadsOnceAndReturnsPostsSequentially() {
+        void postsExist_LazilyLoadsOnceAndReturnsSequentially() {
             PostSummaryReader postSummaryReader = new PostSummaryReader(postRepository);
             Post firstPost = PostFixture.createPost(1L, "첫 번째 글", "본문1", "평문1", "TechFork", null, null);
             Post secondPost = PostFixture.createPost(2L, "두 번째 글", "본문2", "평문2", "TechFork", null, null);
@@ -56,7 +61,7 @@ class PostSummaryReaderTest {
 
         @Test
         @DisplayName("조회 결과가 비어 있으면 null을 반환하고 다시 조회하지 않는다")
-        void returnsNullForEmptyRepositoryResultWithoutReloading() {
+        void emptyRepositoryResult_ReturnsNullWithoutReloading() {
             PostSummaryReader postSummaryReader = new PostSummaryReader(postRepository);
             given(postRepository.findWithKeywordsBySummaryIsNull()).willReturn(List.of());
 
