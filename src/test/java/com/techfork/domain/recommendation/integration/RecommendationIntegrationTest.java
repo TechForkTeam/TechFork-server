@@ -25,11 +25,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.techfork.domain.recommendation.fixture.RecommendationUserFixture.activeUser;
-import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.DEFAULT_PUBLISHED_AT;
-import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.post;
+import static com.techfork.useraccount.fixture.UserFixture.activeUser;
+import static com.techfork.post.fixture.PostFixture.DEFAULT_PUBLISHED_AT;
+import static com.techfork.post.fixture.PostFixture.createPost;
 import static com.techfork.domain.recommendation.fixture.RecommendedPostFixture.recommendedPost;
-import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.techBlog;
+import static com.techfork.domain.source.fixture.TechBlogFixture.createTechBlog;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -74,9 +74,9 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
         JwtDTO tokens = jwtUtil.generateTokens(testUser.getId(), Role.USER);
         accessToken = tokens.accessToken();
 
-        testBlog = techBlogRepository.save(techBlog("테스트회사", "https://test.com"));
+        testBlog = techBlogRepository.save(createTechBlog("테스트회사", "https://test.com"));
 
-        testPost1 = postRepository.save(post(
+        testPost1 = postRepository.save(createPost(
                 testBlog,
                 "추천 게시글 1",
                 "게시글 1의 전체 내용입니다.",
@@ -87,7 +87,7 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
                 "https://test.com/post/1",
                 DEFAULT_PUBLISHED_AT.minusDays(1)
         ));
-        testPost2 = postRepository.save(post(
+        testPost2 = postRepository.save(createPost(
                 testBlog,
                 "추천 게시글 2",
                 "게시글 2의 전체 내용입니다.",
@@ -98,7 +98,7 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
                 "https://test.com/post/2",
                 DEFAULT_PUBLISHED_AT.minusDays(2)
         ));
-        testPost3 = postRepository.save(post(
+        testPost3 = postRepository.save(createPost(
                 testBlog,
                 "추천 게시글 3",
                 "게시글 3의 전체 내용입니다.",

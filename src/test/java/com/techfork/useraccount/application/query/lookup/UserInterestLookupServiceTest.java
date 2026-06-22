@@ -5,6 +5,7 @@ import com.techfork.useraccount.domain.UserInterestCategory;
 import com.techfork.useraccount.domain.enums.EInterestCategory;
 import com.techfork.useraccount.domain.enums.EInterestKeyword;
 import com.techfork.useraccount.fixture.UserFixture;
+import com.techfork.useraccount.fixture.UserInterestCategoryFixture;
 import com.techfork.useraccount.infrastructure.UserInterestCategoryRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,8 +34,8 @@ class UserInterestLookupServiceTest {
     void getInterestKeywordDisplayNames_ReturnsKeywordDisplayNames() {
         Long userId = 1L;
         User user = UserFixture.socialUser("social-1", "user@example.com", null);
-        UserInterestCategory backend = UserFixture.interestCategory(user, EInterestCategory.BACKEND, EInterestKeyword.JAVA, EInterestKeyword.SPRING);
-        UserInterestCategory devops = UserFixture.interestCategory(user, EInterestCategory.DEVOPS, EInterestKeyword.DOCKER);
+        UserInterestCategory backend = UserInterestCategoryFixture.interestCategory(user, EInterestCategory.BACKEND, EInterestKeyword.JAVA, EInterestKeyword.SPRING);
+        UserInterestCategory devops = UserInterestCategoryFixture.interestCategory(user, EInterestCategory.DEVOPS, EInterestKeyword.DOCKER);
         given(userInterestCategoryRepository.findByUserIdWithKeywords(userId))
                 .willReturn(List.of(backend, devops));
 

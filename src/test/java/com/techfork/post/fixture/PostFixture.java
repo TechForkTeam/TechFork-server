@@ -49,6 +49,47 @@ public final class PostFixture {
         return post;
     }
 
+    public static Post createPost(TechBlog techBlog, String title, String url) {
+        return createPost(
+                techBlog,
+                title,
+                title + " 전체 내용",
+                title + " 내용",
+                title + " 요약",
+                title + " 짧은 요약",
+                techBlog.getBlogUrl() + "/thumb.png",
+                url,
+                DEFAULT_PUBLISHED_AT
+        );
+    }
+
+    public static Post createPost(
+            TechBlog techBlog,
+            String title,
+            String fullContent,
+            String plainContent,
+            String summary,
+            String shortSummary,
+            String thumbnailUrl,
+            String url,
+            LocalDateTime publishedAt
+    ) {
+        return Post.builder()
+                .title(title)
+                .fullContent(fullContent)
+                .plainContent(plainContent)
+                .summary(summary)
+                .shortSummary(shortSummary)
+                .company(techBlog.getCompanyName())
+                .logoUrl(techBlog.getLogoUrl())
+                .thumbnailUrl(thumbnailUrl)
+                .url(url)
+                .publishedAt(publishedAt)
+                .crawledAt(DEFAULT_CRAWLED_AT)
+                .techBlog(techBlog)
+                .build();
+    }
+
     public static Post createPostWithKeywords(Long id, String title, String fullContent, String plainContent,
                                               String company, String summary, String shortSummary, List<String> keywords) {
         Post post = createPost(id, title, fullContent, plainContent, company, summary, shortSummary);

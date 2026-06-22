@@ -19,10 +19,10 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
-import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.post;
+import static com.techfork.post.fixture.PostFixture.createPost;
 import static com.techfork.domain.recommendation.fixture.RecommendedPostFixture.recommendedPost;
-import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.techBlog;
-import static com.techfork.domain.recommendation.fixture.RecommendationUserFixture.user;
+import static com.techfork.domain.source.fixture.TechBlogFixture.createTechBlog;
+import static com.techfork.useraccount.fixture.UserFixture.socialUser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -54,13 +54,13 @@ class RecommendedPostRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        testUser = userRepository.save(user("recommendation-repository-user", "recommendation@example.com"));
+        testUser = userRepository.save(socialUser("recommendation-repository-user", "recommendation@example.com"));
 
-        testBlog = techBlogRepository.save(techBlog("테스트회사", "https://recommendation-test.com"));
+        testBlog = techBlogRepository.save(createTechBlog("테스트회사", "https://recommendation-test.com"));
 
-        post1 = postRepository.save(post(testBlog, "게시글 1", "https://recommendation-test.com/posts/1"));
-        post2 = postRepository.save(post(testBlog, "게시글 2", "https://recommendation-test.com/posts/2"));
-        post3 = postRepository.save(post(testBlog, "게시글 3", "https://recommendation-test.com/posts/3"));
+        post1 = postRepository.save(createPost(testBlog, "게시글 1", "https://recommendation-test.com/posts/1"));
+        post2 = postRepository.save(createPost(testBlog, "게시글 2", "https://recommendation-test.com/posts/2"));
+        post3 = postRepository.save(createPost(testBlog, "게시글 3", "https://recommendation-test.com/posts/3"));
     }
 
     @AfterEach
@@ -96,7 +96,7 @@ class RecommendedPostRepositoryTest {
     @Test
     @DisplayName("deleteByUser는 지정한 사용자의 현재 추천만 삭제한다")
     void deleteByUser_DeletesOnlyRecommendationsForGivenUser() {
-        User anotherUser = userRepository.save(user(
+        User anotherUser = userRepository.save(socialUser(
                 "recommendation-repository-another-user",
                 "another-recommendation@example.com"
         ));

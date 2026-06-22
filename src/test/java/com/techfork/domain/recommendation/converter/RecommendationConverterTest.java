@@ -11,10 +11,10 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 
-import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.post;
+import static com.techfork.post.fixture.PostFixture.createPost;
 import static com.techfork.domain.recommendation.fixture.RecommendedPostFixture.recommendedPost;
-import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.techBlog;
-import static com.techfork.domain.recommendation.fixture.RecommendationUserFixture.user;
+import static com.techfork.domain.source.fixture.TechBlogFixture.createTechBlog;
+import static com.techfork.useraccount.fixture.UserFixture.socialUser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -27,8 +27,8 @@ class RecommendationConverterTest {
         CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer = mock(CloudflareThirdPartyThumbnailOptimizer.class);
         RecommendationConverter converter = new RecommendationConverter(thumbnailOptimizer);
 
-        TechBlog techBlog = techBlog("테스트 회사", "https://techfork.com");
-        Post post = post(
+        TechBlog techBlog = createTechBlog("테스트 회사", "https://techfork.com");
+        Post post = createPost(
                 techBlog,
                 "게시글",
                 "전체 내용",
@@ -39,7 +39,7 @@ class RecommendationConverterTest {
                 "https://techfork.com/posts/1",
                 LocalDateTime.now()
         );
-        User user = user("social-id", "test@example.com");
+        User user = socialUser("social-id", "test@example.com");
         RecommendedPost recommendedPost = recommendedPost(user, post, 0.9, 0.8, 1);
 
         when(thumbnailOptimizer.optimize("https://images.example.com/thumb.jpg"))

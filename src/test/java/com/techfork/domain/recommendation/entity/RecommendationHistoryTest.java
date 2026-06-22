@@ -7,10 +7,10 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 
-import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.post;
+import static com.techfork.post.fixture.PostFixture.createPost;
 import static com.techfork.domain.recommendation.fixture.RecommendedPostFixture.recommendedPost;
-import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.techBlog;
-import static com.techfork.domain.recommendation.fixture.RecommendationUserFixture.user;
+import static com.techfork.domain.source.fixture.TechBlogFixture.createTechBlog;
+import static com.techfork.useraccount.fixture.UserFixture.socialUser;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("RecommendationHistory 단위 테스트")
@@ -19,8 +19,8 @@ class RecommendationHistoryTest {
     @Test
     @DisplayName("현재 추천 게시글로부터 추천 이력을 생성한다")
     void fromRecommendedPost_CopiesRecommendationSnapshot() {
-        User user = user("recommendation-history-user", "history@example.com");
-        Post post = post(techBlog("테스트회사", "https://history-test.com"), "추천 이력 테스트 게시글", "https://history-test.com/posts/1");
+        User user = socialUser("recommendation-history-user", "history@example.com");
+        Post post = createPost(createTechBlog("테스트회사", "https://history-test.com"), "추천 이력 테스트 게시글", "https://history-test.com/posts/1");
         RecommendedPost recommendedPost = recommendedPost(user, post, 0.91, 0.82, 3);
 
         RecommendationHistory history = RecommendationHistory.fromRecommendedPost(recommendedPost);
@@ -40,8 +40,8 @@ class RecommendationHistoryTest {
     void markAsClicked_MarksHistoryAsClicked() {
         RecommendationHistory history = RecommendationHistory.fromRecommendedPost(
                 recommendedPost(
-                        user("recommendation-history-user", "history@example.com"),
-                        post(techBlog("테스트회사", "https://history-test.com"), "추천 이력 테스트 게시글", "https://history-test.com/posts/1"),
+                        socialUser("recommendation-history-user", "history@example.com"),
+                        createPost(createTechBlog("테스트회사", "https://history-test.com"), "추천 이력 테스트 게시글", "https://history-test.com/posts/1"),
                         0.91,
                         0.82,
                         1

@@ -21,11 +21,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.post;
-import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.DEFAULT_PUBLISHED_AT;
+import static com.techfork.post.fixture.PostFixture.createPost;
+import static com.techfork.post.fixture.PostFixture.DEFAULT_PUBLISHED_AT;
 import static com.techfork.domain.recommendation.fixture.RecommendedPostFixture.recommendedPost;
-import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.techBlog;
-import static com.techfork.domain.recommendation.fixture.RecommendationUserFixture.user;
+import static com.techfork.domain.source.fixture.TechBlogFixture.createTechBlog;
+import static com.techfork.useraccount.fixture.UserFixture.socialUser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -62,12 +62,12 @@ class RecommendationQueryServiceTest {
 
     @BeforeEach
     void setUp() {
-        testUser = user("test-social-id", "test@example.com");
-        testTechBlog = techBlog("테스트 회사", "https://test.com");
+        testUser = socialUser("test-social-id", "test@example.com");
+        testTechBlog = createTechBlog("테스트 회사", "https://test.com");
 
-        post1 = post(testTechBlog, "게시글 1", "전체 내용 1", "내용 1", null, "요약 1", null, "https://test.com/post1", DEFAULT_PUBLISHED_AT.minusDays(1));
-        post2 = post(testTechBlog, "게시글 2", "전체 내용 2", "내용 2", null, "요약 2", null, "https://test.com/post2", DEFAULT_PUBLISHED_AT.minusDays(2));
-        post3 = post(testTechBlog, "게시글 3", "전체 내용 3", "내용 3", null, "요약 3", null, "https://test.com/post3", DEFAULT_PUBLISHED_AT.minusDays(3));
+        post1 = createPost(testTechBlog, "게시글 1", "전체 내용 1", "내용 1", null, "요약 1", null, "https://test.com/post1", DEFAULT_PUBLISHED_AT.minusDays(1));
+        post2 = createPost(testTechBlog, "게시글 2", "전체 내용 2", "내용 2", null, "요약 2", null, "https://test.com/post2", DEFAULT_PUBLISHED_AT.minusDays(2));
+        post3 = createPost(testTechBlog, "게시글 3", "전체 내용 3", "내용 3", null, "요약 3", null, "https://test.com/post3", DEFAULT_PUBLISHED_AT.minusDays(3));
 
         recommendedPost1 = recommendedPost(testUser, post1, 1);
         recommendedPost2 = recommendedPost(testUser, post2, 2);
