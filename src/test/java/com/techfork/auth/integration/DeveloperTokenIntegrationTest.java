@@ -5,6 +5,7 @@ import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.auth.security.jwt.JwtDTO;
@@ -60,7 +61,7 @@ class DeveloperTokenIntegrationTest extends IntegrationTestBase {
         adminAccessToken = adminTokens.accessToken();
 
         // 일반 사용자 생성
-        normalUser = User.createSocialUser(SocialType.KAKAO, "userSocialId", "user@example.com", null);
+        normalUser = UserFixture.socialUser("userSocialId", "user@example.com", null);
         normalUser = userRepository.save(normalUser);
 
         JwtDTO userTokens = jwtUtil.generateTokens(normalUser.getId(), Role.USER);

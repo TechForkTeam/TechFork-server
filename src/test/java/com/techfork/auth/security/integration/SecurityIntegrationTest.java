@@ -3,6 +3,7 @@ package com.techfork.auth.security.integration;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.global.llm.EmbeddingClient;
@@ -57,7 +58,7 @@ class SecurityIntegrationTest extends IntegrationTestBase {
     @BeforeEach
     void setUp() {
         // 일반 사용자
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", null);
+        testUser = UserFixture.socialUser("testSocialId", "test@example.com", null);
         testUser = userRepository.save(testUser);
 
         JwtDTO tokens = jwtUtil.generateTokens(testUser.getId(), Role.USER);

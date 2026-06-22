@@ -9,6 +9,7 @@ import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.enums.UserStatus;
+import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.auth.security.token.RefreshTokenStore;
@@ -91,7 +92,7 @@ class AuthIntegrationTest extends IntegrationTestBase {
     @BeforeEach
     void setUp() {
         // 테스트 사용자 생성
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", null);
+        testUser = UserFixture.socialUser("testSocialId", "test@example.com", null);
         testUser = userRepository.save(testUser);
         userId = testUser.getId();
 
@@ -299,7 +300,7 @@ class AuthIntegrationTest extends IntegrationTestBase {
     @DisplayName("카카오 로그인 성공 - 기존 회원 로그인")
     void kakaoLogin_Success_ExistingUser() throws Exception {
         // Given: 기존 사용자 생성
-        User existingUser = User.createSocialUser(SocialType.KAKAO, "12345", "existing@kakao.com", "test.png");
+        User existingUser = UserFixture.socialUser("12345", "existing@kakao.com", "test.png");
         existingUser.updateUser("테스트", "existing@kakao.com", "테스트 사용자입니다.");
         userRepository.save(existingUser);
 
