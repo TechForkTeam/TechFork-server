@@ -3,6 +3,7 @@ package com.techfork.domain.recommendation.service;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,17 +27,23 @@ class RecommendationCommandServiceTest {
     @InjectMocks
     private RecommendationCommandService recommendationCommandService;
 
-    @Test
-    @DisplayName("userId로 사용자 참조를 조회해 수동 추천 재생성을 요청한다")
-    void regenerateRecommendations_GeneratesRecommendationsForUserReference() {
-        Long userId = 1L;
-        User user = mock(User.class);
-        given(userRepository.getReferenceById(userId)).willReturn(user);
-        given(recommendationService.generateRecommendationsForUser(user)).willReturn(5);
+    @Nested
+    @DisplayName("regenerateRecommendations")
+    class RegenerateRecommendations {
 
-        recommendationCommandService.regenerateRecommendations(userId);
+        @Test
+        @DisplayName("userId로 사용자 참조를 조회해 수동 추천 재생성을 요청한다")
+        void userIdProvided_GeneratesRecommendationsForUserReference() {
+            Long userId = 1L;
+            User user = mock(User.class);
+            given(userRepository.getReferenceById(userId)).willReturn(user);
+            given(recommendationService.generateRecommendationsForUser(user)).willReturn(5);
 
-        verify(userRepository).getReferenceById(userId);
-        verify(recommendationService).generateRecommendationsForUser(user);
+            recommendationCommandService.regenerateRecommendations(userId);
+
+            verify(userRepository).getReferenceById(userId);
+            verify(recommendationService).generateRecommendationsForUser(user);
+        }
     }
+
 }

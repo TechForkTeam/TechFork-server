@@ -12,6 +12,7 @@ import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -74,113 +75,118 @@ class RecommendationQueryServiceTest {
         recommendedPost3 = recommendedPost(testUser, post3, 3);
     }
 
-    @Test
-    @DisplayName("추천 게시글 목록을 조회한다")
-    void getRecommendations() {
-        // given
-        Long userId = 1L;
-        List<RecommendedPost> recommendedPosts = List.of(
-                recommendedPost1, recommendedPost2, recommendedPost3
-        );
+    @Nested
+    @DisplayName("추천 게시글 조회")
+    class GetRecommendations {
 
-        RecommendedPostDto dto1 = createRecommendedPostDto(1L, 101L, "게시글 1", "요약 1", null);
-        RecommendedPostDto dto2 = createRecommendedPostDto(2L, 102L, "게시글 2", "요약 2", null);
-        RecommendedPostDto dto3 = createRecommendedPostDto(3L, 103L, "게시글 3", "요약 3", null);
-        List<Long> postIds = List.of(101L, 102L, 103L);
+        @Test
+        @DisplayName("추천 게시글 목록을 조회한다")
+        void recommendationsExist_ReturnsRecommendations() {
+            // given
+            Long userId = 1L;
+            List<RecommendedPost> recommendedPosts = List.of(
+                    recommendedPost1, recommendedPost2, recommendedPost3
+            );
 
-        RecommendationListResponse initialResponse = RecommendationListResponse.builder()
-                .recommendations(List.of(dto1, dto2, dto3))
-                .totalCount(3)
-                .build();
+            RecommendedPostDto dto1 = createRecommendedPostDto(1L, 101L, "게시글 1", "요약 1", null);
+            RecommendedPostDto dto2 = createRecommendedPostDto(2L, 102L, "게시글 2", "요약 2", null);
+            RecommendedPostDto dto3 = createRecommendedPostDto(3L, 103L, "게시글 3", "요약 3", null);
+            List<Long> postIds = List.of(101L, 102L, 103L);
 
-        given(userRepository.getReferenceById(userId)).willReturn(testUser);
-        given(recommendedPostRepository.findByUserOrderByRankAsc(testUser)).willReturn(recommendedPosts);
-        given(recommendationConverter.toRecommendationListResponse(recommendedPosts)).willReturn(initialResponse);
-        given(bookmarkRepository.findBookmarkedPostIds(userId, postIds)).willReturn(List.of());
+            RecommendationListResponse initialResponse = RecommendationListResponse.builder()
+                    .recommendations(List.of(dto1, dto2, dto3))
+                    .totalCount(3)
+                    .build();
 
-        // when
-        RecommendationListResponse response = recommendationQueryService.getRecommendations(userId);
+            given(userRepository.getReferenceById(userId)).willReturn(testUser);
+            given(recommendedPostRepository.findByUserOrderByRankAsc(testUser)).willReturn(recommendedPosts);
+            given(recommendationConverter.toRecommendationListResponse(recommendedPosts)).willReturn(initialResponse);
+            given(bookmarkRepository.findBookmarkedPostIds(userId, postIds)).willReturn(List.of());
 
-        // then
-        assertThat(response.recommendations()).hasSize(3);
-        assertThat(response.totalCount()).isEqualTo(3);
-        assertThat(response.recommendations().get(0).title()).isEqualTo("게시글 1");
-        assertThat(response.recommendations().get(0).isBookmarked()).isFalse();
+            // when
+            RecommendationListResponse response = recommendationQueryService.getRecommendations(userId);
 
-        verify(userRepository).getReferenceById(userId);
-        verify(recommendedPostRepository).findByUserOrderByRankAsc(testUser);
-        verify(recommendationConverter).toRecommendationListResponse(recommendedPosts);
-        verify(bookmarkRepository).findBookmarkedPostIds(userId, postIds);
-    }
+            // then
+            assertThat(response.recommendations()).hasSize(3);
+            assertThat(response.totalCount()).isEqualTo(3);
+            assertThat(response.recommendations().get(0).title()).isEqualTo("게시글 1");
+            assertThat(response.recommendations().get(0).isBookmarked()).isFalse();
 
-    @Test
-    @DisplayName("북마크한 게시글은 isBookmarked가 true로 설정된다")
-    void getRecommendations_withBookmarkedPosts() {
-        // given
-        Long userId = 1L;
-        List<RecommendedPost> recommendedPosts = List.of(
-                recommendedPost1, recommendedPost2, recommendedPost3
-        );
+            verify(userRepository).getReferenceById(userId);
+            verify(recommendedPostRepository).findByUserOrderByRankAsc(testUser);
+            verify(recommendationConverter).toRecommendationListResponse(recommendedPosts);
+            verify(bookmarkRepository).findBookmarkedPostIds(userId, postIds);
+        }
 
-        RecommendedPostDto dto1 = createRecommendedPostDto(1L, 101L, "게시글 1", "요약 1", null);
-        RecommendedPostDto dto2 = createRecommendedPostDto(2L, 102L, "게시글 2", "요약 2", null);
-        RecommendedPostDto dto3 = createRecommendedPostDto(3L, 103L, "게시글 3", "요약 3", null);
-        List<Long> postIds = List.of(101L, 102L, 103L);
+        @Test
+        @DisplayName("북마크한 게시글은 isBookmarked가 true로 설정된다")
+        void bookmarkedPostsExist_ReturnsBookmarkedRecommendations() {
+            // given
+            Long userId = 1L;
+            List<RecommendedPost> recommendedPosts = List.of(
+                    recommendedPost1, recommendedPost2, recommendedPost3
+            );
 
-        RecommendationListResponse initialResponse = RecommendationListResponse.builder()
-                .recommendations(List.of(dto1, dto2, dto3))
-                .totalCount(3)
-                .build();
+            RecommendedPostDto dto1 = createRecommendedPostDto(1L, 101L, "게시글 1", "요약 1", null);
+            RecommendedPostDto dto2 = createRecommendedPostDto(2L, 102L, "게시글 2", "요약 2", null);
+            RecommendedPostDto dto3 = createRecommendedPostDto(3L, 103L, "게시글 3", "요약 3", null);
+            List<Long> postIds = List.of(101L, 102L, 103L);
 
-        // 101L, 103L 게시글은 북마크됨
-        List<Long> bookmarkedPostIds = List.of(101L, 103L);
+            RecommendationListResponse initialResponse = RecommendationListResponse.builder()
+                    .recommendations(List.of(dto1, dto2, dto3))
+                    .totalCount(3)
+                    .build();
 
-        given(userRepository.getReferenceById(userId)).willReturn(testUser);
-        given(recommendedPostRepository.findByUserOrderByRankAsc(testUser)).willReturn(recommendedPosts);
-        given(recommendationConverter.toRecommendationListResponse(recommendedPosts)).willReturn(initialResponse);
-        given(bookmarkRepository.findBookmarkedPostIds(userId, postIds)).willReturn(bookmarkedPostIds);
+            // 101L, 103L 게시글은 북마크됨
+            List<Long> bookmarkedPostIds = List.of(101L, 103L);
 
-        // when
-        RecommendationListResponse response = recommendationQueryService.getRecommendations(userId);
+            given(userRepository.getReferenceById(userId)).willReturn(testUser);
+            given(recommendedPostRepository.findByUserOrderByRankAsc(testUser)).willReturn(recommendedPosts);
+            given(recommendationConverter.toRecommendationListResponse(recommendedPosts)).willReturn(initialResponse);
+            given(bookmarkRepository.findBookmarkedPostIds(userId, postIds)).willReturn(bookmarkedPostIds);
 
-        // then
-        assertThat(response.recommendations()).hasSize(3);
-        assertThat(response.recommendations().get(0).postId()).isEqualTo(101L);
-        assertThat(response.recommendations().get(0).isBookmarked()).isTrue();
-        assertThat(response.recommendations().get(1).postId()).isEqualTo(102L);
-        assertThat(response.recommendations().get(1).isBookmarked()).isFalse();
-        assertThat(response.recommendations().get(2).postId()).isEqualTo(103L);
-        assertThat(response.recommendations().get(2).isBookmarked()).isTrue();
-        verify(bookmarkRepository).findBookmarkedPostIds(userId, postIds);
-    }
+            // when
+            RecommendationListResponse response = recommendationQueryService.getRecommendations(userId);
 
-    @Test
-    @DisplayName("추천 게시글이 없으면 빈 리스트를 반환한다")
-    void getRecommendations_emptyList() {
-        // given
-        Long userId = 1L;
-        List<RecommendedPost> emptyList = List.of();
+            // then
+            assertThat(response.recommendations()).hasSize(3);
+            assertThat(response.recommendations().get(0).postId()).isEqualTo(101L);
+            assertThat(response.recommendations().get(0).isBookmarked()).isTrue();
+            assertThat(response.recommendations().get(1).postId()).isEqualTo(102L);
+            assertThat(response.recommendations().get(1).isBookmarked()).isFalse();
+            assertThat(response.recommendations().get(2).postId()).isEqualTo(103L);
+            assertThat(response.recommendations().get(2).isBookmarked()).isTrue();
+            verify(bookmarkRepository).findBookmarkedPostIds(userId, postIds);
+        }
 
-        RecommendationListResponse emptyResponse = RecommendationListResponse.builder()
-                .recommendations(List.of())
-                .totalCount(0)
-                .build();
+        @Test
+        @DisplayName("추천 게시글이 없으면 빈 리스트를 반환한다")
+        void noRecommendations_ReturnsEmptyList() {
+            // given
+            Long userId = 1L;
+            List<RecommendedPost> emptyList = List.of();
 
-        given(userRepository.getReferenceById(userId)).willReturn(testUser);
-        given(recommendedPostRepository.findByUserOrderByRankAsc(testUser)).willReturn(emptyList);
-        given(recommendationConverter.toRecommendationListResponse(emptyList)).willReturn(emptyResponse);
+            RecommendationListResponse emptyResponse = RecommendationListResponse.builder()
+                    .recommendations(List.of())
+                    .totalCount(0)
+                    .build();
 
-        // when
-        RecommendationListResponse response = recommendationQueryService.getRecommendations(userId);
+            given(userRepository.getReferenceById(userId)).willReturn(testUser);
+            given(recommendedPostRepository.findByUserOrderByRankAsc(testUser)).willReturn(emptyList);
+            given(recommendationConverter.toRecommendationListResponse(emptyList)).willReturn(emptyResponse);
 
-        // then
-        assertThat(response.recommendations()).isEmpty();
-        assertThat(response.totalCount()).isZero();
+            // when
+            RecommendationListResponse response = recommendationQueryService.getRecommendations(userId);
 
-        verify(userRepository).getReferenceById(userId);
-        verify(recommendedPostRepository).findByUserOrderByRankAsc(testUser);
-        verify(recommendationConverter).toRecommendationListResponse(emptyList);
-        verify(bookmarkRepository, never()).findBookmarkedPostIds(any(), any());
+            // then
+            assertThat(response.recommendations()).isEmpty();
+            assertThat(response.totalCount()).isZero();
+
+            verify(userRepository).getReferenceById(userId);
+            verify(recommendedPostRepository).findByUserOrderByRankAsc(testUser);
+            verify(recommendationConverter).toRecommendationListResponse(emptyList);
+            verify(bookmarkRepository, never()).findBookmarkedPostIds(any(), any());
+        }
     }
 
     private RecommendedPostDto createRecommendedPostDto(
