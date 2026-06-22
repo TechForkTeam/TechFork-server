@@ -3,10 +3,11 @@ package com.techfork.post.integration;
 import com.techfork.activity.bookmark.domain.Bookmark;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.fixture.TechBlogFixture;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
-import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.auth.security.jwt.JwtUtil;
@@ -60,11 +61,7 @@ class PostIntegrationTest extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() {
-        testTechBlog = TechBlog.builder()
-                .companyName("테스트 회사")
-                .blogUrl("https://test.com")
-                .rssUrl("https://test.com/rss")
-                .build();
+        testTechBlog = TechBlogFixture.createTechBlog("테스트 회사", "https://test.com", "https://test.com/rss", null);
         techBlogRepository.save(testTechBlog);
 
         testPost1 = Post.builder()
@@ -107,7 +104,7 @@ class PostIntegrationTest extends IntegrationTestBase {
 
     @BeforeEach
     void setUpUser() {
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", "profile.jpg");
+        testUser = UserFixture.socialUser("testSocialId", "test@example.com");
         testUser = userRepository.save(testUser);
         accessToken = jwtUtil.generateTokens(testUser.getId(), Role.USER).accessToken();
         bookmarkRepository.save(Bookmark.create(testUser, testPost1, LocalDateTime.now()));

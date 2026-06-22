@@ -3,10 +3,11 @@ package com.techfork.post.integration;
 import com.techfork.activity.bookmark.domain.Bookmark;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.fixture.TechBlogFixture;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
-import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.auth.security.jwt.JwtUtil;
@@ -58,24 +59,14 @@ class PostV2IntegrationTest extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() {
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", "profile.jpg");
+        testUser = UserFixture.socialUser("testSocialId", "test@example.com");
         testUser = userRepository.save(testUser);
         accessToken = jwtUtil.generateTokens(testUser.getId(), Role.USER).accessToken();
 
-        testTechBlog1 = TechBlog.builder()
-                .companyName("카카오")
-                .blogUrl("https://kakao.com")
-                .rssUrl("https://kakao.com/rss")
-                .logoUrl("https://kakao.com/logo.png")
-                .build();
+        testTechBlog1 = TechBlogFixture.createTechBlog("카카오", "https://kakao.com");
         techBlogRepository.save(testTechBlog1);
 
-        testTechBlog2 = TechBlog.builder()
-                .companyName("네이버")
-                .blogUrl("https://naver.com")
-                .rssUrl("https://naver.com/rss")
-                .logoUrl("https://naver.com/logo.png")
-                .build();
+        testTechBlog2 = TechBlogFixture.createTechBlog("네이버", "https://naver.com");
         techBlogRepository.save(testTechBlog2);
 
         todayPost = Post.builder()

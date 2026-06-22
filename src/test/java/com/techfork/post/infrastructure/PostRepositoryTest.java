@@ -5,6 +5,7 @@ import com.techfork.post.infrastructure.row.PostDetailRow;
 import com.techfork.post.infrastructure.row.PostInfoRow;
 import com.techfork.post.domain.Post;
 import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.fixture.TechBlogFixture;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,25 +51,13 @@ class PostRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        techBlog1 = TechBlog.builder()
-                .companyName("카카오")
-                .blogUrl("https://kakao.com/blog")
-                .rssUrl("https://kakao.com/rss")
-                .build();
+        techBlog1 = TechBlogFixture.createTechBlog("카카오", "https://kakao.com/blog", "https://kakao.com/rss", null);
         techBlogRepository.save(techBlog1);
 
-        techBlog2 = TechBlog.builder()
-                .companyName("네이버")
-                .blogUrl("https://naver.com/blog")
-                .rssUrl("https://naver.com/rss")
-                .build();
+        techBlog2 = TechBlogFixture.createTechBlog("네이버", "https://naver.com/blog", "https://naver.com/rss", null);
         techBlogRepository.save(techBlog2);
 
-        techBlog3 = TechBlog.builder()
-                .companyName("AWS")
-                .blogUrl("https://aws.com/blog")
-                .rssUrl("https://aws.com/rss")
-                .build();
+        techBlog3 = TechBlogFixture.createTechBlog("AWS", "https://aws.com/blog", "https://aws.com/rss", null);
         techBlogRepository.save(techBlog3);
     }
 

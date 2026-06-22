@@ -1,8 +1,9 @@
 package com.techfork.post.infrastructure.batch;
 
 import com.techfork.post.domain.Post;
-import com.techfork.domain.source.dto.RssFeedItem;
+import com.techfork.post.fixture.PostFixture;
 import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.fixture.TechBlogFixture;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.post.infrastructure.PostRepository;
 import jakarta.persistence.EntityManager;
@@ -38,14 +39,12 @@ class PostSummaryReaderDataJpaTest {
 
     @BeforeEach
     void setUp() {
-        techBlog = techBlogRepository.save(
-                TechBlog.create(
-                        "TechFork",
-                        "https://techfork.example.com",
-                        "https://techfork.example.com/rss",
-                        "https://cdn.example.com/logo.png"
-                )
-        );
+        techBlog = techBlogRepository.save(TechBlogFixture.createTechBlog(
+                "TechFork",
+                "https://techfork.example.com",
+                "https://techfork.example.com/rss",
+                "https://cdn.example.com/logo.png"
+        ));
     }
 
     @Nested
@@ -109,21 +108,17 @@ class PostSummaryReaderDataJpaTest {
     }
 
     private Post savePost(String suffix, String summary, String shortSummary, List<String> keywords) {
-        Post post = Post.create(
-                RssFeedItem.builder()
-                        .title("요약 대상 글 " + suffix)
-                        .url("https://posts.example.com/" + suffix)
-                        .logoUrl("https://cdn.example.com/logo-" + suffix + ".png")
-                        .thumbnailUrl("https://cdn.example.com/thumb-" + suffix + ".png")
-                        .content("원문 본문 " + suffix)
-                        .plainContent("평문 본문 " + suffix)
-                        .publishedAt(LocalDateTime.of(2026, 5, 10, 10, 0))
-                        .company("TechFork")
-                        .techBlogId(techBlog.getId())
-                        .build(),
-                techBlog
+        Post post = PostFixture.createPost(
+                techBlog,
+                "요약 대상 글 " + suffix,
+                "원문 본문 " + suffix,
+                "평문 본문 " + suffix,
+                summary,
+                shortSummary,
+                "https://cdn.example.com/thumb-" + suffix + ".png",
+                "https://posts.example.com/" + suffix,
+                LocalDateTime.of(2026, 5, 10, 10, 0)
         );
-        post.updateSummaries(summary, shortSummary);
         post.replaceKeywords(keywords);
         return postRepository.saveAndFlush(post);
     }
