@@ -2,6 +2,7 @@ package com.techfork.activity.bookmark.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techfork.activity.bookmark.domain.Bookmark;
+import com.techfork.activity.bookmark.fixture.BookmarkFixture;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.activity.bookmark.presentation.BookmarkRequest;
 import com.techfork.post.domain.Post;
@@ -133,7 +134,7 @@ class BookmarkIntegrationTest extends IntegrationTestBase {
             @Test
             @DisplayName("이미 북마크한 게시글")
             void addBookmark_Fail_AlreadyExists() throws Exception {
-                Bookmark existingBookmark = Bookmark.create(testUser, testPost1, LocalDateTime.now());
+                Bookmark existingBookmark = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now());
                 bookmarkRepository.save(existingBookmark);
 
                 BookmarkRequest request = new BookmarkRequest(testPost1.getId());
@@ -175,7 +176,7 @@ class BookmarkIntegrationTest extends IntegrationTestBase {
             @Test
             @DisplayName("북마크 삭제 성공")
             void deleteBookmark_Success() throws Exception {
-                Bookmark bookmark = Bookmark.create(testUser, testPost1, LocalDateTime.now());
+                Bookmark bookmark = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now());
                 bookmarkRepository.save(bookmark);
 
                 BookmarkRequest request = new BookmarkRequest(testPost1.getId());
@@ -239,8 +240,8 @@ class BookmarkIntegrationTest extends IntegrationTestBase {
             @Test
             @DisplayName("여러 개")
             void getBookmarks_Success_Multiple() throws Exception {
-                Bookmark bookmark1 = Bookmark.create(testUser, testPost1, LocalDateTime.now().minusHours(1));
-                Bookmark bookmark2 = Bookmark.create(testUser, testPost2, LocalDateTime.now());
+                Bookmark bookmark1 = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now().minusHours(1));
+                Bookmark bookmark2 = BookmarkFixture.createBookmark(testUser, testPost2, LocalDateTime.now());
                 bookmarkRepository.save(bookmark1);
                 bookmarkRepository.save(bookmark2);
 
@@ -270,8 +271,8 @@ class BookmarkIntegrationTest extends IntegrationTestBase {
             @Test
             @DisplayName("커서 기반 페이징")
             void getBookmarks_Success_WithCursor() throws Exception {
-                Bookmark bookmark1 = Bookmark.create(testUser, testPost1, LocalDateTime.now().minusHours(2));
-                Bookmark bookmark2 = Bookmark.create(testUser, testPost2, LocalDateTime.now().minusHours(1));
+                Bookmark bookmark1 = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now().minusHours(2));
+                Bookmark bookmark2 = BookmarkFixture.createBookmark(testUser, testPost2, LocalDateTime.now().minusHours(1));
                 bookmarkRepository.save(bookmark1);
                 bookmarkRepository.save(bookmark2);
 

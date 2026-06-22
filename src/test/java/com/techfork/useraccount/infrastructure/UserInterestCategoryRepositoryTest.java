@@ -6,6 +6,8 @@ import com.techfork.useraccount.domain.UserInterestKeyword;
 import com.techfork.useraccount.domain.enums.EInterestCategory;
 import com.techfork.useraccount.domain.enums.EInterestKeyword;
 import com.techfork.useraccount.fixture.UserFixture;
+import com.techfork.useraccount.fixture.UserInterestCategoryFixture;
+import com.techfork.useraccount.fixture.UserInterestKeywordFixture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,15 +44,17 @@ class UserInterestCategoryRepositoryTest {
     @DisplayName("findByUserIdWithKeywords - 키워드와 함께 조회 성공")
     void findByUserIdWithKeywords_Success() {
         // Given: 카테고리와 키워드 생성
-        UserInterestCategory backendCategory = UserInterestCategory.create(testUser, EInterestCategory.BACKEND);
-        UserInterestKeyword javaKeyword = UserInterestKeyword.create(backendCategory, EInterestKeyword.JAVA);
-        UserInterestKeyword springKeyword = UserInterestKeyword.create(backendCategory, EInterestKeyword.SPRING);
-        backendCategory.addKeyword(javaKeyword);
-        backendCategory.addKeyword(springKeyword);
-
-        UserInterestCategory databaseCategory = UserInterestCategory.create(testUser, EInterestCategory.DATABASE);
-        UserInterestKeyword mysqlKeyword = UserInterestKeyword.create(databaseCategory, EInterestKeyword.MYSQL);
-        databaseCategory.addKeyword(mysqlKeyword);
+        UserInterestCategory backendCategory = UserInterestCategoryFixture.interestCategory(
+                testUser,
+                EInterestCategory.BACKEND,
+                EInterestKeyword.JAVA,
+                EInterestKeyword.SPRING
+        );
+        UserInterestCategory databaseCategory = UserInterestCategoryFixture.interestCategory(
+                testUser,
+                EInterestCategory.DATABASE,
+                EInterestKeyword.MYSQL
+        );
 
         userInterestCategoryRepository.saveAll(List.of(backendCategory, databaseCategory));
 
@@ -81,7 +85,7 @@ class UserInterestCategoryRepositoryTest {
     @DisplayName("findByUserIdWithKeywords - 키워드 없는 카테고리도 조회")
     void findByUserIdWithKeywords_CategoryWithoutKeywords_Success() {
         // Given: 키워드 없이 카테고리만 생성
-        UserInterestCategory aiCategory = UserInterestCategory.create(testUser, EInterestCategory.AI_ML);
+        UserInterestCategory aiCategory = UserInterestCategoryFixture.interestCategory(testUser, EInterestCategory.AI_ML);
         userInterestCategoryRepository.save(aiCategory);
 
         // When
@@ -107,14 +111,19 @@ class UserInterestCategoryRepositoryTest {
     @DisplayName("findByUserIdWithKeywords - N+1 문제 없이 조회 (fetch join)")
     void findByUserIdWithKeywords_NoNPlusOne() {
         // Given: 여러 카테고리와 키워드 생성
-        UserInterestCategory backendCategory = UserInterestCategory.create(testUser, EInterestCategory.BACKEND);
-        backendCategory.addKeyword(UserInterestKeyword.create(backendCategory, EInterestKeyword.JAVA));
-        backendCategory.addKeyword(UserInterestKeyword.create(backendCategory, EInterestKeyword.SPRING));
-        backendCategory.addKeyword(UserInterestKeyword.create(backendCategory, EInterestKeyword.PYTHON));
-
-        UserInterestCategory frontendCategory = UserInterestCategory.create(testUser, EInterestCategory.FRONTEND);
-        frontendCategory.addKeyword(UserInterestKeyword.create(frontendCategory, EInterestKeyword.REACT));
-        frontendCategory.addKeyword(UserInterestKeyword.create(frontendCategory, EInterestKeyword.TYPESCRIPT));
+        UserInterestCategory backendCategory = UserInterestCategoryFixture.interestCategory(
+                testUser,
+                EInterestCategory.BACKEND,
+                EInterestKeyword.JAVA,
+                EInterestKeyword.SPRING,
+                EInterestKeyword.PYTHON
+        );
+        UserInterestCategory frontendCategory = UserInterestCategoryFixture.interestCategory(
+                testUser,
+                EInterestCategory.FRONTEND,
+                EInterestKeyword.REACT,
+                EInterestKeyword.TYPESCRIPT
+        );
 
         userInterestCategoryRepository.saveAll(List.of(backendCategory, frontendCategory));
 
@@ -138,10 +147,13 @@ class UserInterestCategoryRepositoryTest {
     @DisplayName("findByUserIdWithKeywords - DISTINCT로 중복 제거")
     void findByUserIdWithKeywords_DistinctCategories() {
         // Given: 키워드가 여러 개인 카테고리
-        UserInterestCategory category = UserInterestCategory.create(testUser, EInterestCategory.DEVOPS);
-        category.addKeyword(UserInterestKeyword.create(category, EInterestKeyword.DOCKER));
-        category.addKeyword(UserInterestKeyword.create(category, EInterestKeyword.KUBERNETES));
-        category.addKeyword(UserInterestKeyword.create(category, EInterestKeyword.CI_CD));
+        UserInterestCategory category = UserInterestCategoryFixture.interestCategory(
+                testUser,
+                EInterestCategory.DEVOPS,
+                EInterestKeyword.DOCKER,
+                EInterestKeyword.KUBERNETES,
+                EInterestKeyword.CI_CD
+        );
         userInterestCategoryRepository.save(category);
 
         // When
@@ -159,8 +171,8 @@ class UserInterestCategoryRepositoryTest {
         User anotherUser = UserFixture.socialUser("anotherSocialId", "another@example.com", null);
         anotherUser = userRepository.save(anotherUser);
 
-        UserInterestCategory testUserCategory = UserInterestCategory.create(testUser, EInterestCategory.BACKEND);
-        UserInterestCategory anotherUserCategory = UserInterestCategory.create(anotherUser, EInterestCategory.FRONTEND);
+        UserInterestCategory testUserCategory = UserInterestCategoryFixture.interestCategory(testUser, EInterestCategory.BACKEND);
+        UserInterestCategory anotherUserCategory = UserInterestCategoryFixture.interestCategory(anotherUser, EInterestCategory.FRONTEND);
         userInterestCategoryRepository.saveAll(List.of(testUserCategory, anotherUserCategory));
 
         // When: testUser의 관심사만 조회
@@ -175,9 +187,12 @@ class UserInterestCategoryRepositoryTest {
     @DisplayName("cascade 테스트 - 카테고리 삭제 시 키워드도 함께 삭제")
     void cascade_DeleteCategory_DeletesKeywords() {
         // Given
-        UserInterestCategory category = UserInterestCategory.create(testUser, EInterestCategory.BACKEND);
-        category.addKeyword(UserInterestKeyword.create(category, EInterestKeyword.JAVA));
-        category.addKeyword(UserInterestKeyword.create(category, EInterestKeyword.SPRING));
+        UserInterestCategory category = UserInterestCategoryFixture.interestCategory(
+                testUser,
+                EInterestCategory.BACKEND,
+                EInterestKeyword.JAVA,
+                EInterestKeyword.SPRING
+        );
         category = userInterestCategoryRepository.save(category);
 
         Long categoryId = category.getId();
@@ -194,8 +209,8 @@ class UserInterestCategoryRepositoryTest {
     @DisplayName("양방향 매핑 - 키워드 추가 시 양쪽 관계 설정")
     void bidirectionalMapping_AddKeyword_SetsBothSides() {
         // Given
-        UserInterestCategory category = UserInterestCategory.create(testUser, EInterestCategory.BACKEND);
-        UserInterestKeyword keyword = UserInterestKeyword.create(category, EInterestKeyword.JAVA);
+        UserInterestCategory category = UserInterestCategoryFixture.interestCategory(testUser, EInterestCategory.BACKEND);
+        UserInterestKeyword keyword = UserInterestKeywordFixture.interestKeyword(category, EInterestKeyword.JAVA);
 
         // When: addKeyword 메서드 사용
         category.addKeyword(keyword);

@@ -74,6 +74,32 @@ public final class PostFixture {
             String url,
             LocalDateTime publishedAt
     ) {
+        return createPost(
+                techBlog,
+                title,
+                fullContent,
+                plainContent,
+                summary,
+                shortSummary,
+                techBlog.getLogoUrl(),
+                thumbnailUrl,
+                url,
+                publishedAt
+        );
+    }
+
+    public static Post createPost(
+            TechBlog techBlog,
+            String title,
+            String fullContent,
+            String plainContent,
+            String summary,
+            String shortSummary,
+            String logoUrl,
+            String thumbnailUrl,
+            String url,
+            LocalDateTime publishedAt
+    ) {
         return Post.builder()
                 .title(title)
                 .fullContent(fullContent)
@@ -81,7 +107,7 @@ public final class PostFixture {
                 .summary(summary)
                 .shortSummary(shortSummary)
                 .company(techBlog.getCompanyName())
-                .logoUrl(techBlog.getLogoUrl())
+                .logoUrl(logoUrl)
                 .thumbnailUrl(thumbnailUrl)
                 .url(url)
                 .publishedAt(publishedAt)

@@ -1,6 +1,7 @@
 package com.techfork.activity.readpost.infrastructure;
 
 import com.techfork.activity.readpost.domain.ReadPost;
+import com.techfork.activity.readpost.fixture.ReadPostFixture;
 import com.techfork.post.domain.Post;
 import com.techfork.post.fixture.PostFixture;
 import com.techfork.post.infrastructure.PostRepository;
@@ -75,8 +76,8 @@ class ReadPostRepositoryTest {
     @Test
     @DisplayName("최근 읽은 게시글 조회 - readDurationSeconds 10초 초과 필터링")
     void findRecentReadPostsByUserIdWithMinDuration() {
-        ReadPost readPost1 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(2), 5);
-        ReadPost readPost2 = ReadPost.create(testUser, testPost2, LocalDateTime.now(), null);
+        ReadPost readPost1 = ReadPostFixture.createReadPost(testUser, testPost1, LocalDateTime.now().minusHours(2), 5);
+        ReadPost readPost2 = ReadPostFixture.createReadPost(testUser, testPost2, LocalDateTime.now(), null);
         readPostRepository.saveAll(List.of(readPost1, readPost2));
 
         List<ReadPost> result = readPostRepository.findRecentReadPostsByUserIdWithMinDuration(testUser.getId(), PageRequest.of(0, 10));
@@ -88,8 +89,8 @@ class ReadPostRepositoryTest {
     @Test
     @DisplayName("같은 게시글은 중복 저장 가능하다")
     void saveDuplicateReadPost_Success() {
-        ReadPost readPost1 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(1), 100);
-        ReadPost readPost2 = ReadPost.create(testUser, testPost1, LocalDateTime.now(), 200);
+        ReadPost readPost1 = ReadPostFixture.createReadPost(testUser, testPost1, LocalDateTime.now().minusHours(1), 100);
+        ReadPost readPost2 = ReadPostFixture.createReadPost(testUser, testPost1, LocalDateTime.now(), 200);
 
         readPostRepository.save(readPost1);
         readPostRepository.save(readPost2);
@@ -104,9 +105,9 @@ class ReadPostRepositoryTest {
     @Test
     @DisplayName("읽은 게시글 목록 조회 - 동일 포스트 중복 제거 및 최신순 정렬 확인")
     void findReadPostsWithCursor_DeduplicateByPostId_Success() {
-        ReadPost read1 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(2), 100);
-        ReadPost read2 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(1), 100);
-        ReadPost read3 = ReadPost.create(testUser, testPost2, LocalDateTime.now(), 100);
+        ReadPost read1 = ReadPostFixture.createReadPost(testUser, testPost1, LocalDateTime.now().minusHours(2), 100);
+        ReadPost read2 = ReadPostFixture.createReadPost(testUser, testPost1, LocalDateTime.now().minusHours(1), 100);
+        ReadPost read3 = ReadPostFixture.createReadPost(testUser, testPost2, LocalDateTime.now(), 100);
 
         readPostRepository.saveAll(List.of(read1, read2, read3));
 
@@ -121,8 +122,8 @@ class ReadPostRepositoryTest {
     @Test
     @DisplayName("읽은 게시글 목록 조회 - lastReadPostId 커서를 적용한다")
     void findReadPostsWithCursor_ApplyCursorBoundary() {
-        ReadPost read1 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(2), 100);
-        ReadPost read2 = ReadPost.create(testUser, testPost2, LocalDateTime.now().minusHours(1), 100);
+        ReadPost read1 = ReadPostFixture.createReadPost(testUser, testPost1, LocalDateTime.now().minusHours(2), 100);
+        ReadPost read2 = ReadPostFixture.createReadPost(testUser, testPost2, LocalDateTime.now().minusHours(1), 100);
 
         readPostRepository.saveAll(List.of(read1, read2));
         readPostRepository.flush();

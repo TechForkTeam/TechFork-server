@@ -3,6 +3,7 @@ package com.techfork.personalization.application;
 import com.techfork.personalization.application.event.PersonalizedProfileGeneratedEvent;
 import com.techfork.personalization.application.generation.PersonalizedProfileGenerator;
 import com.techfork.personalization.infrastructure.PersonalizationProfileDocument;
+import com.techfork.personalization.fixture.PersonalizationProfileDocumentFixture;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,7 @@ class PersonalizationProfileServiceTest {
     void generatePersonalizationProfileSync_PublishesProfileGeneratedEventAfterProfileGeneration() {
         Long userId = 1L;
         float[] profileVector = new float[]{0.1f, 0.2f};
-        PersonalizationProfileDocument profileDocument = PersonalizationProfileDocument.create(
+        PersonalizationProfileDocument profileDocument = PersonalizationProfileDocumentFixture.personalizationProfileDocument(
                 userId,
                 "Spring과 JPA 기반 백엔드 관심 프로필",
                 profileVector,

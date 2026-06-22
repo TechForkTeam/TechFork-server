@@ -12,6 +12,7 @@ import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.auth.security.jwt.JwtUtil;
 import com.techfork.post.domain.Post;
+import com.techfork.post.fixture.PostFixture;
 import com.techfork.post.infrastructure.PostRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -69,36 +70,30 @@ class PostV2IntegrationTest extends IntegrationTestBase {
         testTechBlog2 = TechBlogFixture.createTechBlog("네이버", "https://naver.com");
         techBlogRepository.save(testTechBlog2);
 
-        todayPost = Post.builder()
-                .title("오늘의 게시글")
-                .fullContent("<p>오늘 내용</p>")
-                .plainContent("오늘 내용")
-                .summary("오늘 요약")
-                .shortSummary("오늘 짧은 요약")
-                .company("카카오")
-                .url("https://kakao.com/post/today")
-                .logoUrl("https://kakao.com/logo.png")
-                .thumbnailUrl("https://kakao.com/thumbnail.png")
-                .publishedAt(LocalDate.now().atStartOfDay())
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testTechBlog1)
-                .build();
+        todayPost = PostFixture.createPost(
+                testTechBlog1,
+                "오늘의 게시글",
+                "<p>오늘 내용</p>",
+                "오늘 내용",
+                "오늘 요약",
+                "오늘 짧은 요약",
+                "https://kakao.com/thumbnail.png",
+                "https://kakao.com/post/today",
+                LocalDate.now().atStartOfDay()
+        );
         postRepository.save(todayPost);
 
-        oldPost = Post.builder()
-                .title("어제의 게시글")
-                .fullContent("<p>어제 내용</p>")
-                .plainContent("어제 내용")
-                .summary("어제 요약")
-                .shortSummary("어제 짧은 요약")
-                .company("네이버")
-                .url("https://naver.com/post/old")
-                .logoUrl("https://naver.com/logo.png")
-                .thumbnailUrl("https://naver.com/thumbnail.png")
-                .publishedAt(LocalDate.now().minusDays(1).atStartOfDay())
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testTechBlog2)
-                .build();
+        oldPost = PostFixture.createPost(
+                testTechBlog2,
+                "어제의 게시글",
+                "<p>어제 내용</p>",
+                "어제 내용",
+                "어제 요약",
+                "어제 짧은 요약",
+                "https://naver.com/thumbnail.png",
+                "https://naver.com/post/old",
+                LocalDate.now().minusDays(1).atStartOfDay()
+        );
         postRepository.save(oldPost);
 
         bookmarkRepository.save(BookmarkFixture.createBookmark(testUser, todayPost, LocalDateTime.now()));
@@ -147,17 +142,17 @@ class PostV2IntegrationTest extends IntegrationTestBase {
         @Test
         @DisplayName("발행일 기준 정렬 확인")
         void getCompanies_SortedByLatestPublishedAt() throws Exception {
-            Post newerPost = Post.builder()
-                    .title("최신 네이버 게시글")
-                    .fullContent("<p>최신 내용</p>")
-                    .plainContent("최신 내용")
-                    .company("네이버")
-                    .url("https://naver.com/post/newest")
-                    .logoUrl("https://naver.com/logo.png")
-                    .publishedAt(LocalDateTime.now())
-                    .crawledAt(LocalDateTime.now())
-                    .techBlog(testTechBlog2)
-                    .build();
+            Post newerPost = PostFixture.createPost(
+                    testTechBlog2,
+                    "최신 네이버 게시글",
+                    "<p>최신 내용</p>",
+                    "최신 내용",
+                    null,
+                    null,
+                    null,
+                    "https://naver.com/post/newest",
+                    LocalDateTime.now()
+            );
             postRepository.save(newerPost);
 
             mockMvc.perform(get("/api/v2/posts/companies"))
@@ -227,18 +222,17 @@ class PostV2IntegrationTest extends IntegrationTestBase {
         @DisplayName("커서 페이징")
         void getPostsByCompany_CursorPaging_Success() throws Exception {
             for (int i = 1; i <= 5; i++) {
-                postRepository.save(Post.builder()
-                        .title("카카오 게시글 " + i)
-                        .fullContent("<p>내용 " + i + "</p>")
-                        .plainContent("내용 " + i)
-                        .company("카카오")
-                        .url("https://kakao.com/post/" + i)
-                        .logoUrl("https://kakao.com/logo.png")
-                        .thumbnailUrl("https://kakao.com/thumbnail.png")
-                        .publishedAt(LocalDateTime.now().minusHours(i))
-                        .crawledAt(LocalDateTime.now())
-                        .techBlog(testTechBlog1)
-                        .build());
+                postRepository.save(PostFixture.createPost(
+                        testTechBlog1,
+                        "카카오 게시글 " + i,
+                        "<p>내용 " + i + "</p>",
+                        "내용 " + i,
+                        null,
+                        null,
+                        "https://kakao.com/thumbnail.png",
+                        "https://kakao.com/post/" + i,
+                        LocalDateTime.now().minusHours(i)
+                ));
             }
 
             mockMvc.perform(get("/api/v2/posts/by-company")
@@ -266,18 +260,17 @@ class PostV2IntegrationTest extends IntegrationTestBase {
         @Test
         @DisplayName("발행일 기준 정렬 확인")
         void getPostsByCompany_SortedByPublishedAt() throws Exception {
-            postRepository.save(Post.builder()
-                    .title("최신 게시글")
-                    .fullContent("<p>최신</p>")
-                    .plainContent("최신")
-                    .company("카카오")
-                    .url("https://kakao.com/post/recent")
-                    .logoUrl("https://kakao.com/logo.png")
-                    .thumbnailUrl("https://kakao.com/thumbnail.png")
-                    .publishedAt(LocalDateTime.now())
-                    .crawledAt(LocalDateTime.now())
-                    .techBlog(testTechBlog1)
-                    .build());
+            postRepository.save(PostFixture.createPost(
+                    testTechBlog1,
+                    "최신 게시글",
+                    "<p>최신</p>",
+                    "최신",
+                    null,
+                    null,
+                    "https://kakao.com/thumbnail.png",
+                    "https://kakao.com/post/recent",
+                    LocalDateTime.now()
+            ));
 
             mockMvc.perform(get("/api/v2/posts/by-company")
                             .param("companies", "카카오")
@@ -385,18 +378,17 @@ class PostV2IntegrationTest extends IntegrationTestBase {
         @DisplayName("LATEST 커서 페이징")
         void getRecentPosts_Latest_CursorPaging() throws Exception {
             for (int i = 1; i <= 5; i++) {
-                postRepository.save(Post.builder()
-                        .title("게시글 " + i)
-                        .fullContent("<p>내용 " + i + "</p>")
-                        .plainContent("내용 " + i)
-                        .company("카카오")
-                        .url("https://kakao.com/post/" + i)
-                        .logoUrl("https://kakao.com/logo.png")
-                        .thumbnailUrl("https://kakao.com/thumbnail.png")
-                        .publishedAt(LocalDateTime.now().minusHours(i + 1))
-                        .crawledAt(LocalDateTime.now())
-                        .techBlog(testTechBlog1)
-                        .build());
+                postRepository.save(PostFixture.createPost(
+                        testTechBlog1,
+                        "게시글 " + i,
+                        "<p>내용 " + i + "</p>",
+                        "내용 " + i,
+                        null,
+                        null,
+                        "https://kakao.com/thumbnail.png",
+                        "https://kakao.com/post/" + i,
+                        LocalDateTime.now().minusHours(i + 1)
+                ));
             }
 
             mockMvc.perform(get("/api/v2/posts/recent")
@@ -412,18 +404,17 @@ class PostV2IntegrationTest extends IntegrationTestBase {
         @DisplayName("POPULAR 커서 페이징")
         void getRecentPosts_Popular_CursorPaging() throws Exception {
             for (int i = 1; i <= 5; i++) {
-                Post post = Post.builder()
-                        .title("인기 게시글 " + i)
-                        .fullContent("<p>내용 " + i + "</p>")
-                        .plainContent("내용 " + i)
-                        .company("카카오")
-                        .url("https://kakao.com/post/popular/" + i)
-                        .logoUrl("https://kakao.com/logo.png")
-                        .thumbnailUrl("https://kakao.com/thumbnail.png")
-                        .publishedAt(LocalDateTime.now().minusHours(i))
-                        .crawledAt(LocalDateTime.now())
-                        .techBlog(testTechBlog1)
-                        .build();
+                Post post = PostFixture.createPost(
+                        testTechBlog1,
+                        "인기 게시글 " + i,
+                        "<p>내용 " + i + "</p>",
+                        "내용 " + i,
+                        null,
+                        null,
+                        "https://kakao.com/thumbnail.png",
+                        "https://kakao.com/post/popular/" + i,
+                        LocalDateTime.now().minusHours(i)
+                );
                 setViewCount(post, (long) ((6 - i) * 100));
                 postRepository.save(post);
             }

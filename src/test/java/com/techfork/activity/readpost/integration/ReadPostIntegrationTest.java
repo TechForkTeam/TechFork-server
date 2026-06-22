@@ -2,9 +2,12 @@ package com.techfork.activity.readpost.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techfork.activity.bookmark.domain.Bookmark;
+import com.techfork.activity.bookmark.fixture.BookmarkFixture;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.activity.readpost.domain.FirstReadPost;
+import com.techfork.activity.readpost.fixture.FirstReadPostFixture;
 import com.techfork.activity.readpost.domain.ReadPost;
+import com.techfork.activity.readpost.fixture.ReadPostFixture;
 import com.techfork.activity.readpost.infrastructure.FirstReadPostRepository;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.activity.readpost.presentation.ReadPostRequest;
@@ -154,9 +157,9 @@ class ReadPostIntegrationTest extends IntegrationTestBase {
             void saveReadPost_Success_AlreadyRead() throws Exception {
                 LocalDateTime firstReadAt = LocalDateTime.of(2026, 5, 8, 14, 0);
                 LocalDateTime secondReadAt = LocalDateTime.of(2026, 5, 8, 15, 0);
-                ReadPost existingReadPost = ReadPost.create(testUser, testPost1, firstReadAt, 200);
+                ReadPost existingReadPost = ReadPostFixture.createReadPost(testUser, testPost1, firstReadAt, 200);
                 readPostRepository.save(existingReadPost);
-                firstReadPostRepository.save(FirstReadPost.create(testUser, testPost1, firstReadAt));
+                firstReadPostRepository.save(FirstReadPostFixture.createFirstReadPost(testUser, testPost1, firstReadAt));
 
                 Long currentViewCount = testPost1.getViewCount();
                 ReadPostRequest request = new ReadPostRequest(testPost1.getId(), secondReadAt, 400);
@@ -225,8 +228,8 @@ class ReadPostIntegrationTest extends IntegrationTestBase {
             @Test
             @DisplayName("여러 개")
             void getReadPosts_Success_Multiple() throws Exception {
-                ReadPost readPost1 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(2), 300);
-                ReadPost readPost2 = ReadPost.create(testUser, testPost2, LocalDateTime.now().minusHours(1), 150);
+                ReadPost readPost1 = ReadPostFixture.createReadPost(testUser, testPost1, LocalDateTime.now().minusHours(2), 300);
+                ReadPost readPost2 = ReadPostFixture.createReadPost(testUser, testPost2, LocalDateTime.now().minusHours(1), 150);
                 readPostRepository.save(readPost1);
                 readPostRepository.save(readPost2);
 
@@ -257,9 +260,9 @@ class ReadPostIntegrationTest extends IntegrationTestBase {
             @Test
             @DisplayName("동일 포스트는 중복 제거된다")
             void getReadPosts_Success_Deduplicated() throws Exception {
-                ReadPost readPost1 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(2), 300);
-                ReadPost readPost2 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(1), 400);
-                ReadPost readPost3 = ReadPost.create(testUser, testPost2, LocalDateTime.now(), 150);
+                ReadPost readPost1 = ReadPostFixture.createReadPost(testUser, testPost1, LocalDateTime.now().minusHours(2), 300);
+                ReadPost readPost2 = ReadPostFixture.createReadPost(testUser, testPost1, LocalDateTime.now().minusHours(1), 400);
+                ReadPost readPost3 = ReadPostFixture.createReadPost(testUser, testPost2, LocalDateTime.now(), 150);
                 readPostRepository.saveAll(List.of(readPost1, readPost2, readPost3));
 
                 mockMvc.perform(get("/api/v1/activities/read-posts")
@@ -276,12 +279,12 @@ class ReadPostIntegrationTest extends IntegrationTestBase {
             @Test
             @DisplayName("북마크 상태를 포함한다")
             void getReadPosts_Success_WithBookmarks() throws Exception {
-                ReadPost readPost1 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(2), 300);
-                ReadPost readPost2 = ReadPost.create(testUser, testPost2, LocalDateTime.now().minusHours(1), 150);
+                ReadPost readPost1 = ReadPostFixture.createReadPost(testUser, testPost1, LocalDateTime.now().minusHours(2), 300);
+                ReadPost readPost2 = ReadPostFixture.createReadPost(testUser, testPost2, LocalDateTime.now().minusHours(1), 150);
                 readPostRepository.save(readPost1);
                 readPostRepository.save(readPost2);
 
-                Bookmark bookmark = Bookmark.create(testUser, testPost2, LocalDateTime.now());
+                Bookmark bookmark = BookmarkFixture.createBookmark(testUser, testPost2, LocalDateTime.now());
                 bookmarkRepository.save(bookmark);
 
                 mockMvc.perform(get("/api/v1/activities/read-posts")
@@ -299,8 +302,8 @@ class ReadPostIntegrationTest extends IntegrationTestBase {
             @Test
             @DisplayName("커서 기반 페이징")
             void getReadPosts_Success_WithCursor() throws Exception {
-                ReadPost readPost1 = ReadPost.create(testUser, testPost1, LocalDateTime.now().minusHours(1), 300);
-                ReadPost readPost2 = ReadPost.create(testUser, testPost2, LocalDateTime.now().minusHours(2), 150);
+                ReadPost readPost1 = ReadPostFixture.createReadPost(testUser, testPost1, LocalDateTime.now().minusHours(1), 300);
+                ReadPost readPost2 = ReadPostFixture.createReadPost(testUser, testPost2, LocalDateTime.now().minusHours(2), 150);
                 readPostRepository.save(readPost1);
                 readPostRepository.save(readPost2);
 

@@ -7,10 +7,12 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.util.ObjectBuilder;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
+import com.techfork.personalization.fixture.PersonalizationProfileDocumentFixture;
 import com.techfork.personalization.infrastructure.PersonalizationProfileDocument;
 import com.techfork.personalization.infrastructure.PersonalizationProfileDocumentRepository;
 import com.techfork.global.elasticsearch.query.VectorQueryBuilder;
 import com.techfork.post.domain.projection.PostDocument;
+import com.techfork.post.fixture.PostDocumentFixture;
 import com.techfork.domain.recommendation.config.RecommendationProperties;
 import com.techfork.domain.recommendation.repository.RecommendedPostRepository;
 import com.techfork.domain.recommendation.repository.RecommendationHistoryRepository;
@@ -18,6 +20,7 @@ import com.techfork.post.domain.Post;
 import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.global.util.TimeDecayStrategy;
 import com.techfork.useraccount.domain.User;
+import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.fixture.UserFixture;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -34,7 +37,6 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -106,7 +108,7 @@ class LlmRecommendationServiceTest {
         Long userId = 9L;
         User user = createUser(userId);
         float[] profileVector = new float[]{0.1f, 0.2f};
-        PersonalizationProfileDocument personalizationProfile = PersonalizationProfileDocument.create(
+        PersonalizationProfileDocument personalizationProfile = PersonalizationProfileDocumentFixture.personalizationProfileDocument(
                 userId,
                 "Spring과 JPA 기반 백엔드 성능 개선에 관심이 높은 사용자",
                 profileVector,
@@ -353,26 +355,22 @@ class LlmRecommendationServiceTest {
             List<Float> summaryEmbedding,
             LocalDateTime publishedAt
     ) {
-        return PostDocument.builder()
-                .id(String.valueOf(postId))
-                .postId(postId)
-                .title("추천 문서 " + postId)
-                .summary("추천 요약 " + postId)
-                .shortSummary("짧은 추천 요약")
-                .company("TechFork")
-                .url("https://posts.example.com/" + postId)
-                .logoUrl("https://cdn.example.com/logo.png")
-                .thumbnailUrl("https://cdn.example.com/thumb.png")
-                .publishedAtString(publishedAt.toString())
-                .titleEmbedding(titleEmbedding)
-                .summaryEmbedding(summaryEmbedding)
-                .contentChunks(List.of())
-                .build();
+        return PostDocumentFixture.createPostDocument(
+                postId,
+                "추천 문서 " + postId,
+                titleEmbedding,
+                summaryEmbedding,
+                publishedAt
+        );
     }
 
     private User createUser(Long userId) {
-        User user = UserFixture.socialUser("social-" + userId, "user" + userId + "@example.com", null);
-        ReflectionTestUtils.setField(user, "id", userId);
-        return user;
+        return UserFixture.socialUserWithId(
+                userId,
+                SocialType.KAKAO,
+                "social-" + userId,
+                "user" + userId + "@example.com",
+                null
+        );
     }
 }

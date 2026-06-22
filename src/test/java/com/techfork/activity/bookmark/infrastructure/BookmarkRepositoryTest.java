@@ -1,6 +1,7 @@
 package com.techfork.activity.bookmark.infrastructure;
 
 import com.techfork.activity.bookmark.domain.Bookmark;
+import com.techfork.activity.bookmark.fixture.BookmarkFixture;
 import com.techfork.post.domain.Post;
 import com.techfork.post.fixture.PostFixture;
 import com.techfork.post.infrastructure.PostRepository;
@@ -92,9 +93,9 @@ class BookmarkRepositoryTest {
         @Test
         @DisplayName("커서 기반 페이징")
         void findBookmarksWithCursor() {
-            Bookmark bookmark1 = Bookmark.create(testUser, testPost1, LocalDateTime.now().minusHours(3));
-            Bookmark bookmark2 = Bookmark.create(testUser, testPost2, LocalDateTime.now().minusHours(2));
-            Bookmark bookmark3 = Bookmark.create(testUser, testPost3, LocalDateTime.now().minusHours(1));
+            Bookmark bookmark1 = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now().minusHours(3));
+            Bookmark bookmark2 = BookmarkFixture.createBookmark(testUser, testPost2, LocalDateTime.now().minusHours(2));
+            Bookmark bookmark3 = BookmarkFixture.createBookmark(testUser, testPost3, LocalDateTime.now().minusHours(1));
             bookmark1 = bookmarkRepository.save(bookmark1);
             bookmark2 = bookmarkRepository.save(bookmark2);
             bookmark3 = bookmarkRepository.save(bookmark3);
@@ -124,8 +125,8 @@ class BookmarkRepositoryTest {
         @Test
         @DisplayName("북마크된 게시글 ID 목록 조회")
         void findBookmarkedPostIds() {
-            Bookmark bookmark1 = Bookmark.create(testUser, testPost1, LocalDateTime.now());
-            Bookmark bookmark3 = Bookmark.create(testUser, testPost3, LocalDateTime.now());
+            Bookmark bookmark1 = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now());
+            Bookmark bookmark3 = BookmarkFixture.createBookmark(testUser, testPost3, LocalDateTime.now());
             bookmarkRepository.save(bookmark1);
             bookmarkRepository.save(bookmark3);
 
@@ -154,8 +155,8 @@ class BookmarkRepositoryTest {
             User anotherUser = UserFixture.socialUser("anotherSocialId", "another@example.com", "another.jpg");
             anotherUser = userRepository.save(anotherUser);
 
-            Bookmark bookmark1 = Bookmark.create(testUser, testPost1, LocalDateTime.now());
-            Bookmark bookmark2 = Bookmark.create(anotherUser, testPost2, LocalDateTime.now());
+            Bookmark bookmark1 = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now());
+            Bookmark bookmark2 = BookmarkFixture.createBookmark(anotherUser, testPost2, LocalDateTime.now());
             bookmarkRepository.save(bookmark1);
             bookmarkRepository.save(bookmark2);
 
@@ -179,8 +180,8 @@ class BookmarkRepositoryTest {
             @Test
             @DisplayName("같은 사용자와 게시글 조합은 한 번만 북마크할 수 있다")
             void save_duplicateUserAndPostCombination_ThrowsException() {
-                Bookmark firstBookmark = Bookmark.create(testUser, testPost1, LocalDateTime.now().minusMinutes(1));
-                Bookmark duplicateBookmark = Bookmark.create(testUser, testPost1, LocalDateTime.now());
+                Bookmark firstBookmark = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now().minusMinutes(1));
+                Bookmark duplicateBookmark = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now());
 
                 bookmarkRepository.saveAndFlush(firstBookmark);
 

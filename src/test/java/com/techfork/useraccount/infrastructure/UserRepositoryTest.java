@@ -21,6 +21,7 @@ import com.techfork.useraccount.domain.enums.EInterestCategory;
 import com.techfork.useraccount.domain.enums.EInterestKeyword;
 import com.techfork.useraccount.domain.vo.UserInterestSelection;
 import com.techfork.useraccount.fixture.UserFixture;
+import com.techfork.useraccount.fixture.UserInterestCategoryFixture;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -83,8 +84,8 @@ class UserRepositoryTest {
     @DisplayName("findByIdWithInterestCategories - 관심사 카테고리와 함께 조회")
     void findByIdWithInterestCategories_Success() {
         // Given: 관심사 카테고리 추가
-        UserInterestCategory category1 = UserInterestCategory.create(testUser, EInterestCategory.BACKEND);
-        UserInterestCategory category2 = UserInterestCategory.create(testUser, EInterestCategory.DATABASE);
+        UserInterestCategory category1 = UserInterestCategoryFixture.interestCategory(testUser, EInterestCategory.BACKEND);
+        UserInterestCategory category2 = UserInterestCategoryFixture.interestCategory(testUser, EInterestCategory.DATABASE);
         testUser.getInterestCategories().add(category1);
         testUser.getInterestCategories().add(category2);
         userRepository.save(testUser);
@@ -345,8 +346,8 @@ class UserRepositoryTest {
         User user2 = UserFixture.socialUser("testSocialId2", "test2@example.com", null);
         user2 = userRepository.save(user2);
 
-        UserInterestCategory category1 = UserInterestCategory.create(testUser, EInterestCategory.BACKEND);
-        UserInterestCategory category2 = UserInterestCategory.create(user2, EInterestCategory.FRONTEND);
+        UserInterestCategory category1 = UserInterestCategoryFixture.interestCategory(testUser, EInterestCategory.BACKEND);
+        UserInterestCategory category2 = UserInterestCategoryFixture.interestCategory(user2, EInterestCategory.FRONTEND);
         testUser.getInterestCategories().add(category1);
         user2.getInterestCategories().add(category2);
         userRepository.saveAll(List.of(testUser, user2));

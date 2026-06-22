@@ -12,7 +12,8 @@ import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.auth.security.jwt.JwtUtil;
 import com.techfork.post.domain.Post;
-import com.techfork.post.domain.PostKeyword;
+import com.techfork.post.fixture.PostFixture;
+import com.techfork.post.fixture.PostKeywordFixture;
 import com.techfork.post.infrastructure.PostKeywordRepository;
 import com.techfork.post.infrastructure.PostRepository;
 import java.time.LocalDateTime;
@@ -64,42 +65,38 @@ class PostIntegrationTest extends IntegrationTestBase {
         testTechBlog = TechBlogFixture.createTechBlog("테스트 회사", "https://test.com", "https://test.com/rss", null);
         techBlogRepository.save(testTechBlog);
 
-        testPost1 = Post.builder()
-                .title("테스트 게시글 1")
-                .fullContent("<p>전체 내용 1</p>")
-                .plainContent("전체 내용 1")
-                .summary("요약 내용 1")
-                .shortSummary("짧은 요약 1")
-                .company("테스트 회사")
-                .url("https://test.com/post/1")
-                .logoUrl("https://test.com/post/1/logo.png")
-                .thumbnailUrl("https://test.com/post/1/thumbnail.png")
-                .publishedAt(LocalDateTime.of(2025, 1, 1, 10, 0))
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testTechBlog)
-                .build();
+        testPost1 = PostFixture.createPost(
+                testTechBlog,
+                "테스트 게시글 1",
+                "<p>전체 내용 1</p>",
+                "전체 내용 1",
+                "요약 내용 1",
+                "짧은 요약 1",
+                "https://test.com/post/1/logo.png",
+                "https://test.com/post/1/thumbnail.png",
+                "https://test.com/post/1",
+                LocalDateTime.of(2025, 1, 1, 10, 0)
+        );
         testPost1 = postRepository.save(testPost1);
         postKeywordRepository.saveAll(List.of(
-                PostKeyword.create("Java", testPost1),
-                PostKeyword.create("Spring", testPost1)
+                PostKeywordFixture.postKeyword("Java", testPost1),
+                PostKeywordFixture.postKeyword("Spring", testPost1)
         ));
 
-        testPost2 = Post.builder()
-                .title("테스트 게시글 2")
-                .fullContent("<p>전체 내용 2</p>")
-                .plainContent("전체 내용 2")
-                .summary("요약 내용 2")
-                .shortSummary("짧은 요약 2")
-                .company("테스트 회사")
-                .url("https://test.com/post/2")
-                .logoUrl("https://test.com/post/2/logo.png")
-                .thumbnailUrl("https://test.com/post/2/thumbnail.png")
-                .publishedAt(LocalDateTime.of(2025, 1, 2, 10, 0))
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testTechBlog)
-                .build();
+        testPost2 = PostFixture.createPost(
+                testTechBlog,
+                "테스트 게시글 2",
+                "<p>전체 내용 2</p>",
+                "전체 내용 2",
+                "요약 내용 2",
+                "짧은 요약 2",
+                "https://test.com/post/2/logo.png",
+                "https://test.com/post/2/thumbnail.png",
+                "https://test.com/post/2",
+                LocalDateTime.of(2025, 1, 2, 10, 0)
+        );
         testPost2 = postRepository.save(testPost2);
-        postKeywordRepository.save(PostKeyword.create("Kotlin", testPost2));
+        postKeywordRepository.save(PostKeywordFixture.postKeyword("Kotlin", testPost2));
     }
 
     @BeforeEach

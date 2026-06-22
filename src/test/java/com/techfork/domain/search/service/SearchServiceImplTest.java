@@ -8,8 +8,10 @@ import co.elastic.clients.util.ObjectBuilder;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.personalization.infrastructure.PersonalizationProfileDocument;
 import com.techfork.personalization.infrastructure.PersonalizationProfileDocumentRepository;
+import com.techfork.personalization.fixture.PersonalizationProfileDocumentFixture;
 import com.techfork.post.domain.Post;
 import com.techfork.post.domain.projection.PostDocument;
+import com.techfork.post.fixture.PostDocumentFixture;
 import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.domain.search.config.GeneralSearchProperties;
 import com.techfork.domain.search.dto.SearchResult;
@@ -128,7 +130,7 @@ class SearchServiceImplTest {
                 thumbnailOptimizer
         );
 
-        PersonalizationProfileDocument personalizationProfile = PersonalizationProfileDocument.create(
+        PersonalizationProfileDocument personalizationProfile = PersonalizationProfileDocumentFixture.personalizationProfileDocument(
                 userId,
                 "Kubernetes 운영 자동화에 관심이 높은 사용자",
                 new float[]{0.0f, 1.0f},
@@ -223,21 +225,13 @@ class SearchServiceImplTest {
             List<Float> titleEmbedding,
             List<Float> summaryEmbedding
     ) {
-        return PostDocument.builder()
-                .id(String.valueOf(postId))
-                .postId(postId)
-                .title(title)
-                .summary("배치 처리 요약")
-                .shortSummary("짧은 요약")
-                .company("TechFork")
-                .url("https://posts.example.com/" + postId)
-                .logoUrl("https://cdn.example.com/logo.png")
-                .thumbnailUrl("https://cdn.example.com/thumb-" + postId + ".png")
-                .publishedAtString(LocalDateTime.of(2026, 5, 1, 10, 0).toString())
-                .titleEmbedding(titleEmbedding)
-                .summaryEmbedding(summaryEmbedding)
-                .contentChunks(List.of())
-                .build();
+        return PostDocumentFixture.createPostDocument(
+                postId,
+                title,
+                titleEmbedding,
+                summaryEmbedding,
+                LocalDateTime.of(2026, 5, 1, 10, 0)
+        );
     }
 
     private Post metadataPost(Long postId, Long viewCount) {

@@ -6,13 +6,14 @@ import com.techfork.post.infrastructure.batch.PostEmbeddingWriter;
 import com.techfork.post.application.batch.PostSummaryProcessor;
 import com.techfork.post.infrastructure.batch.PostSummaryReader;
 import com.techfork.post.infrastructure.batch.PostSummaryWriter;
-import com.techfork.post.domain.projection.ContentChunk;
 import com.techfork.post.domain.projection.PostDocument;
 import com.techfork.post.domain.Post;
 import com.techfork.domain.source.batch.PostBatchWriter;
 import com.techfork.domain.source.batch.RssFeedReader;
 import com.techfork.domain.source.batch.RssToPostProcessor;
 import com.techfork.domain.source.dto.RssFeedItem;
+import com.techfork.domain.source.fixture.RssFeedItemFixture;
+import com.techfork.post.fixture.PostDocumentFixture;
 import com.techfork.post.fixture.PostFixture;
 import com.techfork.domain.source.listener.RssCrawlingJobListener;
 import com.techfork.global.common.IntegrationTestBase;
@@ -105,16 +106,16 @@ class RssCrawlingJobIntegrationTest extends IntegrationTestBase {
     @Test
     @DisplayName("fetchAndSaveRssStep은 RSS item을 읽어 processor/writer로 전달한다")
     void fetchAndSaveRssStep_WiresReaderProcessorWriter() throws Exception {
-        RssFeedItem item = new RssFeedItem(
+        RssFeedItem item = RssFeedItemFixture.createRssFeedItem(
+                1L,
                 "테스트 제목",
                 "https://posts.example.com/1",
                 "https://logo.example.com/logo.png",
                 null,
                 "본문",
                 "본문",
-                java.time.LocalDateTime.now(),
-                "카카오",
-                1L
+                LocalDateTime.now(),
+                "카카오"
         );
         Post post = mock(Post.class);
 
@@ -160,11 +161,11 @@ class RssCrawlingJobIntegrationTest extends IntegrationTestBase {
     @DisplayName("embedAndIndexStep은 reader, async processor, writer wiring을 유지한다")
     void embedAndIndexStep_WiresReaderAsyncProcessorAndWriter() throws Exception {
         Post post = PostFixture.createPost(21L, "embed-step", "원문", "평문", "TechFork", "요약 완료", "짧은 요약");
-        PostDocument postDocument = PostDocument.create(
+        PostDocument postDocument = PostDocumentFixture.createPostDocument(
                 post,
                 List.of(0.1f, 0.2f),
                 List.of(0.3f, 0.4f),
-                List.of(ContentChunk.create(0, "chunk", List.of(0.5f, 0.6f)))
+                List.of(0.5f, 0.6f)
         );
 
         given(postEmbeddingReader.read()).willReturn(post).willReturn((Post) null);
@@ -190,11 +191,11 @@ class RssCrawlingJobIntegrationTest extends IntegrationTestBase {
 
         Post summaryPost = PostFixture.createPost(31L, "summary-job", "원문", "평문", "TechFork", "요약 전", null);
         Post embeddedPost = PostFixture.createPost(32L, "embed-job", "원문", "평문", "TechFork", "요약 완료", "짧은 요약");
-        PostDocument postDocument = PostDocument.create(
+        PostDocument postDocument = PostDocumentFixture.createPostDocument(
                 embeddedPost,
                 List.of(0.1f),
                 List.of(0.2f),
-                List.of(ContentChunk.create(0, "chunk", List.of(0.3f)))
+                List.of(0.3f)
         );
 
         given(postSummaryReader.read()).willReturn(summaryPost).willReturn((Post) null);
@@ -218,7 +219,8 @@ class RssCrawlingJobIntegrationTest extends IntegrationTestBase {
     void rssCrawlingJob_ExecutesFetchSummaryEmbedInOrder() throws Exception {
         jobLauncherTestUtils.setJob(rssCrawlingJob);
 
-        RssFeedItem item = new RssFeedItem(
+        RssFeedItem item = RssFeedItemFixture.createRssFeedItem(
+                41L,
                 "순서 검증",
                 "https://posts.example.com/order",
                 "https://logo.example.com/logo.png",
@@ -226,16 +228,15 @@ class RssCrawlingJobIntegrationTest extends IntegrationTestBase {
                 "본문",
                 "평문",
                 LocalDateTime.of(2026, 4, 13, 7, 0, 0),
-                "카카오",
-                41L
+                "카카오"
         );
         Post fetchedPost = PostFixture.createPost(41L, "fetch-job", "본문", "본문", "TechFork", null, null);
         Post summaryPost = PostFixture.createPost(42L, "summary-job", "본문", "본문", "TechFork", "요약 완료", "짧은 요약");
-        PostDocument postDocument = PostDocument.create(
+        PostDocument postDocument = PostDocumentFixture.createPostDocument(
                 summaryPost,
                 List.of(0.1f),
                 List.of(0.2f),
-                List.of(ContentChunk.create(0, "chunk", List.of(0.3f)))
+                List.of(0.3f)
         );
 
         given(rssFeedReader.read()).willReturn(item).willReturn((RssFeedItem) null);

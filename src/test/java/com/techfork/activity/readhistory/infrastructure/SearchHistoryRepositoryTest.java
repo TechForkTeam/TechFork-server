@@ -1,6 +1,7 @@
 package com.techfork.activity.readhistory.infrastructure;
 
 import com.techfork.activity.readhistory.domain.SearchHistory;
+import com.techfork.activity.readhistory.fixture.SearchHistoryFixture;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
@@ -53,9 +54,9 @@ class SearchHistoryRepositoryTest {
             @Test
             @DisplayName("최근 순으로 정렬된다")
             void findRecentSearchHistoriesByUserId_Success() {
-                SearchHistory history1 = SearchHistory.create(testUser, "Spring Boot", LocalDateTime.now().minusHours(3));
-                SearchHistory history2 = SearchHistory.create(testUser, "Java", LocalDateTime.now().minusHours(2));
-                SearchHistory history3 = SearchHistory.create(testUser, "Kotlin", LocalDateTime.now().minusHours(1));
+                SearchHistory history1 = SearchHistoryFixture.createSearchHistory(testUser, "Spring Boot", LocalDateTime.now().minusHours(3));
+                SearchHistory history2 = SearchHistoryFixture.createSearchHistory(testUser, "Java", LocalDateTime.now().minusHours(2));
+                SearchHistory history3 = SearchHistoryFixture.createSearchHistory(testUser, "Kotlin", LocalDateTime.now().minusHours(1));
                 searchHistoryRepository.saveAll(List.of(history1, history2, history3));
 
                 PageRequest pageRequest = PageRequest.of(0, 10);
