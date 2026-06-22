@@ -8,7 +8,7 @@ import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
-import com.techfork.global.common.IntegrationTestBase;
+import com.techfork.global.common.MySqlRedisIntegrationTestBase;
 import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtUtil;
 import java.time.LocalDateTime;
@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class SearchHistoryIntegrationTest extends IntegrationTestBase {
+class SearchHistoryIntegrationTest extends MySqlRedisIntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;

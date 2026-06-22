@@ -21,7 +21,7 @@ import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
-import com.techfork.global.common.IntegrationTestBase;
+import com.techfork.global.common.MySqlRedisIntegrationTestBase;
 import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtUtil;
 import org.junit.jupiter.api.AfterEach;
@@ -43,7 +43,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class ReadPostIntegrationTest extends IntegrationTestBase {
+class ReadPostIntegrationTest extends MySqlRedisIntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;

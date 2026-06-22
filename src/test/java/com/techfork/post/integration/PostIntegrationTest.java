@@ -9,7 +9,7 @@ import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
-import com.techfork.global.common.IntegrationTestBase;
+import com.techfork.global.common.MySqlRedisIntegrationTestBase;
 import com.techfork.auth.security.jwt.JwtUtil;
 import com.techfork.post.domain.Post;
 import com.techfork.post.fixture.PostFixture;
@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class PostIntegrationTest extends IntegrationTestBase {
+class PostIntegrationTest extends MySqlRedisIntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;
@@ -63,7 +63,7 @@ class PostIntegrationTest extends IntegrationTestBase {
     @BeforeEach
     void setUp() {
         testTechBlog = TechBlogFixture.createTechBlog("테스트 회사", "https://test.com", "https://test.com/rss", null);
-        techBlogRepository.save(testTechBlog);
+        testTechBlog = techBlogRepository.save(testTechBlog);
 
         testPost1 = PostFixture.createPost(
                 testTechBlog,

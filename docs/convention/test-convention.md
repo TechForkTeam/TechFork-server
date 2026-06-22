@@ -8,12 +8,12 @@
 | --- | --- | --- | --- |
 | unit / slice | `./gradlew test -PexcludeIntegration` | `integration`, `evaluation`, `evaluation-setup` 제외 | 일반 단위 테스트와 JPA slice 등 빠른 회귀 확인 |
 | default test | `./gradlew test` | `evaluation`, `evaluation-setup` 제외 | Gradle 기본 테스트. `integration` 태그는 제외하지 않으므로 빠른 로컬 루프에는 권장하지 않음 |
-| integration | `./gradlew integrationTest` | `integration` 포함, `evaluation`, `evaluation-setup` 제외 | `IntegrationTestBase` 기반 API/트랜잭션/컨테이너 통합 검증 |
+| integration | `./gradlew integrationTest` | `integration` 포함, `evaluation`, `evaluation-setup` 제외 | `MySqlRedisIntegrationTestBase` 기반 API/트랜잭션/컨테이너 통합 검증 |
 | evaluation | `./gradlew evaluationTest` | `evaluation` 포함, `integration`, `evaluation-setup` 제외 | 검색/추천 품질 평가 |
 | evaluation-setup | `./gradlew evaluationSetup` | `evaluation-setup` 포함 | 평가 fixture 생성/export 등 사전 데이터 준비 |
 
 - 빠른 리팩터링 검증 루프는 `./gradlew test -PexcludeIntegration`를 기본으로 한다.
-- `@SpringBootTest` 기반 테스트는 기본적으로 `IntegrationTestBase`를 상속해 `integration` 레인에 둔다.
+- `@SpringBootTest` 기반 일반 통합 테스트는 기본적으로 `MySqlRedisIntegrationTestBase`를 상속해 `integration` 레인에 둔다.
 - 빈 Spring context smoke test는 일반 `test` 레인에 두지 않는다. 유지가 필요하면 `integration` 레인 계약을 명확히 적용한다.
 - evaluation 하위 테스트는 일반 unit/integration 회귀 검증과 섞지 않는다.
 
@@ -85,9 +85,10 @@
 
 ## 통합 테스트 컨벤션
 
-- 통합 테스트 base는 `IntegrationTestBase`를 기본으로 사용한다.
-- `MySqlRedisIntegrationTestBase`로 대량 전환하지 않는다. base/config 조합이 달라지면 Spring context cache key와 Testcontainers lifecycle이 CI에서 갈라질 수 있다.
-- integration base를 분리하려면 먼저 container 재사용 여부와 CI 실행 시간 영향을 검증한다.
+- 일반 통합 테스트 base는 `MySqlRedisIntegrationTestBase`를 기본으로 사용한다.
+- `MySqlRedisIntegrationTestBase`는 MySQL/Redis 컨테이너만 띄우고 Elasticsearch 관련 bean/repository는 mock 처리한다.
+- Elasticsearch 실기동이 필요한 평가/검색 품질 검증은 일반 `integrationTest` 레인과 섞지 않고 별도 base/레인에서 실행한다.
+- 같은 `integrationTest` 레인 안에서는 base/config 조합을 불필요하게 나누지 않는다. Spring context cache key가 달라지면 Testcontainers lifecycle이 갈라져 CI 실행 시간이 늘어난다.
 
 ## 실행 명령
 

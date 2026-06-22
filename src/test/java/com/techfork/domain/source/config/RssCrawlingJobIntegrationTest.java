@@ -16,7 +16,7 @@ import com.techfork.domain.source.fixture.RssFeedItemFixture;
 import com.techfork.post.fixture.PostDocumentFixture;
 import com.techfork.post.fixture.PostFixture;
 import com.techfork.domain.source.listener.RssCrawlingJobListener;
-import com.techfork.global.common.IntegrationTestBase;
+import com.techfork.global.common.MySqlRedisIntegrationTestBase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -48,7 +48,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @SpringBatchTest
-class RssCrawlingJobIntegrationTest extends IntegrationTestBase {
+class RssCrawlingJobIntegrationTest extends MySqlRedisIntegrationTestBase {
 
     @Autowired
     private JobLauncherTestUtils jobLauncherTestUtils;

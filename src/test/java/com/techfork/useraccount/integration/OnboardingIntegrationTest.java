@@ -7,7 +7,7 @@ import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.useraccount.fixture.UserFixture;
-import com.techfork.global.common.IntegrationTestBase;
+import com.techfork.global.common.MySqlRedisIntegrationTestBase;
 import com.techfork.global.llm.EmbeddingClient;
 import com.techfork.global.llm.LlmClient;
 import com.techfork.auth.security.jwt.JwtDTO;
@@ -37,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Onboarding API 통합 테스트
  */
-class OnboardingIntegrationTest extends IntegrationTestBase {
+class OnboardingIntegrationTest extends MySqlRedisIntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;

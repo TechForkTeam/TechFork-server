@@ -11,7 +11,7 @@ import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.domain.enums.UserStatus;
 import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
-import com.techfork.global.common.IntegrationTestBase;
+import com.techfork.global.common.MySqlRedisIntegrationTestBase;
 import com.techfork.auth.security.token.RefreshTokenStore;
 import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtProperties;
@@ -36,13 +36,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Auth API 통합 테스트
- * - IntegrationTestBase 상속으로 테스트 컨테이너 공유
+ * - MySqlRedisIntegrationTestBase 상속으로 MySQL/Redis 테스트 컨테이너 공유
  * - @Tag("integration") 자동 적용
  * - 모든 레이어(Controller, Service, Repository) 통합 테스트
  * - MockMvc로 HTTP 요청/응답 테스트
  * - WireMock으로 카카오 API 모킹
  */
-class AuthIntegrationTest extends IntegrationTestBase {
+class AuthIntegrationTest extends MySqlRedisIntegrationTestBase {
 
     private static WireMockServer wireMockServer;
 

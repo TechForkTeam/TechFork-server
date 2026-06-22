@@ -5,7 +5,7 @@ import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
-import com.techfork.global.common.IntegrationTestBase;
+import com.techfork.global.common.MySqlRedisIntegrationTestBase;
 import com.techfork.global.llm.EmbeddingClient;
 import com.techfork.global.llm.LlmClient;
 import com.techfork.auth.security.jwt.JwtDTO;
@@ -35,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * - JWT 인증 실패 시 401 응답 검증
  * - 권한 부족 시 403 응답 검증
  */
-class SecurityIntegrationTest extends IntegrationTestBase {
+class SecurityIntegrationTest extends MySqlRedisIntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;

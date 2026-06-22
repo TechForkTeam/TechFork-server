@@ -1,7 +1,7 @@
 package com.techfork.useraccount.integration;
 
 import com.techfork.personalization.application.PersonalizationProfileService;
-import com.techfork.global.common.IntegrationTestBase;
+import com.techfork.global.common.MySqlRedisIntegrationTestBase;
 import com.techfork.auth.security.cache.UserAuthCacheStore;
 import com.techfork.useraccount.application.command.InterestCommandService;
 import com.techfork.useraccount.application.command.UserCommandService;
@@ -37,7 +37,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
-class UserAccountAfterCommitEventIntegrationTest extends IntegrationTestBase {
+class UserAccountAfterCommitEventIntegrationTest extends MySqlRedisIntegrationTestBase {
 
     @Autowired
     private UserCommandService userCommandService;

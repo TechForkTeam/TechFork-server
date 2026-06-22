@@ -9,7 +9,7 @@ import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
-import com.techfork.global.common.IntegrationTestBase;
+import com.techfork.global.common.MySqlRedisIntegrationTestBase;
 import com.techfork.auth.security.jwt.JwtUtil;
 import com.techfork.post.domain.Post;
 import com.techfork.post.fixture.PostFixture;
@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class PostV2IntegrationTest extends IntegrationTestBase {
+class PostV2IntegrationTest extends MySqlRedisIntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;
@@ -65,10 +65,10 @@ class PostV2IntegrationTest extends IntegrationTestBase {
         accessToken = jwtUtil.generateTokens(testUser.getId(), Role.USER).accessToken();
 
         testTechBlog1 = TechBlogFixture.createTechBlog("카카오", "https://kakao.com");
-        techBlogRepository.save(testTechBlog1);
+        testTechBlog1 = techBlogRepository.save(testTechBlog1);
 
         testTechBlog2 = TechBlogFixture.createTechBlog("네이버", "https://naver.com");
-        techBlogRepository.save(testTechBlog2);
+        testTechBlog2 = techBlogRepository.save(testTechBlog2);
 
         todayPost = PostFixture.createPost(
                 testTechBlog1,

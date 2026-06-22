@@ -13,7 +13,7 @@ import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
-import com.techfork.global.common.IntegrationTestBase;
+import com.techfork.global.common.MySqlRedisIntegrationTestBase;
 import java.time.LocalDateTime;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -30,7 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class ReadPostCommandServiceConcurrencyIntegrationTest extends IntegrationTestBase {
+class ReadPostCommandServiceConcurrencyIntegrationTest extends MySqlRedisIntegrationTestBase {
 
     @Autowired
     private ReadPostCommandService readPostCommandService;

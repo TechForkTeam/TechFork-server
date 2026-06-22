@@ -9,7 +9,7 @@ import com.techfork.domain.recommendation.entity.RecommendedPost;
 import com.techfork.domain.recommendation.repository.RecommendedPostRepository;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.repository.TechBlogRepository;
-import com.techfork.global.common.IntegrationTestBase;
+import com.techfork.global.common.MySqlRedisIntegrationTestBase;
 import com.techfork.post.domain.Post;
 import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.useraccount.domain.User;
@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * 추천 통합 테스트
  */
-class RecommendationIntegrationTest extends IntegrationTestBase {
+class RecommendationIntegrationTest extends MySqlRedisIntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;
