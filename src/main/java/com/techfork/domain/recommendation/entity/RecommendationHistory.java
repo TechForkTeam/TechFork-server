@@ -85,7 +85,7 @@ public class RecommendationHistory extends BaseEntity {
     /**
      * 클릭 기록
      */
-    public void markAsisClicked() {
+    public void markAsClicked() {
         this.isClicked = true;
         this.clickedAt = LocalDateTime.now();
     }

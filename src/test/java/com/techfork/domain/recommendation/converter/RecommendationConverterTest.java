@@ -5,13 +5,16 @@ import com.techfork.domain.recommendation.dto.RecommendedPostDto;
 import com.techfork.domain.recommendation.entity.RecommendedPost;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 
+import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.post;
+import static com.techfork.domain.recommendation.fixture.RecommendedPostFixture.recommendedPost;
+import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.techBlog;
+import static com.techfork.domain.recommendation.fixture.RecommendationUserFixture.user;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -24,32 +27,20 @@ class RecommendationConverterTest {
         CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer = mock(CloudflareThirdPartyThumbnailOptimizer.class);
         RecommendationConverter converter = new RecommendationConverter(thumbnailOptimizer);
 
-        TechBlog techBlog = TechBlog.create(
-                "테스트 회사",
-                "https://techfork.com",
-                "https://techfork.com/rss",
-                "https://techfork.com/logo.png"
+        TechBlog techBlog = techBlog("테스트 회사", "https://techfork.com");
+        Post post = post(
+                techBlog,
+                "게시글",
+                "전체 내용",
+                "본문 내용",
+                null,
+                "요약",
+                "https://images.example.com/thumb.jpg",
+                "https://techfork.com/posts/1",
+                LocalDateTime.now()
         );
-
-        Post post = Post.builder()
-                .title("게시글")
-                .shortSummary("요약")
-                .company("테스트 회사")
-                .url("https://techfork.com/posts/1")
-                .thumbnailUrl("https://images.example.com/thumb.jpg")
-                .publishedAt(LocalDateTime.now())
-                .crawledAt(LocalDateTime.now())
-                .techBlog(techBlog)
-                .build();
-
-        User user = User.createSocialUser(
-                SocialType.KAKAO,
-                "social-id",
-                "test@example.com",
-                "https://example.com/profile.png"
-        );
-
-        RecommendedPost recommendedPost = RecommendedPost.create(user, post, 0.9, 0.8, 1);
+        User user = user("social-id", "test@example.com");
+        RecommendedPost recommendedPost = recommendedPost(user, post, 0.9, 0.8, 1);
 
         when(thumbnailOptimizer.optimize("https://images.example.com/thumb.jpg"))
                 .thenReturn("https://api.techfork.com/cdn-cgi/image/fit=scale-down,width=480,quality=75,format=auto/https://images.example.com/thumb.jpg");

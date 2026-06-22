@@ -30,6 +30,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
@@ -147,7 +148,10 @@ class LlmRecommendationServiceTest {
         )).willReturn(List.of());
         given(vectorQueryBuilder.createBm25Query(List.of("Spring", "JPA"), 0.6f, 0.2f, 0.2f))
                 .willReturn(bm25Query);
-        given(elasticsearchClient.search(searchRequestBuilder(), eq(PostDocument.class)))
+        given(elasticsearchClient.search(
+                ArgumentMatchers.<Function<SearchRequest.Builder, ObjectBuilder<SearchRequest>>>any(),
+                eq(PostDocument.class)
+        ))
                 .willReturn(
                         searchResponse(hit("501", 9.0, vectorDocument)),
                         searchResponse(hit("502", 7.0, keywordDocument))
@@ -216,7 +220,10 @@ class LlmRecommendationServiceTest {
         )).willReturn(List.of());
         given(vectorQueryBuilder.createBm25Query(keyKeywords, 0.6f, 0.2f, 0.2f))
                 .willReturn(bm25Query);
-        given(elasticsearchClient.search(searchRequestBuilder(), eq(PostDocument.class)))
+        given(elasticsearchClient.search(
+                ArgumentMatchers.<Function<SearchRequest.Builder, ObjectBuilder<SearchRequest>>>any(),
+                eq(PostDocument.class)
+        ))
                 .willReturn(emptySearchResponse(), emptySearchResponse());
 
         int createdCount = llmRecommendationService.generateRecommendationsForUser(user, profileVector, keyKeywords);
@@ -303,11 +310,6 @@ class LlmRecommendationServiceTest {
         assertThat(candidate.getSummaryVector()).containsExactly(0.7f, 0.6f);
         assertThat(candidate.getSimilarityScore()).isCloseTo(0.6, within(1e-9));
         verify(timeDecayStrategy).calculateWeight(document.getPublishedAt());
-    }
-
-    @SuppressWarnings("unchecked")
-    private Function<SearchRequest.Builder, ObjectBuilder<SearchRequest>> searchRequestBuilder() {
-        return (Function<SearchRequest.Builder, ObjectBuilder<SearchRequest>>) any();
     }
 
     private SearchResponse<PostDocument> searchResponse(Hit<PostDocument> hit) {
