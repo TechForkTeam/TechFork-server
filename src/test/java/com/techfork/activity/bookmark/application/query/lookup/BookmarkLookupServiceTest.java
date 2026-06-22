@@ -38,7 +38,7 @@ class BookmarkLookupServiceTest {
 
         @Test
         @DisplayName("입력 postIds가 비어있으면 repository 호출 없이 빈 Set을 반환한다")
-        void getBookmarkedPostIds_EmptyInput_ReturnsEmptySet() {
+        void emptyPostIds_ReturnsEmptySet() {
             Set<Long> result = bookmarkLookupService.getBookmarkedPostIds(1L, List.of());
 
             assertThat(result).isEmpty();
@@ -47,7 +47,7 @@ class BookmarkLookupServiceTest {
 
         @Test
         @DisplayName("repository 조회 결과를 Set으로 변환해 반환한다")
-        void getBookmarkedPostIds_ReturnsRepositoryResultAsSet() {
+        void postIdsProvided_ReturnsRepositoryResultAsSet() {
             Long userId = 1L;
             List<Long> postIds = List.of(101L, 102L, 103L);
             given(bookmarkRepository.findBookmarkedPostIds(userId, postIds)).willReturn(List.of(101L, 103L));
@@ -64,7 +64,7 @@ class BookmarkLookupServiceTest {
 
         @Test
         @DisplayName("최근 북마크 게시글 제목과 키워드를 반환한다")
-        void getRecentBookmarkPostActivities_ReturnsBookmarkPostActivities() {
+        void sinceDate_ReturnsBookmarkPostActivities() {
             Long userId = 1L;
             int limit = 20;
             Bookmark bookmark = bookmark("북마크 포스트", List.of("Kubernetes", "Helm"));

@@ -3,6 +3,7 @@ package com.techfork.activity.readhistory.application.query.lookup;
 import com.techfork.activity.readhistory.domain.SearchHistory;
 import com.techfork.activity.readhistory.infrastructure.SearchHistoryRepository;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,20 +27,25 @@ class SearchHistoryLookupServiceTest {
     @InjectMocks
     private SearchHistoryLookupService searchHistoryLookupService;
 
-    @Test
-    @DisplayName("최근 검색어 목록을 조회한다")
-    void getRecentSearchQueries_ReturnsQueries() {
-        Long userId = 1L;
-        int limit = 30;
-        SearchHistory springBatch = searchHistory("Spring Batch");
-        SearchHistory elasticsearchVector = searchHistory("Elasticsearch vector");
-        given(searchHistoryRepository.findRecentSearchHistoriesByUserId(userId, PageRequest.of(0, limit)))
-                .willReturn(List.of(springBatch, elasticsearchVector));
+    @Nested
+    @DisplayName("최근 검색어 조회")
+    class GetRecentSearchQueries {
 
-        List<String> result = searchHistoryLookupService.getRecentSearchQueries(userId, limit);
+        @Test
+        @DisplayName("최근 검색어 목록을 조회한다")
+        void limitProvided_ReturnsRecentQueries() {
+            Long userId = 1L;
+            int limit = 30;
+            SearchHistory springBatch = searchHistory("Spring Batch");
+            SearchHistory elasticsearchVector = searchHistory("Elasticsearch vector");
+            given(searchHistoryRepository.findRecentSearchHistoriesByUserId(userId, PageRequest.of(0, limit)))
+                    .willReturn(List.of(springBatch, elasticsearchVector));
 
-        assertThat(result).containsExactly("Spring Batch", "Elasticsearch vector");
-        verify(searchHistoryRepository).findRecentSearchHistoriesByUserId(userId, PageRequest.of(0, limit));
+            List<String> result = searchHistoryLookupService.getRecentSearchQueries(userId, limit);
+
+            assertThat(result).containsExactly("Spring Batch", "Elasticsearch vector");
+            verify(searchHistoryRepository).findRecentSearchHistoriesByUserId(userId, PageRequest.of(0, limit));
+        }
     }
 
     private SearchHistory searchHistory(String query) {

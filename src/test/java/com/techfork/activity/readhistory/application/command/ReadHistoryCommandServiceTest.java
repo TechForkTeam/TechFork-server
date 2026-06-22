@@ -41,50 +41,40 @@ class ReadHistoryCommandServiceTest {
     @DisplayName("검색 히스토리 저장")
     class SaveSearchHistory {
 
-        @Nested
-        @DisplayName("Success")
-        class Success {
+        @Test
+        @DisplayName("검색 히스토리 저장 성공")
+        void validCommand_SavesSearchHistory() {
+            Long userId = 1L;
+            String query = "Spring Boot";
+            LocalDateTime searchedAt = LocalDateTime.now();
+            SaveSearchHistoryCommand command = new SaveSearchHistoryCommand(userId, query, searchedAt);
 
-            @Test
-            @DisplayName("검색 히스토리 저장 성공")
-            void saveSearchHistory_Success() {
-                Long userId = 1L;
-                String query = "Spring Boot";
-                LocalDateTime searchedAt = LocalDateTime.now();
-                SaveSearchHistoryCommand command = new SaveSearchHistoryCommand(userId, query, searchedAt);
+            User mockUser = mock(User.class);
+            given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
+            given(searchHistoryRepository.save(any(SearchHistory.class))).willReturn(mock(SearchHistory.class));
 
-                User mockUser = mock(User.class);
-                given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
-                given(searchHistoryRepository.save(any(SearchHistory.class))).willReturn(mock(SearchHistory.class));
+            readHistoryCommandService.saveSearchHistory(command);
 
-                readHistoryCommandService.saveSearchHistory(command);
-
-                verify(userLookupService, times(1)).getUserOrThrow(userId);
-                ArgumentCaptor<SearchHistory> searchHistoryCaptor = ArgumentCaptor.forClass(SearchHistory.class);
-                verify(searchHistoryRepository, times(1)).save(searchHistoryCaptor.capture());
-                assertThat(searchHistoryCaptor.getValue().getQuery()).isEqualTo(query);
-            }
+            verify(userLookupService, times(1)).getUserOrThrow(userId);
+            ArgumentCaptor<SearchHistory> searchHistoryCaptor = ArgumentCaptor.forClass(SearchHistory.class);
+            verify(searchHistoryRepository, times(1)).save(searchHistoryCaptor.capture());
+            assertThat(searchHistoryCaptor.getValue().getQuery()).isEqualTo(query);
         }
 
-        @Nested
-        @DisplayName("Failure")
-        class Failure {
+        @Test
+        @DisplayName("존재하지 않는 사용자")
+        void userNotFound_ThrowsUserNotFound() {
+            Long userId = 999L;
+            SaveSearchHistoryCommand command = new SaveSearchHistoryCommand(userId, "Spring Boot", LocalDateTime.now());
 
-            @Test
-            @DisplayName("존재하지 않는 사용자")
-            void saveSearchHistory_Fail_UserNotFound() {
-                Long userId = 999L;
-                SaveSearchHistoryCommand command = new SaveSearchHistoryCommand(userId, "Spring Boot", LocalDateTime.now());
+            given(userLookupService.getUserOrThrow(userId))
+                    .willThrow(new GeneralException(UserErrorCode.USER_NOT_FOUND));
 
-                given(userLookupService.getUserOrThrow(userId))
-                        .willThrow(new GeneralException(UserErrorCode.USER_NOT_FOUND));
+            assertThatThrownBy(() -> readHistoryCommandService.saveSearchHistory(command))
+                    .isInstanceOf(GeneralException.class)
+                    .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
 
-                assertThatThrownBy(() -> readHistoryCommandService.saveSearchHistory(command))
-                        .isInstanceOf(GeneralException.class)
-                        .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
-
-                verify(searchHistoryRepository, never()).save(any());
-            }
+            verify(searchHistoryRepository, never()).save(any());
         }
     }
 }

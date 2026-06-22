@@ -103,65 +103,55 @@ class BookmarkIntegrationTest extends IntegrationTestBase {
     @DisplayName("북마크 추가")
     class AddBookmark {
 
-        @Nested
-        @DisplayName("Success")
-        class Success {
+        @Test
+        @DisplayName("북마크 추가 성공")
+        void validRequest_ReturnsOk() throws Exception {
+            BookmarkRequest request = new BookmarkRequest(testPost1.getId());
 
-            @Test
-            @DisplayName("북마크 추가 성공")
-            void addBookmark_Success() throws Exception {
-                BookmarkRequest request = new BookmarkRequest(testPost1.getId());
+            mockMvc.perform(post("/api/v1/activities/bookmarks")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.isSuccess").value(true));
 
-                mockMvc.perform(post("/api/v1/activities/bookmarks")
-                                .header("Authorization", "Bearer " + accessToken)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
-                        .andDo(print())
-                        .andExpect(status().isCreated())
-                        .andExpect(jsonPath("$.isSuccess").value(true));
-
-                List<Bookmark> bookmarks = bookmarkRepository.findAll();
-                assertThat(bookmarks).hasSize(1);
-                assertThat(bookmarks.get(0).getUser().getId()).isEqualTo(testUser.getId());
-                assertThat(bookmarks.get(0).getPost().getId()).isEqualTo(testPost1.getId());
-            }
+            List<Bookmark> bookmarks = bookmarkRepository.findAll();
+            assertThat(bookmarks).hasSize(1);
+            assertThat(bookmarks.get(0).getUser().getId()).isEqualTo(testUser.getId());
+            assertThat(bookmarks.get(0).getPost().getId()).isEqualTo(testPost1.getId());
         }
 
-        @Nested
-        @DisplayName("Failure")
-        class Failure {
+        @Test
+        @DisplayName("이미 북마크한 게시글")
+        void alreadyBookmarkedPost_ReturnsConflict() throws Exception {
+            Bookmark existingBookmark = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now());
+            bookmarkRepository.save(existingBookmark);
 
-            @Test
-            @DisplayName("이미 북마크한 게시글")
-            void addBookmark_Fail_AlreadyExists() throws Exception {
-                Bookmark existingBookmark = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now());
-                bookmarkRepository.save(existingBookmark);
+            BookmarkRequest request = new BookmarkRequest(testPost1.getId());
 
-                BookmarkRequest request = new BookmarkRequest(testPost1.getId());
+            mockMvc.perform(post("/api/v1/activities/bookmarks")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.isSuccess").value(false))
+                    .andExpect(jsonPath("$.code").value("BOOKMARK409_1"));
+        }
 
-                mockMvc.perform(post("/api/v1/activities/bookmarks")
-                                .header("Authorization", "Bearer " + accessToken)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
-                        .andDo(print())
-                        .andExpect(status().isConflict())
-                        .andExpect(jsonPath("$.isSuccess").value(false))
-                        .andExpect(jsonPath("$.code").value("BOOKMARK409_1"));
-            }
+        @Test
+        @DisplayName("존재하지 않는 게시글")
+        void postNotFound_ReturnsNotFound() throws Exception {
+            BookmarkRequest request = new BookmarkRequest(99999L);
 
-            @Test
-            @DisplayName("존재하지 않는 게시글")
-            void addBookmark_Fail_PostNotFound() throws Exception {
-                BookmarkRequest request = new BookmarkRequest(99999L);
-
-                mockMvc.perform(post("/api/v1/activities/bookmarks")
-                                .header("Authorization", "Bearer " + accessToken)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
-                        .andDo(print())
-                        .andExpect(status().isNotFound())
-                        .andExpect(jsonPath("$.isSuccess").value(false));
-            }
+            mockMvc.perform(post("/api/v1/activities/bookmarks")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.isSuccess").value(false));
         }
     }
 
@@ -169,49 +159,39 @@ class BookmarkIntegrationTest extends IntegrationTestBase {
     @DisplayName("북마크 삭제")
     class DeleteBookmark {
 
-        @Nested
-        @DisplayName("Success")
-        class Success {
+        @Test
+        @DisplayName("북마크 삭제 성공")
+        void existingBookmark_ReturnsOk() throws Exception {
+            Bookmark bookmark = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now());
+            bookmarkRepository.save(bookmark);
 
-            @Test
-            @DisplayName("북마크 삭제 성공")
-            void deleteBookmark_Success() throws Exception {
-                Bookmark bookmark = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now());
-                bookmarkRepository.save(bookmark);
+            BookmarkRequest request = new BookmarkRequest(testPost1.getId());
 
-                BookmarkRequest request = new BookmarkRequest(testPost1.getId());
+            mockMvc.perform(delete("/api/v1/activities/bookmarks")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.isSuccess").value(true));
 
-                mockMvc.perform(delete("/api/v1/activities/bookmarks")
-                                .header("Authorization", "Bearer " + accessToken)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
-                        .andDo(print())
-                        .andExpect(status().isOk())
-                        .andExpect(jsonPath("$.isSuccess").value(true));
-
-                List<Bookmark> bookmarks = bookmarkRepository.findAll();
-                assertThat(bookmarks).isEmpty();
-            }
+            List<Bookmark> bookmarks = bookmarkRepository.findAll();
+            assertThat(bookmarks).isEmpty();
         }
 
-        @Nested
-        @DisplayName("Failure")
-        class Failure {
+        @Test
+        @DisplayName("북마크가 존재하지 않음")
+        void bookmarkNotFound_ReturnsNotFound() throws Exception {
+            BookmarkRequest request = new BookmarkRequest(testPost1.getId());
 
-            @Test
-            @DisplayName("북마크가 존재하지 않음")
-            void deleteBookmark_Fail_NotFound() throws Exception {
-                BookmarkRequest request = new BookmarkRequest(testPost1.getId());
-
-                mockMvc.perform(delete("/api/v1/activities/bookmarks")
-                                .header("Authorization", "Bearer " + accessToken)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
-                        .andDo(print())
-                        .andExpect(status().isNotFound())
-                        .andExpect(jsonPath("$.isSuccess").value(false))
-                        .andExpect(jsonPath("$.code").value("BOOKMARK404_1"));
-            }
+            mockMvc.perform(delete("/api/v1/activities/bookmarks")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andDo(print())
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.isSuccess").value(false))
+                    .andExpect(jsonPath("$.code").value("BOOKMARK404_1"));
         }
     }
 
@@ -219,73 +199,68 @@ class BookmarkIntegrationTest extends IntegrationTestBase {
     @DisplayName("북마크 목록 조회")
     class GetBookmarks {
 
-        @Nested
-        @DisplayName("Success")
-        class Success {
+        @Test
+        @DisplayName("빈 목록")
+        void noBookmarks_ReturnsEmptyPage() throws Exception {
+            mockMvc.perform(get("/api/v1/activities/bookmarks")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .param("size", "20"))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.isSuccess").value(true))
+                    .andExpect(jsonPath("$.data.bookmarks").isArray())
+                    .andExpect(jsonPath("$.data.bookmarks").isEmpty())
+                    .andExpect(jsonPath("$.data.hasNext").value(false));
+        }
 
-            @Test
-            @DisplayName("빈 목록")
-            void getBookmarks_Success_Empty() throws Exception {
-                mockMvc.perform(get("/api/v1/activities/bookmarks")
-                                .header("Authorization", "Bearer " + accessToken)
-                                .param("size", "20"))
-                        .andDo(print())
-                        .andExpect(status().isOk())
-                        .andExpect(jsonPath("$.isSuccess").value(true))
-                        .andExpect(jsonPath("$.data.bookmarks").isArray())
-                        .andExpect(jsonPath("$.data.bookmarks").isEmpty())
-                        .andExpect(jsonPath("$.data.hasNext").value(false));
-            }
+        @Test
+        @DisplayName("여러 개")
+        void multipleBookmarks_ReturnsBookmarks() throws Exception {
+            Bookmark bookmark1 = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now().minusHours(1));
+            Bookmark bookmark2 = BookmarkFixture.createBookmark(testUser, testPost2, LocalDateTime.now());
+            bookmarkRepository.save(bookmark1);
+            bookmarkRepository.save(bookmark2);
 
-            @Test
-            @DisplayName("여러 개")
-            void getBookmarks_Success_Multiple() throws Exception {
-                Bookmark bookmark1 = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now().minusHours(1));
-                Bookmark bookmark2 = BookmarkFixture.createBookmark(testUser, testPost2, LocalDateTime.now());
-                bookmarkRepository.save(bookmark1);
-                bookmarkRepository.save(bookmark2);
+            mockMvc.perform(get("/api/v1/activities/bookmarks")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .param("size", "20"))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.isSuccess").value(true))
+                    .andExpect(jsonPath("$.data.bookmarks").isArray())
+                    .andExpect(jsonPath("$.data.bookmarks.length()").value(2))
+                    .andExpect(jsonPath("$.data.hasNext").value(false))
+                    .andExpect(jsonPath("$.data.bookmarks[0].bookmarkId").value(bookmark2.getId()))
+                    .andExpect(jsonPath("$.data.bookmarks[0].postId").value(testPost2.getId()))
+                    .andExpect(jsonPath("$.data.bookmarks[0].title").value("테스트 게시글 2"))
+                    .andExpect(jsonPath("$.data.bookmarks[0].shortSummary").value("게시글 2의 짧은 요약"))
+                    .andExpect(jsonPath("$.data.bookmarks[0].url").value("https://test.com/post/2"))
+                    .andExpect(jsonPath("$.data.bookmarks[0].companyName").value("테스트회사"))
+                    .andExpect(jsonPath("$.data.bookmarks[0].logoUrl").value("https://test.com/logo.png"))
+                    .andExpect(jsonPath("$.data.bookmarks[0].publishedAt").exists())
+                    .andExpect(jsonPath("$.data.bookmarks[0].thumbnailUrl").value("https://test.com/thumb2.png"))
+                    .andExpect(jsonPath("$.data.bookmarks[0].viewCount").value(0))
+                    .andExpect(jsonPath("$.data.bookmarks[0].keywords").isArray())
+                    .andExpect(jsonPath("$.data.bookmarks[0].isBookmarked").value(true));
+        }
 
-                mockMvc.perform(get("/api/v1/activities/bookmarks")
-                                .header("Authorization", "Bearer " + accessToken)
-                                .param("size", "20"))
-                        .andDo(print())
-                        .andExpect(status().isOk())
-                        .andExpect(jsonPath("$.isSuccess").value(true))
-                        .andExpect(jsonPath("$.data.bookmarks").isArray())
-                        .andExpect(jsonPath("$.data.bookmarks.length()").value(2))
-                        .andExpect(jsonPath("$.data.hasNext").value(false))
-                        .andExpect(jsonPath("$.data.bookmarks[0].bookmarkId").value(bookmark2.getId()))
-                        .andExpect(jsonPath("$.data.bookmarks[0].postId").value(testPost2.getId()))
-                        .andExpect(jsonPath("$.data.bookmarks[0].title").value("테스트 게시글 2"))
-                        .andExpect(jsonPath("$.data.bookmarks[0].shortSummary").value("게시글 2의 짧은 요약"))
-                        .andExpect(jsonPath("$.data.bookmarks[0].url").value("https://test.com/post/2"))
-                        .andExpect(jsonPath("$.data.bookmarks[0].companyName").value("테스트회사"))
-                        .andExpect(jsonPath("$.data.bookmarks[0].logoUrl").value("https://test.com/logo.png"))
-                        .andExpect(jsonPath("$.data.bookmarks[0].publishedAt").exists())
-                        .andExpect(jsonPath("$.data.bookmarks[0].thumbnailUrl").value("https://test.com/thumb2.png"))
-                        .andExpect(jsonPath("$.data.bookmarks[0].viewCount").value(0))
-                        .andExpect(jsonPath("$.data.bookmarks[0].keywords").isArray())
-                        .andExpect(jsonPath("$.data.bookmarks[0].isBookmarked").value(true));
-            }
+        @Test
+        @DisplayName("커서 기반 페이징")
+        void cursorProvided_ReturnsNextPage() throws Exception {
+            Bookmark bookmark1 = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now().minusHours(2));
+            Bookmark bookmark2 = BookmarkFixture.createBookmark(testUser, testPost2, LocalDateTime.now().minusHours(1));
+            bookmarkRepository.save(bookmark1);
+            bookmarkRepository.save(bookmark2);
 
-            @Test
-            @DisplayName("커서 기반 페이징")
-            void getBookmarks_Success_WithCursor() throws Exception {
-                Bookmark bookmark1 = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now().minusHours(2));
-                Bookmark bookmark2 = BookmarkFixture.createBookmark(testUser, testPost2, LocalDateTime.now().minusHours(1));
-                bookmarkRepository.save(bookmark1);
-                bookmarkRepository.save(bookmark2);
-
-                mockMvc.perform(get("/api/v1/activities/bookmarks")
-                                .header("Authorization", "Bearer " + accessToken)
-                                .param("size", "1"))
-                        .andDo(print())
-                        .andExpect(status().isOk())
-                        .andExpect(jsonPath("$.isSuccess").value(true))
-                        .andExpect(jsonPath("$.data.bookmarks.length()").value(1))
-                        .andExpect(jsonPath("$.data.hasNext").value(true))
-                        .andExpect(jsonPath("$.data.lastBookmarkId").exists());
-            }
+            mockMvc.perform(get("/api/v1/activities/bookmarks")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .param("size", "1"))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.isSuccess").value(true))
+                    .andExpect(jsonPath("$.data.bookmarks.length()").value(1))
+                    .andExpect(jsonPath("$.data.hasNext").value(true))
+                    .andExpect(jsonPath("$.data.lastBookmarkId").exists());
         }
     }
 
@@ -293,40 +268,35 @@ class BookmarkIntegrationTest extends IntegrationTestBase {
     @DisplayName("통합 시나리오")
     class Scenario {
 
-        @Nested
-        @DisplayName("Success")
-        class Success {
+        @Test
+        @DisplayName("북마크 추가 후 조회 후 삭제")
+        void addGetDeleteFlow_ReflectsBookmarkLifecycle() throws Exception {
+            BookmarkRequest addRequest = new BookmarkRequest(testPost1.getId());
+            mockMvc.perform(post("/api/v1/activities/bookmarks")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(addRequest)))
+                    .andExpect(status().isCreated());
 
-            @Test
-            @DisplayName("북마크 추가 후 조회 후 삭제")
-            void integrationScenario_AddGetDeleteBookmark() throws Exception {
-                BookmarkRequest addRequest = new BookmarkRequest(testPost1.getId());
-                mockMvc.perform(post("/api/v1/activities/bookmarks")
-                                .header("Authorization", "Bearer " + accessToken)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(addRequest)))
-                        .andExpect(status().isCreated());
+            mockMvc.perform(get("/api/v1/activities/bookmarks")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .param("size", "20"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.bookmarks.length()").value(1))
+                    .andExpect(jsonPath("$.data.bookmarks[0].postId").value(testPost1.getId()));
 
-                mockMvc.perform(get("/api/v1/activities/bookmarks")
-                                .header("Authorization", "Bearer " + accessToken)
-                                .param("size", "20"))
-                        .andExpect(status().isOk())
-                        .andExpect(jsonPath("$.data.bookmarks.length()").value(1))
-                        .andExpect(jsonPath("$.data.bookmarks[0].postId").value(testPost1.getId()));
+            BookmarkRequest deleteRequest = new BookmarkRequest(testPost1.getId());
+            mockMvc.perform(delete("/api/v1/activities/bookmarks")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(deleteRequest)))
+                    .andExpect(status().isOk());
 
-                BookmarkRequest deleteRequest = new BookmarkRequest(testPost1.getId());
-                mockMvc.perform(delete("/api/v1/activities/bookmarks")
-                                .header("Authorization", "Bearer " + accessToken)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(deleteRequest)))
-                        .andExpect(status().isOk());
-
-                mockMvc.perform(get("/api/v1/activities/bookmarks")
-                                .header("Authorization", "Bearer " + accessToken)
-                                .param("size", "20"))
-                        .andExpect(status().isOk())
-                        .andExpect(jsonPath("$.data.bookmarks").isEmpty());
-            }
+            mockMvc.perform(get("/api/v1/activities/bookmarks")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .param("size", "20"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.bookmarks").isEmpty());
         }
     }
 }

@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -75,52 +76,58 @@ class ReadPostCommandServiceConcurrencyIntegrationTest extends IntegrationTestBa
         userRepository.deleteAll();
     }
 
-    @Test
-    @DisplayName("동시에 같은 게시글 읽기 요청이 와도 조회수는 한 번만 증가한다")
-    void saveReadPost_ConcurrentRequests_IncrementViewCountOnlyOnce() throws Exception {
-        int requestCount = 10;
-        LocalDateTime baseReadAt = LocalDateTime.of(2026, 5, 8, 16, 0);
-        long initialViewCount = testPost.getViewCount();
-        CountDownLatch readyLatch = new CountDownLatch(requestCount);
-        CountDownLatch startLatch = new CountDownLatch(1);
-        CountDownLatch doneLatch = new CountDownLatch(requestCount);
-        Queue<Throwable> failures = new ConcurrentLinkedQueue<>();
-        ExecutorService executorService = Executors.newFixedThreadPool(requestCount);
+    @Nested
+    @DisplayName("동시 읽은 게시글 저장")
+    class SaveReadPostConcurrently {
 
-        try {
-            for (int i = 0; i < requestCount; i++) {
-                final int index = i;
-                executorService.submit(() -> {
-                    readyLatch.countDown();
-                    try {
-                        assertThat(startLatch.await(5, TimeUnit.SECONDS)).isTrue();
-                        readPostCommandService.saveReadPost(new SaveReadPostCommand(
-                                testUser.getId(),
-                                testPost.getId(),
-                                baseReadAt.plusSeconds(index),
-                                120 + index
-                        ));
-                    } catch (Throwable throwable) {
-                        failures.add(throwable);
-                    } finally {
-                        doneLatch.countDown();
-                    }
-                });
+        @Test
+        @DisplayName("동시에 같은 게시글 읽기 요청이 와도 조회수는 한 번만 증가한다")
+        void concurrentRequests_IncrementViewCountOnlyOnce() throws Exception {
+            int requestCount = 10;
+            LocalDateTime baseReadAt = LocalDateTime.of(2026, 5, 8, 16, 0);
+            long initialViewCount = testPost.getViewCount();
+            CountDownLatch readyLatch = new CountDownLatch(requestCount);
+            CountDownLatch startLatch = new CountDownLatch(1);
+            CountDownLatch doneLatch = new CountDownLatch(requestCount);
+            Queue<Throwable> failures = new ConcurrentLinkedQueue<>();
+            ExecutorService executorService = Executors.newFixedThreadPool(requestCount);
+
+            try {
+                for (int i = 0; i < requestCount; i++) {
+                    final int index = i;
+                    executorService.submit(() -> {
+                        readyLatch.countDown();
+                        try {
+                            assertThat(startLatch.await(5, TimeUnit.SECONDS)).isTrue();
+                            readPostCommandService.saveReadPost(new SaveReadPostCommand(
+                                    testUser.getId(),
+                                    testPost.getId(),
+                                    baseReadAt.plusSeconds(index),
+                                    120 + index
+                            ));
+                        } catch (Throwable throwable) {
+                            failures.add(throwable);
+                        } finally {
+                            doneLatch.countDown();
+                        }
+                    });
+                }
+
+                assertThat(readyLatch.await(5, TimeUnit.SECONDS)).isTrue();
+                startLatch.countDown();
+                assertThat(doneLatch.await(15, TimeUnit.SECONDS)).isTrue();
+            } finally {
+                executorService.shutdownNow();
+                assertThat(executorService.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
             }
 
-            assertThat(readyLatch.await(5, TimeUnit.SECONDS)).isTrue();
-            startLatch.countDown();
-            assertThat(doneLatch.await(15, TimeUnit.SECONDS)).isTrue();
-        } finally {
-            executorService.shutdownNow();
-            assertThat(executorService.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+            assertThat(failures).isEmpty();
+            assertThat(readPostRepository.count()).isEqualTo(requestCount);
+            assertThat(firstReadPostRepository.count()).isEqualTo(1);
+
+            Post updatedPost = postRepository.findById(testPost.getId()).orElseThrow();
+            assertThat(updatedPost.getViewCount()).isEqualTo(initialViewCount + 1);
         }
-
-        assertThat(failures).isEmpty();
-        assertThat(readPostRepository.count()).isEqualTo(requestCount);
-        assertThat(firstReadPostRepository.count()).isEqualTo(1);
-
-        Post updatedPost = postRepository.findById(testPost.getId()).orElseThrow();
-        assertThat(updatedPost.getViewCount()).isEqualTo(initialViewCount + 1);
     }
+
 }

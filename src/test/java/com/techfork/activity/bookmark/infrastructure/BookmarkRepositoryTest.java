@@ -92,7 +92,7 @@ class BookmarkRepositoryTest {
 
         @Test
         @DisplayName("커서 기반 페이징")
-        void findBookmarksWithCursor() {
+        void cursorCondition_ReturnsBookmarks() {
             Bookmark bookmark1 = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now().minusHours(3));
             Bookmark bookmark2 = BookmarkFixture.createBookmark(testUser, testPost2, LocalDateTime.now().minusHours(2));
             Bookmark bookmark3 = BookmarkFixture.createBookmark(testUser, testPost3, LocalDateTime.now().minusHours(1));
@@ -124,7 +124,7 @@ class BookmarkRepositoryTest {
 
         @Test
         @DisplayName("북마크된 게시글 ID 목록 조회")
-        void findBookmarkedPostIds() {
+        void bookmarkedPosts_ReturnsPostIds() {
             Bookmark bookmark1 = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now());
             Bookmark bookmark3 = BookmarkFixture.createBookmark(testUser, testPost3, LocalDateTime.now());
             bookmarkRepository.save(bookmark1);
@@ -141,7 +141,7 @@ class BookmarkRepositoryTest {
 
         @Test
         @DisplayName("북마크된 게시글이 없을 때 빈 리스트 반환")
-        void findBookmarkedPostIds_whenNoBookmarks() {
+        void noBookmarks_ReturnsEmptySet() {
             List<Long> postIds = List.of(testPost1.getId(), testPost2.getId(), testPost3.getId());
 
             List<Long> bookmarkedPostIds = bookmarkRepository.findBookmarkedPostIds(testUser.getId(), postIds);
@@ -151,7 +151,7 @@ class BookmarkRepositoryTest {
 
         @Test
         @DisplayName("다른 사용자의 북마크는 조회되지 않음")
-        void findBookmarkedPostIds_differentUser() {
+        void otherUserBookmarks_AreExcluded() {
             User anotherUser = UserFixture.socialUser("anotherSocialId", "another@example.com", "another.jpg");
             anotherUser = userRepository.save(anotherUser);
 
@@ -173,23 +173,18 @@ class BookmarkRepositoryTest {
     @DisplayName("북마크 저장")
     class Save {
 
-        @Nested
-        @DisplayName("Failure")
-        class Failure {
+        @Test
+        @DisplayName("같은 사용자와 게시글 조합은 한 번만 북마크할 수 있다")
+        void duplicateUserAndPostCombination_ThrowsException() {
+            Bookmark firstBookmark = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now().minusMinutes(1));
+            Bookmark duplicateBookmark = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now());
 
-            @Test
-            @DisplayName("같은 사용자와 게시글 조합은 한 번만 북마크할 수 있다")
-            void save_duplicateUserAndPostCombination_ThrowsException() {
-                Bookmark firstBookmark = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now().minusMinutes(1));
-                Bookmark duplicateBookmark = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now());
+            bookmarkRepository.saveAndFlush(firstBookmark);
 
-                bookmarkRepository.saveAndFlush(firstBookmark);
+            assertThatThrownBy(() -> bookmarkRepository.saveAndFlush(duplicateBookmark))
+                    .isInstanceOf(DataIntegrityViolationException.class);
 
-                assertThatThrownBy(() -> bookmarkRepository.saveAndFlush(duplicateBookmark))
-                        .isInstanceOf(DataIntegrityViolationException.class);
-
-                entityManager.clear();
-            }
+            entityManager.clear();
         }
     }
 }

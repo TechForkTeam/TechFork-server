@@ -5,6 +5,7 @@ import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.post.domain.Post;
 import com.techfork.post.domain.PostKeyword;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -28,19 +29,24 @@ class ReadPostLookupServiceTest {
     @InjectMocks
     private ReadPostLookupService readPostLookupService;
 
-    @Test
-    @DisplayName("최근 읽은 게시글 활동 신호를 조회한다")
-    void getRecentReadPostActivities_ReturnsReadPostActivities() {
-        Long userId = 1L;
-        int limit = 20;
-        ReadPost readPost = readPost("읽은 포스트", List.of("Java", "Spring"), 120);
-        given(readPostRepository.findRecentReadPostsByUserIdWithMinDuration(userId, PageRequest.of(0, limit)))
-                .willReturn(List.of(readPost));
+    @Nested
+    @DisplayName("최근 읽은 게시글 활동 신호 조회")
+    class GetRecentReadPostActivities {
 
-        List<ReadPostLookupItem> result = readPostLookupService.getRecentReadPostActivities(userId, limit);
+        @Test
+        @DisplayName("최근 읽은 게시글 활동 신호를 조회한다")
+        void sinceDate_ReturnsReadPostActivities() {
+            Long userId = 1L;
+            int limit = 20;
+            ReadPost readPost = readPost("읽은 포스트", List.of("Java", "Spring"), 120);
+            given(readPostRepository.findRecentReadPostsByUserIdWithMinDuration(userId, PageRequest.of(0, limit)))
+                    .willReturn(List.of(readPost));
 
-        assertThat(result).containsExactly(new ReadPostLookupItem("읽은 포스트", List.of("Java", "Spring"), 120));
-        verify(readPostRepository).findRecentReadPostsByUserIdWithMinDuration(userId, PageRequest.of(0, limit));
+            List<ReadPostLookupItem> result = readPostLookupService.getRecentReadPostActivities(userId, limit);
+
+            assertThat(result).containsExactly(new ReadPostLookupItem("읽은 포스트", List.of("Java", "Spring"), 120));
+            verify(readPostRepository).findRecentReadPostsByUserIdWithMinDuration(userId, PageRequest.of(0, limit));
+        }
     }
 
     private ReadPost readPost(String title, List<String> keywords, Integer readDurationSeconds) {

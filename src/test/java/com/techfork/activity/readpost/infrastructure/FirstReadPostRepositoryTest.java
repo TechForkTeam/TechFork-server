@@ -14,6 +14,7 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -64,32 +65,38 @@ class FirstReadPostRepositoryTest {
         userRepository.deleteAll();
     }
 
-    @Test
-    @DisplayName("첫 읽기 마킹은 같은 user/post 조합에서 한 번만 성공한다")
-    void markFirstRead_SuccessOnlyOncePerUserPostPair() {
-        LocalDateTime firstReadAt = LocalDateTime.of(2026, 5, 8, 9, 0);
-        LocalDateTime secondReadAt = LocalDateTime.of(2026, 5, 8, 9, 5);
+    @Nested
+    @DisplayName("첫 읽기 마킹")
+    class MarkFirstRead {
 
-        boolean firstMarked = firstReadPostRepository.markFirstRead(testUser.getId(), testPost.getId(), firstReadAt);
-        boolean secondMarked = firstReadPostRepository.markFirstRead(testUser.getId(), testPost.getId(), secondReadAt);
+        @Test
+        @DisplayName("첫 읽기 마킹은 같은 user/post 조합에서 한 번만 성공한다")
+        void sameUserPostPair_ReturnsTrueOnlyOnce() {
+            LocalDateTime firstReadAt = LocalDateTime.of(2026, 5, 8, 9, 0);
+            LocalDateTime secondReadAt = LocalDateTime.of(2026, 5, 8, 9, 5);
 
-        List<com.techfork.activity.readpost.domain.FirstReadPost> savedFirstReads = firstReadPostRepository.findAll();
+            boolean firstMarked = firstReadPostRepository.markFirstRead(testUser.getId(), testPost.getId(), firstReadAt);
+            boolean secondMarked = firstReadPostRepository.markFirstRead(testUser.getId(), testPost.getId(), secondReadAt);
 
-        assertThat(firstMarked).isTrue();
-        assertThat(secondMarked).isFalse();
-        assertThat(savedFirstReads).hasSize(1);
-        assertThat(savedFirstReads.get(0).getFirstReadAt()).isEqualTo(firstReadAt);
-        assertThat(savedFirstReads.get(0).getUser().getId()).isEqualTo(testUser.getId());
-        assertThat(savedFirstReads.get(0).getPost().getId()).isEqualTo(testPost.getId());
+            List<com.techfork.activity.readpost.domain.FirstReadPost> savedFirstReads = firstReadPostRepository.findAll();
+
+            assertThat(firstMarked).isTrue();
+            assertThat(secondMarked).isFalse();
+            assertThat(savedFirstReads).hasSize(1);
+            assertThat(savedFirstReads.get(0).getFirstReadAt()).isEqualTo(firstReadAt);
+            assertThat(savedFirstReads.get(0).getUser().getId()).isEqualTo(testUser.getId());
+            assertThat(savedFirstReads.get(0).getPost().getId()).isEqualTo(testPost.getId());
+        }
+
+        @Test
+        @DisplayName("중복이 아닌 무결성 오류는 그대로 전파한다")
+        void nonDuplicateIntegrityViolation_ThrowsException() {
+            LocalDateTime readAt = LocalDateTime.of(2026, 5, 8, 10, 0);
+
+            assertThatThrownBy(() -> firstReadPostRepository.markFirstRead(testUser.getId(), 999999L, readAt))
+                    .isInstanceOf(DataIntegrityViolationException.class);
+            assertThat(firstReadPostRepository.findAll()).isEmpty();
+        }
     }
 
-    @Test
-    @DisplayName("중복이 아닌 무결성 오류는 그대로 전파한다")
-    void markFirstRead_Throws_WhenIntegrityViolationIsNotDuplicateKey() {
-        LocalDateTime readAt = LocalDateTime.of(2026, 5, 8, 10, 0);
-
-        assertThatThrownBy(() -> firstReadPostRepository.markFirstRead(testUser.getId(), 999999L, readAt))
-                .isInstanceOf(DataIntegrityViolationException.class);
-        assertThat(firstReadPostRepository.findAll()).isEmpty();
-    }
 }

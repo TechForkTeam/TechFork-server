@@ -82,135 +82,125 @@ class BookmarkQueryServiceTest {
     @DisplayName("북마크 목록 조회")
     class GetBookmarks {
 
-        @Nested
-        @DisplayName("Success")
-        class Success {
+        @Test
+        @DisplayName("첫 페이지")
+        void firstPage_ReturnsBookmarks() {
+            Long userId = 1L;
+            Long lastBookmarkId = null;
+            int size = 20;
+            GetBookmarksQuery query = new GetBookmarksQuery(userId, lastBookmarkId, size);
 
-            @Test
-            @DisplayName("첫 페이지")
-            void getBookmarks_Success_FirstPage() {
-                Long userId = 1L;
-                Long lastBookmarkId = null;
-                int size = 20;
-                GetBookmarksQuery query = new GetBookmarksQuery(userId, lastBookmarkId, size);
+            given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
+            given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
+                    .willReturn(mockBookmarkRowsFirstPage);
+            given(postKeywordLookupService.getKeywordsByPostIds(any())).willReturn(Map.of());
 
-                given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
-                given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
-                        .willReturn(mockBookmarkRowsFirstPage);
-                given(postKeywordLookupService.getKeywordsByPostIds(any())).willReturn(Map.of());
+            GetBookmarksResult response = bookmarkQueryService.getBookmarks(query);
 
-                GetBookmarksResult response = bookmarkQueryService.getBookmarks(query);
+            assertThat(response).isNotNull();
+            assertThat(response.bookmarks()).hasSize(3);
+            assertThat(response.lastBookmarkId()).isEqualTo(1L);
+            assertThat(response.hasNext()).isFalse();
+            assertThat(response.bookmarks().get(0).bookmarkId()).isEqualTo(3L);
 
-                assertThat(response).isNotNull();
-                assertThat(response.bookmarks()).hasSize(3);
-                assertThat(response.lastBookmarkId()).isEqualTo(1L);
-                assertThat(response.hasNext()).isFalse();
-                assertThat(response.bookmarks().get(0).bookmarkId()).isEqualTo(3L);
-
-                verify(userLookupService, times(1)).getUserOrThrow(userId);
-                verify(bookmarkRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
-            }
-
-            @Test
-            @DisplayName("커서 기반 페이징")
-            void getBookmarks_Success_WithCursor() {
-                Long userId = 1L;
-                Long lastBookmarkId = 10L;
-                int size = 20;
-                GetBookmarksQuery query = new GetBookmarksQuery(userId, lastBookmarkId, size);
-
-                given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
-                given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
-                        .willReturn(mockBookmarkRowsSecondPage);
-                given(postKeywordLookupService.getKeywordsByPostIds(any())).willReturn(Map.of());
-
-                GetBookmarksResult response = bookmarkQueryService.getBookmarks(query);
-
-                assertThat(response).isNotNull();
-                assertThat(response.bookmarks()).hasSize(2);
-                assertThat(response.lastBookmarkId()).isEqualTo(8L);
-                assertThat(response.hasNext()).isFalse();
-
-                verify(bookmarkRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
-            }
-
-            @Test
-            @DisplayName("빈 목록")
-            void getBookmarks_Success_EmptyList() {
-                Long userId = 1L;
-                Long lastBookmarkId = null;
-                int size = 20;
-                GetBookmarksQuery query = new GetBookmarksQuery(userId, lastBookmarkId, size);
-
-                given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
-
-                List<BookmarkQueryRow> emptyBookmarks = List.of();
-                given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
-                        .willReturn(emptyBookmarks);
-
-                GetBookmarksResult response = bookmarkQueryService.getBookmarks(query);
-
-                assertThat(response).isNotNull();
-                assertThat(response.bookmarks()).isEmpty();
-                assertThat(response.lastBookmarkId()).isNull();
-                assertThat(response.hasNext()).isFalse();
-
-                verify(bookmarkRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
-            }
-
-            @Test
-            @DisplayName("키워드 포함")
-            void getBookmarks_Success_WithKeywords() {
-                Long userId = 1L;
-                Long lastBookmarkId = null;
-                int size = 20;
-                GetBookmarksQuery query = new GetBookmarksQuery(userId, lastBookmarkId, size);
-
-                given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
-                given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
-                        .willReturn(mockBookmarkRowsFirstPage);
-                given(postKeywordLookupService.getKeywordsByPostIds(any()))
-                        .willReturn(Map.of(
-                                103L, List.of("Java", "Spring"),
-                                102L, List.of("Kotlin")
-                        ));
-
-                GetBookmarksResult response = bookmarkQueryService.getBookmarks(query);
-
-                assertThat(response).isNotNull();
-                assertThat(response.bookmarks()).hasSize(3);
-                assertThat(response.bookmarks().get(0).keywords()).containsExactlyInAnyOrder("Java", "Spring");
-                assertThat(response.bookmarks().get(1).keywords()).containsExactly("Kotlin");
-                assertThat(response.bookmarks().get(2).keywords()).isEmpty();
-
-                verify(userLookupService, times(1)).getUserOrThrow(userId);
-                verify(bookmarkRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
-                verify(postKeywordLookupService, times(1)).getKeywordsByPostIds(any());
-            }
+            verify(userLookupService, times(1)).getUserOrThrow(userId);
+            verify(bookmarkRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
         }
 
-        @Nested
-        @DisplayName("Failure")
-        class Failure {
+        @Test
+        @DisplayName("커서 기반 페이징")
+        void cursorProvided_ReturnsNextPage() {
+            Long userId = 1L;
+            Long lastBookmarkId = 10L;
+            int size = 20;
+            GetBookmarksQuery query = new GetBookmarksQuery(userId, lastBookmarkId, size);
 
-            @Test
-            @DisplayName("존재하지 않는 사용자")
-            void getBookmarks_Fail_UserNotFound() {
-                Long userId = 999L;
-                Long lastBookmarkId = null;
-                int size = 20;
-                GetBookmarksQuery query = new GetBookmarksQuery(userId, lastBookmarkId, size);
+            given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
+            given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
+                    .willReturn(mockBookmarkRowsSecondPage);
+            given(postKeywordLookupService.getKeywordsByPostIds(any())).willReturn(Map.of());
 
-                given(userLookupService.getUserOrThrow(userId))
-                        .willThrow(new GeneralException(UserErrorCode.USER_NOT_FOUND));
+            GetBookmarksResult response = bookmarkQueryService.getBookmarks(query);
 
-                assertThatThrownBy(() -> bookmarkQueryService.getBookmarks(query))
-                        .isInstanceOf(GeneralException.class)
-                        .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
+            assertThat(response).isNotNull();
+            assertThat(response.bookmarks()).hasSize(2);
+            assertThat(response.lastBookmarkId()).isEqualTo(8L);
+            assertThat(response.hasNext()).isFalse();
 
-                verify(userLookupService, times(1)).getUserOrThrow(userId);
-                verify(bookmarkRepository, never()).findBookmarksWithCursor(any(), any(), any());
-            }
+            verify(bookmarkRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
+        }
+
+        @Test
+        @DisplayName("빈 목록")
+        void noBookmarks_ReturnsEmptyPage() {
+            Long userId = 1L;
+            Long lastBookmarkId = null;
+            int size = 20;
+            GetBookmarksQuery query = new GetBookmarksQuery(userId, lastBookmarkId, size);
+
+            given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
+
+            List<BookmarkQueryRow> emptyBookmarks = List.of();
+            given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
+                    .willReturn(emptyBookmarks);
+
+            GetBookmarksResult response = bookmarkQueryService.getBookmarks(query);
+
+            assertThat(response).isNotNull();
+            assertThat(response.bookmarks()).isEmpty();
+            assertThat(response.lastBookmarkId()).isNull();
+            assertThat(response.hasNext()).isFalse();
+
+            verify(bookmarkRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
+        }
+
+        @Test
+        @DisplayName("키워드 포함")
+        void bookmarkedPostsHaveKeywords_ReturnsKeywordNames() {
+            Long userId = 1L;
+            Long lastBookmarkId = null;
+            int size = 20;
+            GetBookmarksQuery query = new GetBookmarksQuery(userId, lastBookmarkId, size);
+
+            given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
+            given(bookmarkRepository.findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class)))
+                    .willReturn(mockBookmarkRowsFirstPage);
+            given(postKeywordLookupService.getKeywordsByPostIds(any()))
+                    .willReturn(Map.of(
+                            103L, List.of("Java", "Spring"),
+                            102L, List.of("Kotlin")
+                    ));
+
+            GetBookmarksResult response = bookmarkQueryService.getBookmarks(query);
+
+            assertThat(response).isNotNull();
+            assertThat(response.bookmarks()).hasSize(3);
+            assertThat(response.bookmarks().get(0).keywords()).containsExactlyInAnyOrder("Java", "Spring");
+            assertThat(response.bookmarks().get(1).keywords()).containsExactly("Kotlin");
+            assertThat(response.bookmarks().get(2).keywords()).isEmpty();
+
+            verify(userLookupService, times(1)).getUserOrThrow(userId);
+            verify(bookmarkRepository, times(1)).findBookmarksWithCursor(eq(mockUser), eq(lastBookmarkId), any(PageRequest.class));
+            verify(postKeywordLookupService, times(1)).getKeywordsByPostIds(any());
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 사용자")
+        void userNotFound_ThrowsUserNotFound() {
+            Long userId = 999L;
+            Long lastBookmarkId = null;
+            int size = 20;
+            GetBookmarksQuery query = new GetBookmarksQuery(userId, lastBookmarkId, size);
+
+            given(userLookupService.getUserOrThrow(userId))
+                    .willThrow(new GeneralException(UserErrorCode.USER_NOT_FOUND));
+
+            assertThatThrownBy(() -> bookmarkQueryService.getBookmarks(query))
+                    .isInstanceOf(GeneralException.class)
+                    .hasFieldOrPropertyWithValue("code", UserErrorCode.USER_NOT_FOUND);
+
+            verify(userLookupService, times(1)).getUserOrThrow(userId);
+            verify(bookmarkRepository, never()).findBookmarksWithCursor(any(), any(), any());
         }
     }
 }
