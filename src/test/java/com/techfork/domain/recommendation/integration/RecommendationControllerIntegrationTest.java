@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.techfork.domain.recommendation.fixture.RecommendationUserFixture.activeUser;
+import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.DEFAULT_PUBLISHED_AT;
 import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.post;
 import static com.techfork.domain.recommendation.fixture.RecommendedPostFixture.recommendedPost;
 import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.techBlog;
@@ -84,7 +85,7 @@ class RecommendationControllerIntegrationTest extends IntegrationTestBase {
                 "게시글 1의 짧은 요약",
                 "https://test.com/thumb1.png",
                 "https://test.com/post/1",
-                LocalDateTime.now().minusDays(1)
+                DEFAULT_PUBLISHED_AT.minusDays(1)
         ));
         testPost2 = postRepository.save(post(
                 testBlog,
@@ -95,7 +96,7 @@ class RecommendationControllerIntegrationTest extends IntegrationTestBase {
                 "게시글 2의 짧은 요약",
                 "https://test.com/thumb2.png",
                 "https://test.com/post/2",
-                LocalDateTime.now().minusDays(2)
+                DEFAULT_PUBLISHED_AT.minusDays(2)
         ));
         testPost3 = postRepository.save(post(
                 testBlog,
@@ -106,7 +107,7 @@ class RecommendationControllerIntegrationTest extends IntegrationTestBase {
                 "게시글 3의 짧은 요약",
                 "https://test.com/thumb3.png",
                 "https://test.com/post/3",
-                LocalDateTime.now().minusDays(3)
+                DEFAULT_PUBLISHED_AT.minusDays(3)
         ));
     }
 

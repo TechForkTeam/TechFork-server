@@ -10,7 +10,8 @@ import java.util.List;
 
 public final class PostFixture {
 
-    private static final LocalDateTime DEFAULT_PUBLISHED_AT = LocalDateTime.of(2026, 4, 13, 7, 0, 0);
+    public static final LocalDateTime DEFAULT_PUBLISHED_AT = LocalDateTime.of(2026, 4, 13, 7, 0, 0);
+    private static final LocalDateTime DEFAULT_CRAWLED_AT = LocalDateTime.of(2026, 4, 13, 8, 0, 0);
 
     private PostFixture() {
     }
@@ -63,6 +64,7 @@ public final class PostFixture {
 
         Post post = Post.create(rssFeedItem, techBlog);
         ReflectionTestUtils.setField(post, "id", id);
+        ReflectionTestUtils.setField(post, "crawledAt", DEFAULT_CRAWLED_AT);
         ReflectionTestUtils.setField(post, "summary", summary);
         ReflectionTestUtils.setField(post, "shortSummary", shortSummary);
         return post;

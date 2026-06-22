@@ -7,6 +7,9 @@ import java.time.LocalDateTime;
 
 public final class RecommendationPostFixture {
 
+    public static final LocalDateTime DEFAULT_PUBLISHED_AT = LocalDateTime.of(2026, 1, 1, 10, 0);
+    public static final LocalDateTime DEFAULT_CRAWLED_AT = LocalDateTime.of(2026, 1, 1, 11, 0);
+
     private RecommendationPostFixture() {
     }
 
@@ -29,7 +32,7 @@ public final class RecommendationPostFixture {
                 title + " 짧은 요약",
                 techBlog.getBlogUrl() + "/thumb.png",
                 url,
-                LocalDateTime.now()
+                DEFAULT_PUBLISHED_AT
         );
     }
 
@@ -55,7 +58,7 @@ public final class RecommendationPostFixture {
                 .thumbnailUrl(thumbnailUrl)
                 .url(url)
                 .publishedAt(publishedAt)
-                .crawledAt(LocalDateTime.now())
+                .crawledAt(DEFAULT_CRAWLED_AT)
                 .techBlog(techBlog)
                 .build();
     }

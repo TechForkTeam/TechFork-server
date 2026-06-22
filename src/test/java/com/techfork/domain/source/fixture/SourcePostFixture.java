@@ -9,6 +9,9 @@ import java.time.LocalDateTime;
 
 public final class SourcePostFixture {
 
+    private static final LocalDateTime DEFAULT_PUBLISHED_AT = LocalDateTime.of(2026, 4, 13, 7, 0, 0);
+    private static final LocalDateTime DEFAULT_CRAWLED_AT = LocalDateTime.of(2026, 4, 13, 8, 0, 0);
+
     private SourcePostFixture() {
     }
 
@@ -29,11 +32,12 @@ public final class SourcePostFixture {
                 .thumbnailUrl("https://cdn.example.com/thumb-%s.png".formatted(id))
                 .content(fullContent)
                 .plainContent(plainContent)
-                .publishedAt(LocalDateTime.of(2026, 4, 13, 7, 0, 0))
+                .publishedAt(DEFAULT_PUBLISHED_AT)
                 .company(company)
                 .techBlogId(id)
                 .build(), techBlog);
         ReflectionTestUtils.setField(post, "id", id);
+        ReflectionTestUtils.setField(post, "crawledAt", DEFAULT_CRAWLED_AT);
         ReflectionTestUtils.setField(post, "summary", summary);
         ReflectionTestUtils.setField(post, "shortSummary", shortSummary);
         return post;
