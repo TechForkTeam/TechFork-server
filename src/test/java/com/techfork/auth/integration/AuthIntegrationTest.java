@@ -41,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * - MockMvc로 HTTP 요청/응답 테스트
  * - WireMock으로 카카오 API 모킹
  */
-class AuthControllerIntegrationTest extends IntegrationTestBase {
+class AuthIntegrationTest extends IntegrationTestBase {
 
     private static WireMockServer wireMockServer;
 

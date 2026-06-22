@@ -36,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * OnboardingController 통합 테스트
  */
-class OnboardingControllerIntegrationTest extends IntegrationTestBase {
+class OnboardingIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;

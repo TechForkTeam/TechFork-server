@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class PostControllerIntegrationTest extends IntegrationTestBase {
+class PostIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;

@@ -37,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * 추천 통합 테스트
  */
-class RecommendationControllerIntegrationTest extends IntegrationTestBase {
+class RecommendationIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;

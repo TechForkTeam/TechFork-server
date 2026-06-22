@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * UserController 통합 테스트
  */
-class UserControllerIntegrationTest extends IntegrationTestBase {
+class UserIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;
