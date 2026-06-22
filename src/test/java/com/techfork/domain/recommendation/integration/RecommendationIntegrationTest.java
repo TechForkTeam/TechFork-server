@@ -1,6 +1,7 @@
 package com.techfork.domain.recommendation.integration;
 
 import com.techfork.activity.bookmark.domain.Bookmark;
+import com.techfork.activity.bookmark.fixture.BookmarkFixture;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtUtil;
@@ -205,7 +206,7 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.data.recommendations[0].isBookmarked").value(false));
 
-            Bookmark bookmark = Bookmark.create(testUser, testPost1, LocalDateTime.now());
+            Bookmark bookmark = BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now());
             bookmarkRepository.save(bookmark);
 
             mockMvc.perform(get("/api/v1/recommendations")

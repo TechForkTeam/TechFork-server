@@ -18,7 +18,7 @@ import com.techfork.post.domain.Post;
 import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.global.util.TimeDecayStrategy;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.fixture.UserFixture;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -371,7 +371,7 @@ class LlmRecommendationServiceTest {
     }
 
     private User createUser(Long userId) {
-        User user = User.createSocialUser(SocialType.KAKAO, "social-" + userId, "user" + userId + "@example.com", null);
+        User user = UserFixture.socialUser("social-" + userId, "user" + userId + "@example.com", null);
         ReflectionTestUtils.setField(user, "id", userId);
         return user;
     }
