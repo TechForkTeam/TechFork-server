@@ -31,7 +31,7 @@ class PostSummaryProcessorTest {
 
         @Test
         @DisplayName("추출 결과로 summary를 갱신하고 keyword를 재구성한다")
-        void updatesSummariesAndRebuildsKeywordsFromExtractionResult() {
+        void extractionResult_UpdatesSummariesAndRebuildsKeywords() {
             PostSummaryProcessor postSummaryProcessor = new PostSummaryProcessor(summaryExtractionService);
             Post post = createSummaryTargetPostWithExistingKeywords();
             PostKeyword oldKeyword1 = post.getKeywords().get(0);
@@ -60,7 +60,7 @@ class PostSummaryProcessorTest {
 
         @Test
         @DisplayName("추출 결과 keyword가 비어 있으면 기존 keyword를 모두 제거한다")
-        void clearsExistingKeywordsWhenExtractionReturnsNoKeywords() {
+        void noKeywords_ClearsExistingKeywords() {
             PostSummaryProcessor postSummaryProcessor = new PostSummaryProcessor(summaryExtractionService);
             Post post = createSummaryTargetPostWithExistingKeywords();
             given(summaryExtractionService.extractSummary("요약 대상 글", "평문 본문"))
@@ -76,7 +76,7 @@ class PostSummaryProcessorTest {
 
         @Test
         @DisplayName("요약 추출 서비스 예외를 그대로 전파한다")
-        void propagatesExtractionServiceFailure() {
+        void extractionServiceFails_PropagatesException() {
             PostSummaryProcessor postSummaryProcessor = new PostSummaryProcessor(summaryExtractionService);
             Post post = createSummaryTargetPostWithExistingKeywords();
             PostKeyword oldKeyword1 = post.getKeywords().get(0);

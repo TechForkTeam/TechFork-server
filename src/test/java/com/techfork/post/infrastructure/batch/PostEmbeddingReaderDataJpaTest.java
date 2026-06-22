@@ -53,7 +53,7 @@ class PostEmbeddingReaderDataJpaTest {
 
         @Test
         @DisplayName("요약이 공백이 아니고 embeddedAt이 null인 게시글만 읽는다")
-        void readsOnlyPostsReadyForEmbedding() throws Exception {
+        void readyPostsExist_ReadsOnlyPostsReadyForEmbedding() throws Exception {
             Post readyPost1 = savePost("ready-1", "요약 완료 1", "짧은 요약 1", null);
             Post readyPost2 = savePost("ready-2", "요약 완료 2", "짧은 요약 2", null);
             savePost("null-summary", null, null, null);
@@ -86,7 +86,7 @@ class PostEmbeddingReaderDataJpaTest {
 
         @Test
         @DisplayName("조건을 만족하는 게시글이 없으면 null을 반환한다")
-        void returnsNullWhenNoPostsAreReadyForEmbedding() throws Exception {
+        void noReadyPosts_ReturnsNull() throws Exception {
             savePost("null-summary", null, null, null);
             savePost("empty-summary", "", "", null);
             savePost("blank-summary", "   ", "   ", null);

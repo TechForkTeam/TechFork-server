@@ -63,7 +63,7 @@ class PostSummaryWriterDataJpaTest {
 
         @Test
         @DisplayName("summary를 갱신하고 기존 keyword를 제거한 뒤 새 keyword만 저장한다")
-        void updatesSummariesAndReplacesPersistedKeywords() {
+        void chunkWithKeywords_UpdatesSummariesAndReplacesKeywords() {
             Post post = savePost("기존 요약", "기존 짧은 요약", List.of("Legacy", "Old"));
 
             entityManager.clear();
@@ -85,7 +85,7 @@ class PostSummaryWriterDataJpaTest {
 
         @Test
         @DisplayName("새 keyword가 없으면 기존 keyword를 모두 삭제하고 summary만 저장한다")
-        void deletesExistingKeywordsWhenNewKeywordListIsEmpty() {
+        void emptyKeywordList_DeletesExistingKeywords() {
             Post post = savePost("기존 요약", "기존 짧은 요약", List.of("Legacy", "Old"));
 
             entityManager.clear();

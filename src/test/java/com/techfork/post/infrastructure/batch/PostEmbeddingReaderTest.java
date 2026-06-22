@@ -25,12 +25,17 @@ class PostEmbeddingReaderTest {
     @Mock
     private PostRepository postRepository;
 
-    @Test
-    @DisplayName("생성만으로는 repository를 조회하지 않는다")
-    void doesNotQueryRepositoryOnConstruction() {
-        new PostEmbeddingReader(postRepository);
+    @Nested
+    @DisplayName("생성")
+    class Constructor {
 
-        verifyNoInteractions(postRepository);
+        @Test
+        @DisplayName("생성만으로는 repository를 조회하지 않는다")
+        void construction_DoesNotQueryRepository() {
+            new PostEmbeddingReader(postRepository);
+
+            verifyNoInteractions(postRepository);
+        }
     }
 
     @Nested
@@ -39,7 +44,7 @@ class PostEmbeddingReaderTest {
 
         @Test
         @DisplayName("첫 read에서만 repository를 조회하고 Post를 순차적으로 반환한다")
-        void lazilyLoadsOnceAndReturnsPostsSequentially() {
+        void postsExist_LazilyLoadsOnceAndReturnsSequentially() {
             PostEmbeddingReader postEmbeddingReader = new PostEmbeddingReader(postRepository);
             Post firstPost = PostFixture.createPost(1L, "첫 번째 글", "본문1", "평문1", "TechFork", "요약1", "짧은요약1");
             Post secondPost = PostFixture.createPost(2L, "두 번째 글", "본문2", "평문2", "TechFork", "요약2", "짧은요약2");
@@ -57,7 +62,7 @@ class PostEmbeddingReaderTest {
 
         @Test
         @DisplayName("조회 결과가 비어 있으면 null을 반환하고 다시 조회하지 않는다")
-        void returnsNullForEmptyRepositoryResultWithoutReloading() {
+        void emptyRepositoryResult_ReturnsNullWithoutReloading() {
             PostEmbeddingReader postEmbeddingReader = new PostEmbeddingReader(postRepository);
             given(postRepository.findReadyForEmbedding()).willReturn(List.of());
 
@@ -71,7 +76,7 @@ class PostEmbeddingReaderTest {
 
         @Test
         @DisplayName("새 step execution이 시작되면 repository를 다시 조회한다")
-        void reloadsRepositoryWhenNewStepExecutionStarts() {
+        void newStepExecution_ReloadsRepository() {
             PostEmbeddingReader postEmbeddingReader = new PostEmbeddingReader(postRepository);
             Post firstStepPost = PostFixture.createPost(1L, "첫 실행 글", "본문1", "평문1", "TechFork", "요약1", "짧은요약1");
             Post secondStepPost = PostFixture.createPost(2L, "두 번째 실행 글", "본문2", "평문2", "TechFork", "요약2", "짧은요약2");

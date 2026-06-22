@@ -35,7 +35,7 @@ class PostKeywordLookupServiceTest {
 
         @Test
         @DisplayName("입력 postIds가 비어있으면 repository 호출 없이 빈 Map을 반환한다")
-        void getKeywordsByPostIds_EmptyInput_ReturnsEmptyMap() {
+        void emptyPostIds_ReturnsEmptyMap() {
             Map<Long, List<String>> result = postKeywordLookupService.getKeywordsByPostIds(List.of());
 
             assertThat(result).isEmpty();
@@ -44,7 +44,7 @@ class PostKeywordLookupServiceTest {
 
         @Test
         @DisplayName("postId별 keyword map을 반환한다")
-        void getKeywordsByPostIds_ReturnsKeywordMap() {
+        void postIdsProvided_ReturnsKeywordMap() {
             Post post1 = mock(Post.class);
             Post post2 = mock(Post.class);
             given(post1.getId()).willReturn(101L);

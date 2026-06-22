@@ -55,7 +55,7 @@ class PostSummaryWriterTest {
 
         @Test
         @DisplayName("빈 chunk면 JDBC batch와 EntityManager clear를 수행하지 않는다")
-        void doesNothingForEmptyChunk() throws Exception {
+        void emptyChunk_DoesNothing() throws Exception {
             PostSummaryWriter postSummaryWriter = createWriter();
 
             postSummaryWriter.write(Chunk.of());
@@ -67,7 +67,7 @@ class PostSummaryWriterTest {
         @Test
         @DisplayName("게시글 chunk를 summary update, keyword delete, keyword insert로 위임한다")
         @SuppressWarnings({"rawtypes", "unchecked"})
-        void delegatesUpdateDeleteInsertWithExpectedBindings() throws Exception {
+        void chunkWithKeywords_DelegatesUpdateDeleteInsert() throws Exception {
             PostSummaryWriter postSummaryWriter = createWriter();
             Post firstPost = createPostWithSummaryAndKeywords(1L, "첫 요약", "첫 짧은 요약", List.of("AI", "Java"));
             Post secondPost = createPostWithSummaryAndKeywords(2L, "둘 요약", "둘 짧은 요약", List.of("Spring"));
@@ -119,7 +119,7 @@ class PostSummaryWriterTest {
         @Test
         @DisplayName("삽입할 keyword가 없으면 insert batch를 건너뛰고 update/delete/clear를 수행한다")
         @SuppressWarnings({"rawtypes", "unchecked"})
-        void skipsInsertWhenFlattenedKeywordListIsEmpty() throws Exception {
+        void emptyFlattenedKeywordList_SkipsInsert() throws Exception {
             PostSummaryWriter postSummaryWriter = createWriter();
             Post firstPost = createPostWithSummaryAndKeywords(1L, "첫 요약", "첫 짧은 요약", List.of());
             Post secondPost = createPostWithSummaryAndKeywords(2L, "둘 요약", "둘 짧은 요약", List.of());

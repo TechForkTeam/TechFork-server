@@ -53,7 +53,7 @@ class PostSummaryReaderDataJpaTest {
 
         @Test
         @DisplayName("summary가 null이거나 빈 문자열인 게시글만 읽는다")
-        void readsOnlyPostsWithNullOrEmptySummary() throws Exception {
+        void postsNeedSummary_ReadsOnlyMatchingPosts() throws Exception {
             Post nullSummaryPost = savePost("null-summary", null, null, List.of("AI"));
             Post emptySummaryPost = savePost("empty-summary", "", "", List.of("Batch"));
             savePost("completed-summary", "완료 요약", "완료 짧은 요약", List.of("Done"));
@@ -96,7 +96,7 @@ class PostSummaryReaderDataJpaTest {
 
         @Test
         @DisplayName("summary가 있는 게시글만 있으면 null을 반환한다")
-        void returnsNullWhenNoPostsMatchSummaryCondition() throws Exception {
+        void noPostsMatchSummaryCondition_ReturnsNull() throws Exception {
             savePost("completed-summary", "완료 요약", "완료 짧은 요약", List.of("Done"));
 
             entityManager.clear();

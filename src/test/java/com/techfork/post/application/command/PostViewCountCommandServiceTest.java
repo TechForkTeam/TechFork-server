@@ -29,7 +29,7 @@ class PostViewCountCommandServiceTest {
 
         @Test
         @DisplayName("1건이 업데이트되면 true를 반환한다")
-        void incrementViewCount_ReturnsTrue_WhenSingleRowUpdated() {
+        void singleRowUpdated_ReturnsTrue() {
             Long postId = 100L;
             given(postRepository.incrementViewCount(postId)).willReturn(1);
 
@@ -41,7 +41,7 @@ class PostViewCountCommandServiceTest {
 
         @Test
         @DisplayName("업데이트 건수가 1이 아니면 false를 반환한다")
-        void incrementViewCount_ReturnsFalse_WhenUpdatedCountIsNotOne() {
+        void updatedCountIsNotOne_ReturnsFalse() {
             Long postId = 100L;
             given(postRepository.incrementViewCount(postId)).willReturn(0);
 

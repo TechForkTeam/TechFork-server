@@ -43,7 +43,7 @@ class PostEmbeddingWriterTest {
 
         @Test
         @DisplayName("빈 chunk면 Elasticsearch와 repository를 호출하지 않는다")
-        void doesNothingForEmptyChunk() throws Exception {
+        void emptyChunk_DoesNothing() throws Exception {
             PostEmbeddingWriter postEmbeddingWriter = createWriter();
 
             postEmbeddingWriter.write(org.springframework.batch.item.Chunk.of());
@@ -55,7 +55,7 @@ class PostEmbeddingWriterTest {
         @Test
         @DisplayName("문서를 bulk index 요청으로 보내고 성공한 post id들의 embeddedAt을 갱신한다")
         @SuppressWarnings({"rawtypes", "unchecked"})
-        void indexesDocumentsAndUpdatesEmbeddedAtForSuccessfulIds() throws Exception {
+        void successfulBulkResponse_IndexesDocumentsAndUpdatesEmbeddedAt() throws Exception {
             PostEmbeddingWriter postEmbeddingWriter = createWriter();
             PostDocument firstDocument = createPostDocument(1L);
             PostDocument secondDocument = createPostDocument(2L);
@@ -97,7 +97,7 @@ class PostEmbeddingWriterTest {
 
         @Test
         @DisplayName("bulk 일부 실패 시 성공한 post id만 embeddedAt을 갱신한다")
-        void updatesOnlySuccessfulPostIdsWhenBulkHasFailures() throws Exception {
+        void bulkResponseHasFailures_UpdatesOnlySuccessfulPostIds() throws Exception {
             PostEmbeddingWriter postEmbeddingWriter = createWriter();
             PostDocument firstDocument = createPostDocument(1L);
             PostDocument secondDocument = createPostDocument(2L);
@@ -120,7 +120,7 @@ class PostEmbeddingWriterTest {
 
         @Test
         @DisplayName("bulk 응답이 null이면 embeddedAt을 갱신하지 않는다")
-        void skipsEmbeddedAtUpdateWhenBulkResponseIsNull() throws Exception {
+        void nullBulkResponse_SkipsEmbeddedAtUpdate() throws Exception {
             PostEmbeddingWriter postEmbeddingWriter = createWriter();
             PostDocument document = createPostDocument(1L);
             doReturn(null).when(elasticsearchClient).bulk(any(Function.class));
@@ -132,7 +132,7 @@ class PostEmbeddingWriterTest {
 
         @Test
         @DisplayName("성공한 문서가 없으면 embeddedAt을 갱신하지 않는다")
-        void skipsEmbeddedAtUpdateWhenNoDocumentSucceeded() throws Exception {
+        void noDocumentSucceeded_SkipsEmbeddedAtUpdate() throws Exception {
             PostEmbeddingWriter postEmbeddingWriter = createWriter();
             PostDocument document = createPostDocument(1L);
             BulkResponse bulkResponse = BulkResponse.of(b -> b

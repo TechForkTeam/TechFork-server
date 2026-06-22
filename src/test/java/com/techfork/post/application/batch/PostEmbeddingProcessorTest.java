@@ -41,7 +41,7 @@ class PostEmbeddingProcessorTest {
 
         @Test
         @DisplayName("제목, 요약, 유효 본문 청크를 임베딩해 PostDocument projection을 생성한다")
-        void createsPostDocumentProjectionFromEmbeddings() {
+        void validEmbeddings_CreatePostDocumentProjection() {
             PostEmbeddingProcessor postEmbeddingProcessor = createProcessor();
             Post post = createEmbeddingTargetPost();
             List<Float> titleEmbedding = List.of(0.1f, 0.2f);
@@ -88,7 +88,7 @@ class PostEmbeddingProcessorTest {
 
         @Test
         @DisplayName("제목이 비어 있으면 임베딩을 스킵하고 null을 반환한다")
-        void returnsNullWhenTitleIsBlank() {
+        void blankTitle_ReturnsNull() {
             PostEmbeddingProcessor postEmbeddingProcessor = createProcessor();
             Post post = createEmbeddingTargetPost();
             ReflectionTestUtils.setField(post, "title", " ");
@@ -101,7 +101,7 @@ class PostEmbeddingProcessorTest {
 
         @Test
         @DisplayName("요약이 비어 있으면 임베딩을 스킵하고 null을 반환한다")
-        void returnsNullWhenSummaryIsBlank() {
+        void blankSummary_ReturnsNull() {
             PostEmbeddingProcessor postEmbeddingProcessor = createProcessor();
             Post post = createEmbeddingTargetPost();
             ReflectionTestUtils.setField(post, "summary", " ");
@@ -114,7 +114,7 @@ class PostEmbeddingProcessorTest {
 
         @Test
         @DisplayName("유효한 본문 청크가 없으면 batch embedding 없이 null을 반환한다")
-        void returnsNullWhenNoValidChunksRemain() {
+        void noValidChunksRemain_ReturnsNull() {
             PostEmbeddingProcessor postEmbeddingProcessor = createProcessor();
             Post post = createEmbeddingTargetPost();
             given(embeddingClient.embed("임베딩 대상 게시글")).willReturn(List.of(0.1f));
@@ -133,7 +133,7 @@ class PostEmbeddingProcessorTest {
 
         @Test
         @DisplayName("임베딩 클라이언트 예외를 그대로 전파한다")
-        void propagatesEmbeddingClientFailure() {
+        void embeddingClientFails_PropagatesException() {
             PostEmbeddingProcessor postEmbeddingProcessor = createProcessor();
             Post post = createEmbeddingTargetPost();
             given(embeddingClient.embed("임베딩 대상 게시글"))
