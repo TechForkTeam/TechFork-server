@@ -86,7 +86,7 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
                 .build();
         testBlog = techBlogRepository.save(testBlog);
 
-        testPost1 = postRepository.save(createPost(
+        testPost1 = postRepository.save(postFixture(
                 "추천 게시글 1",
                 "게시글 1의 전체 내용입니다.",
                 "게시글 1의 내용",
@@ -96,7 +96,7 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
                 "https://test.com/post/1",
                 LocalDateTime.now().minusDays(1)
         ));
-        testPost2 = postRepository.save(createPost(
+        testPost2 = postRepository.save(postFixture(
                 "추천 게시글 2",
                 "게시글 2의 전체 내용입니다.",
                 "게시글 2의 내용",
@@ -106,7 +106,7 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
                 "https://test.com/post/2",
                 LocalDateTime.now().minusDays(2)
         ));
-        testPost3 = postRepository.save(createPost(
+        testPost3 = postRepository.save(postFixture(
                 "추천 게시글 3",
                 "게시글 3의 전체 내용입니다.",
                 "게시글 3의 내용",
@@ -226,7 +226,7 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
         }
     }
 
-    private Post createPost(
+    private Post postFixture(
             String title,
             String fullContent,
             String plainContent,
