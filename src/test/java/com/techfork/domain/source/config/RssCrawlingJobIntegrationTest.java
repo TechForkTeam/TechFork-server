@@ -13,7 +13,7 @@ import com.techfork.domain.source.batch.PostBatchWriter;
 import com.techfork.domain.source.batch.RssFeedReader;
 import com.techfork.domain.source.batch.RssToPostProcessor;
 import com.techfork.domain.source.dto.RssFeedItem;
-import com.techfork.domain.source.fixture.SourcePostFixture;
+import com.techfork.post.fixture.PostFixture;
 import com.techfork.domain.source.listener.RssCrawlingJobListener;
 import com.techfork.global.common.IntegrationTestBase;
 import org.junit.jupiter.api.AfterEach;
@@ -138,7 +138,7 @@ class RssCrawlingJobIntegrationTest extends IntegrationTestBase {
     @Test
     @DisplayName("extractSummaryStep은 reader, async processor, writer wiring을 유지한다")
     void extractSummaryStep_WiresReaderAsyncProcessorAndWriter() throws Exception {
-        Post post = SourcePostFixture.createPost(11L, "summary-step", "원문", "평문", "TechFork", "요약 전", null);
+        Post post = PostFixture.createPost(11L, "summary-step", "원문", "평문", "TechFork", "요약 전", null);
 
         given(postSummaryReader.read()).willReturn(post).willReturn((Post) null);
         given(postSummaryProcessor.process(post)).willReturn(post);
@@ -159,7 +159,7 @@ class RssCrawlingJobIntegrationTest extends IntegrationTestBase {
     @Test
     @DisplayName("embedAndIndexStep은 reader, async processor, writer wiring을 유지한다")
     void embedAndIndexStep_WiresReaderAsyncProcessorAndWriter() throws Exception {
-        Post post = SourcePostFixture.createPost(21L, "embed-step", "원문", "평문", "TechFork", "요약 완료", "짧은 요약");
+        Post post = PostFixture.createPost(21L, "embed-step", "원문", "평문", "TechFork", "요약 완료", "짧은 요약");
         PostDocument postDocument = PostDocument.create(
                 post,
                 List.of(0.1f, 0.2f),
@@ -188,8 +188,8 @@ class RssCrawlingJobIntegrationTest extends IntegrationTestBase {
     void summaryAndEmbeddingJob_ExecutesOnlySummaryThenEmbedSteps() throws Exception {
         jobLauncherTestUtils.setJob(summaryAndEmbeddingJob);
 
-        Post summaryPost = SourcePostFixture.createPost(31L, "summary-job", "원문", "평문", "TechFork", "요약 전", null);
-        Post embeddedPost = SourcePostFixture.createPost(32L, "embed-job", "원문", "평문", "TechFork", "요약 완료", "짧은 요약");
+        Post summaryPost = PostFixture.createPost(31L, "summary-job", "원문", "평문", "TechFork", "요약 전", null);
+        Post embeddedPost = PostFixture.createPost(32L, "embed-job", "원문", "평문", "TechFork", "요약 완료", "짧은 요약");
         PostDocument postDocument = PostDocument.create(
                 embeddedPost,
                 List.of(0.1f),
@@ -229,8 +229,8 @@ class RssCrawlingJobIntegrationTest extends IntegrationTestBase {
                 "카카오",
                 41L
         );
-        Post fetchedPost = SourcePostFixture.createPost(41L, "fetch-job", "본문", "본문", "TechFork", null, null);
-        Post summaryPost = SourcePostFixture.createPost(42L, "summary-job", "본문", "본문", "TechFork", "요약 완료", "짧은 요약");
+        Post fetchedPost = PostFixture.createPost(41L, "fetch-job", "본문", "본문", "TechFork", null, null);
+        Post summaryPost = PostFixture.createPost(42L, "summary-job", "본문", "본문", "TechFork", "요약 완료", "짧은 요약");
         PostDocument postDocument = PostDocument.create(
                 summaryPost,
                 List.of(0.1f),

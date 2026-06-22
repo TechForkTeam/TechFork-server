@@ -7,10 +7,7 @@ import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.bulk.OperationType;
 import co.elastic.clients.util.ObjectBuilder;
-import com.techfork.post.domain.projection.ContentChunk;
 import com.techfork.post.domain.projection.PostDocument;
-import com.techfork.post.domain.Post;
-import com.techfork.post.fixture.PostFixture;
 import com.techfork.post.infrastructure.PostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.function.Function;
 
+import static com.techfork.post.fixture.PostDocumentFixture.createPostDocument;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -153,23 +151,6 @@ class PostEmbeddingWriterTest {
             return new PostEmbeddingWriter(elasticsearchClient, postRepository);
         }
 
-        private PostDocument createPostDocument(Long id) {
-            Post post = PostFixture.createPost(
-                    id,
-                    "임베딩 대상 글 " + id,
-                    "원문 본문 " + id,
-                    "평문 본문 " + id,
-                    "TechFork",
-                    "요약 완료 " + id,
-                    "짧은 요약 " + id
-            );
-            return PostDocument.create(
-                    post,
-                    List.of(0.1f, 0.2f),
-                    List.of(0.3f, 0.4f),
-                    List.of(ContentChunk.create(0, "chunk-" + id, List.of(0.5f, 0.6f)))
-            );
-        }
 
         private BulkResponseItem successItem(String id) {
             return BulkResponseItem.of(item -> item

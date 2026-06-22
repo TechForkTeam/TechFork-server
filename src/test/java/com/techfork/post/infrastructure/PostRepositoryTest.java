@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static com.techfork.post.fixture.PostFixture.createPost;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -534,22 +534,4 @@ class PostRepositoryTest {
         }
     }
 
-    private Post createPost(String title, TechBlog techBlog, LocalDateTime publishedAt, Long viewCount) {
-        Post post = Post.builder()
-                .title(title)
-                .fullContent("<p>" + title + " 내용</p>")
-                .plainContent(title + " 내용")
-                .company(techBlog.getCompanyName())
-                .url("https://test.com/" + title)
-                .logoUrl("https://test.com/logo.png")
-                .thumbnailUrl("https://test.com/thumb.png")
-                .publishedAt(publishedAt)
-                .crawledAt(LocalDateTime.now())
-                .techBlog(techBlog)
-                .build();
-
-        ReflectionTestUtils.setField(post, "viewCount", viewCount);
-
-        return post;
-    }
 }
