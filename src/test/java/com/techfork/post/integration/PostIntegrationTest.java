@@ -1,6 +1,6 @@
 package com.techfork.post.integration;
 
-import com.techfork.activity.bookmark.domain.Bookmark;
+import com.techfork.activity.bookmark.fixture.BookmarkFixture;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.fixture.TechBlogFixture;
@@ -107,7 +107,7 @@ class PostIntegrationTest extends IntegrationTestBase {
         testUser = UserFixture.socialUser("testSocialId", "test@example.com");
         testUser = userRepository.save(testUser);
         accessToken = jwtUtil.generateTokens(testUser.getId(), Role.USER).accessToken();
-        bookmarkRepository.save(Bookmark.create(testUser, testPost1, LocalDateTime.now()));
+        bookmarkRepository.save(BookmarkFixture.createBookmark(testUser, testPost1, LocalDateTime.now()));
     }
 
     @AfterEach

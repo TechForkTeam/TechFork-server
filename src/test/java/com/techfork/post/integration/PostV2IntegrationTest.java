@@ -1,6 +1,6 @@
 package com.techfork.post.integration;
 
-import com.techfork.activity.bookmark.domain.Bookmark;
+import com.techfork.activity.bookmark.fixture.BookmarkFixture;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.fixture.TechBlogFixture;
@@ -101,7 +101,7 @@ class PostV2IntegrationTest extends IntegrationTestBase {
                 .build();
         postRepository.save(oldPost);
 
-        bookmarkRepository.save(Bookmark.create(testUser, todayPost, LocalDateTime.now()));
+        bookmarkRepository.save(BookmarkFixture.createBookmark(testUser, todayPost, LocalDateTime.now()));
     }
 
     @AfterEach
