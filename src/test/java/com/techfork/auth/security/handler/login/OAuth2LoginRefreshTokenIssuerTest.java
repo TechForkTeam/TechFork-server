@@ -7,6 +7,7 @@ import com.techfork.useraccount.domain.enums.Role;
 import com.techfork.useraccount.domain.enums.UserStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -36,18 +37,23 @@ class OAuth2LoginRefreshTokenIssuerTest {
         refreshTokenIssuer = new OAuth2LoginRefreshTokenIssuer(jwtUtil, jwtProperties);
     }
 
-    @Test
-    @DisplayName("OAuth2 로그인 성공 경로에서 refresh token만 발급한다")
-    void issue_ReturnsOAuth2LoginRefreshTokenWithoutSideEffects() {
-        UserPrincipal principal = principal();
-        given(jwtUtil.generateRefreshToken(USER_ID, Role.USER)).willReturn(REFRESH_TOKEN);
+    @Nested
+    @DisplayName("issue")
+    class Issue {
 
-        OAuth2LoginRefreshToken issuedRefreshToken = refreshTokenIssuer.issue(principal);
+        @Test
+        @DisplayName("OAuth2 로그인 성공 경로에서 refresh token만 발급한다")
+        void validPrincipal_ReturnsRefreshTokenWithoutSideEffects() {
+            UserPrincipal principal = principal();
+            given(jwtUtil.generateRefreshToken(USER_ID, Role.USER)).willReturn(REFRESH_TOKEN);
 
-        assertThat(issuedRefreshToken.refreshToken()).isEqualTo(REFRESH_TOKEN);
-        assertThat(issuedRefreshToken.refreshTokenExpiration()).isEqualTo(REFRESH_TOKEN_EXPIRATION_MILLIS);
-        verify(jwtUtil).generateRefreshToken(USER_ID, Role.USER);
-        verify(jwtUtil, never()).generateTokens(USER_ID, Role.USER);
+            OAuth2LoginRefreshToken issuedRefreshToken = refreshTokenIssuer.issue(principal);
+
+            assertThat(issuedRefreshToken.refreshToken()).isEqualTo(REFRESH_TOKEN);
+            assertThat(issuedRefreshToken.refreshTokenExpiration()).isEqualTo(REFRESH_TOKEN_EXPIRATION_MILLIS);
+            verify(jwtUtil).generateRefreshToken(USER_ID, Role.USER);
+            verify(jwtUtil, never()).generateTokens(USER_ID, Role.USER);
+        }
     }
 
     private UserPrincipal principal() {

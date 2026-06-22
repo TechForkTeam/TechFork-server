@@ -2,6 +2,7 @@ package com.techfork.auth.security.jwt;
 
 import com.techfork.useraccount.domain.enums.Role;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static com.techfork.auth.security.jwt.JwtConstants.TOKEN_TYPE_REFRESH;
@@ -14,15 +15,20 @@ class JwtUtilTest {
     private static final long ACCESS_TOKEN_EXPIRATION_MILLIS = 900_000L;
     private static final long REFRESH_TOKEN_EXPIRATION_MILLIS = 1_209_600_000L;
 
-    @Test
-    @DisplayName("refresh token만 발급하면 refresh 타입 토큰을 생성한다")
-    void generateRefreshToken_ReturnsRefreshTypeToken() {
-        JwtUtil jwtUtil = jwtUtil();
+    @Nested
+    @DisplayName("generateRefreshToken")
+    class GenerateRefreshToken {
 
-        String refreshToken = jwtUtil.generateRefreshToken(USER_ID, Role.USER);
+        @Test
+        @DisplayName("refresh token만 발급하면 refresh 타입 토큰을 생성한다")
+        void userIdAndRole_ReturnsRefreshTypeToken() {
+            JwtUtil jwtUtil = jwtUtil();
 
-        assertThat(jwtUtil.getUserIdFromToken(refreshToken)).isEqualTo(USER_ID);
-        assertThat(jwtUtil.getTokenType(refreshToken)).isEqualTo(TOKEN_TYPE_REFRESH);
+            String refreshToken = jwtUtil.generateRefreshToken(USER_ID, Role.USER);
+
+            assertThat(jwtUtil.getUserIdFromToken(refreshToken)).isEqualTo(USER_ID);
+            assertThat(jwtUtil.getTokenType(refreshToken)).isEqualTo(TOKEN_TYPE_REFRESH);
+        }
     }
 
     private JwtUtil jwtUtil() {

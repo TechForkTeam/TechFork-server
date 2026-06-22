@@ -19,6 +19,7 @@ import com.techfork.useraccount.domain.enums.UserStatus;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -71,209 +72,219 @@ class AuthCommandServiceTest {
         userAuthProfile = new UserAuthProfile(userId, Role.USER, UserStatus.PENDING, "test@example.com", false);
     }
 
-    // ===== 토큰 갱신 테스트 =====
+    @Nested
+    @DisplayName("토큰 갱신")
+    class RefreshToken {
 
-    @Test
-    @DisplayName("토큰 갱신 성공")
-    void refreshToken_Success() {
-        // Given
-        JwtDTO newTokens = JwtDTO.of(newAccessToken, newRefreshToken);
+        @Test
+        @DisplayName("토큰 갱신 성공")
+        void validRefreshToken_ReturnsNewTokens() {
+            // Given
+            JwtDTO newTokens = JwtDTO.of(newAccessToken, newRefreshToken);
 
-        given(jwtUtil.isValidToken(validRefreshToken)).willReturn(true);
-        given(jwtUtil.getUserIdFromToken(validRefreshToken)).willReturn(userId);
-        given(refreshTokenStore.validateRefreshToken(userId, validRefreshToken)).willReturn(true);
-        given(userAuthAccountService.findAuthProfileById(userId)).willReturn(Optional.of(userAuthProfile));
-        given(jwtUtil.generateTokens(userId, Role.USER)).willReturn(newTokens);
-        given(jwtProperties.getRefreshTokenExpiration()).willReturn(900000L);
-        given(jwtProperties.getAccessTokenExpiration()).willReturn(180000L);
+            given(jwtUtil.isValidToken(validRefreshToken)).willReturn(true);
+            given(jwtUtil.getUserIdFromToken(validRefreshToken)).willReturn(userId);
+            given(refreshTokenStore.validateRefreshToken(userId, validRefreshToken)).willReturn(true);
+            given(userAuthAccountService.findAuthProfileById(userId)).willReturn(Optional.of(userAuthProfile));
+            given(jwtUtil.generateTokens(userId, Role.USER)).willReturn(newTokens);
+            given(jwtProperties.getRefreshTokenExpiration()).willReturn(900000L);
+            given(jwtProperties.getAccessTokenExpiration()).willReturn(180000L);
 
-        // When
-        TokenRefreshResult result = authCommandService.refreshToken(new RefreshTokenCommand(validRefreshToken));
+            // When
+            TokenRefreshResult result = authCommandService.refreshToken(new RefreshTokenCommand(validRefreshToken));
 
-        // Then
-        assertThat(result.accessToken()).isEqualTo(newAccessToken);
-        assertThat(result.refreshToken()).isEqualTo(newRefreshToken);
-        assertThat(result.refreshTokenExpiration()).isEqualTo(900000L);
-        verify(jwtUtil).isValidToken(validRefreshToken);
-        verify(jwtUtil).validateTokenType(validRefreshToken, TOKEN_TYPE_REFRESH);
-        verify(refreshTokenStore).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
-        verify(userAuthCacheStore).put(eq(userId), eq(userAuthProfile), eq(180000L));
+            // Then
+            assertThat(result.accessToken()).isEqualTo(newAccessToken);
+            assertThat(result.refreshToken()).isEqualTo(newRefreshToken);
+            assertThat(result.refreshTokenExpiration()).isEqualTo(900000L);
+            verify(jwtUtil).isValidToken(validRefreshToken);
+            verify(jwtUtil).validateTokenType(validRefreshToken, TOKEN_TYPE_REFRESH);
+            verify(refreshTokenStore).saveRefreshToken(eq(userId), eq(newRefreshToken), anyLong());
+            verify(userAuthCacheStore).put(eq(userId), eq(userAuthProfile), eq(180000L));
+        }
+
+        @Test
+        @DisplayName("토큰 갱신 실패 - 리프레시 토큰이 null")
+        void nullToken_ThrowsRefreshTokenMissing() {
+            // When & Then
+            assertThatThrownBy(() -> authCommandService.refreshToken(new RefreshTokenCommand(null)))
+                    .isInstanceOf(GeneralException.class)
+                    .extracting(ex -> ((GeneralException) ex).getCode())
+                    .isEqualTo(AuthErrorCode.REFRESH_TOKEN_MISSING);
+        }
+
+        @Test
+        @DisplayName("토큰 갱신 실패 - 리프레시 토큰이 빈 문자열")
+        void emptyToken_ThrowsRefreshTokenMissing() {
+            // When & Then
+            assertThatThrownBy(() -> authCommandService.refreshToken(new RefreshTokenCommand("")))
+                    .isInstanceOf(GeneralException.class)
+                    .extracting(ex -> ((GeneralException) ex).getCode())
+                    .isEqualTo(AuthErrorCode.REFRESH_TOKEN_MISSING);
+        }
+
+        @Test
+        @DisplayName("토큰 갱신 실패 - 유효하지 않은 토큰")
+        void invalidToken_ThrowsInvalidRefreshToken() {
+            // Given
+            given(jwtUtil.isValidToken(validRefreshToken)).willReturn(false);
+
+            // When & Then
+            assertThatThrownBy(() -> authCommandService.refreshToken(new RefreshTokenCommand(validRefreshToken)))
+                    .isInstanceOf(GeneralException.class)
+                    .extracting(ex -> ((GeneralException) ex).getCode())
+                    .isEqualTo(AuthErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        @Test
+        @DisplayName("토큰 갱신 실패 - Redis에 저장된 토큰과 불일치하여 세션 무효화")
+        void tokenMismatch_DeletesRefreshTokenAndThrowsRefreshTokenMismatch() {
+            // Given
+            given(jwtUtil.isValidToken(validRefreshToken)).willReturn(true);
+            given(jwtUtil.getUserIdFromToken(validRefreshToken)).willReturn(userId);
+            given(refreshTokenStore.validateRefreshToken(userId, validRefreshToken)).willReturn(false);
+
+            // When & Then
+            assertThatThrownBy(() -> authCommandService.refreshToken(new RefreshTokenCommand(validRefreshToken)))
+                    .isInstanceOf(GeneralException.class)
+                    .extracting(ex -> ((GeneralException) ex).getCode())
+                    .isEqualTo(AuthErrorCode.REFRESH_TOKEN_MISMATCH);
+
+            // 세션 무효화를 위해 Redis 토큰 삭제가 호출되었는지 검증
+            verify(refreshTokenStore).deleteRefreshToken(userId);
+        }
+
+        @Test
+        @DisplayName("토큰 갱신 실패 - 사용자를 찾을 수 없음")
+        void userNotFound_ThrowsUserNotFound() {
+            // Given
+            given(jwtUtil.isValidToken(validRefreshToken)).willReturn(true);
+            given(jwtUtil.getUserIdFromToken(validRefreshToken)).willReturn(userId);
+            given(refreshTokenStore.validateRefreshToken(userId, validRefreshToken)).willReturn(true);
+            given(userAuthAccountService.findAuthProfileById(userId)).willReturn(Optional.empty());
+
+            // When & Then
+            assertThatThrownBy(() -> authCommandService.refreshToken(new RefreshTokenCommand(validRefreshToken)))
+                    .isInstanceOf(GeneralException.class)
+                    .extracting(ex -> ((GeneralException) ex).getCode())
+                    .isEqualTo(AuthErrorCode.USER_NOT_FOUND);
+        }
     }
 
-    @Test
-    @DisplayName("토큰 갱신 실패 - 리프레시 토큰이 null")
-    void refreshToken_Fail_TokenIsNull() {
-        // When & Then
-        assertThatThrownBy(() -> authCommandService.refreshToken(new RefreshTokenCommand(null)))
-                .isInstanceOf(GeneralException.class)
-                .extracting(ex -> ((GeneralException) ex).getCode())
-                .isEqualTo(AuthErrorCode.REFRESH_TOKEN_MISSING);
+    @Nested
+    @DisplayName("로그아웃")
+    class Logout {
+
+        @Test
+        @DisplayName("로그아웃 성공")
+        void validRefreshToken_DeletesRefreshToken() {
+            // Given
+            given(jwtUtil.isValidToken(validRefreshToken)).willReturn(true);
+            given(jwtUtil.getUserIdFromToken(validRefreshToken)).willReturn(userId);
+
+            // When
+            authCommandService.logout(new LogoutCommand(validRefreshToken));
+
+            // Then
+            verify(jwtUtil).isValidToken(validRefreshToken);
+            verify(jwtUtil).validateTokenType(validRefreshToken, TOKEN_TYPE_REFRESH);
+            verify(refreshTokenStore).deleteRefreshToken(userId);
+        }
+
+        @Test
+        @DisplayName("로그아웃 실패 - 리프레시 토큰이 null")
+        void nullToken_ThrowsRefreshTokenMissing() {
+            // When & Then
+            assertThatThrownBy(() -> authCommandService.logout(new LogoutCommand(null)))
+                    .isInstanceOf(GeneralException.class)
+                    .extracting(ex -> ((GeneralException) ex).getCode())
+                    .isEqualTo(AuthErrorCode.REFRESH_TOKEN_MISSING);
+        }
+
+        @Test
+        @DisplayName("로그아웃 실패 - 리프레시 토큰이 빈 문자열")
+        void emptyToken_ThrowsRefreshTokenMissing() {
+            // When & Then
+            assertThatThrownBy(() -> authCommandService.logout(new LogoutCommand("")))
+                    .isInstanceOf(GeneralException.class)
+                    .extracting(ex -> ((GeneralException) ex).getCode())
+                    .isEqualTo(AuthErrorCode.REFRESH_TOKEN_MISSING);
+        }
+
+        @Test
+        @DisplayName("로그아웃 실패 - 유효하지 않은 토큰")
+        void invalidToken_ThrowsInvalidRefreshToken() {
+            // Given
+            given(jwtUtil.isValidToken(validRefreshToken)).willReturn(false);
+
+            // When & Then
+            assertThatThrownBy(() -> authCommandService.logout(new LogoutCommand(validRefreshToken)))
+                    .isInstanceOf(GeneralException.class)
+                    .extracting(ex -> ((GeneralException) ex).getCode())
+                    .isEqualTo(AuthErrorCode.INVALID_REFRESH_TOKEN);
+        }
     }
 
-    @Test
-    @DisplayName("토큰 갱신 실패 - 리프레시 토큰이 빈 문자열")
-    void refreshToken_Fail_TokenIsEmpty() {
-        // When & Then
-        assertThatThrownBy(() -> authCommandService.refreshToken(new RefreshTokenCommand("")))
-                .isInstanceOf(GeneralException.class)
-                .extracting(ex -> ((GeneralException) ex).getCode())
-                .isEqualTo(AuthErrorCode.REFRESH_TOKEN_MISSING);
+    @Nested
+    @DisplayName("개발자 토큰 발급")
+    class GenerateDeveloperToken {
+
+        @Test
+        @DisplayName("개발자 토큰 발급 성공 - ADMIN 권한으로 30일 만료 토큰 발급")
+        void adminUser_ReturnsDeveloperToken() {
+            // Given
+            UserAuthProfile adminAuthProfile = new UserAuthProfile(
+                    userId,
+                    Role.ADMIN,
+                    UserStatus.ACTIVE,
+                    "admin@example.com",
+                    true
+            );
+            String developerToken = "long.lived.access.token";
+
+            given(userAuthAccountService.findAuthProfileById(userId)).willReturn(Optional.of(adminAuthProfile));
+            given(jwtUtil.generateLongLivedAccessToken(userId, Role.ADMIN)).willReturn(developerToken);
+
+            // When
+            DeveloperTokenResult result = authCommandService.generateDeveloperToken(new GenerateDeveloperTokenCommand(userId));
+
+            // Then
+            assertThat(result.developerToken()).isEqualTo(developerToken);
+            verify(userAuthAccountService).findAuthProfileById(userId);
+            verify(jwtUtil).generateLongLivedAccessToken(userId, Role.ADMIN);
+        }
+
+        @Test
+        @DisplayName("개발자 토큰 발급 실패 - 사용자를 찾을 수 없음")
+        void userNotFound_ThrowsUserNotFound() {
+            // Given
+            given(userAuthAccountService.findAuthProfileById(userId)).willReturn(Optional.empty());
+
+            // When & Then
+            assertThatThrownBy(() -> authCommandService.generateDeveloperToken(new GenerateDeveloperTokenCommand(userId)))
+                    .isInstanceOf(GeneralException.class)
+                    .extracting(ex -> ((GeneralException) ex).getCode())
+                    .isEqualTo(AuthErrorCode.USER_NOT_FOUND);
+
+            verify(userAuthAccountService).findAuthProfileById(userId);
+            verify(jwtUtil, never()).generateLongLivedAccessToken(anyLong(), any(Role.class));
+        }
+
+        @Test
+        @DisplayName("개발자 토큰 발급 실패 - ADMIN 권한이 아닌 사용자")
+        void nonAdminUser_ThrowsInsufficientPermission() {
+            // Given
+            given(userAuthAccountService.findAuthProfileById(userId)).willReturn(Optional.of(userAuthProfile));
+
+            // When & Then
+            assertThatThrownBy(() -> authCommandService.generateDeveloperToken(new GenerateDeveloperTokenCommand(userId)))
+                    .isInstanceOf(GeneralException.class)
+                    .extracting(ex -> ((GeneralException) ex).getCode())
+                    .isEqualTo(AuthErrorCode.FORBIDDEN_INSUFFICIENT_PERMISSIONS);
+
+            verify(userAuthAccountService).findAuthProfileById(userId);
+            verify(jwtUtil, never()).generateLongLivedAccessToken(anyLong(), any(Role.class));
+        }
     }
 
-    @Test
-    @DisplayName("토큰 갱신 실패 - 유효하지 않은 토큰")
-    void refreshToken_Fail_InvalidToken() {
-        // Given
-        given(jwtUtil.isValidToken(validRefreshToken)).willReturn(false);
-
-        // When & Then
-        assertThatThrownBy(() -> authCommandService.refreshToken(new RefreshTokenCommand(validRefreshToken)))
-                .isInstanceOf(GeneralException.class)
-                .extracting(ex -> ((GeneralException) ex).getCode())
-                .isEqualTo(AuthErrorCode.INVALID_REFRESH_TOKEN);
-    }
-
-    @Test
-    @DisplayName("토큰 갱신 실패 - Redis에 저장된 토큰과 불일치하여 세션 무효화")
-    void refreshToken_Fail_TokenMismatchAndSessionInvalidated() {
-        // Given
-        given(jwtUtil.isValidToken(validRefreshToken)).willReturn(true);
-        given(jwtUtil.getUserIdFromToken(validRefreshToken)).willReturn(userId);
-        given(refreshTokenStore.validateRefreshToken(userId, validRefreshToken)).willReturn(false);
-
-        // When & Then
-        assertThatThrownBy(() -> authCommandService.refreshToken(new RefreshTokenCommand(validRefreshToken)))
-                .isInstanceOf(GeneralException.class)
-                .extracting(ex -> ((GeneralException) ex).getCode())
-                .isEqualTo(AuthErrorCode.REFRESH_TOKEN_MISMATCH);
-
-        // 세션 무효화를 위해 Redis 토큰 삭제가 호출되었는지 검증
-        verify(refreshTokenStore).deleteRefreshToken(userId);
-    }
-
-    @Test
-    @DisplayName("토큰 갱신 실패 - 사용자를 찾을 수 없음")
-    void refreshToken_Fail_UserNotFound() {
-        // Given
-        given(jwtUtil.isValidToken(validRefreshToken)).willReturn(true);
-        given(jwtUtil.getUserIdFromToken(validRefreshToken)).willReturn(userId);
-        given(refreshTokenStore.validateRefreshToken(userId, validRefreshToken)).willReturn(true);
-        given(userAuthAccountService.findAuthProfileById(userId)).willReturn(Optional.empty());
-
-        // When & Then
-        assertThatThrownBy(() -> authCommandService.refreshToken(new RefreshTokenCommand(validRefreshToken)))
-                .isInstanceOf(GeneralException.class)
-                .extracting(ex -> ((GeneralException) ex).getCode())
-                .isEqualTo(AuthErrorCode.USER_NOT_FOUND);
-    }
-
-    // ===== 로그아웃 테스트 =====
-
-    @Test
-    @DisplayName("로그아웃 성공")
-    void logout_Success() {
-        // Given
-        given(jwtUtil.isValidToken(validRefreshToken)).willReturn(true);
-        given(jwtUtil.getUserIdFromToken(validRefreshToken)).willReturn(userId);
-
-        // When
-        authCommandService.logout(new LogoutCommand(validRefreshToken));
-
-        // Then
-        verify(jwtUtil).isValidToken(validRefreshToken);
-        verify(jwtUtil).validateTokenType(validRefreshToken, TOKEN_TYPE_REFRESH);
-        verify(refreshTokenStore).deleteRefreshToken(userId);
-    }
-
-    @Test
-    @DisplayName("로그아웃 실패 - 리프레시 토큰이 null")
-    void logout_Fail_TokenIsNull() {
-        // When & Then
-        assertThatThrownBy(() -> authCommandService.logout(new LogoutCommand(null)))
-                .isInstanceOf(GeneralException.class)
-                .extracting(ex -> ((GeneralException) ex).getCode())
-                .isEqualTo(AuthErrorCode.REFRESH_TOKEN_MISSING);
-    }
-
-    @Test
-    @DisplayName("로그아웃 실패 - 리프레시 토큰이 빈 문자열")
-    void logout_Fail_TokenIsEmpty() {
-        // When & Then
-        assertThatThrownBy(() -> authCommandService.logout(new LogoutCommand("")))
-                .isInstanceOf(GeneralException.class)
-                .extracting(ex -> ((GeneralException) ex).getCode())
-                .isEqualTo(AuthErrorCode.REFRESH_TOKEN_MISSING);
-    }
-
-    @Test
-    @DisplayName("로그아웃 실패 - 유효하지 않은 토큰")
-    void logout_Fail_InvalidToken() {
-        // Given
-        given(jwtUtil.isValidToken(validRefreshToken)).willReturn(false);
-
-        // When & Then
-        assertThatThrownBy(() -> authCommandService.logout(new LogoutCommand(validRefreshToken)))
-                .isInstanceOf(GeneralException.class)
-                .extracting(ex -> ((GeneralException) ex).getCode())
-                .isEqualTo(AuthErrorCode.INVALID_REFRESH_TOKEN);
-    }
-
-    // ===== 개발자 토큰 발급 테스트 =====
-
-    @Test
-    @DisplayName("개발자 토큰 발급 성공 - ADMIN 권한으로 30일 만료 토큰 발급")
-    void generateDeveloperToken_Success() {
-        // Given
-        UserAuthProfile adminAuthProfile = new UserAuthProfile(
-                userId,
-                Role.ADMIN,
-                UserStatus.ACTIVE,
-                "admin@example.com",
-                true
-        );
-        String developerToken = "long.lived.access.token";
-
-        given(userAuthAccountService.findAuthProfileById(userId)).willReturn(Optional.of(adminAuthProfile));
-        given(jwtUtil.generateLongLivedAccessToken(userId, Role.ADMIN)).willReturn(developerToken);
-
-        // When
-        DeveloperTokenResult result = authCommandService.generateDeveloperToken(new GenerateDeveloperTokenCommand(userId));
-
-        // Then
-        assertThat(result.developerToken()).isEqualTo(developerToken);
-        verify(userAuthAccountService).findAuthProfileById(userId);
-        verify(jwtUtil).generateLongLivedAccessToken(userId, Role.ADMIN);
-    }
-
-    @Test
-    @DisplayName("개발자 토큰 발급 실패 - 사용자를 찾을 수 없음")
-    void generateDeveloperToken_Fail_UserNotFound() {
-        // Given
-        given(userAuthAccountService.findAuthProfileById(userId)).willReturn(Optional.empty());
-
-        // When & Then
-        assertThatThrownBy(() -> authCommandService.generateDeveloperToken(new GenerateDeveloperTokenCommand(userId)))
-                .isInstanceOf(GeneralException.class)
-                .extracting(ex -> ((GeneralException) ex).getCode())
-                .isEqualTo(AuthErrorCode.USER_NOT_FOUND);
-
-        verify(userAuthAccountService).findAuthProfileById(userId);
-        verify(jwtUtil, never()).generateLongLivedAccessToken(anyLong(), any(Role.class));
-    }
-
-    @Test
-    @DisplayName("개발자 토큰 발급 실패 - ADMIN 권한이 아닌 사용자")
-    void generateDeveloperToken_Fail_InsufficientPermissions() {
-        // Given
-        given(userAuthAccountService.findAuthProfileById(userId)).willReturn(Optional.of(userAuthProfile));
-
-        // When & Then
-        assertThatThrownBy(() -> authCommandService.generateDeveloperToken(new GenerateDeveloperTokenCommand(userId)))
-                .isInstanceOf(GeneralException.class)
-                .extracting(ex -> ((GeneralException) ex).getCode())
-                .isEqualTo(AuthErrorCode.FORBIDDEN_INSUFFICIENT_PERMISSIONS);
-
-        verify(userAuthAccountService).findAuthProfileById(userId);
-        verify(jwtUtil, never()).generateLongLivedAccessToken(anyLong(), any(Role.class));
-    }
 }

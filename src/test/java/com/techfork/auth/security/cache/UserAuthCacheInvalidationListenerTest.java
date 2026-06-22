@@ -37,7 +37,7 @@ class UserAuthCacheInvalidationListenerTest {
 
         @Test
         @DisplayName("커밋 이후 인증 캐시를 무효화한다")
-        void evictOnOnboardingCompletedAfterCommit_EvictsUserAuthCache() {
+        void afterCommit_EvictsUserAuthCache() {
             Long userId = 1L;
 
             listener.evictOnOnboardingCompletedAfterCommit(new OnboardingCompletedEvent(userId));
@@ -47,7 +47,7 @@ class UserAuthCacheInvalidationListenerTest {
 
         @Test
         @DisplayName("AFTER_COMMIT 단계에서만 실행한다")
-        void listenerMethod_RunsAfterCommitOnly() {
+        void listenerPhase_RunsAfterCommitOnly() {
             assertTransactionalEventListenerPhases(OnboardingCompletedEvent.class, TransactionPhase.AFTER_COMMIT);
         }
     }
@@ -58,7 +58,7 @@ class UserAuthCacheInvalidationListenerTest {
 
         @Test
         @DisplayName("커밋 이후 인증 캐시를 무효화한다")
-        void evictOnUserReactivatedAfterCommit_EvictsUserAuthCache() {
+        void afterCommit_EvictsUserAuthCache() {
             Long userId = 1L;
 
             listener.evictOnUserReactivatedAfterCommit(new UserReactivatedEvent(userId));
@@ -68,7 +68,7 @@ class UserAuthCacheInvalidationListenerTest {
 
         @Test
         @DisplayName("AFTER_COMMIT 단계에서만 실행한다")
-        void listenerMethod_RunsAfterCommitOnly() {
+        void listenerPhase_RunsAfterCommitOnly() {
             assertTransactionalEventListenerPhases(UserReactivatedEvent.class, TransactionPhase.AFTER_COMMIT);
         }
     }
@@ -79,7 +79,7 @@ class UserAuthCacheInvalidationListenerTest {
 
         @Test
         @DisplayName("커밋 직전 인증 캐시를 무효화한다")
-        void evictOnUserWithdrawnBeforeCommit_EvictsUserAuthCache() {
+        void beforeCommit_EvictsUserAuthCache() {
             Long userId = 1L;
 
             listener.evictOnUserWithdrawnBeforeCommit(new UserWithdrawnEvent(userId));
@@ -89,7 +89,7 @@ class UserAuthCacheInvalidationListenerTest {
 
         @Test
         @DisplayName("커밋 이후 인증 캐시를 한 번 더 무효화한다")
-        void evictOnUserWithdrawnAfterCommit_EvictsUserAuthCache() {
+        void afterCommit_EvictsUserAuthCache() {
             Long userId = 1L;
 
             listener.evictOnUserWithdrawnAfterCommit(new UserWithdrawnEvent(userId));
@@ -99,7 +99,7 @@ class UserAuthCacheInvalidationListenerTest {
 
         @Test
         @DisplayName("BEFORE_COMMIT과 AFTER_COMMIT 단계에서 모두 실행한다")
-        void listenerMethods_RunBeforeAndAfterCommit() {
+        void listenerPhase_RunsBeforeAndAfterCommit() {
             assertTransactionalEventListenerPhases(
                     UserWithdrawnEvent.class,
                     TransactionPhase.BEFORE_COMMIT,
@@ -109,7 +109,7 @@ class UserAuthCacheInvalidationListenerTest {
 
         @Test
         @DisplayName("커밋 직전 인증 캐시 무효화 실패는 예외를 전파한다")
-        void evictOnUserWithdrawnBeforeCommit_PropagatesEvictionFailure() {
+        void beforeCommitEvictionFails_PropagatesException() {
             Long userId = 1L;
             RuntimeException evictionFailure = new RuntimeException("redis eviction failed");
             doThrow(evictionFailure).when(userAuthCacheStore).evict(userId);

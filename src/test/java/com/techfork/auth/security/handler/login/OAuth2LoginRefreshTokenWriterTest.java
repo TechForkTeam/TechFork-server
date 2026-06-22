@@ -4,6 +4,7 @@ import com.techfork.auth.security.cookie.RefreshTokenCookieWriter;
 import com.techfork.auth.security.token.RefreshTokenStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -32,18 +33,24 @@ class OAuth2LoginRefreshTokenWriterTest {
         refreshTokenWriter = new OAuth2LoginRefreshTokenWriter(refreshTokenStore, refreshTokenCookieWriter);
     }
 
-    @Test
-    @DisplayName("refresh token을 저장하고 cookie writer에 응답 작성을 위임한다")
-    void write_SavesRefreshTokenAndAddsCookie() {
-        OAuth2LoginRefreshToken issuedRefreshToken = new OAuth2LoginRefreshToken(
-                REFRESH_TOKEN,
-                REFRESH_TOKEN_EXPIRATION_MILLIS
-        );
-        MockHttpServletResponse response = new MockHttpServletResponse();
+    @Nested
+    @DisplayName("write")
+    class Write {
 
-        refreshTokenWriter.write(USER_ID, issuedRefreshToken, response);
+        @Test
+        @DisplayName("refresh token을 저장하고 cookie writer에 응답 작성을 위임한다")
+        void refreshToken_SavesTokenAndAddsCookie() {
+            OAuth2LoginRefreshToken issuedRefreshToken = new OAuth2LoginRefreshToken(
+                    REFRESH_TOKEN,
+                    REFRESH_TOKEN_EXPIRATION_MILLIS
+            );
+            MockHttpServletResponse response = new MockHttpServletResponse();
 
-        verify(refreshTokenStore).saveRefreshToken(USER_ID, REFRESH_TOKEN, REFRESH_TOKEN_EXPIRATION_MILLIS);
-        verify(refreshTokenCookieWriter).write(response, REFRESH_TOKEN, REFRESH_TOKEN_EXPIRATION_MILLIS);
+            refreshTokenWriter.write(USER_ID, issuedRefreshToken, response);
+
+            verify(refreshTokenStore).saveRefreshToken(USER_ID, REFRESH_TOKEN, REFRESH_TOKEN_EXPIRATION_MILLIS);
+            verify(refreshTokenCookieWriter).write(response, REFRESH_TOKEN, REFRESH_TOKEN_EXPIRATION_MILLIS);
+        }
     }
+
 }

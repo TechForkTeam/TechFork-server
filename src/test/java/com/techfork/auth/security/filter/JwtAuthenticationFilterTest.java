@@ -82,12 +82,12 @@ class JwtAuthenticationFilterTest {
     }
 
     @Nested
-    @DisplayName("성공")
-    class Success {
+    @DisplayName("doFilterInternal")
+    class DoFilterInternal {
 
         @Test
         @DisplayName("JWT 인증 성공 - 캐시 미스: 인증 프로필 조회 후 캐시 저장")
-        void doFilterInternal_Success_CacheMiss() throws Exception {
+        void cacheMiss_SetsAuthenticationAndStoresCache() throws Exception {
             // Given
             given(request.getHeader("Authorization")).willReturn("Bearer " + validAccessToken);
             willDoNothing().given(jwtUtil).validateToken(validAccessToken);
@@ -117,7 +117,7 @@ class JwtAuthenticationFilterTest {
 
         @Test
         @DisplayName("JWT 인증 성공 - 캐시 히트: 인증 프로필 조회 없이 인증")
-        void doFilterInternal_Success_CacheHit() throws Exception {
+        void cacheHit_SetsAuthenticationWithoutProfileLookup() throws Exception {
             // Given
             UserPrincipal cachedPrincipal = UserPrincipal.builder()
                     .id(userId)
@@ -146,7 +146,7 @@ class JwtAuthenticationFilterTest {
 
         @Test
         @DisplayName("JWT 인증 성공 - 재활성화된 PENDING 사용자는 인증 프로필 조회 후 캐시에 저장한다")
-        void doFilterInternal_Success_ReactivatedPendingUser_CacheMiss() throws Exception {
+        void reactivatedPendingUserAndCacheMiss_SetsAuthenticationAndStoresCache() throws Exception {
             // Given
             UserAuthProfile reactivatedProfile = new UserAuthProfile(
                     userId,
@@ -181,15 +181,10 @@ class JwtAuthenticationFilterTest {
             verify(userAuthCacheStore).put(userId, reactivatedProfile, 180000L);
             verify(filterChain).doFilter(request, response);
         }
-    }
-
-    @Nested
-    @DisplayName("실패")
-    class Failure {
 
         @Test
         @DisplayName("JWT 인증 실패 - Authorization 헤더 없음")
-        void doFilterInternal_Fail_NoAuthorizationHeader() throws Exception {
+        void noAuthorizationHeader_ContinuesWithoutAuthentication() throws Exception {
             // Given
             given(request.getHeader("Authorization")).willReturn(null);
 
@@ -207,7 +202,7 @@ class JwtAuthenticationFilterTest {
 
         @Test
         @DisplayName("JWT 인증 실패 - Bearer 접두사 없음")
-        void doFilterInternal_Fail_NoBearerPrefix() throws Exception {
+        void noBearerPrefix_ContinuesWithoutAuthentication() throws Exception {
             // Given
             given(request.getHeader("Authorization")).willReturn(validAccessToken);
 
@@ -225,7 +220,7 @@ class JwtAuthenticationFilterTest {
 
         @Test
         @DisplayName("JWT 인증 실패 - 유효하지 않은 토큰")
-        void doFilterInternal_Fail_InvalidToken() throws Exception {
+        void invalidToken_ClearsAuthenticationAndStoresException() throws Exception {
             // Given
             String invalidToken = "invalid.token";
             RuntimeException invalidTokenException = new RuntimeException("Invalid token");
@@ -247,7 +242,7 @@ class JwtAuthenticationFilterTest {
 
         @Test
         @DisplayName("JWT 인증 실패 - 기존 SecurityContext가 있어도 유효하지 않은 토큰이면 인증을 제거한다")
-        void doFilterInternal_Fail_InvalidToken_ClearsExistingAuthentication() throws Exception {
+        void invalidTokenWithExistingAuthentication_ClearsAuthenticationAndStoresException() throws Exception {
             // Given
             UserPrincipal stalePrincipal = UserPrincipal.builder()
                     .id(userId)
@@ -279,7 +274,7 @@ class JwtAuthenticationFilterTest {
 
         @Test
         @DisplayName("JWT 인증 실패 - 리프레시 토큰 사용 시도")
-        void doFilterInternal_Fail_RefreshTokenUsed() throws Exception {
+        void refreshTokenUsed_StoresTokenTypeMismatchException() throws Exception {
             // Given
             String refreshToken = "refresh.token";
             RuntimeException tokenTypeMismatchException = new RuntimeException("Token type mismatch");
@@ -304,7 +299,7 @@ class JwtAuthenticationFilterTest {
 
         @Test
         @DisplayName("JWT 인증 실패 - 사용자를 찾을 수 없음 (삭제된 사용자)")
-        void doFilterInternal_Fail_UserNotFound() throws Exception {
+        void userNotFound_StoresUserNotFoundException() throws Exception {
             // Given
             String deletedUserToken = "deleted.user.token";
             given(request.getHeader("Authorization")).willReturn("Bearer " + deletedUserToken);
@@ -329,7 +324,7 @@ class JwtAuthenticationFilterTest {
 
         @Test
         @DisplayName("JWT 인증 실패 - 탈퇴한 회원 (캐시 미스 후 인증 프로필 조회)")
-        void doFilterInternal_Fail_WithdrawnUser_CacheMiss() throws Exception {
+        void withdrawnUserAndCacheMiss_StoresWithdrawnUserExceptionWithoutCaching() throws Exception {
             // Given
             UserAuthProfile withdrawnProfile = new UserAuthProfile(
                     userId,
@@ -361,7 +356,7 @@ class JwtAuthenticationFilterTest {
 
         @Test
         @DisplayName("JWT 인증 실패 - 탈퇴한 회원 (캐시 히트)")
-        void doFilterInternal_Fail_WithdrawnUser_CacheHit() throws Exception {
+        void withdrawnUserAndCacheHit_StoresWithdrawnUserException() throws Exception {
             // Given
             UserPrincipal withdrawnPrincipal = UserPrincipal.builder()
                     .id(userId)

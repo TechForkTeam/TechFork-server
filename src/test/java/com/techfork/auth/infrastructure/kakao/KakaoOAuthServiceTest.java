@@ -5,6 +5,7 @@ import com.techfork.auth.domain.exception.AuthErrorCode;
 import com.techfork.global.exception.GeneralException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -57,98 +58,104 @@ class KakaoOAuthServiceTest {
         given(requestHeadersSpec.retrieve()).willReturn(responseSpec);
     }
 
-    @Test
-    @DisplayName("카카오 사용자 정보 조회 성공")
-    void getUserInfo_Success() {
-        // Given
-        KakaoUserInfoResponse.Profile profile = new KakaoUserInfoResponse.Profile("https://example.com/profile.jpg");
-        KakaoUserInfoResponse.KakaoAccount kakaoAccount = new KakaoUserInfoResponse.KakaoAccount("test@kakao.com", profile);
-        KakaoUserInfoResponse expectedResponse = new KakaoUserInfoResponse(12345L, kakaoAccount);
+    @Nested
+    @DisplayName("getUserInfo")
+    class GetUserInfo {
 
-        given(responseSpec.bodyToMono(KakaoUserInfoResponse.class))
-                .willReturn(Mono.just(expectedResponse));
+        @Test
+        @DisplayName("카카오 사용자 정보 조회 성공")
+        void validAccessToken_ReturnsUserInfo() {
+            // Given
+            KakaoUserInfoResponse.Profile profile = new KakaoUserInfoResponse.Profile("https://example.com/profile.jpg");
+            KakaoUserInfoResponse.KakaoAccount kakaoAccount = new KakaoUserInfoResponse.KakaoAccount("test@kakao.com", profile);
+            KakaoUserInfoResponse expectedResponse = new KakaoUserInfoResponse(12345L, kakaoAccount);
 
-        // When
-        KakaoUserInfoResponse result = kakaoOAuthService.getUserInfo(validAccessToken);
+            given(responseSpec.bodyToMono(KakaoUserInfoResponse.class))
+                    .willReturn(Mono.just(expectedResponse));
 
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.id()).isEqualTo(12345L);
-        assertThat(result.id().toString()).isEqualTo("12345");
-        assertThat(result.kakaoAccount().email()).isEqualTo("test@kakao.com");
-        assertThat(result.kakaoAccount().profile().profileImageUrl()).isEqualTo("https://example.com/profile.jpg");
+            // When
+            KakaoUserInfoResponse result = kakaoOAuthService.getUserInfo(validAccessToken);
 
-        verify(webClientBuilder).build();
-        verify(webClient).get();
-        verify(requestHeadersUriSpec).uri(userInfoUrl);
-        verify(requestHeadersSpec).header("Authorization", "Bearer " + validAccessToken);
-        verify(requestHeadersSpec).retrieve();
+            // Then
+            assertThat(result).isNotNull();
+            assertThat(result.id()).isEqualTo(12345L);
+            assertThat(result.id().toString()).isEqualTo("12345");
+            assertThat(result.kakaoAccount().email()).isEqualTo("test@kakao.com");
+            assertThat(result.kakaoAccount().profile().profileImageUrl()).isEqualTo("https://example.com/profile.jpg");
+
+            verify(webClientBuilder).build();
+            verify(webClient).get();
+            verify(requestHeadersUriSpec).uri(userInfoUrl);
+            verify(requestHeadersSpec).header("Authorization", "Bearer " + validAccessToken);
+            verify(requestHeadersSpec).retrieve();
+        }
+
+        @Test
+        @DisplayName("카카오 사용자 정보 조회 실패 - 잘못된 액세스 토큰 (401)")
+        void invalidAccessToken_ThrowsInvalidKakaoAccessToken() {
+            // Given
+            WebClientResponseException exception = WebClientResponseException.create(
+                    401,
+                    "Unauthorized",
+                    null,
+                    null,
+                    null
+            );
+
+            given(responseSpec.bodyToMono(KakaoUserInfoResponse.class))
+                    .willReturn(Mono.error(exception));
+
+            // When & Then
+            assertThatThrownBy(() -> kakaoOAuthService.getUserInfo(validAccessToken))
+                    .isInstanceOf(GeneralException.class)
+                    .extracting(ex -> ((GeneralException) ex).getCode())
+                    .isEqualTo(AuthErrorCode.INVALID_KAKAO_ACCESS_TOKEN);
+
+            verify(webClientBuilder).build();
+            verify(webClient).get();
+        }
+
+        @Test
+        @DisplayName("카카오 사용자 정보 조회 실패 - 카카오 API 에러 (500)")
+        void kakaoApiError_ThrowsInvalidKakaoAccessToken() {
+            // Given
+            WebClientResponseException exception = WebClientResponseException.create(
+                    500,
+                    "Internal Server Error",
+                    null,
+                    null,
+                    null
+            );
+
+            given(responseSpec.bodyToMono(KakaoUserInfoResponse.class))
+                    .willReturn(Mono.error(exception));
+
+            // When & Then
+            assertThatThrownBy(() -> kakaoOAuthService.getUserInfo(validAccessToken))
+                    .isInstanceOf(GeneralException.class)
+                    .extracting(ex -> ((GeneralException) ex).getCode())
+                    .isEqualTo(AuthErrorCode.INVALID_KAKAO_ACCESS_TOKEN);
+
+            verify(webClientBuilder).build();
+            verify(webClient).get();
+        }
+
+        @Test
+        @DisplayName("카카오 사용자 정보 조회 실패 - 예상치 못한 에러")
+        void unexpectedError_ThrowsInvalidKakaoAccessToken() {
+            // Given
+            given(responseSpec.bodyToMono(KakaoUserInfoResponse.class))
+                    .willReturn(Mono.error(new RuntimeException("Unexpected error")));
+
+            // When & Then
+            assertThatThrownBy(() -> kakaoOAuthService.getUserInfo(validAccessToken))
+                    .isInstanceOf(GeneralException.class)
+                    .extracting(ex -> ((GeneralException) ex).getCode())
+                    .isEqualTo(AuthErrorCode.KAKAO_API_ERROR);
+
+            verify(webClientBuilder).build();
+            verify(webClient).get();
+        }
     }
 
-    @Test
-    @DisplayName("카카오 사용자 정보 조회 실패 - 잘못된 액세스 토큰 (401)")
-    void getUserInfo_Fail_InvalidAccessToken() {
-        // Given
-        WebClientResponseException exception = WebClientResponseException.create(
-                401,
-                "Unauthorized",
-                null,
-                null,
-                null
-        );
-
-        given(responseSpec.bodyToMono(KakaoUserInfoResponse.class))
-                .willReturn(Mono.error(exception));
-
-        // When & Then
-        assertThatThrownBy(() -> kakaoOAuthService.getUserInfo(validAccessToken))
-                .isInstanceOf(GeneralException.class)
-                .extracting(ex -> ((GeneralException) ex).getCode())
-                .isEqualTo(AuthErrorCode.INVALID_KAKAO_ACCESS_TOKEN);
-
-        verify(webClientBuilder).build();
-        verify(webClient).get();
-    }
-
-    @Test
-    @DisplayName("카카오 사용자 정보 조회 실패 - 카카오 API 에러 (500)")
-    void getUserInfo_Fail_KakaoApiError() {
-        // Given
-        WebClientResponseException exception = WebClientResponseException.create(
-                500,
-                "Internal Server Error",
-                null,
-                null,
-                null
-        );
-
-        given(responseSpec.bodyToMono(KakaoUserInfoResponse.class))
-                .willReturn(Mono.error(exception));
-
-        // When & Then
-        assertThatThrownBy(() -> kakaoOAuthService.getUserInfo(validAccessToken))
-                .isInstanceOf(GeneralException.class)
-                .extracting(ex -> ((GeneralException) ex).getCode())
-                .isEqualTo(AuthErrorCode.INVALID_KAKAO_ACCESS_TOKEN);
-
-        verify(webClientBuilder).build();
-        verify(webClient).get();
-    }
-
-    @Test
-    @DisplayName("카카오 사용자 정보 조회 실패 - 예상치 못한 에러")
-    void getUserInfo_Fail_UnexpectedError() {
-        // Given
-        given(responseSpec.bodyToMono(KakaoUserInfoResponse.class))
-                .willReturn(Mono.error(new RuntimeException("Unexpected error")));
-
-        // When & Then
-        assertThatThrownBy(() -> kakaoOAuthService.getUserInfo(validAccessToken))
-                .isInstanceOf(GeneralException.class)
-                .extracting(ex -> ((GeneralException) ex).getCode())
-                .isEqualTo(AuthErrorCode.KAKAO_API_ERROR);
-
-        verify(webClientBuilder).build();
-        verify(webClient).get();
-    }
 }
