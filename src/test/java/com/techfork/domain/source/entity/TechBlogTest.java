@@ -14,7 +14,7 @@ class TechBlogTest {
 
         @Test
         @DisplayName("logoUrl이 주어지면 전달한 값을 그대로 사용한다")
-        void usesProvidedLogoUrlWhenPresent() {
+        void logoUrlProvided_UsesProvidedLogoUrl() {
             String logoUrl = "https://cdn.example.com/logo.png";
 
             TechBlog techBlog = TechBlog.create(
@@ -32,7 +32,7 @@ class TechBlogTest {
 
         @Test
         @DisplayName("logoUrl이 없으면 blogUrl 기반 기본 favicon URL을 생성한다")
-        void generatesFallbackLogoUrlWhenLogoUrlMissing() {
+        void logoUrlMissing_GeneratesFallbackLogoUrl() {
             String blogUrl = "https://techfork.example.com";
 
             TechBlog techBlog = TechBlog.create(

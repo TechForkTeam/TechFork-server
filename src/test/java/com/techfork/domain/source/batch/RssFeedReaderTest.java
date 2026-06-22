@@ -64,7 +64,7 @@ class RssFeedReaderTest {
 
         @Test
         @DisplayName("기존 URL을 제외하고 동일 crawl 내 중복 URL은 한 번만 반환한다")
-        void filtersExistingUrlsAndDeduplicatesCollectedItems() {
+        void feedsContainExistingAndDuplicateUrls_FiltersAndDeduplicatesItems() {
             TechBlog kakao = techBlog("카카오", "https://kakao.example.com", "https://kakao.example.com/rss");
             TechBlog naver = techBlog("네이버", "https://naver.example.com", "https://naver.example.com/rss");
 
@@ -98,7 +98,7 @@ class RssFeedReaderTest {
 
         @Test
         @DisplayName("일부 feed 실패가 있어도 성공한 feed 결과는 유지한다")
-        void keepsSuccessfulItemsWhenOneFeedFails() {
+        void oneFeedFails_KeepsSuccessfulItems() {
             TechBlog kakao = techBlog("카카오", "https://kakao.example.com", "https://kakao.example.com/rss");
             TechBlog naver = techBlog("네이버", "https://naver.example.com", "https://naver.example.com/rss");
 
@@ -120,7 +120,7 @@ class RssFeedReaderTest {
 
         @Test
         @DisplayName("느린 feed는 timeout 처리되고 다른 feed 결과는 계속 반환한다")
-        void timesOutSlowFeedAndKeepsOtherResults() {
+        void slowFeedTimesOut_KeepsOtherResults() {
             TechBlog kakao = techBlog("카카오", "https://kakao.example.com", "https://kakao.example.com/rss");
             TechBlog naver = techBlog("네이버", "https://naver.example.com", "https://naver.example.com/rss");
 
@@ -146,7 +146,7 @@ class RssFeedReaderTest {
 
         @Test
         @DisplayName("빈 RSS 응답이면 결과 없이 종료한다")
-        void returnsEmptyWhenFeedResponseIsEmpty() {
+        void emptyFeedResponse_ReturnsEmpty() {
             TechBlog techBlog = techBlog("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss");
 
             given(techBlogRepository.findAll()).willReturn(List.of(techBlog));
@@ -163,7 +163,7 @@ class RssFeedReaderTest {
 
         @Test
         @DisplayName("피드 파싱에 실패해도 다른 피드 결과는 유지한다")
-        void keepsOtherResultsWhenFeedParsingFails() {
+        void feedParsingFails_KeepsOtherResults() {
             TechBlog kakao = techBlog("카카오", "https://kakao.example.com", "https://kakao.example.com/rss");
             TechBlog naver = techBlog("네이버", "https://naver.example.com", "https://naver.example.com/rss");
 
@@ -190,7 +190,7 @@ class RssFeedReaderTest {
 
         @Test
         @DisplayName("content:encoded가 description보다 길면 content를 본문으로 사용한다")
-        void usesContentWhenItIsLongerThanDescription() {
+        void contentLongerThanDescription_UsesContent() {
             TechBlog techBlog = techBlog("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss");
             String longContent = "<p>description 보다 훨씬 긴 content 본문입니다.</p>";
 
@@ -214,7 +214,7 @@ class RssFeedReaderTest {
 
         @Test
         @DisplayName("content가 없거나 더 짧으면 description을 본문으로 사용한다")
-        void usesDescriptionWhenContentIsMissingOrShorter() {
+        void contentMissingOrShorter_UsesDescription() {
             TechBlog techBlog = techBlog("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss");
             String description = "content 보다 더 긴 description 본문입니다.";
 
@@ -237,7 +237,7 @@ class RssFeedReaderTest {
 
         @Test
         @DisplayName("발행일이 없으면 현재 시각으로 fallback 한다")
-        void fallsBackToNowWhenPublishedDateIsNull() {
+        void publishedDateNull_FallsBackToNow() {
             TechBlog techBlog = techBlog("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss");
 
             given(techBlogRepository.findAll()).willReturn(List.of(techBlog));
@@ -266,7 +266,7 @@ class RssFeedReaderTest {
 
         @Test
         @DisplayName("media module 이미지가 있으면 thumbnail 우선순위 1번으로 사용한다")
-        void extractsThumbnailFromMediaModuleFirst() {
+        void mediaModuleExists_ExtractsThumbnailFirst() {
             TechBlog techBlog = techBlog("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss");
             String mediaImage = "https://cdn.example.com/media-thumbnail.jpg";
 
@@ -294,7 +294,7 @@ class RssFeedReaderTest {
 
         @Test
         @DisplayName("media module이 없으면 enclosure 이미지를 thumbnail로 사용한다")
-        void extractsThumbnailFromEnclosureWhenMediaMissing() {
+        void enclosureExistsWithoutMedia_ExtractsThumbnail() {
             TechBlog techBlog = techBlog("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss");
             String enclosureImage = "https://cdn.example.com/enclosure-thumbnail.jpg";
 
@@ -322,7 +322,7 @@ class RssFeedReaderTest {
 
         @Test
         @DisplayName("media와 enclosure가 모두 없으면 HTML의 첫 이미지로 thumbnail을 채운다")
-        void extractsThumbnailFromHtmlWhenNoMediaOrEnclosureExists() {
+        void htmlContainsImageWithoutMediaOrEnclosure_ExtractsThumbnail() {
             TechBlog techBlog = techBlog("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss");
             String htmlImage = "https://cdn.example.com/html-thumbnail.jpg";
 

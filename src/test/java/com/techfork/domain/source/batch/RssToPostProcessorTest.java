@@ -45,7 +45,7 @@ class RssToPostProcessorTest {
 
         @Test
         @DisplayName("tech blog 참조를 조회한 뒤 Post 엔티티로 변환한다")
-        void loadsTechBlogReferenceAndCreatesPost() {
+        void rssFeedItemProvided_LoadsTechBlogReferenceAndCreatesPost() {
             RssToPostProcessor rssToPostProcessor = new RssToPostProcessor(techBlogRepository);
             TechBlog techBlog = TechBlogFixture.createTechBlog(
                     "TechFork",
@@ -74,7 +74,7 @@ class RssToPostProcessorTest {
 
         @Test
         @DisplayName("tech blog 조회 실패를 그대로 전파한다")
-        void propagatesRepositoryFailure() {
+        void repositoryFails_PropagatesException() {
             RssToPostProcessor rssToPostProcessor = new RssToPostProcessor(techBlogRepository);
             given(techBlogRepository.getReferenceById(7L))
                     .willThrow(new EntityNotFoundException("tech blog not found"));

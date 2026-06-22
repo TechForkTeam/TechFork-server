@@ -60,7 +60,7 @@ class CrawlingServiceTest {
 
         @Test
         @DisplayName("락을 획득하지 못하면 크롤링 job을 실행하지 않는다")
-        void skipsWhenLockIsNotAcquired() {
+        void lockNotAcquired_SkipsJobLaunch() {
             given(distributedLock.tryLock(RedisKey.CRAWLING_LOCK_KEY, LOCK_TTL)).willReturn(null);
 
             crawlingService.executeCrawling();
@@ -72,7 +72,7 @@ class CrawlingServiceTest {
 
         @Test
         @DisplayName("락 획득 시 timestamp 파라미터와 함께 크롤링 job을 실행한다")
-        void launchesJobWithTimestampWhenLockIsAcquired() throws Exception {
+        void lockAcquired_LaunchesJobWithTimestamp() throws Exception {
             String lockValue = "lock-value";
             long startedAt = System.currentTimeMillis();
 
@@ -94,7 +94,7 @@ class CrawlingServiceTest {
         @ParameterizedTest(name = "[{index}] {0}")
         @MethodSource("com.techfork.domain.source.service.CrawlingServiceTest#jobLauncherExceptions")
         @DisplayName("배치 예외가 발생해도 락은 항상 해제한다")
-        void alwaysUnlocksWhenJobLauncherThrowsBatchExceptions(Exception exception) throws Exception {
+        void jobLauncherThrowsBatchException_AlwaysUnlocks(Exception exception) throws Exception {
             String lockValue = "lock-value";
 
             given(distributedLock.tryLock(RedisKey.CRAWLING_LOCK_KEY, LOCK_TTL)).willReturn(lockValue);
@@ -108,7 +108,7 @@ class CrawlingServiceTest {
 
         @Test
         @DisplayName("예상치 못한 예외가 발생해도 락은 항상 해제한다")
-        void alwaysUnlocksWhenUnexpectedExceptionOccurs() throws Exception {
+        void unexpectedExceptionOccurs_AlwaysUnlocks() throws Exception {
             String lockValue = "lock-value";
 
             given(distributedLock.tryLock(RedisKey.CRAWLING_LOCK_KEY, LOCK_TTL)).willReturn(lockValue);

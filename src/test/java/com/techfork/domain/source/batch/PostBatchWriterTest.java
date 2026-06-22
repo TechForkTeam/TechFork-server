@@ -43,7 +43,7 @@ class PostBatchWriterTest {
 
         @Test
         @DisplayName("빈 chunk면 JDBC batch 실행을 하지 않는다")
-        void doesNothingForEmptyChunk() {
+        void emptyChunk_DoesNothing() {
             PostBatchWriter postBatchWriter = new PostBatchWriter(jdbcBatchExecutor);
 
             postBatchWriter.write(Chunk.of());
@@ -54,7 +54,7 @@ class PostBatchWriterTest {
         @Test
         @DisplayName("게시글 chunk를 posts bulk insert SQL과 매핑으로 전달한다")
         @SuppressWarnings("unchecked")
-        void delegatesBulkInsertWithExpectedSqlAndMappings() throws Exception {
+        void chunkWithPosts_DelegatesBulkInsertWithExpectedBindings() throws Exception {
             PostBatchWriter postBatchWriter = new PostBatchWriter(jdbcBatchExecutor);
             LocalDateTime publishedAt = LocalDateTime.of(2026, 4, 13, 6, 0, 0);
             LocalDateTime crawledAt = LocalDateTime.of(2026, 4, 13, 6, 1, 0);

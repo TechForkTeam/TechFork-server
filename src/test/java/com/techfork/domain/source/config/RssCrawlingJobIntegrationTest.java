@@ -20,6 +20,7 @@ import com.techfork.global.common.IntegrationTestBase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.batch.core.BatchStatus;
@@ -103,158 +104,168 @@ class RssCrawlingJobIntegrationTest extends IntegrationTestBase {
         jobRepositoryTestUtils.removeJobExecutions();
     }
 
-    @Test
-    @DisplayName("fetchAndSaveRssStep은 RSS item을 읽어 processor/writer로 전달한다")
-    void fetchAndSaveRssStep_WiresReaderProcessorWriter() throws Exception {
-        RssFeedItem item = RssFeedItemFixture.createRssFeedItem(
-                1L,
-                "테스트 제목",
-                "https://posts.example.com/1",
-                "https://logo.example.com/logo.png",
-                null,
-                "본문",
-                "본문",
-                LocalDateTime.now(),
-                "카카오"
-        );
-        Post post = mock(Post.class);
+    @Nested
+    @DisplayName("step bean wiring")
+    class StepBeanWiring {
 
-        given(rssFeedReader.read()).willReturn(item, (RssFeedItem) null);
-        given(rssToPostProcessor.process(item)).willReturn(post);
+        @Test
+        @DisplayName("fetchAndSaveRssStep은 RSS item을 읽어 processor/writer로 전달한다")
+        void fetchStepContext_WiresReaderProcessorWriter() throws Exception {
+            RssFeedItem item = RssFeedItemFixture.createRssFeedItem(
+                    1L,
+                    "테스트 제목",
+                    "https://posts.example.com/1",
+                    "https://logo.example.com/logo.png",
+                    null,
+                    "본문",
+                    "본문",
+                    LocalDateTime.now(),
+                    "카카오"
+            );
+            Post post = mock(Post.class);
 
-        JobExecution execution = jobLauncherTestUtils.launchStep("fetchAndSaveRssStep");
-        awaitCompletion(execution);
+            given(rssFeedReader.read()).willReturn(item, (RssFeedItem) null);
+            given(rssToPostProcessor.process(item)).willReturn(post);
 
-        assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+            JobExecution execution = jobLauncherTestUtils.launchStep("fetchAndSaveRssStep");
+            awaitCompletion(execution);
 
-        verify(rssFeedReader, times(2)).read();
-        verify(rssToPostProcessor).process(item);
+            assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
 
-        ArgumentCaptor<Chunk<? extends Post>> chunkCaptor = ArgumentCaptor.forClass(Chunk.class);
-        verify(postBatchWriter).write(chunkCaptor.capture());
-        assertThat(chunkCaptor.getValue().getItems()).hasSize(1);
-        assertThat(chunkCaptor.getValue().getItems().get(0)).isSameAs(post);
+            verify(rssFeedReader, times(2)).read();
+            verify(rssToPostProcessor).process(item);
+
+            ArgumentCaptor<Chunk<? extends Post>> chunkCaptor = ArgumentCaptor.forClass(Chunk.class);
+            verify(postBatchWriter).write(chunkCaptor.capture());
+            assertThat(chunkCaptor.getValue().getItems()).hasSize(1);
+            assertThat(chunkCaptor.getValue().getItems().get(0)).isSameAs(post);
+        }
+
+        @Test
+        @DisplayName("extractSummaryStep은 reader, async processor, writer wiring을 유지한다")
+        void summaryStepContext_WiresReaderAsyncProcessorAndWriter() throws Exception {
+            Post post = PostFixture.createPost(11L, "summary-step", "원문", "평문", "TechFork", "요약 전", null);
+
+            given(postSummaryReader.read()).willReturn(post).willReturn((Post) null);
+            given(postSummaryProcessor.process(post)).willReturn(post);
+
+            JobExecution execution = jobLauncherTestUtils.launchStep("extractSummaryStep");
+            awaitCompletion(execution);
+
+            assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+            verify(postSummaryReader, times(2)).read();
+            verify(postSummaryProcessor).process(post);
+
+            ArgumentCaptor<Chunk<? extends Post>> chunkCaptor = ArgumentCaptor.forClass(Chunk.class);
+            verify(postSummaryWriter).write(chunkCaptor.capture());
+            assertThat(chunkCaptor.getValue().getItems()).hasSize(1);
+            assertThat(chunkCaptor.getValue().getItems().get(0)).isSameAs(post);
+        }
+
+        @Test
+        @DisplayName("embedAndIndexStep은 reader, async processor, writer wiring을 유지한다")
+        void embeddingStepContext_WiresReaderAsyncProcessorAndWriter() throws Exception {
+            Post post = PostFixture.createPost(21L, "embed-step", "원문", "평문", "TechFork", "요약 완료", "짧은 요약");
+            PostDocument postDocument = PostDocumentFixture.createPostDocument(
+                    post,
+                    List.of(0.1f, 0.2f),
+                    List.of(0.3f, 0.4f),
+                    List.of(0.5f, 0.6f)
+            );
+
+            given(postEmbeddingReader.read()).willReturn(post).willReturn((Post) null);
+            given(postEmbeddingProcessor.process(post)).willReturn(postDocument);
+
+            JobExecution execution = jobLauncherTestUtils.launchStep("embedAndIndexStep");
+            awaitCompletion(execution);
+
+            assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+            verify(postEmbeddingReader, times(2)).read();
+            verify(postEmbeddingProcessor).process(post);
+
+            ArgumentCaptor<Chunk<? extends PostDocument>> chunkCaptor = ArgumentCaptor.forClass(Chunk.class);
+            verify(postEmbeddingWriter).write(chunkCaptor.capture());
+            assertThat(chunkCaptor.getValue().getItems()).hasSize(1);
+            assertThat(chunkCaptor.getValue().getItems().get(0)).isSameAs(postDocument);
+        }
     }
 
-    @Test
-    @DisplayName("extractSummaryStep은 reader, async processor, writer wiring을 유지한다")
-    void extractSummaryStep_WiresReaderAsyncProcessorAndWriter() throws Exception {
-        Post post = PostFixture.createPost(11L, "summary-step", "원문", "평문", "TechFork", "요약 전", null);
+    @Nested
+    @DisplayName("job execution flow")
+    class JobExecutionFlow {
 
-        given(postSummaryReader.read()).willReturn(post).willReturn((Post) null);
-        given(postSummaryProcessor.process(post)).willReturn(post);
+        @Test
+        @DisplayName("summaryAndEmbeddingJob은 summary 다음 embed step만 실행한다")
+        void jobLaunch_ExecutesOnlySummaryThenEmbedSteps() throws Exception {
+            jobLauncherTestUtils.setJob(summaryAndEmbeddingJob);
 
-        JobExecution execution = jobLauncherTestUtils.launchStep("extractSummaryStep");
-        awaitCompletion(execution);
+            Post summaryPost = PostFixture.createPost(31L, "summary-job", "원문", "평문", "TechFork", "요약 전", null);
+            Post embeddedPost = PostFixture.createPost(32L, "embed-job", "원문", "평문", "TechFork", "요약 완료", "짧은 요약");
+            PostDocument postDocument = PostDocumentFixture.createPostDocument(
+                    embeddedPost,
+                    List.of(0.1f),
+                    List.of(0.2f),
+                    List.of(0.3f)
+            );
 
-        assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
-        verify(postSummaryReader, times(2)).read();
-        verify(postSummaryProcessor).process(post);
+            given(postSummaryReader.read()).willReturn(summaryPost).willReturn((Post) null);
+            given(postSummaryProcessor.process(summaryPost)).willReturn(summaryPost);
+            given(postEmbeddingReader.read()).willReturn(embeddedPost).willReturn((Post) null);
+            given(postEmbeddingProcessor.process(embeddedPost)).willReturn(postDocument);
 
-        ArgumentCaptor<Chunk<? extends Post>> chunkCaptor = ArgumentCaptor.forClass(Chunk.class);
-        verify(postSummaryWriter).write(chunkCaptor.capture());
-        assertThat(chunkCaptor.getValue().getItems()).hasSize(1);
-        assertThat(chunkCaptor.getValue().getItems().get(0)).isSameAs(post);
-    }
+            JobExecution execution = jobLauncherTestUtils.launchJob();
+            awaitCompletion(execution);
 
-    @Test
-    @DisplayName("embedAndIndexStep은 reader, async processor, writer wiring을 유지한다")
-    void embedAndIndexStep_WiresReaderAsyncProcessorAndWriter() throws Exception {
-        Post post = PostFixture.createPost(21L, "embed-step", "원문", "평문", "TechFork", "요약 완료", "짧은 요약");
-        PostDocument postDocument = PostDocumentFixture.createPostDocument(
-                post,
-                List.of(0.1f, 0.2f),
-                List.of(0.3f, 0.4f),
-                List.of(0.5f, 0.6f)
-        );
+            assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+            assertThat(sortedStepNames(execution))
+                    .containsExactly("extractSummaryStep", "embedAndIndexStep");
+            verify(rssFeedReader, never()).read();
+            verify(rssToPostProcessor, never()).process(any());
+            verify(postBatchWriter, never()).write(any());
+        }
 
-        given(postEmbeddingReader.read()).willReturn(post).willReturn((Post) null);
-        given(postEmbeddingProcessor.process(post)).willReturn(postDocument);
+        @Test
+        @DisplayName("rssCrawlingJob은 fetch, summary, embed 순서로 실행된다")
+        void jobLaunch_ExecutesFetchSummaryEmbedInOrder() throws Exception {
+            jobLauncherTestUtils.setJob(rssCrawlingJob);
 
-        JobExecution execution = jobLauncherTestUtils.launchStep("embedAndIndexStep");
-        awaitCompletion(execution);
+            RssFeedItem item = RssFeedItemFixture.createRssFeedItem(
+                    41L,
+                    "순서 검증",
+                    "https://posts.example.com/order",
+                    "https://logo.example.com/logo.png",
+                    null,
+                    "본문",
+                    "평문",
+                    LocalDateTime.of(2026, 4, 13, 7, 0, 0),
+                    "카카오"
+            );
+            Post fetchedPost = PostFixture.createPost(41L, "fetch-job", "본문", "본문", "TechFork", null, null);
+            Post summaryPost = PostFixture.createPost(42L, "summary-job", "본문", "본문", "TechFork", "요약 완료", "짧은 요약");
+            PostDocument postDocument = PostDocumentFixture.createPostDocument(
+                    summaryPost,
+                    List.of(0.1f),
+                    List.of(0.2f),
+                    List.of(0.3f)
+            );
 
-        assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
-        verify(postEmbeddingReader, times(2)).read();
-        verify(postEmbeddingProcessor).process(post);
+            given(rssFeedReader.read()).willReturn(item).willReturn((RssFeedItem) null);
+            given(rssToPostProcessor.process(item)).willReturn(fetchedPost);
+            given(postSummaryReader.read()).willReturn(summaryPost).willReturn((Post) null);
+            given(postSummaryProcessor.process(summaryPost)).willReturn(summaryPost);
+            given(postEmbeddingReader.read()).willReturn(summaryPost).willReturn((Post) null);
+            given(postEmbeddingProcessor.process(summaryPost)).willReturn(postDocument);
 
-        ArgumentCaptor<Chunk<? extends PostDocument>> chunkCaptor = ArgumentCaptor.forClass(Chunk.class);
-        verify(postEmbeddingWriter).write(chunkCaptor.capture());
-        assertThat(chunkCaptor.getValue().getItems()).hasSize(1);
-        assertThat(chunkCaptor.getValue().getItems().get(0)).isSameAs(postDocument);
-    }
+            JobExecution execution = jobLauncherTestUtils.launchJob();
+            awaitCompletion(execution);
 
-    @Test
-    @DisplayName("summaryAndEmbeddingJob은 summary 다음 embed step만 실행한다")
-    void summaryAndEmbeddingJob_ExecutesOnlySummaryThenEmbedSteps() throws Exception {
-        jobLauncherTestUtils.setJob(summaryAndEmbeddingJob);
-
-        Post summaryPost = PostFixture.createPost(31L, "summary-job", "원문", "평문", "TechFork", "요약 전", null);
-        Post embeddedPost = PostFixture.createPost(32L, "embed-job", "원문", "평문", "TechFork", "요약 완료", "짧은 요약");
-        PostDocument postDocument = PostDocumentFixture.createPostDocument(
-                embeddedPost,
-                List.of(0.1f),
-                List.of(0.2f),
-                List.of(0.3f)
-        );
-
-        given(postSummaryReader.read()).willReturn(summaryPost).willReturn((Post) null);
-        given(postSummaryProcessor.process(summaryPost)).willReturn(summaryPost);
-        given(postEmbeddingReader.read()).willReturn(embeddedPost).willReturn((Post) null);
-        given(postEmbeddingProcessor.process(embeddedPost)).willReturn(postDocument);
-
-        JobExecution execution = jobLauncherTestUtils.launchJob();
-        awaitCompletion(execution);
-
-        assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
-        assertThat(sortedStepNames(execution))
-                .containsExactly("extractSummaryStep", "embedAndIndexStep");
-        verify(rssFeedReader, never()).read();
-        verify(rssToPostProcessor, never()).process(any());
-        verify(postBatchWriter, never()).write(any());
-    }
-
-    @Test
-    @DisplayName("rssCrawlingJob은 fetch, summary, embed 순서로 실행된다")
-    void rssCrawlingJob_ExecutesFetchSummaryEmbedInOrder() throws Exception {
-        jobLauncherTestUtils.setJob(rssCrawlingJob);
-
-        RssFeedItem item = RssFeedItemFixture.createRssFeedItem(
-                41L,
-                "순서 검증",
-                "https://posts.example.com/order",
-                "https://logo.example.com/logo.png",
-                null,
-                "본문",
-                "평문",
-                LocalDateTime.of(2026, 4, 13, 7, 0, 0),
-                "카카오"
-        );
-        Post fetchedPost = PostFixture.createPost(41L, "fetch-job", "본문", "본문", "TechFork", null, null);
-        Post summaryPost = PostFixture.createPost(42L, "summary-job", "본문", "본문", "TechFork", "요약 완료", "짧은 요약");
-        PostDocument postDocument = PostDocumentFixture.createPostDocument(
-                summaryPost,
-                List.of(0.1f),
-                List.of(0.2f),
-                List.of(0.3f)
-        );
-
-        given(rssFeedReader.read()).willReturn(item).willReturn((RssFeedItem) null);
-        given(rssToPostProcessor.process(item)).willReturn(fetchedPost);
-        given(postSummaryReader.read()).willReturn(summaryPost).willReturn((Post) null);
-        given(postSummaryProcessor.process(summaryPost)).willReturn(summaryPost);
-        given(postEmbeddingReader.read()).willReturn(summaryPost).willReturn((Post) null);
-        given(postEmbeddingProcessor.process(summaryPost)).willReturn(postDocument);
-
-        JobExecution execution = jobLauncherTestUtils.launchJob();
-        awaitCompletion(execution);
-
-        assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
-        assertThat(sortedStepNames(execution))
-                .containsExactly("fetchAndSaveRssStep", "extractSummaryStep", "embedAndIndexStep");
-        verify(rssFeedReader, times(2)).read();
-        verify(postSummaryReader, times(2)).read();
-        verify(postEmbeddingReader, times(2)).read();
+            assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+            assertThat(sortedStepNames(execution))
+                    .containsExactly("fetchAndSaveRssStep", "extractSummaryStep", "embedAndIndexStep");
+            verify(rssFeedReader, times(2)).read();
+            verify(postSummaryReader, times(2)).read();
+            verify(postEmbeddingReader, times(2)).read();
+        }
     }
 
     private List<String> sortedStepNames(JobExecution execution) {
