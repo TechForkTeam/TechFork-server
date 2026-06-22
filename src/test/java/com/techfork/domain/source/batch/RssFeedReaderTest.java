@@ -3,6 +3,7 @@ package com.techfork.domain.source.batch;
 import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.domain.source.dto.RssFeedItem;
 import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.fixture.TechBlogFixture;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,8 +65,8 @@ class RssFeedReaderTest {
         @Test
         @DisplayName("기존 URL을 제외하고 동일 crawl 내 중복 URL은 한 번만 반환한다")
         void filtersExistingUrlsAndDeduplicatesCollectedItems() {
-            TechBlog kakao = TechBlog.create("카카오", "https://kakao.example.com", "https://kakao.example.com/rss", null);
-            TechBlog naver = TechBlog.create("네이버", "https://naver.example.com", "https://naver.example.com/rss", null);
+            TechBlog kakao = techBlog("카카오", "https://kakao.example.com", "https://kakao.example.com/rss");
+            TechBlog naver = techBlog("네이버", "https://naver.example.com", "https://naver.example.com/rss");
 
             given(techBlogRepository.findAll()).willReturn(List.of(kakao, naver));
             given(postRepository.findExistingUrls(anyList())).willReturn(Set.of("https://posts.example.com/existing"));
@@ -98,8 +99,8 @@ class RssFeedReaderTest {
         @Test
         @DisplayName("일부 feed 실패가 있어도 성공한 feed 결과는 유지한다")
         void keepsSuccessfulItemsWhenOneFeedFails() {
-            TechBlog kakao = TechBlog.create("카카오", "https://kakao.example.com", "https://kakao.example.com/rss", null);
-            TechBlog naver = TechBlog.create("네이버", "https://naver.example.com", "https://naver.example.com/rss", null);
+            TechBlog kakao = techBlog("카카오", "https://kakao.example.com", "https://kakao.example.com/rss");
+            TechBlog naver = techBlog("네이버", "https://naver.example.com", "https://naver.example.com/rss");
 
             given(techBlogRepository.findAll()).willReturn(List.of(kakao, naver));
             given(postRepository.findExistingUrls(anyList())).willReturn(Set.of());
@@ -120,8 +121,8 @@ class RssFeedReaderTest {
         @Test
         @DisplayName("느린 feed는 timeout 처리되고 다른 feed 결과는 계속 반환한다")
         void timesOutSlowFeedAndKeepsOtherResults() {
-            TechBlog kakao = TechBlog.create("카카오", "https://kakao.example.com", "https://kakao.example.com/rss", null);
-            TechBlog naver = TechBlog.create("네이버", "https://naver.example.com", "https://naver.example.com/rss", null);
+            TechBlog kakao = techBlog("카카오", "https://kakao.example.com", "https://kakao.example.com/rss");
+            TechBlog naver = techBlog("네이버", "https://naver.example.com", "https://naver.example.com/rss");
 
             given(techBlogRepository.findAll()).willReturn(List.of(kakao, naver));
             given(postRepository.findExistingUrls(anyList())).willReturn(Set.of());
@@ -146,7 +147,7 @@ class RssFeedReaderTest {
         @Test
         @DisplayName("빈 RSS 응답이면 결과 없이 종료한다")
         void returnsEmptyWhenFeedResponseIsEmpty() {
-            TechBlog techBlog = TechBlog.create("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss", null);
+            TechBlog techBlog = techBlog("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss");
 
             given(techBlogRepository.findAll()).willReturn(List.of(techBlog));
             given(postRepository.findExistingUrls(anyList())).willReturn(Set.of());
@@ -163,8 +164,8 @@ class RssFeedReaderTest {
         @Test
         @DisplayName("피드 파싱에 실패해도 다른 피드 결과는 유지한다")
         void keepsOtherResultsWhenFeedParsingFails() {
-            TechBlog kakao = TechBlog.create("카카오", "https://kakao.example.com", "https://kakao.example.com/rss", null);
-            TechBlog naver = TechBlog.create("네이버", "https://naver.example.com", "https://naver.example.com/rss", null);
+            TechBlog kakao = techBlog("카카오", "https://kakao.example.com", "https://kakao.example.com/rss");
+            TechBlog naver = techBlog("네이버", "https://naver.example.com", "https://naver.example.com/rss");
 
             given(techBlogRepository.findAll()).willReturn(List.of(kakao, naver));
             given(postRepository.findExistingUrls(anyList())).willReturn(Set.of());
@@ -190,7 +191,7 @@ class RssFeedReaderTest {
         @Test
         @DisplayName("content:encoded가 description보다 길면 content를 본문으로 사용한다")
         void usesContentWhenItIsLongerThanDescription() {
-            TechBlog techBlog = TechBlog.create("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss", null);
+            TechBlog techBlog = techBlog("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss");
             String longContent = "<p>description 보다 훨씬 긴 content 본문입니다.</p>";
 
             given(techBlogRepository.findAll()).willReturn(List.of(techBlog));
@@ -214,7 +215,7 @@ class RssFeedReaderTest {
         @Test
         @DisplayName("content가 없거나 더 짧으면 description을 본문으로 사용한다")
         void usesDescriptionWhenContentIsMissingOrShorter() {
-            TechBlog techBlog = TechBlog.create("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss", null);
+            TechBlog techBlog = techBlog("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss");
             String description = "content 보다 더 긴 description 본문입니다.";
 
             given(techBlogRepository.findAll()).willReturn(List.of(techBlog));
@@ -237,7 +238,7 @@ class RssFeedReaderTest {
         @Test
         @DisplayName("발행일이 없으면 현재 시각으로 fallback 한다")
         void fallsBackToNowWhenPublishedDateIsNull() {
-            TechBlog techBlog = TechBlog.create("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss", null);
+            TechBlog techBlog = techBlog("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss");
 
             given(techBlogRepository.findAll()).willReturn(List.of(techBlog));
             given(postRepository.findExistingUrls(anyList())).willReturn(Set.of());
@@ -266,7 +267,7 @@ class RssFeedReaderTest {
         @Test
         @DisplayName("media module 이미지가 있으면 thumbnail 우선순위 1번으로 사용한다")
         void extractsThumbnailFromMediaModuleFirst() {
-            TechBlog techBlog = TechBlog.create("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss", null);
+            TechBlog techBlog = techBlog("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss");
             String mediaImage = "https://cdn.example.com/media-thumbnail.jpg";
 
             given(techBlogRepository.findAll()).willReturn(List.of(techBlog));
@@ -294,7 +295,7 @@ class RssFeedReaderTest {
         @Test
         @DisplayName("media module이 없으면 enclosure 이미지를 thumbnail로 사용한다")
         void extractsThumbnailFromEnclosureWhenMediaMissing() {
-            TechBlog techBlog = TechBlog.create("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss", null);
+            TechBlog techBlog = techBlog("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss");
             String enclosureImage = "https://cdn.example.com/enclosure-thumbnail.jpg";
 
             given(techBlogRepository.findAll()).willReturn(List.of(techBlog));
@@ -322,7 +323,7 @@ class RssFeedReaderTest {
         @Test
         @DisplayName("media와 enclosure가 모두 없으면 HTML의 첫 이미지로 thumbnail을 채운다")
         void extractsThumbnailFromHtmlWhenNoMediaOrEnclosureExists() {
-            TechBlog techBlog = TechBlog.create("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss", null);
+            TechBlog techBlog = techBlog("테크포크", "https://techfork.example.com", "https://techfork.example.com/rss");
             String htmlImage = "https://cdn.example.com/html-thumbnail.jpg";
 
             given(techBlogRepository.findAll()).willReturn(List.of(techBlog));
@@ -341,6 +342,10 @@ class RssFeedReaderTest {
             assertThat(items).hasSize(1);
             assertThat(items.get(0).thumbnailUrl()).isEqualTo(htmlImage);
         }
+    }
+
+    private TechBlog techBlog(String companyName, String blogUrl, String rssUrl) {
+        return TechBlogFixture.createTechBlog(companyName, blogUrl, rssUrl, null);
     }
 
     private RssFeedReader newReader(WebClient webClient) {

@@ -1,8 +1,9 @@
 package com.techfork.domain.source.batch;
 
 import com.techfork.post.domain.Post;
-import com.techfork.domain.source.dto.RssFeedItem;
+import com.techfork.post.fixture.PostFixture;
 import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.fixture.TechBlogFixture;
 import com.techfork.global.util.JdbcBatchExecutor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -57,7 +58,7 @@ class PostBatchWriterTest {
             PostBatchWriter postBatchWriter = new PostBatchWriter(jdbcBatchExecutor);
             LocalDateTime publishedAt = LocalDateTime.of(2026, 4, 13, 6, 0, 0);
             LocalDateTime crawledAt = LocalDateTime.of(2026, 4, 13, 6, 1, 0);
-            TechBlog techBlog = TechBlog.create(
+            TechBlog techBlog = TechBlogFixture.createTechBlog(
                     "TechFork",
                     "https://techfork.example.com",
                     "https://techfork.example.com/rss",
@@ -65,17 +66,17 @@ class PostBatchWriterTest {
             );
             ReflectionTestUtils.setField(techBlog, "id", 9L);
 
-            Post post = Post.create(RssFeedItem.builder()
-                    .title("테스트 제목")
-                    .url("https://posts.example.com/step3")
-                    .logoUrl("https://cdn.example.com/logo.png")
-                    .thumbnailUrl("https://cdn.example.com/thumb.png")
-                    .content("긴 본문")
-                    .plainContent("평문 본문")
-                    .publishedAt(publishedAt)
-                    .company("TechFork")
-                    .techBlogId(9L)
-                    .build(), techBlog);
+            Post post = PostFixture.createPost(
+                    techBlog,
+                    "테스트 제목",
+                    "긴 본문",
+                    "평문 본문",
+                    null,
+                    null,
+                    "https://cdn.example.com/thumb.png",
+                    "https://posts.example.com/step3",
+                    publishedAt
+            );
             ReflectionTestUtils.setField(post, "crawledAt", crawledAt);
 
             ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
