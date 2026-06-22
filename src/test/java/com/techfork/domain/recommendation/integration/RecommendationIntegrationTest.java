@@ -13,7 +13,6 @@ import com.techfork.post.domain.Post;
 import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
-import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +25,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static com.techfork.domain.recommendation.fixture.RecommendationUserFixture.activeUser;
+import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.post;
+import static com.techfork.domain.recommendation.fixture.RecommendedPostFixture.recommendedPost;
+import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.techBlog;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -66,27 +69,15 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() {
-        testUser = User.createSocialUser(
-                SocialType.KAKAO,
-                "testSocialId",
-                "test@example.com",
-                "profile.jpg"
-        );
-        testUser.updateUser("테스트유저", "test@example.com", "백엔드 개발자입니다.");
-        testUser = userRepository.save(testUser);
+        testUser = userRepository.save(activeUser("testSocialId", "test@example.com"));
 
         JwtDTO tokens = jwtUtil.generateTokens(testUser.getId(), Role.USER);
         accessToken = tokens.accessToken();
 
-        testBlog = TechBlog.builder()
-                .companyName("테스트회사")
-                .blogUrl("https://test.com")
-                .rssUrl("https://test.com/rss")
-                .logoUrl("https://test.com/logo.png")
-                .build();
-        testBlog = techBlogRepository.save(testBlog);
+        testBlog = techBlogRepository.save(techBlog("테스트회사", "https://test.com"));
 
-        testPost1 = postRepository.save(postFixture(
+        testPost1 = postRepository.save(post(
+                testBlog,
                 "추천 게시글 1",
                 "게시글 1의 전체 내용입니다.",
                 "게시글 1의 내용",
@@ -96,7 +87,8 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
                 "https://test.com/post/1",
                 LocalDateTime.now().minusDays(1)
         ));
-        testPost2 = postRepository.save(postFixture(
+        testPost2 = postRepository.save(post(
+                testBlog,
                 "추천 게시글 2",
                 "게시글 2의 전체 내용입니다.",
                 "게시글 2의 내용",
@@ -106,7 +98,8 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
                 "https://test.com/post/2",
                 LocalDateTime.now().minusDays(2)
         ));
-        testPost3 = postRepository.save(postFixture(
+        testPost3 = postRepository.save(post(
+                testBlog,
                 "추천 게시글 3",
                 "게시글 3의 전체 내용입니다.",
                 "게시글 3의 내용",
@@ -148,9 +141,9 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
         @Test
         @DisplayName("추천 게시글 목록 조회 성공 - 여러 개")
         void success_multiple() throws Exception {
-            RecommendedPost rec1 = RecommendedPost.create(testUser, testPost1, 0.9, 0.85, 1);
-            RecommendedPost rec2 = RecommendedPost.create(testUser, testPost2, 0.8, 0.75, 2);
-            RecommendedPost rec3 = RecommendedPost.create(testUser, testPost3, 0.7, 0.65, 3);
+            RecommendedPost rec1 = recommendedPost(testUser, testPost1, 1);
+            RecommendedPost rec2 = recommendedPost(testUser, testPost2, 2);
+            RecommendedPost rec3 = recommendedPost(testUser, testPost3, 3);
             recommendedPostRepository.saveAll(List.of(rec1, rec2, rec3));
 
             mockMvc.perform(get("/api/v1/recommendations")
@@ -182,9 +175,9 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
         @Test
         @DisplayName("추천 게시글 목록 조회 성공 - 랭킹 순으로 정렬")
         void success_orderedByRank() throws Exception {
-            RecommendedPost rec3 = RecommendedPost.create(testUser, testPost3, 0.7, 0.65, 3);
-            RecommendedPost rec1 = RecommendedPost.create(testUser, testPost1, 0.9, 0.85, 1);
-            RecommendedPost rec2 = RecommendedPost.create(testUser, testPost2, 0.8, 0.75, 2);
+            RecommendedPost rec3 = recommendedPost(testUser, testPost3, 3);
+            RecommendedPost rec1 = recommendedPost(testUser, testPost1, 1);
+            RecommendedPost rec2 = recommendedPost(testUser, testPost2, 2);
             recommendedPostRepository.saveAll(List.of(rec3, rec1, rec2));
 
             mockMvc.perform(get("/api/v1/recommendations")
@@ -207,7 +200,7 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
         @Test
         @DisplayName("추천 조회 후 북마크 추가 후 다시 조회")
         void getRecommendations_addBookmark_getAgain() throws Exception {
-            RecommendedPost rec1 = RecommendedPost.create(testUser, testPost1, 0.9, 0.85, 1);
+            RecommendedPost rec1 = recommendedPost(testUser, testPost1, 1);
             recommendedPostRepository.save(rec1);
 
             mockMvc.perform(get("/api/v1/recommendations")
@@ -226,29 +219,4 @@ class RecommendationIntegrationTest extends IntegrationTestBase {
         }
     }
 
-    private Post postFixture(
-            String title,
-            String fullContent,
-            String plainContent,
-            String summary,
-            String shortSummary,
-            String thumbnailUrl,
-            String url,
-            LocalDateTime publishedAt
-    ) {
-        return Post.builder()
-                .title(title)
-                .fullContent(fullContent)
-                .plainContent(plainContent)
-                .summary(summary)
-                .shortSummary(shortSummary)
-                .company("테스트회사")
-                .logoUrl("https://test.com/logo.png")
-                .thumbnailUrl(thumbnailUrl)
-                .url(url)
-                .publishedAt(publishedAt)
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testBlog)
-                .build();
-    }
 }

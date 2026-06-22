@@ -9,7 +9,6 @@ import com.techfork.domain.recommendation.entity.RecommendedPost;
 import com.techfork.domain.recommendation.repository.RecommendedPostRepository;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +21,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.post;
+import static com.techfork.domain.recommendation.fixture.RecommendedPostFixture.recommendedPost;
+import static com.techfork.domain.recommendation.fixture.RecommendationPostFixture.techBlog;
+import static com.techfork.domain.recommendation.fixture.RecommendationUserFixture.user;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -59,57 +62,16 @@ class RecommendationQueryServiceTest {
 
     @BeforeEach
     void setUp() {
-        // 테스트 사용자 생성
-        testUser = User.createSocialUser(
-                SocialType.KAKAO,
-                "test-social-id",
-                "test@example.com",
-                "https://example.com/profile.jpg"
-        );
+        testUser = user("test-social-id", "test@example.com");
+        testTechBlog = techBlog("테스트 회사", "https://test.com");
 
-        // 테스트 기술 블로그 생성
-        testTechBlog = TechBlog.create(
-                "테스트 회사",
-                "https://test.com",
-                "https://test.com/rss",
-                "https://test.com/logo.png"
-        );
+        post1 = post(testTechBlog, "게시글 1", "전체 내용 1", "내용 1", null, "요약 1", null, "https://test.com/post1", LocalDateTime.now().minusDays(1));
+        post2 = post(testTechBlog, "게시글 2", "전체 내용 2", "내용 2", null, "요약 2", null, "https://test.com/post2", LocalDateTime.now().minusDays(2));
+        post3 = post(testTechBlog, "게시글 3", "전체 내용 3", "내용 3", null, "요약 3", null, "https://test.com/post3", LocalDateTime.now().minusDays(3));
 
-        // 테스트 게시글 생성
-        post1 = Post.builder()
-                .title("게시글 1")
-                .shortSummary("요약 1")
-                .url("https://test.com/post1")
-                .company("테스트 회사")
-                .publishedAt(LocalDateTime.now().minusDays(1))
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testTechBlog)
-                .build();
-
-        post2 = Post.builder()
-                .title("게시글 2")
-                .shortSummary("요약 2")
-                .url("https://test.com/post2")
-                .company("테스트 회사")
-                .publishedAt(LocalDateTime.now().minusDays(2))
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testTechBlog)
-                .build();
-
-        post3 = Post.builder()
-                .title("게시글 3")
-                .shortSummary("요약 3")
-                .url("https://test.com/post3")
-                .company("테스트 회사")
-                .publishedAt(LocalDateTime.now().minusDays(3))
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testTechBlog)
-                .build();
-
-        // 테스트 추천 게시글 생성
-        recommendedPost1 = RecommendedPost.create(testUser, post1, 0.9, 0.85, 1);
-        recommendedPost2 = RecommendedPost.create(testUser, post2, 0.8, 0.75, 2);
-        recommendedPost3 = RecommendedPost.create(testUser, post3, 0.7, 0.65, 3);
+        recommendedPost1 = recommendedPost(testUser, post1, 1);
+        recommendedPost2 = recommendedPost(testUser, post2, 2);
+        recommendedPost3 = recommendedPost(testUser, post3, 3);
     }
 
     @Test
