@@ -2,11 +2,13 @@ package com.techfork.activity.readpost.infrastructure;
 
 import com.techfork.activity.readpost.domain.ReadPost;
 import com.techfork.post.domain.Post;
+import com.techfork.post.fixture.PostFixture;
 import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.fixture.TechBlogFixture;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,38 +47,20 @@ class ReadPostRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", "profile.jpg");
+        testUser = UserFixture.socialUser("testSocialId", "test@example.com");
         testUser = userRepository.save(testUser);
 
-        testBlog = TechBlog.builder()
-                .companyName("테스트회사")
-                .blogUrl("https://test.com")
-                .rssUrl("https://test.com/rss")
-                .build();
+        testBlog = TechBlogFixture.createTechBlog("테스트회사", "https://test.com");
         testBlog = techBlogRepository.save(testBlog);
 
-        testPost1 = Post.builder()
-                .title("테스트 게시글 1")
-                .fullContent("전체 내용")
-                .plainContent("내용")
-                .company("테스트회사")
-                .url("https://test.com/post/1")
-                .publishedAt(LocalDateTime.now())
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testBlog)
-                .build();
+        testPost1 = PostFixture.createPost(testBlog, "테스트 게시글 1", "전체 내용", "내용",
+                "테스트 게시글 1 요약", "테스트 게시글 1 짧은 요약", "https://test.com/thumb1.png",
+                "https://test.com/post/1", LocalDateTime.now());
         testPost1 = postRepository.save(testPost1);
 
-        testPost2 = Post.builder()
-                .title("테스트 게시글 2")
-                .fullContent("전체 내용 2")
-                .plainContent("내용 2")
-                .company("테스트회사")
-                .url("https://test.com/post/2")
-                .publishedAt(LocalDateTime.now())
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testBlog)
-                .build();
+        testPost2 = PostFixture.createPost(testBlog, "테스트 게시글 2", "전체 내용 2", "내용 2",
+                "테스트 게시글 2 요약", "테스트 게시글 2 짧은 요약", "https://test.com/thumb2.png",
+                "https://test.com/post/2", LocalDateTime.now());
         testPost2 = postRepository.save(testPost2);
     }
 

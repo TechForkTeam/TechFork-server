@@ -5,8 +5,9 @@ import com.techfork.activity.bookmark.domain.BookmarkErrorCode;
 import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.post.domain.Post;
 import com.techfork.post.domain.exception.PostErrorCode;
+import com.techfork.post.fixture.PostFixture;
 import com.techfork.post.application.query.lookup.PostLookupService;
-import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.fixture.TechBlogFixture;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
 import com.techfork.useraccount.application.query.lookup.UserLookupService;
@@ -62,22 +63,11 @@ class BookmarkCommandServiceTest {
                 AddBookmarkCommand command = new AddBookmarkCommand(userId, postId);
 
                 User mockUser = mock(User.class);
-                TechBlog mockTechBlog = TechBlog.builder()
-                        .companyName("테스트회사")
-                        .blogUrl("https://test.com")
-                        .rssUrl("https://test.com/rss")
-                        .build();
-
-                Post mockPost = Post.builder()
-                        .title("테스트 제목")
-                        .fullContent("내용")
-                        .plainContent("내용")
-                        .company("테스트회사")
-                        .url("https://test.com/post/1")
-                        .publishedAt(LocalDateTime.now())
-                        .crawledAt(LocalDateTime.now())
-                        .techBlog(mockTechBlog)
-                        .build();
+                Post mockPost = PostFixture.createPost(
+                        TechBlogFixture.createTechBlog("테스트회사", "https://test.com"),
+                        "테스트 제목",
+                        "https://test.com/post/1"
+                );
 
                 given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
                 given(postLookupService.getPostOrThrow(postId)).willReturn(mockPost);

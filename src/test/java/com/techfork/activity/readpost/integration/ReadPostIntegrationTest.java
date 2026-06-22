@@ -9,12 +9,14 @@ import com.techfork.activity.readpost.infrastructure.FirstReadPostRepository;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.activity.readpost.presentation.ReadPostRequest;
 import com.techfork.post.domain.Post;
+import com.techfork.post.fixture.PostFixture;
 import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.fixture.TechBlogFixture;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.Role;
-import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.common.IntegrationTestBase;
 import com.techfork.auth.security.jwt.JwtDTO;
@@ -75,51 +77,25 @@ class ReadPostIntegrationTest extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() {
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", "profile.jpg");
-        testUser.updateUser("테스트유저", "test@example.com", "백엔드 개발자입니다.");
+        testUser = UserFixture.activeUser("testSocialId", "test@example.com");
         testUser = userRepository.save(testUser);
 
         JwtDTO tokens = jwtUtil.generateTokens(testUser.getId(), Role.USER);
         accessToken = tokens.accessToken();
 
-        testBlog = TechBlog.builder()
-                .companyName("테스트회사")
-                .blogUrl("https://test.com")
-                .rssUrl("https://test.com/rss")
-                .logoUrl("https://test.com/logo.png")
-                .build();
+        testBlog = TechBlogFixture.createTechBlog("테스트회사", "https://test.com");
         testBlog = techBlogRepository.save(testBlog);
 
-        testPost1 = Post.builder()
-                .title("테스트 게시글 1")
-                .fullContent("게시글 1의 전체 내용입니다.")
-                .plainContent("게시글 1의 내용")
-                .summary("게시글 1의 요약")
-                .shortSummary("게시글 1의 짧은 요약")
-                .company("테스트회사")
-                .logoUrl("https://test.com/logo.png")
-                .thumbnailUrl("https://test.com/thumb1.png")
-                .url("https://test.com/post/1")
-                .publishedAt(LocalDateTime.now().minusDays(1))
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testBlog)
-                .build();
+        testPost1 = PostFixture.createPost(testBlog, "테스트 게시글 1",
+                "게시글 1의 전체 내용입니다.", "게시글 1의 내용",
+                "게시글 1의 요약", "게시글 1의 짧은 요약", "https://test.com/thumb1.png",
+                "https://test.com/post/1", LocalDateTime.now().minusDays(1));
         testPost1 = postRepository.save(testPost1);
 
-        testPost2 = Post.builder()
-                .title("테스트 게시글 2")
-                .fullContent("게시글 2의 전체 내용입니다.")
-                .plainContent("게시글 2의 내용")
-                .summary("게시글 2의 요약")
-                .shortSummary("게시글 2의 짧은 요약")
-                .company("테스트회사")
-                .logoUrl("https://test.com/logo.png")
-                .thumbnailUrl("https://test.com/thumb2.png")
-                .url("https://test.com/post/2")
-                .publishedAt(LocalDateTime.now().minusDays(2))
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testBlog)
-                .build();
+        testPost2 = PostFixture.createPost(testBlog, "테스트 게시글 2",
+                "게시글 2의 전체 내용입니다.", "게시글 2의 내용",
+                "게시글 2의 요약", "게시글 2의 짧은 요약", "https://test.com/thumb2.png",
+                "https://test.com/post/2", LocalDateTime.now().minusDays(2));
         testPost2 = postRepository.save(testPost2);
     }
 

@@ -2,7 +2,7 @@ package com.techfork.activity.readhistory.infrastructure;
 
 import com.techfork.activity.readhistory.domain.SearchHistory;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,7 +32,7 @@ class SearchHistoryRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", "profile.jpg");
+        testUser = UserFixture.socialUser("testSocialId", "test@example.com");
         testUser = userRepository.save(testUser);
     }
 

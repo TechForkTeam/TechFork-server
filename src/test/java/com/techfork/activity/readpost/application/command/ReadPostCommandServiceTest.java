@@ -7,8 +7,9 @@ import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.post.application.command.PostViewCountCommandService;
 import com.techfork.post.domain.Post;
 import com.techfork.post.domain.exception.PostErrorCode;
+import com.techfork.post.fixture.PostFixture;
 import com.techfork.post.application.query.lookup.PostLookupService;
-import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.fixture.TechBlogFixture;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.exception.UserErrorCode;
 import com.techfork.useraccount.application.query.lookup.UserLookupService;
@@ -71,21 +72,11 @@ class ReadPostCommandServiceTest {
                 Integer readDurationSeconds = 300;
 
                 User mockUser = mock(User.class);
-                TechBlog mockTechBlog = TechBlog.builder()
-                        .companyName("테스트회사")
-                        .blogUrl("https://test.com")
-                        .rssUrl("https://test.com/rss")
-                        .build();
-                Post mockPost = Post.builder()
-                        .title("테스트 제목")
-                        .fullContent("내용")
-                        .plainContent("내용")
-                        .company("테스트회사")
-                        .url("https://test.com/post/1")
-                        .publishedAt(LocalDateTime.now())
-                        .crawledAt(LocalDateTime.now())
-                        .techBlog(mockTechBlog)
-                        .build();
+                Post mockPost = PostFixture.createPost(
+                        TechBlogFixture.createTechBlog("테스트회사", "https://test.com"),
+                        "테스트 제목",
+                        "https://test.com/post/1"
+                );
                 ReflectionTestUtils.setField(mockPost, "id", postId);
                 SaveReadPostCommand command = new SaveReadPostCommand(userId, postId, readAt, readDurationSeconds);
 
@@ -121,21 +112,11 @@ class ReadPostCommandServiceTest {
                 Integer readDurationSeconds = 400;
 
                 User mockUser = mock(User.class);
-                TechBlog mockTechBlog = TechBlog.builder()
-                        .companyName("테스트회사")
-                        .blogUrl("https://test.com")
-                        .rssUrl("https://test.com/rss")
-                        .build();
-                Post mockPost = Post.builder()
-                        .title("테스트 제목")
-                        .fullContent("내용")
-                        .plainContent("내용")
-                        .company("테스트회사")
-                        .url("https://test.com/post/1")
-                        .publishedAt(LocalDateTime.now())
-                        .crawledAt(LocalDateTime.now())
-                        .techBlog(mockTechBlog)
-                        .build();
+                Post mockPost = PostFixture.createPost(
+                        TechBlogFixture.createTechBlog("테스트회사", "https://test.com"),
+                        "테스트 제목",
+                        "https://test.com/post/1"
+                );
                 SaveReadPostCommand command = new SaveReadPostCommand(userId, postId, readAt, readDurationSeconds);
 
                 given(userLookupService.getUserOrThrow(userId)).willReturn(mockUser);
@@ -164,21 +145,11 @@ class ReadPostCommandServiceTest {
                 LocalDateTime readAt = LocalDateTime.of(2026, 5, 5, 16, 0, 0);
 
                 User mockUser = mock(User.class);
-                TechBlog mockTechBlog = TechBlog.builder()
-                        .companyName("테스트회사")
-                        .blogUrl("https://test.com")
-                        .rssUrl("https://test.com/rss")
-                        .build();
-                Post mockPost = Post.builder()
-                        .title("테스트 제목")
-                        .fullContent("내용")
-                        .plainContent("내용")
-                        .company("테스트회사")
-                        .url("https://test.com/post/1")
-                        .publishedAt(LocalDateTime.now())
-                        .crawledAt(LocalDateTime.now())
-                        .techBlog(mockTechBlog)
-                        .build();
+                Post mockPost = PostFixture.createPost(
+                        TechBlogFixture.createTechBlog("테스트회사", "https://test.com"),
+                        "테스트 제목",
+                        "https://test.com/post/1"
+                );
                 ReflectionTestUtils.setField(mockPost, "id", postId);
                 SaveReadPostCommand command = new SaveReadPostCommand(userId, postId, readAt, 300);
 

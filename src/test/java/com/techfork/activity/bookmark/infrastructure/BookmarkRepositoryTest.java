@@ -2,11 +2,13 @@ package com.techfork.activity.bookmark.infrastructure;
 
 import com.techfork.activity.bookmark.domain.Bookmark;
 import com.techfork.post.domain.Post;
+import com.techfork.post.fixture.PostFixture;
 import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.fixture.TechBlogFixture;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,51 +55,25 @@ class BookmarkRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", "profile.jpg");
+        testUser = UserFixture.socialUser("testSocialId", "test@example.com");
         testUser = userRepository.save(testUser);
 
-        testBlog = TechBlog.builder()
-                .companyName("테스트회사")
-                .blogUrl("https://test.com")
-                .rssUrl("https://test.com/rss")
-                .logoUrl("https://test.com/logo.png")
-                .build();
+        testBlog = TechBlogFixture.createTechBlog("테스트회사", "https://test.com");
         testBlog = techBlogRepository.save(testBlog);
 
-        testPost1 = Post.builder()
-                .title("게시글 1")
-                .fullContent("내용 1")
-                .plainContent("내용 1")
-                .company("테스트회사")
-                .url("https://test.com/post/1")
-                .publishedAt(LocalDateTime.now().minusDays(3))
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testBlog)
-                .build();
+        testPost1 = PostFixture.createPost(testBlog, "게시글 1", "내용 1", "내용 1",
+                "게시글 1 요약", "게시글 1 짧은 요약", "https://test.com/thumb1.png",
+                "https://test.com/post/1", LocalDateTime.now().minusDays(3));
         testPost1 = postRepository.save(testPost1);
 
-        testPost2 = Post.builder()
-                .title("게시글 2")
-                .fullContent("내용 2")
-                .plainContent("내용 2")
-                .company("테스트회사")
-                .url("https://test.com/post/2")
-                .publishedAt(LocalDateTime.now().minusDays(2))
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testBlog)
-                .build();
+        testPost2 = PostFixture.createPost(testBlog, "게시글 2", "내용 2", "내용 2",
+                "게시글 2 요약", "게시글 2 짧은 요약", "https://test.com/thumb2.png",
+                "https://test.com/post/2", LocalDateTime.now().minusDays(2));
         testPost2 = postRepository.save(testPost2);
 
-        testPost3 = Post.builder()
-                .title("게시글 3")
-                .fullContent("내용 3")
-                .plainContent("내용 3")
-                .company("테스트회사")
-                .url("https://test.com/post/3")
-                .publishedAt(LocalDateTime.now().minusDays(1))
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testBlog)
-                .build();
+        testPost3 = PostFixture.createPost(testBlog, "게시글 3", "내용 3", "내용 3",
+                "게시글 3 요약", "게시글 3 짧은 요약", "https://test.com/thumb3.png",
+                "https://test.com/post/3", LocalDateTime.now().minusDays(1));
         testPost3 = postRepository.save(testPost3);
     }
 
@@ -175,7 +151,7 @@ class BookmarkRepositoryTest {
         @Test
         @DisplayName("다른 사용자의 북마크는 조회되지 않음")
         void findBookmarkedPostIds_differentUser() {
-            User anotherUser = User.createSocialUser(SocialType.KAKAO, "anotherSocialId", "another@example.com", "another.jpg");
+            User anotherUser = UserFixture.socialUser("anotherSocialId", "another@example.com", "another.jpg");
             anotherUser = userRepository.save(anotherUser);
 
             Bookmark bookmark1 = Bookmark.create(testUser, testPost1, LocalDateTime.now());

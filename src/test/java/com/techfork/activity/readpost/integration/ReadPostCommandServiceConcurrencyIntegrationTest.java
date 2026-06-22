@@ -5,11 +5,13 @@ import com.techfork.activity.readpost.application.command.SaveReadPostCommand;
 import com.techfork.activity.readpost.infrastructure.FirstReadPostRepository;
 import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
 import com.techfork.post.domain.Post;
+import com.techfork.post.fixture.PostFixture;
 import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.fixture.TechBlogFixture;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import com.techfork.global.common.IntegrationTestBase;
 import java.time.LocalDateTime;
@@ -52,28 +54,15 @@ class ReadPostCommandServiceConcurrencyIntegrationTest extends IntegrationTestBa
 
     @BeforeEach
     void setUp() {
-        testUser = User.createSocialUser(SocialType.KAKAO, "concurrentUser", "concurrent@example.com", "profile.jpg");
+        testUser = UserFixture.socialUser("concurrentUser", "concurrent@example.com");
         testUser = userRepository.save(testUser);
 
-        TechBlog testBlog = TechBlog.builder()
-                .companyName("테스트회사")
-                .blogUrl("https://test.com")
-                .rssUrl("https://test.com/rss")
-                .build();
+        TechBlog testBlog = TechBlogFixture.createTechBlog("테스트회사", "https://test.com");
         testBlog = techBlogRepository.save(testBlog);
 
-        testPost = Post.builder()
-                .title("동시성 테스트 게시글")
-                .fullContent("전체 내용")
-                .plainContent("내용")
-                .summary("요약")
-                .shortSummary("짧은 요약")
-                .company("테스트회사")
-                .url("https://test.com/post/concurrency")
-                .publishedAt(LocalDateTime.now().minusDays(1))
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testBlog)
-                .build();
+        testPost = PostFixture.createPost(testBlog, "동시성 테스트 게시글", "전체 내용", "내용",
+                "요약", "짧은 요약", "https://test.com/thumb.png",
+                "https://test.com/post/concurrency", LocalDateTime.now().minusDays(1));
         testPost = postRepository.save(testPost);
     }
 

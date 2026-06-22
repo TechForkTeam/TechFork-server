@@ -1,11 +1,13 @@
 package com.techfork.activity.readpost.infrastructure;
 
 import com.techfork.post.domain.Post;
+import com.techfork.post.fixture.PostFixture;
 import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.domain.source.fixture.TechBlogFixture;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.domain.enums.SocialType;
+import com.techfork.useraccount.fixture.UserFixture;
 import com.techfork.useraccount.infrastructure.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -42,26 +44,15 @@ class FirstReadPostRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        testUser = User.createSocialUser(SocialType.KAKAO, "testSocialId", "test@example.com", "profile.jpg");
+        testUser = UserFixture.socialUser("testSocialId", "test@example.com");
         testUser = userRepository.save(testUser);
 
-        TechBlog testBlog = TechBlog.builder()
-                .companyName("테스트회사")
-                .blogUrl("https://test.com")
-                .rssUrl("https://test.com/rss")
-                .build();
+        TechBlog testBlog = TechBlogFixture.createTechBlog("테스트회사", "https://test.com");
         testBlog = techBlogRepository.save(testBlog);
 
-        testPost = Post.builder()
-                .title("테스트 게시글")
-                .fullContent("전체 내용")
-                .plainContent("내용")
-                .company("테스트회사")
-                .url("https://test.com/post/1")
-                .publishedAt(LocalDateTime.now())
-                .crawledAt(LocalDateTime.now())
-                .techBlog(testBlog)
-                .build();
+        testPost = PostFixture.createPost(testBlog, "테스트 게시글", "전체 내용", "내용",
+                "테스트 게시글 요약", "테스트 게시글 짧은 요약", "https://test.com/thumb.png",
+                "https://test.com/post/1", LocalDateTime.now());
         testPost = postRepository.save(testPost);
     }
 
