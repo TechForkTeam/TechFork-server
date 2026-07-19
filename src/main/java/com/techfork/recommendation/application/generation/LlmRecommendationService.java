@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.service;
+package com.techfork.recommendation.application.generation;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.KnnSearch;
@@ -6,13 +6,14 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.techfork.activity.readpost.application.query.lookup.ReadPostLookupService;
+import com.techfork.recommendation.application.ranking.MmrService;
+import com.techfork.recommendation.application.ranking.MmrService.MmrCandidate;
+import com.techfork.recommendation.application.ranking.MmrService.MmrResult;
 import com.techfork.recommendation.config.RecommendationProperties;
 import com.techfork.recommendation.domain.RecommendationHistory;
 import com.techfork.recommendation.domain.RecommendedPost;
 import com.techfork.recommendation.infrastructure.RecommendationHistoryRepository;
 import com.techfork.recommendation.infrastructure.RecommendedPostRepository;
-import com.techfork.domain.recommendation.service.MmrService.MmrCandidate;
-import com.techfork.domain.recommendation.service.MmrService.MmrResult;
 import com.techfork.global.elasticsearch.query.VectorQueryBuilder;
 import com.techfork.global.util.RrfScorer;
 import com.techfork.global.util.TimeDecayStrategy;

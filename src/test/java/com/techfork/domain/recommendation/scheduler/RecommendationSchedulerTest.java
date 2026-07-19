@@ -1,7 +1,7 @@
 package com.techfork.domain.recommendation.scheduler;
 
 import com.techfork.recommendation.config.RecommendationProperties;
-import com.techfork.domain.recommendation.service.RecommendationService;
+import com.techfork.recommendation.application.generation.RecommendationService;
 import com.techfork.useraccount.application.query.lookup.UserLookupService;
 import com.techfork.useraccount.domain.User;
 import org.junit.jupiter.api.DisplayName;

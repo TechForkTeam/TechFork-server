@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.service;
+package com.techfork.recommendation.application.ranking;
 
 import com.techfork.recommendation.config.RecommendationProperties;
 import com.techfork.global.util.VectorUtil;

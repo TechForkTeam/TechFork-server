@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.service;
+package com.techfork.recommendation.application.generation;
 
 import com.techfork.useraccount.domain.User;
 import java.util.List;

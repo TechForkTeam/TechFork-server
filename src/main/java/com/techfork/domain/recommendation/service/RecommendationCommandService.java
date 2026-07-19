@@ -1,5 +1,6 @@
 package com.techfork.domain.recommendation.service;
 
+import com.techfork.recommendation.application.generation.RecommendationService;
 import com.techfork.useraccount.application.query.lookup.UserLookupService;
 import com.techfork.useraccount.domain.User;
 import lombok.RequiredArgsConstructor;

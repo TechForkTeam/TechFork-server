@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.service;
+package com.techfork.recommendation.application.generation;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
@@ -7,6 +7,7 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.util.ObjectBuilder;
 import com.techfork.activity.readpost.application.query.lookup.ReadPostLookupService;
+import com.techfork.recommendation.application.ranking.MmrService;
 import com.techfork.global.elasticsearch.query.VectorQueryBuilder;
 import com.techfork.post.domain.projection.PostDocument;
 import com.techfork.post.fixture.PostDocumentFixture;
