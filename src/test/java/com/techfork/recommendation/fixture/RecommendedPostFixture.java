@@ -1,6 +1,6 @@
-package com.techfork.domain.recommendation.fixture;
+package com.techfork.recommendation.fixture;
 
-import com.techfork.domain.recommendation.entity.RecommendedPost;
+import com.techfork.recommendation.domain.RecommendedPost;
 import com.techfork.post.domain.Post;
 import com.techfork.useraccount.domain.User;
 

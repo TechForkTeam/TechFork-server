@@ -5,7 +5,7 @@ import com.techfork.post.domain.Post;
 import com.techfork.domain.recommendation.converter.RecommendationConverter;
 import com.techfork.domain.recommendation.dto.RecommendationListResponse;
 import com.techfork.domain.recommendation.dto.RecommendedPostDto;
-import com.techfork.domain.recommendation.entity.RecommendedPost;
+import com.techfork.recommendation.domain.RecommendedPost;
 import com.techfork.domain.recommendation.repository.RecommendedPostRepository;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.useraccount.application.query.lookup.UserLookupService;
@@ -25,7 +25,7 @@ import java.util.Set;
 
 import static com.techfork.post.fixture.PostFixture.createPost;
 import static com.techfork.post.fixture.PostFixture.DEFAULT_PUBLISHED_AT;
-import static com.techfork.domain.recommendation.fixture.RecommendedPostFixture.recommendedPost;
+import static com.techfork.recommendation.fixture.RecommendedPostFixture.recommendedPost;
 import static com.techfork.domain.source.fixture.TechBlogFixture.createTechBlog;
 import static com.techfork.useraccount.fixture.UserFixture.socialUser;
 import static org.assertj.core.api.Assertions.assertThat;

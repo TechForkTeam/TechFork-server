@@ -4,7 +4,7 @@ import com.techfork.post.domain.Post;
 import com.techfork.post.domain.PostKeyword;
 import com.techfork.domain.recommendation.dto.RecommendationListResponse;
 import com.techfork.domain.recommendation.dto.RecommendedPostDto;
-import com.techfork.domain.recommendation.entity.RecommendedPost;
+import com.techfork.recommendation.domain.RecommendedPost;
 import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.entity;
+package com.techfork.recommendation.domain;
 
 import com.techfork.post.domain.Post;
 import com.techfork.useraccount.domain.User;

@@ -1,6 +1,6 @@
 package com.techfork.domain.recommendation.repository;
 
-import com.techfork.domain.recommendation.entity.RecommendedPost;
+import com.techfork.recommendation.domain.RecommendedPost;
 import com.techfork.useraccount.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

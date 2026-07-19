@@ -1,6 +1,6 @@
 package com.techfork.domain.recommendation.repository;
 
-import com.techfork.domain.recommendation.entity.RecommendedPost;
+import com.techfork.recommendation.domain.RecommendedPost;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.post.domain.Post;
@@ -21,7 +21,7 @@ import org.springframework.test.context.ActiveProfiles;
 import java.util.List;
 
 import static com.techfork.post.fixture.PostFixture.createPost;
-import static com.techfork.domain.recommendation.fixture.RecommendedPostFixture.recommendedPost;
+import static com.techfork.recommendation.fixture.RecommendedPostFixture.recommendedPost;
 import static com.techfork.domain.source.fixture.TechBlogFixture.createTechBlog;
 import static com.techfork.useraccount.fixture.UserFixture.socialUser;
 import static org.assertj.core.api.Assertions.assertThat;
