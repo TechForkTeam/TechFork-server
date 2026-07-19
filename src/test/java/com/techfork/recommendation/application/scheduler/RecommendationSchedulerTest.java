@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.scheduler;
+package com.techfork.recommendation.application.scheduler;
 
 import com.techfork.recommendation.config.RecommendationProperties;
 import com.techfork.recommendation.application.generation.RecommendationService;

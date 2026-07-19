@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.service;
+package com.techfork.recommendation.application.command;
 
 import com.techfork.recommendation.application.generation.RecommendationService;
 import com.techfork.useraccount.application.query.lookup.UserLookupService;

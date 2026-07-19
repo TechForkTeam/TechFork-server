@@ -1,6 +1,6 @@
 package com.techfork.personalization.integration;
 
-import com.techfork.domain.recommendation.listener.PersonalizedProfileGeneratedEventListener;
+import com.techfork.recommendation.application.listener.PersonalizedProfileGeneratedEventListener;
 import com.techfork.recommendation.application.generation.RecommendationService;
 import com.techfork.personalization.application.event.PersonalizedProfileGeneratedEvent;
 import com.techfork.useraccount.application.query.lookup.UserLookupService;

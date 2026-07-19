@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.service;
+package com.techfork.recommendation.application.query;
 
 import com.techfork.activity.bookmark.application.query.lookup.BookmarkLookupService;
 import com.techfork.domain.recommendation.converter.RecommendationConverter;

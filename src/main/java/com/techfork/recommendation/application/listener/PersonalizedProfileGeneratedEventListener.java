@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.listener;
+package com.techfork.recommendation.application.listener;
 
 import com.techfork.recommendation.application.generation.RecommendationService;
 import com.techfork.personalization.application.event.PersonalizedProfileGeneratedEvent;

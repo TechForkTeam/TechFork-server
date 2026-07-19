@@ -1,8 +1,8 @@
 package com.techfork.domain.recommendation.controller;
 
 import com.techfork.domain.recommendation.dto.RecommendationListResponse;
-import com.techfork.domain.recommendation.service.RecommendationCommandService;
-import com.techfork.domain.recommendation.service.RecommendationQueryService;
+import com.techfork.recommendation.application.command.RecommendationCommandService;
+import com.techfork.recommendation.application.query.RecommendationQueryService;
 import com.techfork.global.common.code.SuccessCode;
 import com.techfork.global.response.BaseResponse;
 import com.techfork.auth.security.oauth.UserPrincipal;
