@@ -1,0 +1,50 @@
+package com.techfork.recommendation.application.command;
+
+import com.techfork.recommendation.application.generation.RecommendationService;
+import com.techfork.useraccount.application.query.lookup.UserLookupService;
+import com.techfork.useraccount.domain.User;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("RecommendationCommandService 단위 테스트")
+class RecommendationCommandServiceTest {
+
+    @Mock
+    private RecommendationService recommendationService;
+
+    @Mock
+    private UserLookupService userLookupService;
+
+    @InjectMocks
+    private RecommendationCommandService recommendationCommandService;
+
+    @Nested
+    @DisplayName("regenerateRecommendations")
+    class RegenerateRecommendations {
+
+        @Test
+        @DisplayName("lookup seam으로 사용자를 조회해 수동 추천 재생성을 요청한다")
+        void userIdProvided_GeneratesRecommendationsForLookedUpUser() {
+            Long userId = 1L;
+            User user = mock(User.class);
+            given(userLookupService.getUserReference(userId)).willReturn(user);
+            given(recommendationService.generateRecommendationsForUser(user)).willReturn(5);
+
+            recommendationCommandService.regenerateRecommendations(userId);
+
+            verify(userLookupService).getUserReference(userId);
+            verify(recommendationService).generateRecommendationsForUser(user);
+        }
+    }
+
+}

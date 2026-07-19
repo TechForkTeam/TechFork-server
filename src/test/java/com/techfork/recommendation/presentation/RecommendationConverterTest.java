@@ -1,0 +1,60 @@
+package com.techfork.recommendation.presentation;
+
+import com.techfork.post.domain.Post;
+import com.techfork.recommendation.presentation.response.RecommendedPostDto;
+import com.techfork.recommendation.domain.RecommendedPost;
+import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.useraccount.domain.User;
+import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import java.time.LocalDateTime;
+
+import static com.techfork.post.fixture.PostFixture.createPost;
+import static com.techfork.recommendation.fixture.RecommendedPostFixture.recommendedPost;
+import static com.techfork.domain.source.fixture.TechBlogFixture.createTechBlog;
+import static com.techfork.useraccount.fixture.UserFixture.socialUser;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+class RecommendationConverterTest {
+
+    @Nested
+    @DisplayName("toRecommendedPostDto")
+    class ToRecommendedPostDto {
+
+        @Test
+        @DisplayName("추천 DTO 생성 시 썸네일 URL에 Cloudflare 최적화를 적용한다")
+        void postWithThumbnail_OptimizesThumbnailUrl() {
+            CloudflareThirdPartyThumbnailOptimizer thumbnailOptimizer = mock(CloudflareThirdPartyThumbnailOptimizer.class);
+            RecommendationConverter converter = new RecommendationConverter(thumbnailOptimizer);
+
+            TechBlog techBlog = createTechBlog("테스트 회사", "https://techfork.com");
+            Post post = createPost(
+                    techBlog,
+                    "게시글",
+                    "전체 내용",
+                    "본문 내용",
+                    null,
+                    "요약",
+                    "https://images.example.com/thumb.jpg",
+                    "https://techfork.com/posts/1",
+                    LocalDateTime.now()
+            );
+            User user = socialUser("social-id", "test@example.com");
+            RecommendedPost recommendedPost = recommendedPost(user, post, 0.9, 0.8, 1);
+
+            when(thumbnailOptimizer.optimize("https://images.example.com/thumb.jpg"))
+                    .thenReturn("https://api.techfork.com/cdn-cgi/image/fit=scale-down,width=480,quality=75,format=auto/https://images.example.com/thumb.jpg");
+
+            RecommendedPostDto result = converter.toRecommendedPostDto(recommendedPost);
+
+            assertThat(result.thumbnailUrl())
+                    .isEqualTo("https://api.techfork.com/cdn-cgi/image/fit=scale-down,width=480,quality=75,format=auto/https://images.example.com/thumb.jpg");
+        }
+    }
+
+}
