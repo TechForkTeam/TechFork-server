@@ -1,6 +1,6 @@
 package com.techfork.domain.recommendation.service;
 
-import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
+import com.techfork.activity.bookmark.application.query.lookup.BookmarkLookupService;
 import com.techfork.post.domain.Post;
 import com.techfork.domain.recommendation.converter.RecommendationConverter;
 import com.techfork.domain.recommendation.dto.RecommendationListResponse;
@@ -8,8 +8,8 @@ import com.techfork.domain.recommendation.dto.RecommendedPostDto;
 import com.techfork.domain.recommendation.entity.RecommendedPost;
 import com.techfork.domain.recommendation.repository.RecommendedPostRepository;
 import com.techfork.domain.source.entity.TechBlog;
+import com.techfork.useraccount.application.query.lookup.UserLookupService;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.infrastructure.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 import static com.techfork.post.fixture.PostFixture.createPost;
 import static com.techfork.post.fixture.PostFixture.DEFAULT_PUBLISHED_AT;
@@ -41,13 +42,13 @@ class RecommendationQueryServiceTest {
     private RecommendedPostRepository recommendedPostRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private UserLookupService userLookupService;
 
     @Mock
     private RecommendationConverter recommendationConverter;
 
     @Mock
-    private BookmarkRepository bookmarkRepository;
+    private BookmarkLookupService bookmarkLookupService;
 
     @InjectMocks
     private RecommendationQueryService recommendationQueryService;
@@ -98,10 +99,10 @@ class RecommendationQueryServiceTest {
                     .totalCount(3)
                     .build();
 
-            given(userRepository.getReferenceById(userId)).willReturn(testUser);
+            given(userLookupService.getUserReference(userId)).willReturn(testUser);
             given(recommendedPostRepository.findByUserOrderByRankAsc(testUser)).willReturn(recommendedPosts);
             given(recommendationConverter.toRecommendationListResponse(recommendedPosts)).willReturn(initialResponse);
-            given(bookmarkRepository.findBookmarkedPostIds(userId, postIds)).willReturn(List.of());
+            given(bookmarkLookupService.getBookmarkedPostIds(userId, postIds)).willReturn(Set.of());
 
             // when
             RecommendationListResponse response = recommendationQueryService.getRecommendations(userId);
@@ -112,10 +113,10 @@ class RecommendationQueryServiceTest {
             assertThat(response.recommendations().get(0).title()).isEqualTo("게시글 1");
             assertThat(response.recommendations().get(0).isBookmarked()).isFalse();
 
-            verify(userRepository).getReferenceById(userId);
+            verify(userLookupService).getUserReference(userId);
             verify(recommendedPostRepository).findByUserOrderByRankAsc(testUser);
             verify(recommendationConverter).toRecommendationListResponse(recommendedPosts);
-            verify(bookmarkRepository).findBookmarkedPostIds(userId, postIds);
+            verify(bookmarkLookupService).getBookmarkedPostIds(userId, postIds);
         }
 
         @Test
@@ -138,12 +139,12 @@ class RecommendationQueryServiceTest {
                     .build();
 
             // 101L, 103L 게시글은 북마크됨
-            List<Long> bookmarkedPostIds = List.of(101L, 103L);
+            Set<Long> bookmarkedPostIds = Set.of(101L, 103L);
 
-            given(userRepository.getReferenceById(userId)).willReturn(testUser);
+            given(userLookupService.getUserReference(userId)).willReturn(testUser);
             given(recommendedPostRepository.findByUserOrderByRankAsc(testUser)).willReturn(recommendedPosts);
             given(recommendationConverter.toRecommendationListResponse(recommendedPosts)).willReturn(initialResponse);
-            given(bookmarkRepository.findBookmarkedPostIds(userId, postIds)).willReturn(bookmarkedPostIds);
+            given(bookmarkLookupService.getBookmarkedPostIds(userId, postIds)).willReturn(bookmarkedPostIds);
 
             // when
             RecommendationListResponse response = recommendationQueryService.getRecommendations(userId);
@@ -156,7 +157,7 @@ class RecommendationQueryServiceTest {
             assertThat(response.recommendations().get(1).isBookmarked()).isFalse();
             assertThat(response.recommendations().get(2).postId()).isEqualTo(103L);
             assertThat(response.recommendations().get(2).isBookmarked()).isTrue();
-            verify(bookmarkRepository).findBookmarkedPostIds(userId, postIds);
+            verify(bookmarkLookupService).getBookmarkedPostIds(userId, postIds);
         }
 
         @Test
@@ -171,7 +172,7 @@ class RecommendationQueryServiceTest {
                     .totalCount(0)
                     .build();
 
-            given(userRepository.getReferenceById(userId)).willReturn(testUser);
+            given(userLookupService.getUserReference(userId)).willReturn(testUser);
             given(recommendedPostRepository.findByUserOrderByRankAsc(testUser)).willReturn(emptyList);
             given(recommendationConverter.toRecommendationListResponse(emptyList)).willReturn(emptyResponse);
 
@@ -182,10 +183,10 @@ class RecommendationQueryServiceTest {
             assertThat(response.recommendations()).isEmpty();
             assertThat(response.totalCount()).isZero();
 
-            verify(userRepository).getReferenceById(userId);
+            verify(userLookupService).getUserReference(userId);
             verify(recommendedPostRepository).findByUserOrderByRankAsc(testUser);
             verify(recommendationConverter).toRecommendationListResponse(emptyList);
-            verify(bookmarkRepository, never()).findBookmarkedPostIds(any(), any());
+            verify(bookmarkLookupService, never()).getBookmarkedPostIds(any(), any());
         }
     }
 

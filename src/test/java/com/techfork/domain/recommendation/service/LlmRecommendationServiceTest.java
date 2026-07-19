@@ -6,10 +6,7 @@ import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.util.ObjectBuilder;
-import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
-import com.techfork.personalization.fixture.PersonalizationProfileDocumentFixture;
-import com.techfork.personalization.infrastructure.PersonalizationProfileDocument;
-import com.techfork.personalization.infrastructure.PersonalizationProfileDocumentRepository;
+import com.techfork.activity.readpost.application.query.lookup.ReadPostLookupService;
 import com.techfork.global.elasticsearch.query.VectorQueryBuilder;
 import com.techfork.post.domain.projection.PostDocument;
 import com.techfork.post.fixture.PostDocumentFixture;
@@ -17,8 +14,10 @@ import com.techfork.domain.recommendation.config.RecommendationProperties;
 import com.techfork.domain.recommendation.repository.RecommendedPostRepository;
 import com.techfork.domain.recommendation.repository.RecommendationHistoryRepository;
 import com.techfork.post.domain.Post;
-import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.global.util.TimeDecayStrategy;
+import com.techfork.personalization.application.query.lookup.PersonalizationProfileLookupItem;
+import com.techfork.personalization.application.query.lookup.PersonalizationProfileLookupService;
+import com.techfork.post.application.query.lookup.PostLookupService;
 import com.techfork.useraccount.domain.User;
 import com.techfork.useraccount.domain.enums.SocialType;
 import com.techfork.useraccount.fixture.UserFixture;
@@ -37,11 +36,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
+import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
@@ -59,7 +59,7 @@ class LlmRecommendationServiceTest {
     private ElasticsearchClient elasticsearchClient;
 
     @Mock
-    private PersonalizationProfileDocumentRepository personalizationProfileDocumentRepository;
+    private PersonalizationProfileLookupService personalizationProfileLookupService;
 
     @Mock
     private RecommendedPostRepository recommendedPostRepository;
@@ -68,10 +68,10 @@ class LlmRecommendationServiceTest {
     private RecommendationHistoryRepository recommendationHistoryRepository;
 
     @Mock
-    private ReadPostRepository readPostRepository;
+    private ReadPostLookupService readPostLookupService;
 
     @Mock
-    private PostRepository postRepository;
+    private PostLookupService postLookupService;
 
     @Mock
     private MmrService mmrService;
@@ -90,11 +90,11 @@ class LlmRecommendationServiceTest {
         properties.setMmrCandidateSize(5);
         llmRecommendationService = new LlmRecommendationService(
                 elasticsearchClient,
-                personalizationProfileDocumentRepository,
+                personalizationProfileLookupService,
                 recommendedPostRepository,
                 recommendationHistoryRepository,
-                readPostRepository,
-                postRepository,
+                readPostLookupService,
+                postLookupService,
                 mmrService,
                 timeDecayStrategy,
                 properties,
@@ -108,16 +108,13 @@ class LlmRecommendationServiceTest {
     class GenerateRecommendationsForUser {
 
         @Test
-        @DisplayName("추천 생성은 PersonalizationProfileDocument projection의 벡터와 핵심 키워드로 후보를 검색한다")
+        @DisplayName("추천 생성은 personalization lookup의 벡터와 핵심 키워드로 후보를 검색한다")
         void storedProfileExists_UsesProfileVectorAndKeywords() throws IOException {
             Long userId = 9L;
             User user = createUser(userId);
             float[] profileVector = new float[]{0.1f, 0.2f};
-            PersonalizationProfileDocument personalizationProfile = PersonalizationProfileDocumentFixture.personalizationProfileDocument(
-                    userId,
-                    "Spring과 JPA 기반 백엔드 성능 개선에 관심이 높은 사용자",
+            PersonalizationProfileLookupItem personalizationProfile = new PersonalizationProfileLookupItem(
                     profileVector,
-                    List.of("Backend"),
                     List.of("Spring", "JPA")
             );
             Query filterQuery = Query.of(query -> query.matchAll(matchAll -> matchAll));
@@ -136,16 +133,16 @@ class LlmRecommendationServiceTest {
             );
             Post recommendedPost = mock(Post.class);
 
-            given(personalizationProfileDocumentRepository.findByUserId(userId))
+            given(personalizationProfileLookupService.findByUserId(userId))
                     .willReturn(Optional.of(personalizationProfile));
-            given(readPostRepository.findRecentReadPostsByUserIdWithMinDuration(userId, PageRequest.of(0, 1000)))
-                    .willReturn(List.of());
-            given(vectorQueryBuilder.createExcludeFilter(Set.of())).willReturn(filterQuery);
+            Set<Long> readPostIds = Set.of(301L);
+            given(readPostLookupService.getRecentReadPostIds(userId, 1000)).willReturn(readPostIds);
+            given(vectorQueryBuilder.createExcludeFilter(readPostIds)).willReturn(filterQuery);
             given(vectorQueryBuilder.createKnnSearches(
                     eq("titleEmbedding"),
                     eq("summaryEmbedding"),
                     eq("contentChunks.embedding"),
-                    same(profileVector),
+                    aryEq(profileVector),
                     eq(0.6f),
                     eq(0.2f),
                     eq(0.2f),
@@ -172,7 +169,7 @@ class LlmRecommendationServiceTest {
                             .rank(1)
                             .build()));
             given(recommendedPostRepository.findByUserOrderByRankAsc(user)).willReturn(List.of());
-            given(postRepository.getReferenceById(501L)).willReturn(recommendedPost);
+            given(postLookupService.getPostReference(501L)).willReturn(recommendedPost);
             given(recommendedPostRepository.saveAll(anyList())).willAnswer(invocation -> invocation.getArgument(0));
 
             int createdCount = llmRecommendationService.generateRecommendationsForUser(user);
@@ -184,12 +181,15 @@ class LlmRecommendationServiceTest {
             assertThat(candidatesCaptor.getValue())
                     .extracting(MmrService.MmrCandidate::getPostId)
                     .containsExactly(501L, 502L);
-            verify(personalizationProfileDocumentRepository, times(1)).findByUserId(userId);
+            verify(personalizationProfileLookupService, times(1)).findByUserId(userId);
+            verify(readPostLookupService).getRecentReadPostIds(userId, 1000);
+            verify(vectorQueryBuilder).createExcludeFilter(readPostIds);
+            verify(postLookupService).getPostReference(501L);
             verify(vectorQueryBuilder).createKnnSearches(
                     eq("titleEmbedding"),
                     eq("summaryEmbedding"),
                     eq("contentChunks.embedding"),
-                    same(profileVector),
+                    aryEq(profileVector),
                     eq(0.6f),
                     eq(0.2f),
                     eq(0.2f),
@@ -198,6 +198,20 @@ class LlmRecommendationServiceTest {
                     same(filterQuery)
             );
             verify(vectorQueryBuilder).createBm25Query(List.of("Spring", "JPA"), 0.6f, 0.2f, 0.2f);
+        }
+
+        @Test
+        @DisplayName("저장된 개인화 프로필이 없으면 추천 생성을 건너뛴다")
+        void storedProfileMissing_SkipsRecommendationGeneration() {
+            Long userId = 11L;
+            User user = createUser(userId);
+            given(personalizationProfileLookupService.findByUserId(userId)).willReturn(Optional.empty());
+
+            int createdCount = llmRecommendationService.generateRecommendationsForUser(user);
+
+            assertThat(createdCount).isZero();
+            verify(personalizationProfileLookupService).findByUserId(userId);
+            verify(readPostLookupService, never()).getRecentReadPostIds(any(), anyInt());
         }
 
         @Test
@@ -210,8 +224,7 @@ class LlmRecommendationServiceTest {
             Query filterQuery = Query.of(query -> query.matchAll(matchAll -> matchAll));
             Query bm25Query = Query.of(query -> query.matchAll(matchAll -> matchAll));
 
-            given(readPostRepository.findRecentReadPostsByUserIdWithMinDuration(userId, PageRequest.of(0, 1000)))
-                    .willReturn(List.of());
+            given(readPostLookupService.getRecentReadPostIds(userId, 1000)).willReturn(Set.of());
             given(vectorQueryBuilder.createExcludeFilter(Set.of())).willReturn(filterQuery);
             given(vectorQueryBuilder.createKnnSearches(
                     eq("titleEmbedding"),
@@ -236,7 +249,7 @@ class LlmRecommendationServiceTest {
             int createdCount = llmRecommendationService.generateRecommendationsForUser(user, profileVector, keyKeywords);
 
             assertThat(createdCount).isZero();
-            verify(personalizationProfileDocumentRepository, never()).findByUserId(any());
+            verify(personalizationProfileLookupService, never()).findByUserId(any());
             verify(vectorQueryBuilder).createBm25Query(keyKeywords, 0.6f, 0.2f, 0.2f);
         }
     }

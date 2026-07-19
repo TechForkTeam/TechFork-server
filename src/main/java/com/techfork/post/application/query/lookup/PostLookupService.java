@@ -23,6 +23,10 @@ public class PostLookupService {
 
     private final PostRepository postRepository;
 
+    public Post getPostReference(Long postId) {
+        return postRepository.getReferenceById(postId);
+    }
+
     public Post getPostOrThrow(Long postId) {
         return postRepository.findById(postId)
                 .orElseThrow(() -> new GeneralException(PostErrorCode.POST_NOT_FOUND));

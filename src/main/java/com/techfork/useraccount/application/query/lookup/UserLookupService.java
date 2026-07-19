@@ -17,13 +17,21 @@ public class UserLookupService {
 
     private final UserRepository userRepository;
 
+    public User getUserReference(Long userId) {
+        return userRepository.getReferenceById(userId);
+    }
+
     public User getUserOrThrow(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
     }
 
+    public List<User> getActiveUsersSince(LocalDateTime since) {
+        return userRepository.findActiveUsersSince(since);
+    }
+
     public List<Long> getActiveUserIdsSince(LocalDateTime since) {
-        return userRepository.findActiveUsersSince(since)
+        return getActiveUsersSince(since)
                 .stream()
                 .map(User::getId)
                 .toList();

@@ -1,7 +1,7 @@
 package com.techfork.domain.recommendation.service;
 
+import com.techfork.useraccount.application.query.lookup.UserLookupService;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.infrastructure.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -22,7 +22,7 @@ class RecommendationCommandServiceTest {
     private RecommendationService recommendationService;
 
     @Mock
-    private UserRepository userRepository;
+    private UserLookupService userLookupService;
 
     @InjectMocks
     private RecommendationCommandService recommendationCommandService;
@@ -32,16 +32,16 @@ class RecommendationCommandServiceTest {
     class RegenerateRecommendations {
 
         @Test
-        @DisplayName("userId로 사용자 참조를 조회해 수동 추천 재생성을 요청한다")
-        void userIdProvided_GeneratesRecommendationsForUserReference() {
+        @DisplayName("lookup seam으로 사용자를 조회해 수동 추천 재생성을 요청한다")
+        void userIdProvided_GeneratesRecommendationsForLookedUpUser() {
             Long userId = 1L;
             User user = mock(User.class);
-            given(userRepository.getReferenceById(userId)).willReturn(user);
+            given(userLookupService.getUserReference(userId)).willReturn(user);
             given(recommendationService.generateRecommendationsForUser(user)).willReturn(5);
 
             recommendationCommandService.regenerateRecommendations(userId);
 
-            verify(userRepository).getReferenceById(userId);
+            verify(userLookupService).getUserReference(userId);
             verify(recommendationService).generateRecommendationsForUser(user);
         }
     }

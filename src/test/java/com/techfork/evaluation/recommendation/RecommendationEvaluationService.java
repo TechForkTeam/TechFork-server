@@ -5,9 +5,8 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.KnnSearch;
-import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
+import com.techfork.activity.readpost.application.query.lookup.ReadPostLookupService;
 import com.techfork.post.domain.projection.PostDocument;
-import com.techfork.post.infrastructure.PostRepository;
 import com.techfork.domain.recommendation.config.RecommendationProperties;
 import com.techfork.domain.recommendation.entity.RecommendedPost;
 import com.techfork.domain.recommendation.repository.RecommendationHistoryRepository;
@@ -18,6 +17,8 @@ import com.techfork.domain.recommendation.service.MmrService.MmrCandidate;
 import com.techfork.domain.recommendation.service.MmrService.MmrResult;
 import com.techfork.global.util.RrfScorer;
 import com.techfork.personalization.infrastructure.PersonalizationProfileDocument;
+import com.techfork.personalization.application.query.lookup.PersonalizationProfileLookupService;
+import com.techfork.post.application.query.lookup.PostLookupService;
 import com.techfork.useraccount.domain.User;
 import com.techfork.personalization.infrastructure.PersonalizationProfileDocumentRepository;
 import com.techfork.global.elasticsearch.query.VectorQueryBuilder;
@@ -51,17 +52,18 @@ public class RecommendationEvaluationService extends LlmRecommendationService {
     public RecommendationEvaluationService(
             ElasticsearchClient elasticsearchClient,
             PersonalizationProfileDocumentRepository personalizationProfileDocumentRepository,
+            PersonalizationProfileLookupService personalizationProfileLookupService,
             RecommendedPostRepository recommendedPostRepository,
             RecommendationHistoryRepository recommendationHistoryRepository,
-            ReadPostRepository readPostRepository,
-            PostRepository postRepository,
+            ReadPostLookupService readPostLookupService,
+            PostLookupService postLookupService,
             MmrService mmrService,
             TimeDecayStrategy timeDecayStrategy,
             RecommendationProperties properties,
             VectorQueryBuilder vectorQueryBuilder
     ) {
-        super(elasticsearchClient, personalizationProfileDocumentRepository, recommendedPostRepository,
-                recommendationHistoryRepository, readPostRepository, postRepository,
+        super(elasticsearchClient, personalizationProfileLookupService, recommendedPostRepository,
+                recommendationHistoryRepository, readPostLookupService, postLookupService,
                 mmrService, timeDecayStrategy, properties, vectorQueryBuilder,
                 Executors.newSingleThreadExecutor());
         this.elasticsearchClient = elasticsearchClient;
