@@ -9,8 +9,8 @@ import com.techfork.activity.readpost.application.query.lookup.ReadPostLookupSer
 import com.techfork.post.domain.projection.PostDocument;
 import com.techfork.domain.recommendation.config.RecommendationProperties;
 import com.techfork.recommendation.domain.RecommendedPost;
-import com.techfork.domain.recommendation.repository.RecommendationHistoryRepository;
-import com.techfork.domain.recommendation.repository.RecommendedPostRepository;
+import com.techfork.recommendation.infrastructure.RecommendationHistoryRepository;
+import com.techfork.recommendation.infrastructure.RecommendedPostRepository;
 import com.techfork.domain.recommendation.service.LlmRecommendationService;
 import com.techfork.domain.recommendation.service.MmrService;
 import com.techfork.domain.recommendation.service.MmrService.MmrCandidate;

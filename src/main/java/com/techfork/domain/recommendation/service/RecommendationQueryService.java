@@ -5,7 +5,7 @@ import com.techfork.domain.recommendation.converter.RecommendationConverter;
 import com.techfork.domain.recommendation.dto.RecommendationListResponse;
 import com.techfork.domain.recommendation.dto.RecommendedPostDto;
 import com.techfork.recommendation.domain.RecommendedPost;
-import com.techfork.domain.recommendation.repository.RecommendedPostRepository;
+import com.techfork.recommendation.infrastructure.RecommendedPostRepository;
 import com.techfork.useraccount.application.query.lookup.UserLookupService;
 import com.techfork.useraccount.domain.User;
 import lombok.RequiredArgsConstructor;

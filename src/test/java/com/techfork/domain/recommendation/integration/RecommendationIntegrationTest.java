@@ -6,7 +6,7 @@ import com.techfork.activity.bookmark.infrastructure.BookmarkRepository;
 import com.techfork.auth.security.jwt.JwtDTO;
 import com.techfork.auth.security.jwt.JwtUtil;
 import com.techfork.recommendation.domain.RecommendedPost;
-import com.techfork.domain.recommendation.repository.RecommendedPostRepository;
+import com.techfork.recommendation.infrastructure.RecommendedPostRepository;
 import com.techfork.domain.source.entity.TechBlog;
 import com.techfork.domain.source.repository.TechBlogRepository;
 import com.techfork.global.common.MySqlRedisIntegrationTestBase;

@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.repository;
+package com.techfork.recommendation.infrastructure;
 
 import com.techfork.recommendation.domain.RecommendedPost;
 import com.techfork.useraccount.domain.User;

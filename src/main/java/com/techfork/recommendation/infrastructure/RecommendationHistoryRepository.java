@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.repository;
+package com.techfork.recommendation.infrastructure;
 
 import com.techfork.recommendation.domain.RecommendationHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
