@@ -39,6 +39,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
+import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -141,7 +142,7 @@ class LlmRecommendationServiceTest {
                     eq("titleEmbedding"),
                     eq("summaryEmbedding"),
                     eq("contentChunks.embedding"),
-                    same(profileVector),
+                    aryEq(profileVector),
                     eq(0.6f),
                     eq(0.2f),
                     eq(0.2f),
@@ -188,7 +189,7 @@ class LlmRecommendationServiceTest {
                     eq("titleEmbedding"),
                     eq("summaryEmbedding"),
                     eq("contentChunks.embedding"),
-                    same(profileVector),
+                    aryEq(profileVector),
                     eq(0.6f),
                     eq(0.2f),
                     eq(0.2f),

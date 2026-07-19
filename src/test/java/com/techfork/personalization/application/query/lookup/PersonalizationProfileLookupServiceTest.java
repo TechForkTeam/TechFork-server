@@ -46,7 +46,9 @@ class PersonalizationProfileLookupServiceTest {
                     personalizationProfileLookupService.findByUserId(userId);
 
             assertThat(result).hasValueSatisfying(profile -> {
-                assertThat(profile.profileVector()).isSameAs(profileVector);
+                assertThat(profile.profileVector())
+                        .isNotSameAs(profileVector)
+                        .containsExactly(profileVector);
                 assertThat(profile.keyKeywords()).isEqualTo(keyKeywords);
             });
             verify(personalizationProfileDocumentRepository).findByUserId(userId);
