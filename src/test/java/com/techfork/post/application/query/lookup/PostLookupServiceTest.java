@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class PostLookupServiceTest {
@@ -26,6 +27,24 @@ class PostLookupServiceTest {
 
     @InjectMocks
     private PostLookupService postLookupService;
+
+    @Nested
+    @DisplayName("게시글 참조 조회")
+    class GetPostReference {
+
+        @Test
+        @DisplayName("repository의 지연 참조를 그대로 반환한다")
+        void postIdProvided_ReturnsPostReference() {
+            Long postId = 100L;
+            Post postReference = mock(Post.class);
+            given(postRepository.getReferenceById(postId)).willReturn(postReference);
+
+            Post result = postLookupService.getPostReference(postId);
+
+            assertThat(result).isSameAs(postReference);
+            verify(postRepository).getReferenceById(postId);
+        }
+    }
 
     @Nested
     @DisplayName("게시글 조회")

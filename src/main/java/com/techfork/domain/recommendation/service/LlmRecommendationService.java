@@ -5,29 +5,28 @@ import co.elastic.clients.elasticsearch._types.KnnSearch;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
-import com.techfork.activity.readpost.infrastructure.ReadPostRepository;
-import com.techfork.global.elasticsearch.query.VectorQueryBuilder;
-import com.techfork.post.domain.projection.PostDocument;
-import com.techfork.post.domain.Post;
-import com.techfork.post.infrastructure.PostRepository;
+import com.techfork.activity.readpost.application.query.lookup.ReadPostLookupService;
 import com.techfork.domain.recommendation.config.RecommendationProperties;
-import com.techfork.domain.recommendation.entity.RecommendedPost;
 import com.techfork.domain.recommendation.entity.RecommendationHistory;
-import com.techfork.domain.recommendation.repository.RecommendedPostRepository;
+import com.techfork.domain.recommendation.entity.RecommendedPost;
 import com.techfork.domain.recommendation.repository.RecommendationHistoryRepository;
+import com.techfork.domain.recommendation.repository.RecommendedPostRepository;
 import com.techfork.domain.recommendation.service.MmrService.MmrCandidate;
 import com.techfork.domain.recommendation.service.MmrService.MmrResult;
-import com.techfork.personalization.infrastructure.PersonalizationProfileDocument;
-import com.techfork.useraccount.domain.User;
-import com.techfork.personalization.infrastructure.PersonalizationProfileDocumentRepository;
+import com.techfork.global.elasticsearch.query.VectorQueryBuilder;
 import com.techfork.global.util.RrfScorer;
 import com.techfork.global.util.TimeDecayStrategy;
 import com.techfork.global.util.VectorUtil;
+import com.techfork.personalization.application.query.lookup.PersonalizationProfileLookupItem;
+import com.techfork.personalization.application.query.lookup.PersonalizationProfileLookupService;
+import com.techfork.post.application.query.lookup.PostLookupService;
+import com.techfork.post.domain.Post;
+import com.techfork.post.domain.projection.PostDocument;
+import com.techfork.useraccount.domain.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Primary;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,7 +34,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.stream.Collectors;
 
 /**
  * MMR 알고리즘 기반 추천 전략 구현
@@ -48,11 +46,11 @@ import java.util.stream.Collectors;
 public class LlmRecommendationService implements RecommendationService {
 
     private final ElasticsearchClient elasticsearchClient;
-    private final PersonalizationProfileDocumentRepository personalizationProfileDocumentRepository;
+    private final PersonalizationProfileLookupService personalizationProfileLookupService;
     private final RecommendedPostRepository recommendedPostRepository;
     private final RecommendationHistoryRepository recommendationHistoryRepository;
-    private final ReadPostRepository readPostRepository;
-    private final PostRepository postRepository;
+    private final ReadPostLookupService readPostLookupService;
+    private final PostLookupService postLookupService;
     private final MmrService mmrService;
     private final TimeDecayStrategy timeDecayStrategy;
     private final RecommendationProperties properties;
@@ -64,21 +62,22 @@ public class LlmRecommendationService implements RecommendationService {
     private static final String TITLE_EMBEDDING_FIELD = "titleEmbedding";
     private static final String SUMMARY_EMBEDDING_FIELD = "summaryEmbedding";
     private static final String CONTENT_CHUNKS_EMBEDDING_FIELD = "contentChunks.embedding";
+    private static final int RECENT_READ_POST_LIMIT = 1000;
 
     @Override
     public int generateRecommendationsForUser(User user) {
-        Optional<PersonalizationProfileDocument> personalizationProfileOpt =
-                personalizationProfileDocumentRepository.findByUserId(user.getId());
-        if (personalizationProfileOpt.isEmpty() || personalizationProfileOpt.get().getProfileVector() == null) {
+        Optional<PersonalizationProfileLookupItem> personalizationProfileOpt =
+                personalizationProfileLookupService.findByUserId(user.getId());
+        if (personalizationProfileOpt.isEmpty() || personalizationProfileOpt.get().profileVector() == null) {
             log.warn("사용자 {}의 개인화 프로필 또는 벡터를 찾을 수 없음. 추천 생성 스킵.", user.getId());
             return 0;
         }
 
-        PersonalizationProfileDocument personalizationProfile = personalizationProfileOpt.get();
+        PersonalizationProfileLookupItem personalizationProfile = personalizationProfileOpt.get();
         return generateRecommendationsForUser(
                 user,
-                personalizationProfile.getProfileVector(),
-                personalizationProfile.getKeyKeywords()
+                personalizationProfile.profileVector(),
+                personalizationProfile.keyKeywords()
         );
     }
 
@@ -118,7 +117,7 @@ public class LlmRecommendationService implements RecommendationService {
             // 5. 새 추천 저장
             List<RecommendedPost> recommendations = new ArrayList<>();
             for (MmrResult result : mmrResults) {
-                Post post = postRepository.getReferenceById(result.getPostId());
+                Post post = postLookupService.getPostReference(result.getPostId());
                 recommendations.add(RecommendedPost.create(
                         user, post, result.getSimilarityScore(), result.getMmrScore(), result.getRank()
                 ));
@@ -138,10 +137,7 @@ public class LlmRecommendationService implements RecommendationService {
             List<String> keyKeywords,
             User user
     ) throws IOException {
-        Set<Long> readPostIds = readPostRepository.findRecentReadPostsByUserIdWithMinDuration(user.getId(), PageRequest.of(0, 1000))
-                .stream()
-                .map(readPost -> readPost.getPost().getId())
-                .collect(Collectors.toSet());
+        Set<Long> readPostIds = readPostLookupService.getRecentReadPostIds(user.getId(), RECENT_READ_POST_LIMIT);
 
         RecommendationProperties.EmbeddingWeights weights = properties.getEmbeddingWeights();
         Query filterQuery = vectorQueryBuilder.createExcludeFilter(readPostIds);

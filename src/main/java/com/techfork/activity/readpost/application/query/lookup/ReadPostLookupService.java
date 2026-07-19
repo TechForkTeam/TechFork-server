@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -15,6 +17,13 @@ import java.util.List;
 public class ReadPostLookupService {
 
     private final ReadPostRepository readPostRepository;
+
+    public Set<Long> getRecentReadPostIds(Long userId, int limit) {
+        return readPostRepository.findRecentReadPostsByUserIdWithMinDuration(userId, PageRequest.of(0, limit))
+                .stream()
+                .map(readPost -> readPost.getPost().getId())
+                .collect(Collectors.toSet());
+    }
 
     public List<ReadPostLookupItem> getRecentReadPostActivities(Long userId, int limit) {
         return readPostRepository.findRecentReadPostsByUserIdWithMinDuration(userId, PageRequest.of(0, limit))

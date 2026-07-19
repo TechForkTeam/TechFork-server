@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -28,6 +29,36 @@ class ReadPostLookupServiceTest {
 
     @InjectMocks
     private ReadPostLookupService readPostLookupService;
+
+    @Nested
+    @DisplayName("최근 읽은 게시글 ID 조회")
+    class GetRecentReadPostIds {
+
+        @Test
+        @DisplayName("조회된 읽기 기록의 게시글 ID를 중복 없이 반환한다")
+        void recentReadPostsExist_ReturnsDistinctPostIds() {
+            Long userId = 1L;
+            int limit = 1000;
+            Post firstPost = mock(Post.class);
+            Post secondPost = mock(Post.class);
+            ReadPost firstReadPost = mock(ReadPost.class);
+            ReadPost duplicateReadPost = mock(ReadPost.class);
+            ReadPost secondReadPost = mock(ReadPost.class);
+            given(firstReadPost.getPost()).willReturn(firstPost);
+            given(duplicateReadPost.getPost()).willReturn(firstPost);
+            given(secondReadPost.getPost()).willReturn(secondPost);
+            given(firstPost.getId()).willReturn(10L);
+            given(secondPost.getId()).willReturn(20L);
+            given(readPostRepository.findRecentReadPostsByUserIdWithMinDuration(userId, PageRequest.of(0, limit)))
+                    .willReturn(List.of(firstReadPost, duplicateReadPost, secondReadPost));
+
+            Set<Long> result = readPostLookupService.getRecentReadPostIds(userId, limit);
+
+            assertThat(result).containsExactlyInAnyOrder(10L, 20L);
+            verify(readPostRepository)
+                    .findRecentReadPostsByUserIdWithMinDuration(userId, PageRequest.of(0, limit));
+        }
+    }
 
     @Nested
     @DisplayName("최근 읽은 게시글 활동 신호 조회")
