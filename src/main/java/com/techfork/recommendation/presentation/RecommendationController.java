@@ -1,6 +1,6 @@
-package com.techfork.domain.recommendation.controller;
+package com.techfork.recommendation.presentation;
 
-import com.techfork.domain.recommendation.dto.RecommendationListResponse;
+import com.techfork.recommendation.presentation.response.RecommendationListResponse;
 import com.techfork.recommendation.application.command.RecommendationCommandService;
 import com.techfork.recommendation.application.query.RecommendationQueryService;
 import com.techfork.global.common.code.SuccessCode;

@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.dto;
+package com.techfork.recommendation.presentation.response;
 
 import lombok.Builder;
 

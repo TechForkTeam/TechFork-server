@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.integration;
+package com.techfork.recommendation.integration;
 
 import com.techfork.activity.bookmark.domain.Bookmark;
 import com.techfork.activity.bookmark.fixture.BookmarkFixture;

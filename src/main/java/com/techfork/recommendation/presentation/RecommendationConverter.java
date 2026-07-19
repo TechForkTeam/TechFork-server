@@ -1,9 +1,9 @@
-package com.techfork.domain.recommendation.converter;
+package com.techfork.recommendation.presentation;
 
 import com.techfork.post.domain.Post;
 import com.techfork.post.domain.PostKeyword;
-import com.techfork.domain.recommendation.dto.RecommendationListResponse;
-import com.techfork.domain.recommendation.dto.RecommendedPostDto;
+import com.techfork.recommendation.presentation.response.RecommendationListResponse;
+import com.techfork.recommendation.presentation.response.RecommendedPostDto;
 import com.techfork.recommendation.domain.RecommendedPost;
 import com.techfork.global.util.CloudflareThirdPartyThumbnailOptimizer;
 import lombok.RequiredArgsConstructor;

@@ -2,9 +2,9 @@ package com.techfork.recommendation.application.query;
 
 import com.techfork.activity.bookmark.application.query.lookup.BookmarkLookupService;
 import com.techfork.post.domain.Post;
-import com.techfork.domain.recommendation.converter.RecommendationConverter;
-import com.techfork.domain.recommendation.dto.RecommendationListResponse;
-import com.techfork.domain.recommendation.dto.RecommendedPostDto;
+import com.techfork.recommendation.presentation.RecommendationConverter;
+import com.techfork.recommendation.presentation.response.RecommendationListResponse;
+import com.techfork.recommendation.presentation.response.RecommendedPostDto;
 import com.techfork.recommendation.domain.RecommendedPost;
 import com.techfork.recommendation.infrastructure.RecommendedPostRepository;
 import com.techfork.domain.source.entity.TechBlog;

@@ -34,7 +34,6 @@
 - 현재 legacy 유지 대상:
   - `com.techfork.domain.source`
   - `com.techfork.domain.search`
-  - `com.techfork.domain.recommendation`
 - 테스트만 먼저 `com.techfork.<context>`로 옮기지 않는다. production과 test의 root가 달라지면 IDE 탐색, package-private 접근, fixture 소유권 판단이 어긋날 수 있다.
 - legacy slice를 이관할 때는 다음을 같은 작업 단위로 묶는다.
   - production package 선언과 디렉터리 이동
