@@ -1,6 +1,6 @@
 package com.techfork.domain.recommendation.scheduler;
 
-import com.techfork.domain.recommendation.config.RecommendationProperties;
+import com.techfork.recommendation.config.RecommendationProperties;
 import com.techfork.domain.recommendation.service.RecommendationService;
 import com.techfork.useraccount.application.query.lookup.UserLookupService;
 import com.techfork.useraccount.domain.User;

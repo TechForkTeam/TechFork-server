@@ -6,7 +6,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.techfork.activity.readpost.application.query.lookup.ReadPostLookupService;
-import com.techfork.domain.recommendation.config.RecommendationProperties;
+import com.techfork.recommendation.config.RecommendationProperties;
 import com.techfork.recommendation.domain.RecommendationHistory;
 import com.techfork.recommendation.domain.RecommendedPost;
 import com.techfork.recommendation.infrastructure.RecommendationHistoryRepository;

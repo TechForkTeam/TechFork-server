@@ -1,6 +1,6 @@
 package com.techfork.evaluation.recommendation;
 
-import com.techfork.domain.recommendation.config.RecommendationProperties;
+import com.techfork.recommendation.config.RecommendationProperties;
 import com.techfork.useraccount.domain.User;
 import lombok.Builder;
 import lombok.Getter;

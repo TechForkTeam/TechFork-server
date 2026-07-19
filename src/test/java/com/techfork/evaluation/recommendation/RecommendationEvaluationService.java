@@ -7,7 +7,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.KnnSearch;
 import com.techfork.activity.readpost.application.query.lookup.ReadPostLookupService;
 import com.techfork.post.domain.projection.PostDocument;
-import com.techfork.domain.recommendation.config.RecommendationProperties;
+import com.techfork.recommendation.config.RecommendationProperties;
 import com.techfork.recommendation.domain.RecommendedPost;
 import com.techfork.recommendation.infrastructure.RecommendationHistoryRepository;
 import com.techfork.recommendation.infrastructure.RecommendedPostRepository;

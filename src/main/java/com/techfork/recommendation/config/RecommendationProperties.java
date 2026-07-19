@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.config;
+package com.techfork.recommendation.config;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

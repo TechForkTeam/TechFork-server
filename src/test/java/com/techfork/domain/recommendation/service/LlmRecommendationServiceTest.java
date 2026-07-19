@@ -10,7 +10,7 @@ import com.techfork.activity.readpost.application.query.lookup.ReadPostLookupSer
 import com.techfork.global.elasticsearch.query.VectorQueryBuilder;
 import com.techfork.post.domain.projection.PostDocument;
 import com.techfork.post.fixture.PostDocumentFixture;
-import com.techfork.domain.recommendation.config.RecommendationProperties;
+import com.techfork.recommendation.config.RecommendationProperties;
 import com.techfork.recommendation.infrastructure.RecommendedPostRepository;
 import com.techfork.recommendation.infrastructure.RecommendationHistoryRepository;
 import com.techfork.post.domain.Post;

@@ -1,4 +1,4 @@
-package com.techfork.domain.recommendation.config;
+package com.techfork.recommendation.infrastructure.config;
 
 import com.techfork.global.filter.MdcTaskDecorator;
 import org.springframework.context.annotation.Bean;
