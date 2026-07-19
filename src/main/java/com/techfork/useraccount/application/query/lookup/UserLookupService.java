@@ -17,6 +17,10 @@ public class UserLookupService {
 
     private final UserRepository userRepository;
 
+    public User getUserReference(Long userId) {
+        return userRepository.getReferenceById(userId);
+    }
+
     public User getUserOrThrow(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));

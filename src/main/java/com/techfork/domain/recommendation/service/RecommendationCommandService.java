@@ -17,7 +17,7 @@ public class RecommendationCommandService {
     private final UserLookupService userLookupService;
 
     public void regenerateRecommendations(Long userId) {
-        User user = userLookupService.getUserOrThrow(userId);
+        User user = userLookupService.getUserReference(userId);
         int generatedCount = recommendationService.generateRecommendationsForUser(user);
         log.info("사용자 {} 추천 즉시 재생성 완료: {} 개", userId, generatedCount);
     }

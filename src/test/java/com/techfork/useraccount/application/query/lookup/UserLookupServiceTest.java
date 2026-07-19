@@ -32,6 +32,24 @@ class UserLookupServiceTest {
     private UserLookupService userLookupService;
 
     @Nested
+    @DisplayName("사용자 참조 조회")
+    class GetUserReference {
+
+        @Test
+        @DisplayName("사용자를 즉시 조회하지 않고 지연 참조로 반환한다")
+        void userIdProvided_ReturnsUserReference() {
+            Long userId = 1L;
+            User userReference = mock(User.class);
+            given(userRepository.getReferenceById(userId)).willReturn(userReference);
+
+            User result = userLookupService.getUserReference(userId);
+
+            assertThat(result).isSameAs(userReference);
+            verify(userRepository).getReferenceById(userId);
+        }
+    }
+
+    @Nested
     @DisplayName("사용자 조회")
     class GetUserOrThrow {
 

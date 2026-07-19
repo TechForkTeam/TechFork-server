@@ -36,12 +36,12 @@ class RecommendationCommandServiceTest {
         void userIdProvided_GeneratesRecommendationsForLookedUpUser() {
             Long userId = 1L;
             User user = mock(User.class);
-            given(userLookupService.getUserOrThrow(userId)).willReturn(user);
+            given(userLookupService.getUserReference(userId)).willReturn(user);
             given(recommendationService.generateRecommendationsForUser(user)).willReturn(5);
 
             recommendationCommandService.regenerateRecommendations(userId);
 
-            verify(userLookupService).getUserOrThrow(userId);
+            verify(userLookupService).getUserReference(userId);
             verify(recommendationService).generateRecommendationsForUser(user);
         }
     }

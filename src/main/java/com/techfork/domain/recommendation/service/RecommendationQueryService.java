@@ -28,7 +28,7 @@ public class RecommendationQueryService {
     private final BookmarkLookupService bookmarkLookupService;
 
     public RecommendationListResponse getRecommendations(Long userId) {
-        User user = userLookupService.getUserOrThrow(userId);
+        User user = userLookupService.getUserReference(userId);
         List<RecommendedPost> recommendedPosts = recommendedPostRepository.findByUserOrderByRankAsc(user);
         log.info("사용자 {} 추천 목록 조회: {} 개", userId, recommendedPosts.size());
 

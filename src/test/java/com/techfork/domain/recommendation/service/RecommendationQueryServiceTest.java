@@ -99,7 +99,7 @@ class RecommendationQueryServiceTest {
                     .totalCount(3)
                     .build();
 
-            given(userLookupService.getUserOrThrow(userId)).willReturn(testUser);
+            given(userLookupService.getUserReference(userId)).willReturn(testUser);
             given(recommendedPostRepository.findByUserOrderByRankAsc(testUser)).willReturn(recommendedPosts);
             given(recommendationConverter.toRecommendationListResponse(recommendedPosts)).willReturn(initialResponse);
             given(bookmarkLookupService.getBookmarkedPostIds(userId, postIds)).willReturn(Set.of());
@@ -113,7 +113,7 @@ class RecommendationQueryServiceTest {
             assertThat(response.recommendations().get(0).title()).isEqualTo("게시글 1");
             assertThat(response.recommendations().get(0).isBookmarked()).isFalse();
 
-            verify(userLookupService).getUserOrThrow(userId);
+            verify(userLookupService).getUserReference(userId);
             verify(recommendedPostRepository).findByUserOrderByRankAsc(testUser);
             verify(recommendationConverter).toRecommendationListResponse(recommendedPosts);
             verify(bookmarkLookupService).getBookmarkedPostIds(userId, postIds);
@@ -141,7 +141,7 @@ class RecommendationQueryServiceTest {
             // 101L, 103L 게시글은 북마크됨
             Set<Long> bookmarkedPostIds = Set.of(101L, 103L);
 
-            given(userLookupService.getUserOrThrow(userId)).willReturn(testUser);
+            given(userLookupService.getUserReference(userId)).willReturn(testUser);
             given(recommendedPostRepository.findByUserOrderByRankAsc(testUser)).willReturn(recommendedPosts);
             given(recommendationConverter.toRecommendationListResponse(recommendedPosts)).willReturn(initialResponse);
             given(bookmarkLookupService.getBookmarkedPostIds(userId, postIds)).willReturn(bookmarkedPostIds);
@@ -172,7 +172,7 @@ class RecommendationQueryServiceTest {
                     .totalCount(0)
                     .build();
 
-            given(userLookupService.getUserOrThrow(userId)).willReturn(testUser);
+            given(userLookupService.getUserReference(userId)).willReturn(testUser);
             given(recommendedPostRepository.findByUserOrderByRankAsc(testUser)).willReturn(emptyList);
             given(recommendationConverter.toRecommendationListResponse(emptyList)).willReturn(emptyResponse);
 
@@ -183,7 +183,7 @@ class RecommendationQueryServiceTest {
             assertThat(response.recommendations()).isEmpty();
             assertThat(response.totalCount()).isZero();
 
-            verify(userLookupService).getUserOrThrow(userId);
+            verify(userLookupService).getUserReference(userId);
             verify(recommendedPostRepository).findByUserOrderByRankAsc(testUser);
             verify(recommendationConverter).toRecommendationListResponse(emptyList);
             verify(bookmarkLookupService, never()).getBookmarkedPostIds(any(), any());
