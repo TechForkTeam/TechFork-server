@@ -60,6 +60,25 @@ class UserLookupServiceTest {
     }
 
     @Nested
+    @DisplayName("최근 활동 사용자 조회")
+    class GetActiveUsersSince {
+
+        @Test
+        @DisplayName("최근 활동 사용자 목록을 반환한다")
+        void sinceDate_ReturnsActiveUsers() {
+            LocalDateTime since = LocalDateTime.now().minusHours(24);
+            User firstUser = mock(User.class);
+            User secondUser = mock(User.class);
+            given(userRepository.findActiveUsersSince(since)).willReturn(List.of(firstUser, secondUser));
+
+            List<User> result = userLookupService.getActiveUsersSince(since);
+
+            assertThat(result).containsExactly(firstUser, secondUser);
+            verify(userRepository).findActiveUsersSince(since);
+        }
+    }
+
+    @Nested
     @DisplayName("최근 활동 사용자 ID 조회")
     class GetActiveUserIdsSince {
 

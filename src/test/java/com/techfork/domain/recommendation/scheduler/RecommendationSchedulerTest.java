@@ -2,8 +2,8 @@ package com.techfork.domain.recommendation.scheduler;
 
 import com.techfork.domain.recommendation.config.RecommendationProperties;
 import com.techfork.domain.recommendation.service.RecommendationService;
+import com.techfork.useraccount.application.query.lookup.UserLookupService;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.infrastructure.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -29,7 +29,7 @@ import static org.mockito.Mockito.verify;
 class RecommendationSchedulerTest {
 
     @Mock
-    private UserRepository userRepository;
+    private UserLookupService userLookupService;
 
     @Mock
     private RecommendationService recommendationService;
@@ -51,7 +51,7 @@ class RecommendationSchedulerTest {
             User user1 = mockUser(1L);
             User user2 = mockUser(2L);
             given(properties.getActiveUserHours()).willReturn(activeUserHours);
-            given(userRepository.findActiveUsersSince(any(LocalDateTime.class))).willReturn(List.of(user1, user2));
+            given(userLookupService.getActiveUsersSince(any(LocalDateTime.class))).willReturn(List.of(user1, user2));
             given(recommendationService.generateRecommendationsForUser(user1)).willReturn(2);
             given(recommendationService.generateRecommendationsForUser(user2)).willReturn(3);
 
@@ -60,7 +60,7 @@ class RecommendationSchedulerTest {
             LocalDateTime upperBound = LocalDateTime.now().minusHours(activeUserHours);
 
             ArgumentCaptor<LocalDateTime> sinceCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
-            verify(userRepository).findActiveUsersSince(sinceCaptor.capture());
+            verify(userLookupService).getActiveUsersSince(sinceCaptor.capture());
             assertThat(sinceCaptor.getValue()).isBetween(lowerBound, upperBound);
             verify(recommendationService).generateRecommendationsForUser(user1);
             verify(recommendationService).generateRecommendationsForUser(user2);
@@ -72,7 +72,8 @@ class RecommendationSchedulerTest {
             User failingUser = mockUser(1L);
             User successfulUser = mockUser(2L);
             given(properties.getActiveUserHours()).willReturn(24);
-            given(userRepository.findActiveUsersSince(any(LocalDateTime.class))).willReturn(List.of(failingUser, successfulUser));
+            given(userLookupService.getActiveUsersSince(any(LocalDateTime.class)))
+                    .willReturn(List.of(failingUser, successfulUser));
             given(recommendationService.generateRecommendationsForUser(failingUser))
                     .willThrow(new RuntimeException("recommendation failure"));
             given(recommendationService.generateRecommendationsForUser(successfulUser)).willReturn(3);

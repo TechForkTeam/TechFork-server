@@ -22,8 +22,12 @@ public class UserLookupService {
                 .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
     }
 
+    public List<User> getActiveUsersSince(LocalDateTime since) {
+        return userRepository.findActiveUsersSince(since);
+    }
+
     public List<Long> getActiveUserIdsSince(LocalDateTime since) {
-        return userRepository.findActiveUsersSince(since)
+        return getActiveUsersSince(since)
                 .stream()
                 .map(User::getId)
                 .toList();

@@ -2,8 +2,8 @@ package com.techfork.domain.recommendation.scheduler;
 
 import com.techfork.domain.recommendation.config.RecommendationProperties;
 import com.techfork.domain.recommendation.service.RecommendationService;
+import com.techfork.useraccount.application.query.lookup.UserLookupService;
 import com.techfork.useraccount.domain.User;
-import com.techfork.useraccount.infrastructure.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,7 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RecommendationScheduler {
 
-    private final UserRepository userRepository;
+    private final UserLookupService userLookupService;
     private final RecommendationService recommendationService;
     private final RecommendationProperties properties;
 
@@ -32,7 +32,7 @@ public class RecommendationScheduler {
         log.info("활성 사용자 대상으로 게시글 추천 시작");
 
         LocalDateTime since = LocalDateTime.now().minusHours(properties.getActiveUserHours());
-        List<User> activeUsers = userRepository.findActiveUsersSince(since);
+        List<User> activeUsers = userLookupService.getActiveUsersSince(since);
 
         log.info("{} 명의 활성 사용자를 찾았습니다. ({} 시간 이내)", activeUsers.size(), properties.getActiveUserHours());
 
